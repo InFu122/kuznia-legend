@@ -1,0 +1,169 @@
+import { useRef } from 'preact/hooks';
+import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, SLOTS } from '../../data';
+import { canSmelt } from '../../engine/forge';
+import { dist, itemName, mainVal, maxJump, sellPrice, upCost, upTime } from '../../engine/formulas';
+import type { Game } from '../../engine/game';
+import type { ElemKey } from '../../engine/types';
+import { ItemCard } from '../ItemCard';
+import { fmt, pct, tfmt } from '../format';
+
+export const Dist = ({ d }: { d: [number, number][] }) => (
+  <>{d.map(([r, p], i) => <span key={r}>{i > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n}&nbsp;{pct(p)}</span></span>)}</>
+);
+
+export const InfoBtn = ({ onClick, label }: { onClick: () => void; label: string }) => (
+  <button class="info" onClick={onClick} aria-label={label}>i</button>
+);
+
+function sparks(box: HTMLElement | null) {
+  if (!box || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('span');
+    s.className = 'spark';
+    const a = -Math.PI * Math.random();
+    const d = 40 + Math.random() * 70;
+    s.style.setProperty('--dx', Math.cos(a) * d + 'px');
+    s.style.setProperty('--dy', Math.sin(a) * d + 'px');
+    box.appendChild(s);
+    setTimeout(() => s.remove(), 650);
+  }
+}
+
+export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' | 'level') => void }) {
+  const s = game.s;
+  const f = s.forge;
+  const o = s.oreSel;
+  const mj = maxJump(o);
+  const sparkRef = useRef<HTMLDivElement>(null);
+  const ok = canSmelt(game.ctx, o) && !s.pending;
+  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}` : `Przetop · ${ORES[o].n}`;
+  const elKeys = ELEM_KEYS.filter(k => (s.els[k] ?? 0) > 0);
+  const n = f.lvl + 1;
+
+  return (
+    <>
+      <section class="card" aria-label="Kowadło">
+        <div class="row">
+          <div class="eyebrow">Wybierz rudę do wytopu</div>
+          <InfoBtn onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
+        </div>
+        <div class="ores">
+          {ORES.map((x, i) => {
+            const locked = f.lvl < x.lvl;
+            return (
+              <button key={x.n} class={`ore${i === o ? ' on' : ''}${locked ? ' locked' : ''}`} aria-pressed={i === o} onClick={() => game.setOre(i)}>
+                <span class="gem" style={{ '--c': x.col } as Record<string, string>} />
+                <span class="on-n">{x.n}</span>
+                <span class="cnt">{fmt(s.ores[i])}</span>
+                <small>{locked ? `wytop od poz. ${x.lvl}` : <>min. <span class={`rt${x.floor}`}>{RAR[x.floor].n}</span></>}</small>
+              </button>
+            );
+          })}
+        </div>
+        <div class="odds">
+          Szanse wytopu: <Dist d={dist(o, f.lvl)} />{mj === 0 ? ' · ta ruda nie przeskakuje' : ''} · <button class="linkbtn" onClick={() => onInfo('forge')}>wszystkie szanse</button>
+        </div>
+        {mj >= 1 && (
+          <div class="pity">
+            <span>Gwarancja przeskoku</span>
+            <div class="bar"><i style={{ width: Math.min(100, (s.pity / B.PITY_MAX) * 100) + '%' }} /></div>
+            <span class="num">{s.pity}/{B.PITY_MAX}</span>
+          </div>
+        )}
+        {f.lvl >= B.ELEM_FORGE_LVL && (
+          <div class="mix">
+            <span class="eyebrow" style={{ alignSelf: 'center' }}>Domieszka</span>
+            <button class={`chip${!s.elSel ? ' on' : ''}`} onClick={() => game.setElem(null)}>Bez domieszki</button>
+            {elKeys.map((k: ElemKey) => (
+              <button key={k} class={`chip${s.elSel === k ? ' on' : ''}`} onClick={() => game.setElem(k)}>{ELEM[k].n} · {s.els[k]}</button>
+            ))}
+            {elKeys.length === 0 && <span class="sub" style={{ alignSelf: 'center' }}>Domieszki wypadają w krainach z żywiołem (4% na falę).</span>}
+          </div>
+        )}
+        <div class="anvil">
+          <button class="btn primary btn-forge" disabled={!ok} onClick={() => { if (game.smeltManual()) sparks(sparkRef.current); }}>{btnLabel}</button>
+          <div class="sparks" ref={sparkRef} />
+        </div>
+        {f.lvl >= B.AUTO_FORGE_LVL ? (
+          <div class="auto">
+            <span>Auto-wytop zakłada lepsze przedmioty, resztę sprzedaje.</span>
+            <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />Auto-wytop</button>
+          </div>
+        ) : (
+          <div class="auto"><span>Auto-wytop odblokujesz na {B.AUTO_FORGE_LVL}. poziomie kuźni.</span></div>
+        )}
+      </section>
+
+      <section><Result game={game} /></section>
+
+      <section class="card">
+        {f.lvl >= B.FORGE_MAX ? (
+          <div class="row"><div><LevelEyebrow text="Kuźnia" onInfo={onInfo} /><div class="h">Poziom {B.FORGE_MAX}</div></div><span class="muted">Maksymalny poziom</span></div>
+        ) : f.up ? (
+          <>
+            <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
+            <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / upTime(f.up)) * 100) + '%' }} /></div>
+            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: {FORGE_UNLOCKS[f.up] ?? 'większa szansa na przeskok'}.</p>
+          </>
+        ) : (
+          <div class="row">
+            <div>
+              <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
+              <div class="h">Ulepsz do poziomu {n}</div>
+              <p class="sub">{FORGE_UNLOCKS[n] ? 'Odblokowuje: ' + FORGE_UNLOCKS[n] : 'Większa szansa na przeskok'} · {fmt(upCost(n))} złota · {tfmt(upTime(n))}</p>
+            </div>
+            <button class="btn primary small" disabled={s.gold < upCost(n)} onClick={() => game.upgrade()}>Ulepsz</button>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+const LevelEyebrow = ({ text, onInfo }: { text: string; onInfo: (k: 'level') => void }) => (
+  <div class="row" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+    <span class="eyebrow">{text}</span>
+    <InfoBtn onClick={() => onInfo('level')} label="Jak działa poziom kuźni" />
+  </div>
+);
+
+function Result({ game }: { game: Game }) {
+  const s = game.s;
+  const it = s.pending;
+  if (it) {
+    const cur = s.eq[it.slot];
+    const d = game.pendingDelta();
+    return (
+      <div class="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {it.jump > 0 && <div class="jump" key={'j' + it.id}>Przeskok +{it.jump}!</div>}
+        {!it.obieg && it.flvl > 0 && (
+          <p class="sub">
+            Szanse tego wytopu ({ORES[it.ore].n}, kuźnia poz. {it.flvl}): <Dist d={dist(it.ore, it.flvl)} />
+            {it.forced === 'pity' ? ' · przeskok z gwarancji' : it.forced === 'tut' ? ' · pierwszy przeskok gwarantowany' : ''}
+          </p>
+        )}
+        {it.obieg && <p class="sub">Znalezisko z Wielkiego Obiegu: przedmiot wykuty przez gracza {it.smith}.</p>}
+        <div key={it.id}><ItemCard it={it} delta={d} reveal history={it.obieg} /></div>
+        <p class="sub">
+          {cur
+            ? `Teraz założony: ${itemName(cur)} (${RAR[cur.r].n}, ${SLOTS[cur.slot].stat === 'dmg' ? 'obrażenia' : 'zdrowie'} ${fmt(mainVal(cur))})` +
+              (cur.fame > 0 ? ' · po zmianie połowa jego Sławy Czynów przejdzie na nowy przedmiot.' : '')
+            : `Slot ${SLOTS[it.slot].n} jest pusty.`}
+        </p>
+        <div class="result-actions">
+          <button class={`btn${d >= 0 ? ' primary' : ''}`} onClick={() => game.equipPending()}>Załóż</button>
+          <button class={`btn${d < 0 ? ' primary' : ''}`} onClick={() => game.sellPending()}>Sprzedaj · {fmt(sellPrice(it))} zł.</button>
+        </div>
+      </div>
+    );
+  }
+  if (game.lastAuto) {
+    const { item, equipped } = game.lastAuto;
+    return <div class="card"><div class="eyebrow">Ostatni wytop · {equipped ? 'założony' : 'sprzedany'}</div><ItemCard it={item} /></div>;
+  }
+  return (
+    <div class="card">
+      <p class="sub">Każda ruda gwarantuje minimalną rzadkość. Kuźnia daje szansę, że przedmiot przeskoczy wyżej. Przetop pierwszą rudę, a nowy przedmiot porównasz z założonym.</p>
+    </div>
+  );
+}

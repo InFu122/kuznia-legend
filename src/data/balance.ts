@@ -1,0 +1,77 @@
+// Wszystkie liczby balansu w jednym miejscu, żeby symulator i gra korzystały z tych samych wartości.
+
+/** Progi legendy: wymagana Sława Czynów i bonus do statystyki głównej. */
+export const LEGEND = [
+  { n: '', at: 0, b: 0 },
+  { n: 'Zahartowany', at: 1000, b: 0.05 },
+  { n: 'Sławny', at: 5000, b: 0.10 },
+  { n: 'Przebudzony', at: 20000, b: 0.10 },
+] as const;
+
+export const SMITH_TITLES = [
+  { n: 'Czeladnik', at: 0 },
+  { n: 'Kowal', at: 200 },
+  { n: 'Mistrz Kuźni', at: 1000 },
+  { n: 'Arcymistrz Kuźni', at: 5000 },
+] as const;
+
+/** Szansa na przeskok o 1 i o 2 rzadkości (w %) na wybranych poziomach kuźni; pomiędzy liniowo. */
+export const JUMP_TABLE: [number, number, number][] = [
+  [1, 10, 1], [5, 12, 1.4], [10, 14, 1.9], [15, 16.5, 2.4], [20, 19, 2.9], [25, 22, 3.4], [30, 25, 4],
+];
+
+export const FORGE_UNLOCKS: Record<number, string> = {
+  5: 'wytop Srebra, auto-wytop',
+  10: 'wytop Mithrilu, domieszki żywiołów',
+  15: 'wytop Adamantytu',
+  20: 'wytop Smoczej Stali',
+  25: 'wytop Gwiezdnego Kruszcu',
+  30: 'pełna szansa na przeskok',
+};
+
+/**
+ * Tempo gry. Siła przedmiotu zależy od poziomu kuźni (ulepszenia trwają coraz dłużej) i od rzadkości (rudy),
+ * a nie od postępu w kampanii — dzięki temu krainy stawiają ściany, które pokonuje się kuźnią i farmieniem.
+ * FORGE_AT_BOSS[L] = poziom kuźni, jakiego gra oczekuje przy bossie krainy L.
+ * RARITY_AT_BOSS[L] = oczekiwany średni mnożnik rzadkości ekwipunku przy bossie krainy L.
+ * Łączny czas ulepszeń kuźni: poz. 10 ≈ 40 min, 20 ≈ 9 h, 25 ≈ 31 h, 30 ≈ 108 h gry.
+ */
+export const FORGE_AT_BOSS = [2, 4, 7, 10, 13, 15, 18, 20, 21, 22, 24, 25, 26, 27, 29, 30];
+export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0, 3.2, 3.4, 3.8, 4.2, 4.6, 5.0, 5.6, 6.2];
+/**
+ * Dodatkowy mnożnik siły wrogów przy bossie krainy L (zdrowie i obrażenia). Skalibrowany symulatorem:
+ * gracz zbiera substaty, legendy i rzadkie rudy szybciej niż zakłada sama krzywa rzadkości.
+ */
+export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.17, 1.22, 1.36, 1.49, 1.63, 1.74, 1.74, 1.79, 1.85, 1.85, 1.79, 1.74, 1.58, 1.4];
+/** Siła przedmiotu rośnie o 8% na poziom przedmiotu; poziom przedmiotu = 2 × poziom kuźni (+0–2). */
+export const ITEM_LVL_GROWTH = 1.08;
+
+export const B = {
+  PITY_MAX: 30,                 // po tylu wytopach bez przeskoku następny przeskakuje na pewno
+  FORGE_MAX: 30,
+  UPGRADE_COST_BASE: 100,       // koszt(n) = 100 × 1,5^(n−1)
+  UPGRADE_COST_MULT: 1.5,
+  UPGRADE_TIME_MULT: 1.285,     // czas(n) = 1,285^(n−1) min
+  AUTO_FORGE_LVL: 5,
+  ELEM_FORGE_LVL: 10,
+  AUTO_INTERVAL_MS: 900,
+  WAVES_PER_STAGE: 5,
+  STAGES_PER_LAND: 10,
+  WAVE_HEAL: 0.3,
+  ELEM_DROP: 0.04,
+  OBIEG_CHANCE: 0.3,
+  OBIEG_FIND_FROM_BOSS: 0.2,
+  FAME_BOSS: 50,
+  FAME_DUNGEON: 30,
+  OFFLINE_CAP_MS: 8 * 3600 * 1000,
+  OFFLINE_EFFICIENCY: 0.5,
+  OFFLINE_WAVE_MS: 3500,
+  OFFLINE_CHEST_MAX: 300,
+  DUNGEON_KEYS: 2,
+  DUNGEON_CHECKPOINT: 5,
+  LEGEND_TRANSFER: 0.5,
+  BOSS_HP_MULT: 8,
+  BOSS_ATK_MULT: 0.11,
+  WAVE_HP_MULT: 2.6,
+  WAVE_ATK_DIV: 10,
+} as const;
