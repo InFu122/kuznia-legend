@@ -35,8 +35,18 @@ export interface ArenaFight extends ArenaState {
 
 const newDeviceId = () => 'kl-' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
 
+export type ClanMode = 'open' | 'request' | 'closed';
+export type ClanRole = 'lider' | 'zastepca' | 'starszy' | 'czlonek' | 'prosba';
+export interface ClanSummary { id: string; name: string; tag: string; desc: string; members: number; max: number; minPower: number; mode: ClanMode; lang: string; pending?: boolean }
+export interface ClanMember { id: string; name: string; role: ClanRole; power: number; online: boolean; me: boolean }
+export interface ClanInfo {
+  clan: (ClanSummary & { ann: string; annBy: string; annT: number }) | null;
+  role?: ClanRole; members?: ClanMember[]; requests?: ClanMember[]; pending?: ClanSummary[]; unlocked: boolean;
+}
+
 export class ServerLink {
   private token: string | null = null;
+  private tokenAt = 0;
   /** Wersja zapisu na serwerze (do wykrywania zapisu z innego urządzenia). */
   private version: string | null = null;
   online = false;
@@ -83,6 +93,24 @@ export class ServerLink {
     });
     if (!res.ok) throw new ServerError(res.status, 'Logowanie nieudane');
     this.token = ((await res.json()) as { token: string }).token;
+    this.tokenAt = Date.now();
+  }
+
+  /** Adres serwera (np. dla połączenia czatu). */
+  get base(): string { return this.cfg.base; }
+
+  /** Ważny token sesji (odnawiany przed upływem doby). */
+  async session(): Promise<string> {
+    if (!this.token || Date.now() - this.tokenAt > 20 * 3600000) await this.auth();
+    return this.token as string;
+  }
+
+  /** Zapytanie REST do Nakamy (np. historia czatu). */
+  async get<T>(path: string): Promise<T> {
+    const token = await this.session();
+    const res = await this.req(path, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new ServerError(res.status, 'Błąd serwera');
+    return (await res.json()) as T;
   }
 
   async rpc<T>(id: string, body: unknown, retry = true): Promise<T> {
@@ -116,15 +144,29 @@ export class ServerLink {
    * Zapisuje stan. Gdy serwer ma nowszy zapis z innego urządzenia, zwraca go jako `conflict`
    * (gra wybiera nowszy po `savedAt`).
    */
-  async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number }> {
-    const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null }>(
+  async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number; name?: string; newName?: boolean }> {
+    const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null; name?: string; newName?: boolean }>(
       'save_put', { state, version: this.version });
     this.version = r.version ?? this.version;
     if (r.conflict) return { conflict: r.state ?? null, force: !!r.force };
     this.power = r.power ?? null;
     this.unverified = r.unverified ?? [];
-    return { power: r.power };
+    return { power: r.power, name: r.name, newName: r.newName };
   }
+
+  /** Zmiana nicku (unikalny na serwerze, raz na dobę). */
+  nameSet(name: string): Promise<{ name: string }> { return this.rpc('name_set', { name }); }
+
+  clanInfo(): Promise<ClanInfo> { return this.rpc('clan_info', {}); }
+  clanList(q = ''): Promise<{ clans: ClanSummary[]; power: number }> { return this.rpc('clan_list', { q }); }
+  clanCreate(c: { name: string; tag: string; desc: string; mode: ClanMode; minPower: number; lang: string }): Promise<{ id: string }> { return this.rpc('clan_create', c); }
+  clanJoin(id: string): Promise<{ joined?: boolean; requested?: boolean }> { return this.rpc('clan_join', { id }); }
+  clanLeave(cancel?: string): Promise<{ ok: boolean }> { return this.rpc('clan_leave', cancel ? { cancel } : {}); }
+  clanManage(action: 'accept' | 'reject' | 'kick' | 'promote' | 'demote' | 'transfer', user: string): Promise<{ ok: boolean }> { return this.rpc('clan_manage', { action, user }); }
+  clanSettings(s: { desc?: string; mode?: ClanMode; minPower?: number; lang?: string; ann?: string }): Promise<{ ok: boolean }> { return this.rpc('clan_settings', s); }
+  /** Karta przedmiotu Mitycznego lub Boskiego na czacie klanu albo globalnym. */
+  chatDrop(item: Item, global: boolean): Promise<{ ok: boolean }> { return this.rpc('chat_drop', { item, global }); }
+  chatReport(r: { channel: string; message: string; sender: string; name: string; text: string }): Promise<{ ok: boolean }> { return this.rpc('chat_report', r); }
 
   ranking(board: BoardId): Promise<Ranking> {
     return this.rpc<Ranking>('ranking', { board, limit: 30 });

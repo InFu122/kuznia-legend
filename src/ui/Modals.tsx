@@ -16,6 +16,8 @@ import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
+import { ChatView } from './panels/Chat';
+import type { Tab } from './icons';
 
 export function ModalShell({ locked, onClose, children }: { locked: boolean; onClose: () => void; children: ComponentChildren }) {
   return (
@@ -27,7 +29,7 @@ export function ModalShell({ locked, onClose, children }: { locked: boolean; onC
 
 const Close = ({ onClose, label }: { onClose: () => void; label: string }) => <button class="btn primary" onClick={onClose}>{label}</button>;
 
-export function ModalView({ m, game, close }: { m: ModalData; game: Game; close: () => void }): JSX.Element {
+export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game; close: () => void; goTab?: (t: Tab) => void }): JSX.Element {
   const s = game.s;
   switch (m.kind) {
     case 'intro':
@@ -175,6 +177,8 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
       return <RankingView close={close} />;
     case 'arena':
       return <ArenaView game={game} close={close} />;
+    case 'chat':
+      return <ChatView game={game} initial={m.ch} close={close} goClan={() => { close(); goTab?.('klan'); }} />;
     case 'draw': {
       const name = m.what === 'skill' ? SKILLS[m.id as SkillId].n : m.what === 'pet' ? PETS[m.id as PetId].n : MOUNTS[m.id as MountId].n;
       const r = m.what === 'skill' ? SKILLS[m.id as SkillId].r : m.what === 'pet' ? PETS[m.id as PetId].r : MOUNTS[m.id as MountId].r;

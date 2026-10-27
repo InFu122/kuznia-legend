@@ -1,6 +1,8 @@
 // Przenoszenie konta na inne urządzenie: stare urządzenie pokazuje jednorazowy kod (ważny 10 minut),
 // nowe wpisuje go i od tej chwili oba urządzenia logują się na to samo konto.
 import { leaveArena } from './arena';
+import { leaveClan } from './clan';
+import { releaseName } from './names';
 import { EXHAUSTED, INVALID, SYSTEM_USER, err, parse, updateObject, userOf } from './common';
 import { BOARDS, type BoardId } from './ranking';
 
@@ -76,6 +78,8 @@ export function rpcTransferRedeem(ctx: nkruntime.Context, logger: nkruntime.Logg
     try { nk.leaderboardRecordDelete(id, userId); } catch { /* brak wyniku */ }
   }
   leaveArena(nk, userId);
+  leaveClan(nk, userId, ctx.username ?? '');
+  releaseName(nk, userId);
   nk.storageDelete([{ collection: 'transfer', key: 'tries', userId }]);
   logger.info('Przeniesienie konta: urządzenie konta %s dołączone do konta %s', userId, entry.u);
   return JSON.stringify({ ok: true, serverTime: now });

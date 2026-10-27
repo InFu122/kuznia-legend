@@ -89,6 +89,7 @@ export class Game {
     if (!it) return;
     const equipped = decideAuto(ctx, it, false);
     this.lastAuto = { item: it, equipped };
+    this.dispatch({ t: 'forged', item: it });
     if (it.r >= 4) toast(ctx, `${equipped ? 'Założono' : 'Sprzedano'}: ${itemName(it)} (${RAR[it.r].n})`, 'good');
     if (it.r >= 3) this.dispatch({ t: 'sfx', k: 'rare', r: it.r });
     this.changed();
@@ -103,6 +104,7 @@ export class Game {
     if (!it) return null;
     ctx.s.pending = it;
     this.lastAuto = null;
+    this.dispatch({ t: 'forged', item: it });
     this.dispatch({ t: 'sfx', k: it.jump ? 'jump' : 'smelt', r: it.r });
     if (it.r >= 4) toast(ctx, `Wykuto: ${itemName(it)} (${RAR[it.r].n})!`, 'good');
     this.changed();
@@ -209,6 +211,12 @@ export class Game {
     this.changed();
   }
   get net(): boolean { return this.ctx.net; }
+  /** Nick nadany albo potwierdzony przez serwer. */
+  applyServerName(name: string): void {
+    if (!name || name === this.s.name) return;
+    this.s.name = name;
+    this.changed();
+  }
 
   /* ---------- serwer: ziarna wytopu, Wielki Obieg, arena ---------- */
 

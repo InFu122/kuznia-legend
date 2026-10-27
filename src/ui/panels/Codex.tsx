@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { LANDS } from '../../data';
 import { nextSmithTitle, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
@@ -8,6 +8,36 @@ import type { SaveInfo } from '../App';
 
 const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
 const showCode = (c: string) => c.slice(0, 4) + '-' + c.slice(4);
+
+/** Nick na serwerze: unikalny, zmiana przez serwer (raz na dobę). */
+function NickField({ game, online }: { game: Game; online: boolean }) {
+  const [v, setV] = useState(game.s.name);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setV(game.s.name), [game.s.name]); // nick nadany przez serwer
+  const save = async (e: Event) => {
+    e.preventDefault();
+    const link = getLink();
+    if (!link) return;
+    setBusy(true); setMsg('');
+    try {
+      const r = await link.nameSet(v);
+      game.applyServerName(r.name);
+      setV(r.name);
+      setMsg(`Twój nick: ${r.name}. Nowe przedmioty będą nosić to piętno.`);
+    } catch (x) { setMsg(errText(x)); } finally { setBusy(false); }
+  };
+  return (
+    <form class="field" onSubmit={save}>
+      <label for="nick">Nick (unikalny na serwerze, podpis na nowych przedmiotach)</label>
+      <div class="chat-in">
+        <input id="nick" maxLength={16} value={v} autoComplete="off" onInput={e => { setV(e.currentTarget.value); setMsg(''); }} />
+        <button class="btn small" disabled={!online || busy || v.trim() === game.s.name || v.trim().length < 3}>Zmień</button>
+      </div>
+      <small class="muted">{msg || '3–16 znaków: litery, cyfry, spacja, _ . -. Zmiana raz na dobę (pierwsza zmiana nadanego nicku — od razu).'}</small>
+    </form>
+  );
+}
 
 /** Przeniesienie konta: kod z jednego urządzenia wpisany na drugim — oba grają tym samym kowalem. */
 function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
@@ -138,11 +168,13 @@ export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; sav
       </section>
       <section class="card settings">
         <div class="eyebrow">Ustawienia</div>
-        <label class="field" for="nick">
-          Imię kowala (podpis na nowych przedmiotach)
-          <input id="nick" key={s.name} maxLength={16} defaultValue={s.name} autoComplete="off"
-            onChange={e => { const el = e.currentTarget; el.value = game.setName(el.value); }} />
-        </label>
+        {game.net ? <NickField game={game} online={saveMode === 'server'} /> : (
+          <label class="field" for="nick">
+            Imię kowala (podpis na nowych przedmiotach)
+            <input id="nick" key={s.name} maxLength={16} defaultValue={s.name} autoComplete="off"
+              onChange={e => { const el = e.currentTarget; el.value = game.setName(el.value); }} />
+          </label>
+        )}
         <div class="row">
           <span class="sub">Dźwięki kucia, walki i nagród.</span>
           <button class={`toggle${s.opts.sound ? ' on' : ''}`} aria-pressed={s.opts.sound} onClick={() => game.setSound(!s.opts.sound)}><span class="knob" />Dźwięki</button>

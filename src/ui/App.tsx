@@ -6,7 +6,9 @@ import { ModalShell, ModalView } from './Modals';
 import { Toasts } from './Toasts';
 import { fmt } from './format';
 import { TabIcon, type Tab } from './icons';
+import { ClanPanel } from './panels/Clan';
 import { CodexPanel } from './panels/Codex';
+import { getChat } from '../save/chat';
 import { DungeonPanel } from './panels/Dungeon';
 import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
@@ -16,7 +18,7 @@ import { TUTORIAL } from '../data';
 import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
 
-const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['kodeks', 'Kodeks']];
+const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['klan', 'Klan'], ['kodeks', 'Kodeks']];
 
 export interface SaveInfo {
   mode: 'local' | 'cloud' | 'server' | 'connecting' | 'offline';
@@ -70,7 +72,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   // Wstęp jest dla nowego gracza — znika, gdy z serwera przyszedł zapis z postępem.
   if (queue.current[0]?.kind === 'intro' && game.s.stats.smelted > 0) queue.current.shift();
   const modal = queue.current[0] ?? null;
-  game.uiBusy = !!modal;
+  // Okno z decyzją wstrzymuje auto-wytop; czat, rankingi i arena nie.
+  game.uiBusy = !!modal && modal.kind !== 'chat' && modal.kind !== 'ranking' && modal.kind !== 'arena';
   const close = () => { queue.current.shift(); force(x => x + 1); };
   const open = (m: ModalData) => { queue.current.unshift(m); force(x => x + 1); };
   const goTab = (t: Tab, scroll = false) => {
@@ -85,6 +88,9 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   };
   const s = game.s;
   const nClaim = game.claimable();
+  const chat = getChat();
+  const unread = chat?.unreadTotal ?? 0;
+  const tabs = game.net ? TABS : TABS.filter(([id]) => id !== 'klan'); // klany i czat tylko z serwerem
   return (
     <>
       <div class="app">
@@ -94,9 +100,16 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
               <div class="brand">Kuźnia Legend</div>
               <div class={`save-badge ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
             </div>
-            <button class="quests" onClick={() => open({ kind: 'missions' })} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
-              <TabIcon tab="kodeks" /><span>Zadania</span>{nClaim > 0 && <i class="badge">{nClaim}</i>}
-            </button>
+            <div class="top-btns">
+              {game.net && (
+                <button class="quests" data-chat onClick={() => open({ kind: 'chat' })} aria-label={`Czat${unread ? `: ${unread} nowych` : ''}`}>
+                  <TabIcon tab="czat" /><span class="qlabel">Czat</span>{unread > 0 && <i class="badge">{unread > 99 ? '99+' : unread}</i>}
+                </button>
+              )}
+              <button class="quests" onClick={() => open({ kind: 'missions' })} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
+                <TabIcon tab="kodeks" /><span class="qlabel">Zadania</span>{nClaim > 0 && <i class="badge">{nClaim}</i>}
+              </button>
+            </div>
           </div>
           <div class="res">
             <span><small>Moc</small><b>{fmt(game.stats.power)}</b></span>
@@ -121,13 +134,14 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
+          {tab === 'klan' && <ClanPanel online={save.mode === 'server'} openChat={() => open({ kind: 'chat', ch: 'clan' })} />}
           {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} />}
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
         </main>
       </div>
       <nav class="tabs" aria-label="Zakładki">
-        <div class="tabs-in">
-          {TABS.map(([id, n]) => (
+        <div class="tabs-in" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+          {tabs.map(([id, n]) => (
             <button key={id} data-tab={id} class={`tab${tab === id ? ' on' : ''}`} aria-current={tab === id ? 'page' : undefined} onClick={() => goTab(id)}>
               <TabIcon tab={id} /><span>{n}</span>
             </button>
@@ -136,7 +150,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       </nav>
       {modal && (
         <ModalShell locked={modal.kind === 'dungChoice' || modal.kind === 'labChoice'} onClose={close}>
-          <ModalView m={modal} game={game} close={close} />
+          <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} />
         </ModalShell>
       )}
       <Toasts game={game} />

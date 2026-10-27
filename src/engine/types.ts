@@ -212,6 +212,7 @@ export type ModalData =
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
   | { kind: 'ranking' }
   | { kind: 'arena' }
+  | { kind: 'chat'; ch?: 'global' | 'clan' }
   | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }
@@ -225,4 +226,5 @@ export type GameEvent =
   | { t: 'modal'; m: ModalData }
   | { t: 'drop'; ore: number; n: number; rare: boolean }
   | { t: 'sfx'; k: SfxKind; r?: number }
+  | { t: 'forged'; item: Item }                       // wykuty przedmiot (do wpisu na czacie klanu)
   | { t: 'change' };

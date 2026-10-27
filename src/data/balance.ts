@@ -67,6 +67,14 @@ export const B = {
   SEEDS_REFILL: 300,            // poniżej tylu ziaren gra dobiera nowe
   ARENA_FIGHTS: 5,              // walki na arenie dziennie
   ARENA_UNLOCK_LAND: 1,         // arena od drugiej krainy
+  CLAN_UNLOCK_LAND: 1,          // klany po pokonaniu pierwszego bossa
+  CLAN_MAX: 30,                 // członków w klanie
+  CLAN_DEPUTIES: 2,             // Zastępców
+  CLAN_ELDERS: 5,               // Starszych
+  CHAT_GLOBAL_FORGE: 5,         // czat globalny od tego poziomu kuźni (wcześniej tylko klanowy)
+  CHAT_MAX_LEN: 200,
+  CHAT_SLOW_GLOBAL_MS: 3000,    // tryb wolny czatu globalnego
+  CHAT_SLOW_CLAN_MS: 1000,
   FAME_BOSS: 50,
   FAME_DUNGEON: 30,
   OFFLINE_CAP_MS: 8 * 3600 * 1000,

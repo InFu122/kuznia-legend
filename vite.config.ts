@@ -10,7 +10,12 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: mode === 'single' ? [preact(), viteSingleFile()] : [preact()],
     build: { outDir: mode === 'single' ? 'dist-single' : 'dist' },
-    server: { proxy: { '/v2': env.NAKAMA_PROXY || 'http://127.0.0.1:7350' } },
+    server: {
+      proxy: {
+        '/v2': env.NAKAMA_PROXY || 'http://127.0.0.1:7350',
+        '/ws': { target: env.NAKAMA_PROXY || 'http://127.0.0.1:7350', ws: true },
+      },
+    },
     test: { environment: 'node', include: ['tests/**/*.test.ts', 'server/tests/**/*.test.ts'] },
   };
 });

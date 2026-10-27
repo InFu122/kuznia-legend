@@ -2,6 +2,8 @@ import { render } from 'preact';
 import { Game } from './engine/game';
 import { migrate, newState } from './engine/state';
 import type { GameState } from './engine/types';
+import { toast } from './engine/context';
+import { ChatLink, setChat } from './save/chat';
 import { ServerError, ServerLink, serverConfig, setLink } from './save/server';
 import { connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
@@ -45,15 +47,40 @@ function boot(hotData?: { s?: string }) {
     return true;
   };
 
+  /** Nick nadaje serwer (unikalny); nowy gracz dowiaduje się, jak go zmienić. */
+  const takeName = (r: { name?: string; newName?: boolean }) => {
+    if (!r.name || r.name === game.s.name) return;
+    const generated = r.newName;
+    game.applyServerName(r.name);
+    if (generated) toast(game.ctx, `Twój nick: ${r.name}. Zmienisz go w Kodeksie.`, 'good');
+  };
+
+  /** Czat i klan startują po pierwszym udanym połączeniu z serwerem. */
+  let chat: ChatLink | null = null;
+  const startChat = (l: ServerLink) => {
+    if (chat) return;
+    chat = new ChatLink(l);
+    setChat(chat);
+    void chat.start();
+    l.clanInfo().then(i => chat?.setClan(i.clan?.id ?? null, i.clan?.name ?? '', i.clan?.ann ?? '')).catch(() => {});
+  };
+  // Przedmiot Mityczny albo Boski: wpis na czacie klanu (serwer sprawdza, czy naprawdę go wykuto).
+  game.on(e => {
+    if (e.t !== 'forged' || !link || !chat?.clanId || e.item.r < 5 || typeof e.item.sx !== 'number') return;
+    link.chatDrop(e.item, false).catch(() => {});
+  });
+
   const saveServer = async (l: ServerLink) => {
     try {
-      const r = await l.save(game.s);
+      let r = await l.save(game.s);
       if (r.conflict !== undefined) {
         if (r.conflict && r.force) adopt(r.conflict, true); // na serwerze są późniejsze wytopy — wygrywa serwer
-        else if (!(r.conflict && adopt(r.conflict))) await l.save(game.s); // nasz zapis jest nowszy — nadpisz
+        else if (!(r.conflict && adopt(r.conflict))) r = await l.save(game.s); // nasz zapis jest nowszy — nadpisz
       }
+      takeName(r);
       save.mode = 'server';
       save.error = undefined;
+      startChat(l);
       void extras(l);
     } catch (e) {
       if (e instanceof ServerError && e.status === 400) { save.error = e.message; return; } // serwer odrzucił zapis
@@ -125,6 +152,10 @@ function boot(hotData?: { s?: string }) {
     save.redeem = async (code: string) => {
       const remote = await link.redeem(code);
       if (remote) adopt(remote, true);
+      if (chat) {
+        chat.restart();
+        link.clanInfo().then(i => chat?.setClan(i.clan?.id ?? null, i.clan?.name ?? '', i.clan?.ann ?? '')).catch(() => {});
+      }
       saveLocal(JSON.stringify(game.s));
       save.mode = 'server';
       save.reason = undefined;

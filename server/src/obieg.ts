@@ -72,9 +72,10 @@ export function rpcObiegSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
       const sent = cur ? cur.sx.slice() : [];
       for (const it of out) {
         if (!it || typeof it !== 'object' || typeof it.sx !== 'number' || sent.includes(it.sx)) continue;
-        if (it.r < 2 || it.smith !== s.name || !smeltOk(proof, it, s.sx)) continue;
+        if (it.r < 2 || !smeltOk(proof, it, s.sx)) continue;
         sent.push(it.sx);
-        const clean: Item = { ...it, id: 0, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false };
+        // Piętno kowala to zawsze obecny nick z rejestru (nie da się podszyć pod innego gracza).
+        const clean: Item = { ...it, smith: s.name, id: 0, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false };
         delete clean.sig;
         delete clean.npc;
         fresh.push({ it: clean, uid: userId, t: now });

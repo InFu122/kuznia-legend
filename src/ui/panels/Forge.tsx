@@ -1,10 +1,11 @@
-import { useRef } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS, SLOTS } from '../../data';
 import { canSmelt, sellFor, uniqActive } from '../../engine/forge';
 import { dist, itemName, mainVal, maxJump } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
-import type { ElemKey, SetId } from '../../engine/types';
+import type { ElemKey, Item, SetId } from '../../engine/types';
+import { ServerError, getLink } from '../../save/server';
 import { ItemCard } from '../ItemCard';
 import { fmt, pct, tfmt } from '../format';
 
@@ -162,6 +163,22 @@ const LevelEyebrow = ({ text, onInfo }: { text: string; onInfo: (k: 'level') => 
   </div>
 );
 
+/** „Pochwal się dropem”: karta przedmiotu Mitycznego lub Boskiego na czacie globalnym. */
+function Brag({ game, it }: { game: Game; it: Item }) {
+  const [msg, setMsg] = useState('');
+  if (!game.net || it.r < 5 || typeof it.sx !== 'number') return null;
+  const send = () => {
+    const link = getLink();
+    if (!link?.online) { setMsg('Brak połączenia z serwerem.'); return; }
+    link.chatDrop(it, true).then(() => setMsg('Wysłano na czat globalny!')).catch(e => setMsg(e instanceof ServerError ? e.message : 'Nie udało się wysłać.'));
+  };
+  return (
+    <div class="brag">
+      {msg ? <span class="sub" role="status">{msg}</span> : <button class="btn small" onClick={send}>Pochwal się na czacie globalnym</button>}
+    </div>
+  );
+}
+
 function Result({ game }: { game: Game }) {
   const s = game.s;
   const it = s.pending;
@@ -179,6 +196,7 @@ function Result({ game }: { game: Game }) {
         )}
         {it.obieg && <p class="sub">Znalezisko z Wielkiego Obiegu: przedmiot wykuty przez gracza {it.smith}.</p>}
         <div key={it.id}><ItemCard it={it} delta={d} reveal history={it.obieg} /></div>
+        <Brag key={'b' + it.id} game={game} it={it} />
         <p class="sub">
           {cur
             ? `Teraz założony: ${itemName(cur)} (${RAR[cur.r].n}, ${SLOTS[cur.slot].stat === 'dmg' ? 'obrażenia' : 'zdrowie'} ${fmt(mainVal(cur))})` +
@@ -194,7 +212,7 @@ function Result({ game }: { game: Game }) {
   }
   if (game.lastAuto) {
     const { item, equipped } = game.lastAuto;
-    return <div class="card"><div class="eyebrow">Ostatni wytop · {equipped ? 'założony' : 'sprzedany'}</div><ItemCard it={item} /></div>;
+    return <div class="card"><div class="eyebrow">Ostatni wytop · {equipped ? 'założony' : 'sprzedany'}</div><ItemCard it={item} /><Brag key={'b' + item.id} game={game} it={item} /></div>;
   }
   return (
     <div class="card">

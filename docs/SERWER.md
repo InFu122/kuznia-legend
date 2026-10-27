@@ -5,7 +5,7 @@ Serwer to trzy kontenery uruchamiane jednym poleceniem:
 | Kontener | Co robi | Port |
 | --- | --- | --- |
 | `web` | gra w przeglądarce (nginx); przekazuje API Nakamy pod tym samym adresem | 8080 |
-| `nakama` | serwer gry Nakama 3.30.0 z modułem Kuźni Legend (konta, zapis, wytop, Wielki Obieg, arena, rankingi) | 7350 (API), 7351 (konsola) |
+| `nakama` | serwer gry Nakama 3.30.0 z modułem Kuźni Legend (konta, zapis, wytop, Wielki Obieg, arena, rankingi, klany, czat) | 7350 (API i czat), 7351 (konsola) |
 | `postgres` | baza danych PostgreSQL 16 | tylko wewnątrz Dockera |
 
 ## Pierwsze uruchomienie
@@ -67,6 +67,10 @@ Jeśli port 8080 jest zajęty (np. przez inną aplikację CasaOS), zmień `WEB_P
 - Rankingi (Moc, Wieża Wyzwań co tydzień, postęp, arena) liczy serwer z zapisu — gracz nie może wysłać sobie wyniku.
 - Bez połączenia gra działa dalej i zapisuje lokalnie; co minutę próbuje połączyć się znowu.
 
+### Nick
+
+Każdy gracz ma na serwerze unikalny nick — „Adam”, „adam” i „Ádam” to ten sam nick. Przy pierwszym połączeniu gra zajmuje imię kowala, jeśli jest wolne; w przeciwnym razie (albo gdy to domyślny „Kowal”) serwer nadaje nick w stylu „Iskra_4821” i gra o tym informuje. Nick zmienisz w **Kodeks → Ustawienia** — raz na dobę, a wygenerowany nick od razu. Serwer odrzuca nicki zajęte, wulgarne i nazwy kowali-widm.
+
 ### Wytop
 
 Wynik każdego wytopu losuje się z ziarna, które wydaje serwer (gra trzyma zapas na kilkaset wytopów, więc kuje bez czekania i także bez połączenia). Ten sam wytop zawsze daje ten sam przedmiot — wczytanie starszego zapisu nie pozwala wylosować go jeszcze raz. Serwer odtwarza wytop z ziarna i sprawdza każdy założony przedmiot.
@@ -90,6 +94,21 @@ Rzadkie i lepsze przedmioty, które sprzedajesz, z szansą 30% trafiają do wsp�
 
 Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiami bohaterów innych graczy z ich ostatniego zapisu; walkę liczy serwer, a gra ją odtwarza. 5 walk dziennie (nowe o północy czasu UTC), za wygraną ocena rośnie, za porażkę spada — także gdy ktoś zaatakuje ciebie. Gdy graczy jest mało, listę uzupełniają duchy areny (słabsza, równa i silniejsza kopia ciebie). Ranking areny jest w **Kodeks → Rankingi**.
 
+### Klany
+
+Zakładka **Klan** (po pokonaniu pierwszego bossa): wyszukiwanie, dołączanie, zakładanie klanu. Klan ma do 30 członków. Przywódca ustawia opis, tryb wstępu (otwarty, na prośbę, zamknięty), minimalną Moc i język, awansuje i degraduje (do 2 Zastępców i 5 Starszych) oraz może przekazać przywództwo. Zastępcy piszą ogłoszenia i wyrzucają, Starsi przyjmują prośby. Gdy Przywódca odchodzi, władzę przejmuje Zastępca, Starszy albo najdawniejszy członek; ostatni członek rozwiązuje klan.
+
+### Czat
+
+Przycisk **Czat** na górze ekranu: kanał globalny i kanał klanu. Na globalnym piszesz od 5. poziomu kuźni (wcześniej tylko w klanie). Tryb wolny: 3 sekundy między wiadomościami na globalnym, 1 sekunda w klanie. Serwer zamienia wulgaryzmy na gwiazdki. Wiadomość innego gracza możesz wyciszyć (tylko na swoim urządzeniu) albo zgłosić. Gdy wykujesz przedmiot Mityczny lub Boski, na czacie klanu pojawia się jego karta, a przyciskiem pod przedmiotem możesz pochwalić się na czacie globalnym (raz na 10 minut).
+
+Czat używa WebSocketu pod tym samym adresem co gra (`/ws` — nginx przekazuje go do Nakamy), więc nie trzeba otwierać nowych portów.
+
+### Moderacja (konsola Nakamy, `http://ADRES-SERWERA:7351`)
+
+- **Zgłoszenia:** Storage → kolekcja `reports` — kto zgłosił, czyja wiadomość i jej treść.
+- **Blokada czatu:** Storage → kolekcja `chat`, klucz `bans` (serwer tworzy go przy starcie). Wpisz w wartości `{"ID-GRACZA": czas_końca_w_ms}` — np. `{"3f1c…": 4102444800000}` blokuje na zawsze, `{}` zdejmuje wszystkie blokady. ID gracza jest w zgłoszeniu (`sender`) i w zakładce Accounts.
+
 ## Gdy coś nie działa
 
 | Objaw | Przyczyna | Co zrobić |
@@ -99,6 +118,7 @@ Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiam
 | W grze „Brak serwera”, w Kodeksie „serwer odrzucił klucz gry” | `NAKAMA_SERVER_KEY` zmieniony bez przebudowania gry | `docker compose up -d --build` |
 | W Kodeksie „błąd serwera 502” | gra działa, ale Nakama nie wstała | `docker compose logs nakama` — przyczyna jest w ostatnich liniach |
 | „Serwer odrzucił zapis: kuźnia rośnie szybciej, niż pozwalają czasy ulepszeń” | kuźnia urosła szybciej niż w normalnej grze (np. przestawiony zegar w telefonie bez połączenia) | nic nie rób — gra zapisuje lokalnie, a serwer przyjmie zapis, gdy upłynie tyle czasu, ile trwają ulepszenia |
+| „Czat: brak połączenia”, a gra zapisuje na serwerze | nginx nie przekazuje WebSocketu | sprawdź, czy kontener `web` jest z tej wersji (`docker compose up -d --build`); przy własnym reverse proxy włącz przekazywanie WebSocketów dla `/ws` |
 | Moc w rankingu niższa niż w grze | część założonych przedmiotów powstała przed aktualizacją 3b albo bez ziaren serwera | wykuj nowe przedmioty — liczą się od razu |
 
 Przyczynę braku połączenia gra pokazuje w zakładce Kodeks, w karcie **Serwer gry**.

@@ -11,6 +11,7 @@ import {
   INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, userOf,
   type SaveMeta, type SaveValue,
 } from './common';
+import { ensureName } from './names';
 import { submitBoards } from './ranking';
 import { cleanName, validateSave } from './validate';
 
@@ -129,6 +130,10 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
     throw err('Zapis odrzucony: ' + pace, INVALID);
   }
 
+  // Nick nadaje i zmienia serwer (unikalny); zapis zawsze dostaje nick z rejestru.
+  const nick = ensureName(nk, userId, s.name);
+  s.name = nick.name;
+
   const proof = proofFor(nk, userId, s);
   const ver = verifiedEq(proof, s, meta.pity || []);
   meta.pity = ver.pity;
@@ -147,11 +152,9 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   } catch (_e) {
     return conflict(readSave(nk, userId), now);
   }
-  const account = nk.accountGetId(userId);
-  if (account.user.displayName !== s.name) nk.accountUpdateId(userId, null, s.name);
   submitBoards(nk, logger, userId, ctx.username ?? '', s, power);
   updateArenaHero(nk, logger, userId, ctx.username ?? '', s, ver.eq, power);
-  return JSON.stringify({ version, power, unverified: ver.bad, serverTime: now });
+  return JSON.stringify({ version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, serverTime: now });
 }
 
 /**

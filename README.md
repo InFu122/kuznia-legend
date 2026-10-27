@@ -65,5 +65,8 @@ Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich system
 3. **Serwer** — Nakama
    - 3a: Docker (Nakama 3.30 + PostgreSQL + gra w nginx), konta zakładane automatycznie, zapis na serwerze z kontrolą i wykrywaniem konfliktów, czas serwera, rankingi Mocy, Wieży i postępu. *(gotowe)*
    - 3b: przenoszenie konta na inne urządzenie kodem, wytop z ziarnem serwera (bez cofania i powtarzania wytopów; serwer sprawdza przedmioty i tempo rozwoju kuźni), prawdziwy Wielki Obieg między graczami, arena z oceną i rankingiem. *(gotowe)*
-4. **Społeczność** — klany, czat, boss i wojny klanów.
+4. **Społeczność**
+   - 4a: unikalne nicki (nadawane nowym graczom, zmiana w Kodeksie), klany do 30 osób z rolami (Przywódca, Zastępcy, Starsi), ogłoszenia, czat na żywo — globalny i klanowy — z filtrem wulgaryzmów, trybem wolnym, wyciszaniem i zgłaszaniem, karty Mitycznych i Boskich dropów na czacie. *(gotowe)*
+   - 4b: Wspólna Kuźnia Klanu, boss klanowy, pomoc w ulepszeniach, prośby o rudę, Monety i sklep klanowy.
+   - 4c: wojny klanów i ranking klanów.
 5. **Sklep** — aplikacja Capacitor na Androida i iOS, płatności, reklamy z nagrodą, soft launch.
