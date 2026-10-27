@@ -157,7 +157,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .icard.reveal{animation:reveal .45s ease-out}
 @keyframes reveal{from{opacity:0; transform:translateY(8px) scale(.98); box-shadow:0 0 0 0 var(--rc)} 60%{box-shadow:0 0 24px 2px var(--rc)} to{opacity:1; transform:none; box-shadow:0 0 0 0 transparent}}
 .ihead{display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center}
-.ico{width:34px; height:34px; border-radius:8px; display:grid; place-items:center; background:#11161b; color:var(--rc)}
+.ico{width:42px; height:42px; border-radius:8px; display:grid; place-items:center; background:#11161b; color:var(--rc); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 45%, transparent)}
 .ico svg{width:22px; height:22px}
 .iname{font-weight:700; font-size:16px; line-height:1.15}
 .iname.aw{font-family:var(--f-display); font-size:21px; font-weight:500; color:var(--rc)}
@@ -387,3 +387,14 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .tag-in{text-transform:uppercase; letter-spacing:.1em}
 .tech-cost.warn{color:var(--blood)}
 .brag{display:flex; justify-content:center}
+/* Pixel art (src/art): ostre piksele */
+.px{image-rendering:pixelated; image-rendering:crisp-edges; flex:none; display:block}
+@supports (image-rendering:pixelated){ .px{image-rendering:pixelated} }
+.ore .ore-ic{grid-row:1 / span 2; width:32px; height:32px}
+.chip .px{display:inline-block; vertical-align:-3px; margin-right:5px}
+.res b .px{display:inline-block; vertical-align:-2px; margin-right:4px}
+.row-ic{border-radius:8px}
+.skslot .px{margin-bottom:2px}
+.ore-fly img{position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; filter:drop-shadow(0 0 4px var(--c))}
+.ore-fly:has(img){width:24px; height:24px}
+.ore-fly.rare:has(img){width:32px; height:32px}

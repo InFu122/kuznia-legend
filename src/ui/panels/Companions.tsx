@@ -1,3 +1,5 @@
+import { skillUrl } from '../../art/render';
+import { Px } from '../Px';
 import {
   COMPANION_MAX, DRAW_ODDS, HATCH_MS, MOUNTS, MOUNTS_UNLOCK_LAND, MOUNT_IDS, PETS, PETS_UNLOCK_LAND, PET_IDS, RAR,
   SKILLS, SKILL_IDS, SKILL_MAX, STARS_MAX, companionMult, petAtkPct, petTraitValue, skillValue,
@@ -33,7 +35,7 @@ export function SkillsView({ game }: { game: Game }) {
         <div class="skslots">
           {s.skills.eq.map((id, i) => (
             <button key={i} class={`skslot${id ? ` r${SKILLS[id].r}` : ' empty'}`} disabled={!id} onClick={() => game.equipSkill(null, i)} aria-label={id ? `Zdejmij: ${SKILLS[id].n}` : 'Pusty slot'}>
-              {id ? <><b>{SKILLS[id].n}</b><small>poz. {s.skills.lv[id]} · zdejmij</small></> : <small>pusty slot</small>}
+              {id ? <><Px src={skillUrl(id)} size={48} /><b>{SKILLS[id].n}</b><small>poz. {s.skills.lv[id]} · zdejmij</small></> : <small>pusty slot</small>}
             </button>
           ))}
         </div>
@@ -48,6 +50,7 @@ export function SkillsView({ game }: { game: Game }) {
               const on = s.skills.eq.includes(id);
               return (
                 <li key={id}>
+                  <Px src={skillUrl(id)} size={48} cls="row-ic" />
                   <div class="cmain">
                     <div class="cname"><span class={`rt${S.r}`}>{S.n}</span> <span class="muted">· poz. {lvl}/{SKILL_MAX}</span></div>
                     <div class="sub">{skillText(id, lvl)} · co {f1(S.cd / 1000)} s</div>

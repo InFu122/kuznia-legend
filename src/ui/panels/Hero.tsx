@@ -5,6 +5,8 @@ import type { FoeType, Item } from '../../engine/types';
 import { useState } from 'preact/hooks';
 import { f1, fmt, pct } from '../format';
 import { SlotIcon } from '../icons';
+import { itemUrl } from '../../art/render';
+import { Px } from '../Px';
 import { MountsView, PetsView, SkillsView } from './Companions';
 
 type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
@@ -71,7 +73,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
             if (!it) return <button key={slot} class="slot empty" disabled><SlotIcon slot={slot} /><span>{SLOTS[slot].n}</span><div class="pips" /></button>;
             return (
               <button key={slot} class={`slot r${it.r}`} aria-label={itemName(it)} onClick={() => onItem(it)}>
-                <SlotIcon slot={slot} />
+                <Px src={itemUrl(it.kind, it.ore)} size={32} />
                 <span>{itemName(it)}</span>
                 <div class="pips">{[1, 2, 3].map(i => <i key={i} class={(it.ls || 0) >= i ? 'on' : ''} />)}</div>
               </button>

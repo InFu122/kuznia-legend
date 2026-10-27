@@ -7,6 +7,8 @@ import { techMods } from '../../engine/mods';
 import type { ElemKey, Item, SetId } from '../../engine/types';
 import { ServerError, getLink } from '../../save/server';
 import { ItemCard } from '../ItemCard';
+import { Px } from '../Px';
+import { elemUrl, oreUrl, setOreUrl } from '../../art/render';
 import { fmt, pct, tfmt } from '../format';
 
 export const Dist = ({ d }: { d: [number, number][] }) => (
@@ -58,7 +60,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
             const locked = f.lvl < x.lvl;
             return (
               <button key={x.n} class={`ore${i === o ? ' on' : ''}${locked ? ' locked' : ''}`} aria-pressed={i === o} onClick={() => game.setOre(i)}>
-                <span class="gem" style={{ '--c': x.col } as Record<string, string>} />
+                <Px src={oreUrl(i)} size={32} cls="ore-ic" />
                 <span class="on-n">{x.n}</span>
                 <span class="cnt">{fmt(s.ores[i])}</span>
                 <small>{locked ? `wytop od poz. ${x.lvl}` : <>min. <span class={`rt${x.floor}`}>{RAR[x.floor].n}</span></>}</small>
@@ -81,7 +83,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
             <span class="eyebrow" style={{ alignSelf: 'center' }}>Domieszka</span>
             <button class={`chip${!s.elSel ? ' on' : ''}`} onClick={() => game.setElem(null)}>Bez domieszki</button>
             {elKeys.map((k: ElemKey) => (
-              <button key={k} class={`chip${s.elSel === k ? ' on' : ''}`} onClick={() => game.setElem(k)}>{ELEM[k].n} · {s.els[k]}</button>
+              <button key={k} class={`chip${s.elSel === k ? ' on' : ''}`} onClick={() => game.setElem(k)}><Px src={elemUrl(k)} size={16} />{ELEM[k].n} · {s.els[k]}</button>
             ))}
             {elKeys.length === 0 && <span class="sub" style={{ alignSelf: 'center' }}>Domieszki wypadają w krainach z żywiołem (4% na falę).</span>}
           </div>
@@ -94,7 +96,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
                 <button class={`chip${!s.uniqSel ? ' on' : ''}`} onClick={() => game.setUniq(null)}>Bez zestawu</button>
                 {uniqKeys.map((k: SetId) => (
                   <button key={k} class={`chip${s.uniqSel === k ? ' on' : ''}`} onClick={() => game.setUniq(k)}>
-                    <span style={{ color: SETS[k].col }}>{SETS[k].ore}</span> · {s.uniq[k]}
+                    <Px src={setOreUrl(k)} size={16} /><span style={{ color: SETS[k].col }}>{SETS[k].ore}</span> · {s.uniq[k]}
                   </button>
                 ))}
                 {uniqKeys.length === 0 && <span class="sub" style={{ alignSelf: 'center' }}>Rudy unikalne dają bossowie i Leża Bossów.</span>}

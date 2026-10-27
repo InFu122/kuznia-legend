@@ -3,7 +3,8 @@ import { baseName, itemName, mainVal } from '../engine/formulas';
 import type { FoeType, Item } from '../engine/types';
 import { SUBS } from '../data';
 import { f1, fmt } from './format';
-import { SlotIcon } from './icons';
+import { itemUrl } from '../art/render';
+import { Px } from './Px';
 
 /** `proof` (tylko z serwerem): czy serwer może potwierdzić pochodzenie przedmiotu. */
 interface Props { it: Item; delta?: number; reveal?: boolean; history?: boolean; proof?: boolean }
@@ -17,7 +18,7 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
   return (
     <div class={`icard r${it.r}${reveal ? ' reveal' : ''}`}>
       <div class="ihead">
-        <div class="ico"><SlotIcon slot={it.slot} /></div>
+        <div class="ico"><Px src={itemUrl(it.kind, it.ore)} size={32} alt="" /></div>
         <div>
           <div class={`iname${it.aw ? ' aw' : ''}`}>{itemName(it)}{it.obieg && <span class="tag">Z Obiegu</span>}{it.set && <span class="tag">Zestaw</span>}</div>
           <div class="irar">{it.aw ? baseName(it) + ' · ' : ''}{RAR[it.r].n} · poz. {it.lvl}</div>

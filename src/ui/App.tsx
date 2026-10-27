@@ -9,6 +9,8 @@ import { TabIcon, type Tab } from './icons';
 import { ClanPanel } from './panels/Clan';
 import { CodexPanel } from './panels/Codex';
 import { getChat } from '../save/chat';
+import { resUrl } from '../art/render';
+import { Px } from './Px';
 import { DungeonPanel } from './panels/Dungeon';
 import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
@@ -113,9 +115,9 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           </div>
           <div class="res">
             <span><small>Moc</small><b>{fmt(game.stats.power)}</b></span>
-            <span class="gold"><small>Złoto</small><b>{fmt(s.gold)}</b></span>
+            <span class="gold"><small>Złoto</small><b><Px src={resUrl('zloto')} size={16} />{fmt(s.gold)}</b></span>
             <span><small>Kuźnia</small><b>{s.forge.lvl}{s.forge.up ? '↑' : ''}</b></span>
-            <span class="books"><small>Księgi</small><b>{fmt(s.books)}</b></span>
+            <span class="books"><small>Księgi</small><b><Px src={resUrl('ksiega')} size={16} />{fmt(s.books)}</b></span>
           </div>
         </header>
         <Arena game={game} onTab={t => goTab(t, true)} />

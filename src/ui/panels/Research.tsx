@@ -1,4 +1,6 @@
 import { TECH, TECH_BRANCHES, TECH_IDS, TECH_UNLOCK_FORGE } from '../../data';
+import { techUrl } from '../../art/render';
+import { Px } from '../Px';
 import type { Game } from '../../engine/game';
 import { techBlock, techCost, techLvl, techText, techValue, type TechBlock } from '../../engine/tech';
 import type { TechId } from '../../engine/types';
@@ -25,6 +27,7 @@ function TechRow({ game, id }: { game: Game; id: TechId }) {
   const cur = s.tech.cur?.id === id;
   return (
     <li class={`tech${block === 'forge' ? ' locked' : ''}`}>
+      <Px src={techUrl(id)} size={40} cls="row-ic" />
       <div class="tech-main">
         <div class="tech-n">{T.n} <span class="muted">· {l}/{T.max}</span></div>
         <div class="sub">

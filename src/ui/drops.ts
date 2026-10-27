@@ -1,5 +1,6 @@
 // Animacja dropu rudy: kamień wyskakuje z wroga, podskakuje i leci do zakładki Kuźnia.
 import { ORES } from '../data';
+import { oreUrl } from '../art/render';
 
 const MAX_FLYING = 8;
 let flying = 0;
@@ -28,7 +29,9 @@ export function flyOre(from: Element | null, ore: number, n: number, rare: boole
     g.style.setProperty('--c', ORES[ore].col);
     g.style.left = x0 + 'px';
     g.style.top = y0 + 'px';
-    g.appendChild(document.createElement('i'));
+    const src = oreUrl(ore);
+    if (src) { const img = document.createElement('img'); img.src = src; img.alt = ''; g.appendChild(img); }
+    else g.appendChild(document.createElement('i'));
     document.body.appendChild(g);
     if (typeof g.animate !== 'function') { g.remove(); return; }
     flying++;

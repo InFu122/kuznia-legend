@@ -6,3 +6,4 @@ balans/
 .DS_Store
 server/build
 .env
+__pycache__/
