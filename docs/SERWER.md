@@ -72,6 +72,7 @@ Jeśli port 8080 jest zajęty (np. przez inną aplikację CasaOS), zmień `WEB_P
 | Objaw | Przyczyna | Co zrobić |
 | --- | --- | --- |
 | `nakama` ciągle się restartuje, w logach `password authentication failed for user "nakama"` | `POSTGRES_PASSWORD` zmienione w `.env` po pierwszym uruchomieniu — baza pamięta stare hasło | `docker compose exec postgres psql -U nakama -d nakama -c "ALTER USER nakama PASSWORD '$(grep '^POSTGRES_PASSWORD=' .env \| cut -d= -f2)';"` a potem `docker compose restart nakama` |
+| `nakama` ciągle się restartuje, w logach `Encryption key and refresh token encryption cannot match` | `NAKAMA_SESSION_KEY` i `NAKAMA_REFRESH_KEY` mają tę samą wartość | wygeneruj różne klucze: `for k in NAKAMA_SESSION_KEY NAKAMA_REFRESH_KEY NAKAMA_HTTP_KEY NAKAMA_CONSOLE_KEY; do sed -i "s/^$k=.*/$k=$(openssl rand -hex 16)/" .env; done` a potem `docker compose up -d` |
 | W grze „Brak serwera”, w Kodeksie „serwer odrzucił klucz gry” | `NAKAMA_SERVER_KEY` zmieniony bez przebudowania gry | `docker compose up -d --build` |
 | W Kodeksie „błąd serwera 502” | gra działa, ale Nakama nie wstała | `docker compose logs nakama` — przyczyna jest w ostatnich liniach |
 
