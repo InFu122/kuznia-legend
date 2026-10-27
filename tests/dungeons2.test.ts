@@ -8,8 +8,8 @@ import { makeGame, simulate } from './helpers';
 function act2(seed = 7) {
   const h = makeGame(seed);
   const { ctx, s } = h;
-  s.forge.lvl = 30; s.ores[4] = 8; s.stats.smelted = 10;
-  for (let i = 0; i < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true);
+  s.forge.lvl = 30; s.ores[4] = 200; s.stats.smelted = 10;
+  for (let i = 0; i < 200 && Object.keys(s.eq).length < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true); // wszystkie 8 slotów
   s.cleared = s.cleared.map((_, i) => i < 4);
   s.maxLand = 4; s.bestG = 40;
   return h;
@@ -85,8 +85,7 @@ describe('Krypta Bohaterów', () => {
   it('otwiera się z pierwszym Zahartowanym przedmiotem i walczy tylko legendami', () => {
     const { g, s } = act2();
     expect(g.dungUnlocked('krypta')).toBe(false);
-    s.eq.bron!.fame = 1500; s.eq.bron!.ls = 1;
-    s.eq.zbroja!.fame = 1500; s.eq.zbroja!.ls = 1;
+    for (const slot of ['bron', 'zbroja', 'helm', 'rekawice'] as const) { s.eq[slot]!.fame = 1500; s.eq[slot]!.ls = 1; } // połowa ekwipunku z legendą
     expect(g.dungUnlocked('krypta')).toBe(true);
     g.ctx.cache = null;
     const full = g.stats.power;

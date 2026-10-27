@@ -8,8 +8,8 @@ import { makeGame, simulate } from './helpers';
 function strongGame(seed = 2) {
   const h = makeGame(seed);
   const { ctx, s } = h;
-  s.forge.lvl = 30; s.ores[4] = 8; s.stats.smelted = 10;
-  for (let i = 0; i < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true);
+  s.forge.lvl = 30; s.ores[4] = 200; s.stats.smelted = 10;
+  for (let i = 0; i < 200 && Object.keys(s.eq).length < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true); // wszystkie 8 slotów
   s.cleared = s.cleared.map((_, i) => i < 2);
   s.maxLand = 2;
   return h;

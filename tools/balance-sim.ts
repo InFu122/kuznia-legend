@@ -62,6 +62,12 @@ function manageCompanions(g: Game): void {
     if (!opts.length || !g.levelUp(opts[0][0], opts[0][1])) break;
   }
   while (s.seals > 0 && s.eq.bron) g.useSeal('bron');
+  // misje, skrzynia i kalendarz logowania
+  const ms = g.missions();
+  ms.daily.forEach((_, i) => g.claimMission('daily', i));
+  ms.weekly.forEach((_, i) => g.claimMission('weekly', i));
+  g.claimChest();
+  g.claimLogin();
   while (s.found.length) g.takeFound(0, g.foundDelta(0) > 0);
 }
 

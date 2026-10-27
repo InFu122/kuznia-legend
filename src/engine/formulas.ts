@@ -41,7 +41,8 @@ export const Hstar = (g: number) => (100 + 150 * lvlFactor(2 * forgeExp(g) + 1) 
 export const early = (g: number) => (g < 10 ? 0.4 + 0.06 * g : 1);
 
 export const upCost = (n: number) => Math.round(B.UPGRADE_COST_BASE * Math.pow(B.UPGRADE_COST_MULT, n - 1));
-export const upTime = (n: number) => Math.pow(B.UPGRADE_TIME_MULT, n - 1) * 60000;
+/** Czas ulepszenia kuźni do poziomu n. Pierwsze ulepszenie trwa 30 s (samouczek). */
+export const upTime = (n: number) => (n === 2 ? 30000 : Math.pow(B.UPGRADE_TIME_MULT, n - 1) * 60000);
 /** Złoto rośnie w tempie kosztów kuźni, więc to czas ulepszeń jest główną bramką, nie złoto. */
 export const goldWave = (g: number) => Math.max(1, Math.round(upCost(Math.min(B.FORGE_MAX, Math.ceil(forgeExp(g)) + 1)) / 45));
 export const sellPrice = (it: Item) => Math.max(1, Math.round((upCost(Math.min(B.FORGE_MAX, Math.floor(it.lvl / 2) + 1)) / 70) * (1 + it.r * 0.6)));

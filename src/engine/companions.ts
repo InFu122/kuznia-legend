@@ -6,6 +6,7 @@ import {
 import { toast, type Ctx } from './context';
 import { baseName } from './formulas';
 import { checkLegend } from './legend';
+import { track } from './missions';
 import { pick } from './rng';
 import { invalidate } from './stats';
 import type { GameState, MountId, PetId, SkillId, SlotId } from './types';
@@ -14,11 +15,12 @@ export const skillsUnlocked = (s: GameState) => s.bestG >= SKILLS_UNLOCK_G;
 export const petsUnlocked = (s: GameState) => s.maxLand >= PETS_UNLOCK_LAND;
 export const mountsUnlocked = (s: GameState) => s.maxLand >= MOUNTS_UNLOCK_LAND;
 
-/** Losuje rzadkość 0–4 według DRAW_ODDS. */
-export function drawRarity(ctx: Ctx): number {
-  let x = ctx.rng.next() * 100;
-  for (let r = 0; r < DRAW_ODDS.length; r++) { x -= DRAW_ODDS[r]; if (x < 0) return r; }
-  return 0;
+/** Losuje rzadkość 0–4 według DRAW_ODDS (od rzadkości `min` wzwyż). */
+export function drawRarity(ctx: Ctx, min = 0): number {
+  const odds = DRAW_ODDS.map((p, r) => (r >= min ? p : 0));
+  let x = ctx.rng.next() * odds.reduce((a, b) => a + b, 0);
+  for (let r = 0; r < odds.length; r++) { x -= odds[r]; if (x < 0) return r; }
+  return min;
 }
 
 /* ---------- umiejętności ---------- */
@@ -31,7 +33,14 @@ export function openScroll(ctx: Ctx): { id: SkillId; dupe: boolean } | null {
   const s = ctx.s;
   if (s.scrolls < 1 || !skillsUnlocked(s)) return null;
   s.scrolls--;
-  const r = drawRarity(ctx);
+  track(ctx, 'scroll');
+  return drawSkill(ctx, 0);
+}
+
+/** Losuje umiejętność od rzadkości `min` (epicki Zwój z kalendarza: min = 3). */
+export function drawSkill(ctx: Ctx, min: number): { id: SkillId; dupe: boolean } {
+  const s = ctx.s;
+  const r = drawRarity(ctx, min);
   const id = pick(ctx.rng, SKILL_IDS.filter(k => SKILLS[k].r === r));
   const dupe = !!s.skills.lv[id];
   if (!dupe) {

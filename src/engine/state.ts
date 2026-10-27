@@ -1,13 +1,14 @@
-import { DUNGEONS, DUNG_ORDER, LANDS, SKILL_SLOTS } from '../data';
+import { DUNGEONS, DUNG_ORDER, LANDS, SKILL_SLOTS, TUTORIAL } from '../data';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
  * Wersje zapisu:
  * 2 — poziom przedmiotu liczony z poziomu kuźni (wcześniej z postępu w kampanii),
  * 3 — technologie, Księgi Wiedzy, rudy unikalne, wiele lochów,
- * 4 — umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy, kolejne lochy.
+ * 4 — umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy, kolejne lochy,
+ * 5 — misje, kalendarz logowania, samouczek, ustawienia dźwięku.
  */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];
@@ -26,6 +27,8 @@ export function newState(now: number): GameState {
     scrolls: 0, skills: { lv: {}, cards: {}, eq: Array(SKILL_SLOTS).fill(null) },
     eggs: [0, 0, 0, 0, 0], hatch: null, pets: {}, petSel: null,
     saddles: 0, mounts: {}, mountSel: null, stones: 0, seals: 0, found: [],
+    missions: { day: '', daily: [], chest: false, week: '', weekly: [] }, login: { last: '', idx: 0 }, tut: 0,
+    opts: { sound: true, vol: 0.6 },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0 },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
@@ -66,6 +69,11 @@ export function migrate(raw: unknown, now: number): GameState {
   for (const k of ['pets', 'mounts'] as const) if (!isObj(out[k])) out[k] = {};
   for (const k of ['scrolls', 'saddles', 'stones', 'seals'] as const) if (typeof out[k] !== 'number') out[k] = 0;
   if (!Array.isArray(out.found)) out.found = [];
+  out.missions = Object.assign(fresh.missions, isObj(raw.missions) ? raw.missions : {});
+  if (!Array.isArray(out.missions.daily) || !Array.isArray(out.missions.weekly)) out.missions = fresh.missions;
+  out.login = Object.assign(fresh.login, isObj(raw.login) ? raw.login : {});
+  out.opts = Object.assign(fresh.opts, isObj(raw.opts) ? raw.opts : {});
+  if (typeof out.tut !== 'number') out.tut = 0;
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
   for (const it of [...Object.values(out.eq), out.pending, ...out.found]) {
     if (!it) continue;
@@ -73,6 +81,7 @@ export function migrate(raw: unknown, now: number): GameState {
     it.set ??= null;
     if (oldVersion < 2) it.lvl = 2 * (it.flvl || out.forge.lvl) + 1;
   }
+  if (oldVersion < 5 && out.stats.smelted > 0) out.tut = TUTORIAL.length; // stary gracz nie potrzebuje samouczka
   out.maxLand = Math.min(out.maxLand, LANDS.length - 1);
   out.cur.land = Math.min(out.cur.land, out.maxLand);
   out.v = SAVE_VERSION;

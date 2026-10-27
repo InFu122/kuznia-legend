@@ -3,6 +3,8 @@ import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
 import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labChoose, startDungeon } from './dungeon';
 import { equipSkill, levelUp, openSaddle, openScroll, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
+import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
+import { tutTick } from './tutorial';
 import { canSmelt, decideAuto, equip, sell, sellFor, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime } from './forge';
 import { itemName } from './formulas';
 import { allMods } from './mods';
@@ -55,6 +57,7 @@ export class Game {
     if (tickForge(ctx, ms)) this.changed();
     if (tickResearch(ctx, ms)) this.changed();
     if (tickHatch(ctx, ms)) this.changed();
+    if (tutTick(ctx)) this.changed();
     ctx.b.obiegT -= ms;
     if (ctx.b.obiegT <= 0) { ctx.b.obiegT = rnd(ctx.rng, 60000, 150000); obiegEvent(ctx); }
     if (ctx.s.auto && ctx.s.forge.lvl >= B.AUTO_FORGE_LVL && !this.uiBusy) {
@@ -86,6 +89,7 @@ export class Game {
     const equipped = decideAuto(ctx, it, false);
     this.lastAuto = { item: it, equipped };
     if (it.r >= 4) toast(ctx, `${equipped ? 'Założono' : 'Sprzedano'}: ${itemName(it)} (${RAR[it.r].n})`, 'good');
+    if (it.r >= 3) this.dispatch({ t: 'sfx', k: 'rare', r: it.r });
     this.changed();
   }
 
@@ -98,6 +102,7 @@ export class Game {
     if (!it) return null;
     ctx.s.pending = it;
     this.lastAuto = null;
+    this.dispatch({ t: 'sfx', k: it.jump ? 'jump' : 'smelt', r: it.r });
     if (it.r >= 4) toast(ctx, `Wykuto: ${itemName(it)} (${RAR[it.r].n})!`, 'good');
     this.changed();
     return it;
@@ -159,6 +164,16 @@ export class Game {
   selectMount(id: MountId | null) { const ok = selectMount(this.ctx, id); this.changed(); return ok; }
   levelUp(kind: 'pet' | 'mount', id: PetId | MountId) { const ok = levelUp(this.ctx, kind, id); this.changed(); return ok; }
   useSeal(slot: SlotId) { const ok = useSeal(this.ctx, slot); this.changed(); return ok; }
+
+  /* ---------- misje, kalendarz, ustawienia ---------- */
+
+  claimMission(scope: 'daily' | 'weekly', i: number) { const r = claimMission(this.ctx, scope, i); this.changed(); return r; }
+  claimChest() { const r = claimChest(this.ctx); this.changed(); return r; }
+  claimLogin() { const r = claimLogin(this.ctx); this.changed(); return r; }
+  claimable(): number { return claimable(this.ctx); }
+  canClaimLogin(): boolean { return canClaimLogin(this.ctx); }
+  missions() { ensureMissions(this.ctx); return this.s.missions; }
+  setSound(on: boolean, vol = this.s.opts.vol) { this.s.opts = { sound: on, vol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
 
   /** Decyzja o znalezisku ze Zbrojowni: załóż albo sprzedaj. */
   takeFound(i: number, wear: boolean): void {

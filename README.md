@@ -49,7 +49,7 @@ Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich system
 2. **Pełna gra offline**
    - 2a: drzewko technologii (Akademia Kowalska, Księgi Wiedzy), lochy Skarbiec Złota, Wieża Wyzwań, Leża Bossów i Ołtarze Żywiołów, rudy unikalne i 6 zestawów. *(gotowe)*
    - 2b: umiejętności (Zwoje zaklęć), chowańce (jaja i wykluwanie), wierzchowce (Siodła), Kamienie z Kopalni Kryształów, Labirynt Minotaura, Krypta Bohaterów z Pieczęciami Legendy, Zapomniana Zbrojownia. *(gotowe)*
-   - 2c: misje dzienne, kalendarz logowania, samouczek, dźwięki.
+   - 2c: misje dzienne i tygodniowe ze skrzynią za komplet, kalendarz logowania (7. dnia epicki Zwój), samouczek pierwszych 15 minut, dźwięki syntezowane w Web Audio. *(gotowe)*
 3. **Serwer** — Nakama: konta, zapis, wytop liczony na serwerze, rankingi, arena.
 4. **Społeczność** — klany, czat, prawdziwy Wielki Obieg, boss i wojny klanów.
 5. **Sklep** — aplikacja Capacitor na Androida i iOS, płatności, reklamy z nagrodą, soft launch.

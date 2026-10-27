@@ -17,6 +17,9 @@ export type PetId = 'wilczek' | 'kruk' | 'zolw' | 'salamandra' | 'sowa' | 'gryfi
 export type MountId = 'kon' | 'dzik' | 'wilk' | 'niedzwiedz' | 'jaszczur' | 'jednorozec' | 'gryf' | 'smok';
 export type LabDoorKind = 'walka' | 'elita' | 'skarb' | 'zrodlo' | 'oltarz';
 export type KryptaRuleId = 'zywioly' | 'szybkosc' | 'krew' | 'giganci';
+export type MissionKind = 'smelt' | 'wave' | 'boss' | 'jump' | 'sell' | 'equip' | 'dung' | 'research' | 'scroll';
+export interface Mission { kind: MissionKind; goal: number; n: number; claimed: boolean }
+export type SfxKind = 'smelt' | 'jump' | 'hit' | 'crit' | 'hurt' | 'skill' | 'boss' | 'win' | 'lose' | 'levelup' | 'claim' | 'rare';
 
 /** Nagroda do przyznania i pokazania w podsumowaniu. */
 export interface Reward {
@@ -118,6 +121,10 @@ export interface GameState {
   stones: number;                                      // Kamienie
   seals: number;                                       // Pieczęcie Legendy
   found: Item[];                                       // znaleziska ze Zbrojowni czekające na decyzję
+  missions: { day: string; daily: Mission[]; chest: boolean; week: string; weekly: Mission[] };
+  login: { last: string; idx: number };                // kalendarz logowania: ostatni odbiór, następny dzień 0–6
+  tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
+  opts: { sound: boolean; vol: number };
   stats: { smelted: number; jumps: number; kills: number; bosses: number };
   speed: number;
   savedAt: number;
@@ -192,6 +199,7 @@ export type ModalData =
   | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward; items: number }
   | { kind: 'labChoice'; room: number; doors: LabDoorOpt[]; loot: Reward }
   | { kind: 'found' }
+  | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
   | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }
@@ -204,4 +212,5 @@ export type GameEvent =
   | { t: 'bump'; who: 'hero' | 'foe'; cls: 'lunge' | 'hit' }
   | { t: 'modal'; m: ModalData }
   | { t: 'drop'; ore: number; n: number; rare: boolean }
+  | { t: 'sfx'; k: SfxKind; r?: number }
   | { t: 'change' };

@@ -4,15 +4,15 @@ import { openSaddle, openScroll, skillNeed, startHatch, tickHatch } from '../src
 import { equip, smelt } from '../src/engine/forge';
 import { allMods } from '../src/engine/mods';
 import { applyOffline } from '../src/engine/offline';
-import { migrate, newState } from '../src/engine/state';
+import { SAVE_VERSION, migrate, newState } from '../src/engine/state';
 import { computeStats, extraOf } from '../src/engine/stats';
 import { constRng, makeGame, simulate, T0 } from './helpers';
 
 function geared(seed = 3) {
   const h = makeGame(seed);
   const { ctx, s } = h;
-  s.forge.lvl = 30; s.ores[4] = 8; s.stats.smelted = 10;
-  for (let i = 0; i < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true);
+  s.forge.lvl = 30; s.ores[4] = 200; s.stats.smelted = 10;
+  for (let i = 0; i < 200 && Object.keys(s.eq).length < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true); // wszystkie 8 slotów
   return h;
 }
 
@@ -166,6 +166,6 @@ describe('zapis', () => {
     expect(s.eggs).toEqual([0, 0, 0, 0, 0]);
     expect(s.found).toEqual([]);
     expect(s.stones).toBe(0);
-    expect(s.v).toBe(4);
+    expect(s.v).toBe(SAVE_VERSION);
   });
 });

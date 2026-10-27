@@ -29,11 +29,12 @@ main.tsx ── pętla requestAnimationFrame ──► Game.tick(ms)
                                             ├─ tickForge    (ulepszenie kuźni)
                                             ├─ tickResearch (badanie w Akademii)
                                             ├─ tickHatch    (wykluwanie jaja)
+                                            ├─ tutTick      (kroki samouczka)
                                             ├─ obiegEvent   (Wielki Obieg)
                                             ├─ auto-wytop
                                             ├─ dungTick     (czas Skarbca)
                                             └─ stepCombat   (fale, bossowie, lochy, umiejętności, chowaniec)
-Game.emit ──► interfejs: toast · float · bump · modal · change
+Game.emit ──► interfejs: toast · float · bump · drop · sfx · modal · change
 UI ──► akcje Game: smeltManual, equipPending, upgrade, research, goLand, startDung(id)…
 ```
 
@@ -50,6 +51,9 @@ UI ──► akcje Game: smeltManual, equipPending, upgrade, research, goLand, s
 | `obieg.ts` | Piętno Kowala i Wielki Obieg (do etapu 4 symulowany) |
 | `dungeon.ts` | 9 lochów (Skarbiec, Sztolnia, Wieża, Leża Bossów, Ołtarze, Kopalnia Kryształów, Labirynt, Zbrojownia, Krypta); klucze dzienne |
 | `tech.ts`, `mods.ts` | Akademia Kowalska: koszty i czas badań; `allMods` sumuje technologie, cechę chowańca i wierzchowca |
+| `missions.ts` | misje dzienne i tygodniowe (`track` liczy postęp), skrzynia za komplet, kalendarz logowania |
+| `tutorial.ts` | samouczek: warunki kroków i nagrody |
+| `reward.ts` | `grant` — przyznawanie nagród |
 | `companions.ts` | Zwoje i umiejętności, jaja i chowańce, Siodła i wierzchowce, ulepszanie Kamieniami, Pieczęcie Legendy |
 | `offline.ts` | nagrody za czas poza grą, Skrzynia nocnej zmiany |
 | `stats.ts` | statystyki bohatera i Moc, premie technologii i zestawów |
@@ -70,7 +74,11 @@ Wrogowie skalują się z oczekiwanej siły gracza (`forgeExp`, `rarityExp`, `ext
 
 ## Zapis
 
-Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każdej zmianie znaczenia pól, a `migrate()` przenosi stare zapisy. Wersja 2 przeliczyła poziomy przedmiotów na model oparty o kuźnię. Wersja 3 dodała technologie, Księgi Wiedzy, rudy unikalne i wiele lochów (stare pole `dung` przechodzi do `dungeons.sztolnia`). Wersja 4 dodała umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy i znaleziska ze Zbrojowni.
+Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każdej zmianie znaczenia pól, a `migrate()` przenosi stare zapisy. Wersja 2 przeliczyła poziomy przedmiotów na model oparty o kuźnię. Wersja 3 dodała technologie, Księgi Wiedzy, rudy unikalne i wiele lochów (stare pole `dung` przechodzi do `dungeons.sztolnia`). Wersja 4 dodała umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy i znaleziska ze Zbrojowni. Wersja 5 dodała misje, kalendarz logowania, samouczek i ustawienia dźwięku (starzy gracze mają samouczek od razu ukończony).
+
+## Dźwięk
+
+`src/ui/sound.ts` syntezuje dźwięki w Web Audio (młot, przeskok, trafienia, drop rudy, boss, nagrody), więc gra nie potrzebuje plików audio. Silnik wysyła zdarzenia `sfx`, interfejs je odtwarza z ograniczeniem częstotliwości. Kontekst audio rusza przy pierwszym geście gracza (wymóg przeglądarek i WebView).
 
 ## Co dalej technicznie
 

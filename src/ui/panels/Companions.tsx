@@ -26,7 +26,7 @@ export function SkillsView({ game }: { game: Game }) {
       <section class="card">
         <div class="row">
           <div><div class="eyebrow">Umiejętności</div><div class="h">Zwoje zaklęć: {fmt(s.scrolls)}</div></div>
-          <button class="btn primary small" disabled={s.scrolls < 1} onClick={() => game.openScroll()}>Otwórz Zwój</button>
+          <button class="btn primary small btn-scroll" disabled={s.scrolls < 1} onClick={() => game.openScroll()}>Otwórz Zwój</button>
         </div>
         <p class="sub">Trzy umiejętności rzucają się same, gdy są gotowe. Kopie tej samej umiejętności podnoszą jej poziom.</p>
         <Odds />

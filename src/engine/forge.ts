@@ -4,6 +4,7 @@ import { itemLevelFor, itemName, jumpChances, maxJump, sellPrice, upCost, upTime
 import { checkLegend } from './legend';
 import { allMods } from './mods';
 import { maybeObieg } from './obieg';
+import { track } from './missions';
 import { pick, ri, rnd, shuffle } from './rng';
 import { invalidate, powerDelta, stats } from './stats';
 import type { ElemKey, GameState, Item, SetId, SlotId } from './types';
@@ -62,6 +63,8 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   if (el && s.forge.lvl >= B.ELEM_FORGE_LVL && (s.els[el] ?? 0) > 0) { s.els[el] = (s.els[el] ?? 0) - 1; elKey = el; }
   s.stats.smelted++;
   if (jump) s.stats.jumps++;
+  track(ctx, 'smelt');
+  if (jump) track(ctx, 'jump');
   ctx.dirty = true;
   return {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, ri(ctx.rng, 0, 2)),
@@ -89,6 +92,7 @@ export function equip(ctx: Ctx, it: Item, quiet: boolean): void {
   }
   if (!it.owners.includes(s.name)) it.owners.push(s.name);
   s.eq[it.slot] = it;
+  track(ctx, 'equip');
   checkLegend(ctx, it, quiet);
   invalidate(ctx);
   ctx.dirty = true;
@@ -96,6 +100,7 @@ export function equip(ctx: Ctx, it: Item, quiet: boolean): void {
 
 export function sell(ctx: Ctx, it: Item, quiet: boolean): void {
   ctx.s.gold += sellFor(ctx.s, it);
+  track(ctx, 'sell');
   maybeObieg(ctx, it, quiet);
   ctx.dirty = true;
 }
@@ -138,6 +143,7 @@ export function tickForge(ctx: Ctx, ms: number, quiet = false): boolean {
   if (f.left > 0) return false;
   f.lvl = f.up; f.up = 0; f.left = 0;
   ctx.dirty = true;
+  if (!quiet) ctx.emit({ t: 'sfx', k: 'levelup' });
   if (!quiet) toast(ctx, `Kuźnia osiągnęła poziom ${f.lvl}` + (FORGE_UNLOCKS[f.lvl] ? ': ' + FORGE_UNLOCKS[f.lvl] : ''), 'good');
   return true;
 }

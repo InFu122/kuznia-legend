@@ -12,6 +12,9 @@ import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
 import { ResearchPanel } from './panels/Research';
+import { TUTORIAL } from '../data';
+import { tutStep } from '../engine/tutorial';
+import { play, setSound, unlockAudio } from './sound';
 
 const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['kodeks', 'Kodeks']];
 
@@ -28,12 +31,27 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     const off = game.on(e => {
       if (e.t === 'modal') { queue.current.push(e.m); force(x => x + 1); }
       else if (e.t === 'change') force(x => x + 1);
+      else if (e.t === 'sfx') play(e.k, e.r);
+      else if (e.t === 'drop') play(e.rare ? 'dropRare' : 'drop');
     });
     const id = setInterval(() => force(x => x + 1), 250);
     force(x => x + 1);
     onReady?.();
-    return () => { off(); clearInterval(id); };
+    // Kalendarz logowania wita gracza, który już grał (nowy gracz ma najpierw wstęp i samouczek).
+    if (game.s.stats.smelted > 0 && game.canClaimLogin()) { queue.current.push({ kind: 'missions', tab: 'login' }); force(x => x + 1); }
+    const unlock = () => unlockAudio();
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => { off(); clearInterval(id); window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
   }, [game]);
+
+  // Podświetlenie przycisku, o którym mówi bieżący krok samouczka.
+  const step = tutStep(game.s);
+  useEffect(() => {
+    document.querySelectorAll('.tut-hl').forEach(el => el.classList.remove('tut-hl'));
+    if (step && tab === step.tab && !queue.current.length) document.querySelector(step.target)?.classList.add('tut-hl');
+  });
+  setSound(game.s.opts.sound, game.s.opts.vol);
 
   const modal = queue.current[0] ?? null;
   game.uiBusy = !!modal;
@@ -44,14 +62,25 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     if (scroll) panelRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   };
 
+  /** Przełącza na zakładkę kroku samouczka i przewija do podświetlonego elementu. */
+  const showStep = (t: Tab, target: string) => {
+    setTab(t);
+    setTimeout(() => document.querySelector(target)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }), 60);
+  };
   const s = game.s;
+  const nClaim = game.claimable();
   return (
     <>
       <div class="app">
         <header class="top">
-          <div>
-            <div class="brand">Kuźnia Legend</div>
-            <div class="save-badge">{save.mode === 'cloud' ? 'Zapis w chmurze' : 'Zapis w przeglądarce'}</div>
+          <div class="top-row">
+            <div>
+              <div class="brand">Kuźnia Legend</div>
+              <div class="save-badge">{save.mode === 'cloud' ? 'Zapis w chmurze' : 'Zapis w przeglądarce'}</div>
+            </div>
+            <button class="quests" onClick={() => open({ kind: 'missions' })} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
+              <TabIcon tab="kodeks" /><span>Zadania</span>{nClaim > 0 && <i class="badge">{nClaim}</i>}
+            </button>
           </div>
           <div class="res">
             <span><small>Moc</small><b>{fmt(game.stats.power)}</b></span>
@@ -61,6 +90,16 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           </div>
         </header>
         <Arena game={game} onTab={t => goTab(t, true)} />
+        {step && (
+          <section class="tutbar" aria-label="Samouczek">
+            <div class="cmain">
+              <div class="eyebrow">Samouczek {game.s.tut + 1}/{TUTORIAL.length}</div>
+              <b>{step.t}</b>
+              <div class="sub">{step.d}</div>
+            </div>
+            <button class="btn small primary" onClick={() => showStep(step.tab, step.target)}>Pokaż</button>
+          </section>
+        )}
         <main class="panel" ref={panelRef}>
           {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} onFound={() => open({ kind: 'found' })} />}
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}

@@ -147,7 +147,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
               <div class="h">Ulepsz do poziomu {n}</div>
               <p class="sub">{FORGE_UNLOCKS[n] ? 'Odblokowuje: ' + FORGE_UNLOCKS[n] : 'Większa szansa na przeskok'} · {fmt(cost)} złota · {tfmt(game.upgradeTime())}</p>
             </div>
-            <button class="btn primary small" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
+            <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
           </div>
         )}
       </section>

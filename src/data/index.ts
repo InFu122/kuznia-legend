@@ -5,3 +5,4 @@ export * from './tech';
 export * from './sets';
 export * from './dungeons';
 export * from './companions';
+export * from './missions';

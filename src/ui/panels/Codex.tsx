@@ -46,6 +46,17 @@ export function CodexPanel({ game, saveMode, onReset }: { game: Game; saveMode: 
             onChange={e => { const el = e.currentTarget; el.value = game.setName(el.value); }} />
         </label>
         <div class="row">
+          <span class="sub">Dźwięki kucia, walki i nagród.</span>
+          <button class={`toggle${s.opts.sound ? ' on' : ''}`} aria-pressed={s.opts.sound} onClick={() => game.setSound(!s.opts.sound)}><span class="knob" />Dźwięki</button>
+        </div>
+        {s.opts.sound && (
+          <label class="field" for="vol">
+            Głośność: {Math.round(s.opts.vol * 100)}%
+            <input id="vol" type="range" min={0} max={100} step={5} value={Math.round(s.opts.vol * 100)}
+              onInput={e => game.setSound(true, Number(e.currentTarget.value) / 100)} />
+          </label>
+        )}
+        <div class="row">
           <span class="sub">Tempo testowe ×10 przyspiesza walkę i timery, żeby szybciej sprawdzić progresję.</span>
           <button class={`toggle${s.speed > 1 ? ' on' : ''}`} aria-pressed={s.speed > 1} onClick={() => game.toggleSpeed()}><span class="knob" />Tempo ×10</button>
         </div>

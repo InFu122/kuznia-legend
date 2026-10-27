@@ -8,7 +8,8 @@ import { obiegItem } from './obieg';
 import { sell } from './forge';
 import { pick, ri, rnd } from './rng';
 import { invalidate, stats } from './stats';
-import { grant } from './dungeon';
+import { grant } from './reward';
+import { track } from './missions';
 import type { Enemy, Fx, Reward, Stats } from './types';
 
 const fmtN = (n: number) => Math.round(n).toLocaleString('pl-PL');
@@ -138,6 +139,7 @@ function castSkills(ctx: Ctx, st: Stats, e: Enemy): void {
       case 'stun': fx.stunT = v * 1000; break;
     }
     if (S.kind !== 'dmg' && S.kind !== 'heal') ctx.emit({ t: 'float', side: 'hero', text: S.n, cls: 'loot', force: true });
+    ctx.emit({ t: 'sfx', k: 'skill' });
     fx.cd[i] = S.cd;
   });
 }
@@ -153,6 +155,7 @@ function heroHit(ctx: Ctx, st: Stats, e: Enemy): void {
   ctx.emit({ t: 'bump', who: 'hero', cls: 'lunge' });
   ctx.emit({ t: 'bump', who: 'foe', cls: 'hit' });
   ctx.emit({ t: 'float', side: 'foe', text: fmtN(d), cls: crit ? 'crit' : 'dmg', force: crit });
+  ctx.emit({ t: 'sfx', k: crit ? 'crit' : 'hit' });
 }
 
 function petHit(ctx: Ctx, st: Stats, e: Enemy): void {
@@ -174,6 +177,7 @@ function enemyHit(ctx: Ctx, st: Stats, e: Enemy): void {
   ctx.emit({ t: 'bump', who: 'foe', cls: 'lunge' });
   ctx.emit({ t: 'bump', who: 'hero', cls: 'hit' });
   ctx.emit({ t: 'float', side: 'hero', text: d > 0 ? '−' + fmtN(d) : 'tarcza', cls: d > 0 ? 'hurt' : 'miss', force: e.boss });
+  if (d > 0) ctx.emit({ t: 'sfx', k: 'hurt' });
 }
 
 function onEnemyDown(ctx: Ctx, e: Enemy): void {
@@ -213,6 +217,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   ctx.emit({ t: 'float', side: 'foe', text: loot, cls: 'loot', force: true });
   addFame(ctx, e.count, e.type, false);
   s.stats.kills += e.count;
+  track(ctx, 'wave');
   b.heroHp = Math.min(b.heroMax, b.heroHp + B.WAVE_HEAL * b.heroMax);
   s.cur.wave++;
   if (s.cur.wave > B.WAVES_PER_STAGE) {
@@ -237,6 +242,8 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   const L = LANDS[land];
   s.stats.bosses++;
   addFame(ctx, 0, e.type, true);
+  track(ctx, 'boss');
+  ctx.emit({ t: 'sfx', k: 'boss' });
   const first = !s.cleared[land];
   const gold = Math.round(goldWave(gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + allMods(s).goldPct / 100));
   const n = ri(ctx.rng, 2, 4);
@@ -297,6 +304,7 @@ function onHeroDown(ctx: Ctx, e: Enemy): void {
   if (b.mode === 'dung') { dungEnd(ctx, true); return; }
   if (e.boss) {
     toast(ctx, `${e.name} był za silny. Wzmocnij ekwipunek i spróbuj ponownie.`, 'bad');
+    ctx.emit({ t: 'sfx', k: 'lose' });
     if (s.cleared[s.cur.land]) { s.cur.stage = 1; s.cur.wave = 1; }
   } else {
     if (s.cur.stage > 1) s.cur.stage--;

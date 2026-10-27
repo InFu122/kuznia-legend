@@ -12,6 +12,7 @@ import { ItemCard } from './ItemCard';
 import { fmt, pct, tfmt } from './format';
 import { Dist } from './panels/Forge';
 import { books, rewardText } from './texts';
+import { MissionsView } from './panels/Missions';
 
 export function ModalShell({ locked, onClose, children }: { locked: boolean; onClose: () => void; children: ComponentChildren }) {
   return (
@@ -29,13 +30,13 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
     case 'intro':
       return (
         <>
-          <div class="eyebrow">Wersja rozwojowa</div>
+          <div class="eyebrow">Spalona Wioska</div>
           <div class="h">Kuźnia Legend</div>
-          <p class="sub">Jesteś ostatnim mistrzem kowalskim upadłego królestwa. Bohater walczy sam, a ty przetapiasz rudy z walki na ekwipunek.</p>
+          <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i trzy sztaby żelaza: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie — nie pozwól mu iść z gołymi rękami”.</p>
           <ul class="list">
+            <li>Bohater walczy sam. Ty przetapiasz rudy, które wypadają z wrogów, na ekwipunek.</li>
             <li>Każda ruda gwarantuje minimalną rzadkość, a kuźnia daje szansę na przeskok wyżej.</li>
             <li>Założone przedmioty zbierają Sławę Czynów i w końcu budzą się z własnym imieniem.</li>
-            <li>Na 10. etapie każdej krainy czeka boss — wyzwij go, gdy będziesz gotów.</li>
           </ul>
           <Close onClose={close} label="Rozpal kuźnię" />
         </>
@@ -165,6 +166,8 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
       );
     case 'found':
       return <FoundView game={game} close={close} />;
+    case 'missions':
+      return <MissionsView game={game} initial={m.tab} close={close} />;
     case 'draw': {
       const name = m.what === 'skill' ? SKILLS[m.id as SkillId].n : m.what === 'pet' ? PETS[m.id as PetId].n : MOUNTS[m.id as MountId].n;
       const r = m.what === 'skill' ? SKILLS[m.id as SkillId].r : m.what === 'pet' ? PETS[m.id as PetId].r : MOUNTS[m.id as MountId].r;

@@ -4,6 +4,7 @@ import { toast, type Ctx } from './context';
 import { upCost } from './formulas';
 import { techLvl } from './mods';
 import { invalidate } from './stats';
+import { track } from './missions';
 import type { GameState, TechId } from './types';
 
 export { allMods, techLvl, techMods } from './mods';
@@ -39,6 +40,7 @@ export function startResearch(ctx: Ctx, id: TechId): boolean {
   s.books -= c.books;
   s.gold -= c.gold;
   s.tech.cur = { id, left: c.ms, total: c.ms };
+  track(ctx, 'research');
   ctx.dirty = true;
   return true;
 }
@@ -54,7 +56,7 @@ export function tickResearch(ctx: Ctx, ms: number, quiet = false): boolean {
   ctx.s.tech.cur = null;
   ctx.dirty = true;
   invalidate(ctx);
-  if (!quiet) toast(ctx, `Zbadano: ${TECH[cur.id].n} (poziom ${lvl})`, 'good');
+  if (!quiet) { toast(ctx, `Zbadano: ${TECH[cur.id].n} (poziom ${lvl})`, 'good'); ctx.emit({ t: 'sfx', k: 'levelup' }); }
   return true;
 }
 

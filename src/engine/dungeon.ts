@@ -13,7 +13,11 @@ import { allMods } from './mods';
 import { obiegItem } from './obieg';
 import { pick, ri } from './rng';
 import { fullStats, invalidate } from './stats';
-import type { DungId, ElemKey, FoeType, KryptaRuleId, LabDoorOpt, Reward, SetId } from './types';
+import { grant } from './reward';
+import { track } from './missions';
+
+export { grant };
+import type { DungId, ElemKey, FoeType, KryptaRuleId, LabDoorOpt, Reward } from './types';
 
 const { SKARBIEC_MS, OLTARZE_FLOORS } = B;
 const ACT2 = PETS_UNLOCK_LAND;
@@ -193,6 +197,7 @@ export function dungFloor(ctx: Ctx): void {
       if (mountsUnlocked(s) && ctx.rng.next() < 0.25) add(d.loot, 'saddles', 1);
       addFame(ctx, 0, LANDS[d.bossLand].type, true);
       s.dungeons.leza.best++; // liczba zwycięstw
+      track(ctx, 'boss');
       dungEnd(ctx, false);
       return;
     }
@@ -346,21 +351,6 @@ export function dungContinue(ctx: Ctx): void {
   ctx.b.pause = 300;
 }
 
-/** Przyznaje nagrodę. */
-export function grant(ctx: Ctx, r: Reward): void {
-  const s = ctx.s;
-  s.gold += r.gold ?? 0;
-  s.books += r.books ?? 0;
-  s.scrolls += r.scrolls ?? 0;
-  s.saddles += r.saddles ?? 0;
-  s.stones += r.stones ?? 0;
-  s.seals += r.seals ?? 0;
-  for (const [k, v] of Object.entries(r.ores ?? {})) s.ores[Number(k)] += v ?? 0;
-  for (const [k, v] of Object.entries(r.els ?? {})) s.els[k as ElemKey] = (s.els[k as ElemKey] ?? 0) + (v ?? 0);
-  for (const [k, v] of Object.entries(r.uniq ?? {})) s.uniq[k as SetId] = (s.uniq[k as SetId] ?? 0) + (v ?? 0);
-  for (const [k, v] of Object.entries(r.eggs ?? {})) s.eggs[Number(k)] += v ?? 0;
-}
-
 function halve(r: Reward): Reward {
   const h = (n?: number) => Math.floor((n ?? 0) / 2);
   const out: Reward = { gold: h(r.gold), books: h(r.books) };
@@ -387,6 +377,8 @@ export function dungEnd(ctx: Ctx, lost: boolean): void {
   b.heroHp = b.heroMax;
   b.pause = 400;
   if (d.items.length) s.found.push(...d.items);
+  track(ctx, 'dung');
+  ctx.emit({ t: 'sfx', k: lost ? 'lose' : 'win' });
   ctx.dirty = true;
   ctx.emit({ t: 'modal', m: { kind: 'dungEnd', id: d.id, lost, floor, reward, items: d.items.length } });
   if (d.items.length) ctx.emit({ t: 'modal', m: { kind: 'found' } });
