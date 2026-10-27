@@ -7,6 +7,7 @@ import { techMods } from '../../engine/mods';
 import type { ElemKey, Item, SetId } from '../../engine/types';
 import { ServerError, getLink } from '../../save/server';
 import { ItemCard } from '../ItemCard';
+import { ClanHelpLine } from './ClanLife';
 import { Px } from '../Px';
 import { elemUrl, oreUrl, setOreUrl } from '../../art/render';
 import { fmt, pct, tfmt } from '../format';
@@ -145,6 +146,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
             <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
             <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
             <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: {FORGE_UNLOCKS[f.up] ?? 'większa szansa na przeskok'}.</p>
+            {game.net && <ClanHelpLine game={game} />}
           </>
         ) : (
           <div class="row">

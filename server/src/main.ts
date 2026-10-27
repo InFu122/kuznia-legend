@@ -6,6 +6,7 @@ import { SAVE_VERSION } from '../../src/engine/state';
 import { rpcArenaFight, rpcArenaList } from './arena';
 import { chatBlock, chatJoin, chatSend, rpcChatDrop, rpcChatReport } from './chat';
 import { blockGroupApi, rpcClanCreate, rpcClanInfo, rpcClanJoin, rpcClanLeave, rpcClanList, rpcClanManage, rpcClanSettings } from './clan';
+import { rpcClanBossAttack, rpcClanDonate, rpcClanHelp, rpcClanHelpAsk, rpcClanOreAsk, rpcClanOreGive, rpcClanSync } from './clanlife';
 import { SYSTEM_USER, signSecret } from './common';
 import { rpcNameSet } from './names';
 import { rpcObiegSync } from './obieg';
@@ -43,6 +44,13 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('clan_info', rpcClanInfo);
   initializer.registerRpc('clan_manage', rpcClanManage);
   initializer.registerRpc('clan_settings', rpcClanSettings);
+  initializer.registerRpc('clan_sync', rpcClanSync);
+  initializer.registerRpc('clan_donate', rpcClanDonate);
+  initializer.registerRpc('clan_boss_attack', rpcClanBossAttack);
+  initializer.registerRpc('clan_help_ask', rpcClanHelpAsk);
+  initializer.registerRpc('clan_help', rpcClanHelp);
+  initializer.registerRpc('clan_ore_ask', rpcClanOreAsk);
+  initializer.registerRpc('clan_ore_give', rpcClanOreGive);
   initializer.registerRpc('chat_drop', rpcChatDrop);
   initializer.registerRpc('chat_report', rpcChatReport);
   // Czat: tylko dozwolone kanały, filtr i tryb wolny; bez edycji i usuwania wiadomości.

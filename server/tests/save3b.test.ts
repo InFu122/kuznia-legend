@@ -78,6 +78,23 @@ describe('serwer: pochodzenie przedmiotów', () => {
     expect(paceProblem(s, { t0: now - 1000, f0: 20, pity: [] }, now)).toBeNull();
   });
 
+  it('tempo kuźni uwzględnia pomoc klanu i najwyższy poziom klanu', () => {
+    const { s } = geared();
+    const now = 1000 * 3600000;
+    s.forge.lvl = 20; s.forge.up = 0; s.clanLvl = 0;
+    const need = upgradeTime(s, 20);
+    const meta = { t0: now - need * 0.7, f0: 19, pity: [] };
+    expect(paceProblem(s, meta, now)).toBeTruthy();                  // bez pomocy za szybko
+    expect(paceProblem(s, meta, now, { 20: 10 })).toBeNull();        // 10 pomocy = −30%
+    expect(paceProblem(s, { ...meta, t0: now - need * 0.55 }, now, { 20: 50 })).toBeTruthy(); // ponad 10 pomocy się nie liczy
+    s.forge.lvl = 30;
+    let t28 = 0;
+    for (let n = 25; n <= 30; n++) t28 += upgradeTime({ ...s, clanLvl: 10 }, n);
+    const m28 = { t0: now - t28, f0: 24, pity: [] };
+    expect(paceProblem(s, m28, now)).toBeTruthy();                   // bez premii klanu za szybko
+    expect(paceProblem(s, { ...m28, clMax: 10 }, now)).toBeNull();   // gracz był w klanie z premią do czasu ulepszeń
+  });
+
   it('kod przeniesienia: wielkie litery, bez myślników i spacji', () => {
     expect(normCode(' ab3d-ef9h ')).toBe('AB3DEF9H');
     expect(normCode(5)).toBe('');

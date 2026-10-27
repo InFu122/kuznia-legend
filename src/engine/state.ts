@@ -7,9 +7,10 @@ import type { Battle, DungId, Fx, GameState } from './types';
  * 3 — technologie, Księgi Wiedzy, rudy unikalne, wiele lochów,
  * 4 — umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy, kolejne lochy,
  * 5 — misje, kalendarz logowania, samouczek, ustawienia dźwięku,
- * 6 — ziarna wytopu z serwera, prawdziwy Wielki Obieg.
+ * 6 — ziarna wytopu z serwera, prawdziwy Wielki Obieg,
+ * 7 — życie klanu: poziom klanu, Monety i sklep klanowy, pomoc w ulepszeniach.
  */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];
@@ -32,6 +33,7 @@ export function newState(now: number): GameState {
     opts: { sound: true, vol: 0.6 },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0 },
     sx: 0, seeds: [], obIn: [], obOut: [],
+    clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
 }
@@ -80,6 +82,11 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!Array.isArray(out.seeds)) out.seeds = [];
   if (!Array.isArray(out.obIn)) out.obIn = [];
   if (!Array.isArray(out.obOut)) out.obOut = [];
+  if (typeof out.clanLvl !== 'number' || !(out.clanLvl >= 0)) out.clanLvl = 0;
+  if (typeof out.clanCoins !== 'number' || !(out.clanCoins >= 0)) out.clanCoins = 0;
+  if (!isObj(out.clanShop) || !isObj(out.clanShop.n)) out.clanShop = fresh.clanShop;
+  if (!isObj(out.clanHelp) || typeof out.clanHelp.lvl !== 'number' || typeof out.clanHelp.n !== 'number') out.clanHelp = fresh.clanHelp;
+  if (!Array.isArray(out.clanGot)) out.clanGot = [];
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
   for (const it of [...Object.values(out.eq), out.pending, ...out.found, ...out.obIn, ...out.obOut]) {
     if (!it) continue;

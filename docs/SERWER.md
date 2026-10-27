@@ -98,6 +98,17 @@ Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiam
 
 Zakładka **Klan** (po pokonaniu pierwszego bossa): wyszukiwanie, dołączanie, zakładanie klanu. Klan ma do 30 członków. Przywódca ustawia opis, tryb wstępu (otwarty, na prośbę, zamknięty), minimalną Moc i język, awansuje i degraduje (do 2 Zastępców i 5 Starszych) oraz może przekazać przywództwo. Zastępcy piszą ogłoszenia i wyrzucają, Starsi przyjmują prośby. Gdy Przywódca odchodzi, władzę przejmuje Zastępca, Starszy albo najdawniejszy członek; ostatni członek rozwiązuje klan.
 
+### Życie klanu
+
+W klanie zakładka **Klan** ma pięć części:
+
+- **Kuźnia** — Wspólna Kuźnia Klanu. 3 datki złota dziennie (koszt rośnie z postępem w kampanii); każdy datek daje klanowi 10 Doświadczenia, a tobie 5 Monet klanowych. Pokonany boss klanowy też daje Doświadczenie. Klan ma 10 poziomów, każdy z premią dla wszystkich członków (złoto, obrażenia, zdrowie, ruda, czas ulepszeń kuźni, nagrody offline). Poziom klanu wpisuje do zapisu serwer.
+- **Boss** — wspólny boss klanu. 3 ataki dziennie, obrażenia = twoja Moc w rankingu (±15%), za atak Monety i złoto. Pokonany boss zostawia skrzynię każdemu, kto go atakował (pierwsze miejsce więcej i jajo), a następny jest silniejszy.
+- **Pomoc** — prośba o pomoc przy ulepszeniu kuźni (każda pomoc −3% czasu, do 10 pomocy) i prośby o rudę (raz na 8 godzin). Pomoc i dary rudy dają Monety (10 nagradzanych dziennie). O pomoc poprosisz też w zakładce Kuźnia, w trakcie ulepszania.
+- **Sklep** — towary za Monety klanowe z limitem tygodniowym (od poniedziałku); lepsze towary odblokowuje poziom klanu.
+
+Dzienne limity liczą się od północy czasu UTC. Nagrody klanu (Monety, skrzynie, ruda od klanowiczów) czekają na serwerze, aż gra je odbierze i zapisze — żadna nie przepada ani nie przychodzi dwa razy.
+
 ### Czat
 
 Przycisk **Czat** na górze ekranu: kanał globalny i kanał klanu. Na globalnym piszesz od 5. poziomu kuźni (wcześniej tylko w klanie). Tryb wolny: 3 sekundy między wiadomościami na globalnym, 1 sekunda w klanie. Serwer zamienia wulgaryzmy na gwiazdki. Wiadomość innego gracza możesz wyciszyć (tylko na swoim urządzeniu) albo zgłosić. Gdy wykujesz przedmiot Mityczny lub Boski, na czacie klanu pojawia się jego karta, a przyciskiem pod przedmiotem możesz pochwalić się na czacie globalnym (raz na 10 minut).
@@ -119,6 +130,7 @@ Czat używa WebSocketu pod tym samym adresem co gra (`/ws` — nginx przekazuje 
 | W Kodeksie „błąd serwera 502” | gra działa, ale Nakama nie wstała | `docker compose logs nakama` — przyczyna jest w ostatnich liniach |
 | „Serwer odrzucił zapis: kuźnia rośnie szybciej, niż pozwalają czasy ulepszeń” | kuźnia urosła szybciej niż w normalnej grze (np. przestawiony zegar w telefonie bez połączenia) | nic nie rób — gra zapisuje lokalnie, a serwer przyjmie zapis, gdy upłynie tyle czasu, ile trwają ulepszenia |
 | „Czat: brak połączenia”, a gra zapisuje na serwerze | nginx nie przekazuje WebSocketu | sprawdź, czy kontener `web` jest z tej wersji (`docker compose up -d --build`); przy własnym reverse proxy włącz przekazywanie WebSocketów dla `/ws` |
+| Pomoc klanu nie skróciła ulepszenia | gra odświeża klan co 3 minuty | otwórz zakładkę Klan — odświeża się od razu |
 | Moc w rankingu niższa niż w grze | część założonych przedmiotów powstała przed aktualizacją 3b albo bez ziaren serwera | wykuj nowe przedmioty — liczą się od razu |
 
 Przyczynę braku połączenia gra pokazuje w zakładce Kodeks, w karcie **Serwer gry**.

@@ -1,4 +1,5 @@
 import { B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH } from '../data';
+import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
 import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labChoose, startDungeon } from './dungeon';
@@ -249,11 +250,61 @@ export class Game {
     this.ctx.dirty = true;
     this.changed();
   }
+  /** Komunikat w dymku (np. z działań na serwerze). */
+  notify(msg: string, kind?: 'good' | 'bad'): void { toast(this.ctx, msg, kind); }
+
+  /* ---------- klan (serwer) ---------- */
+
+  /** Poziom klanu od serwera (premie dla członków). */
+  setClanLvl(lvl: number): void {
+    const l = Math.max(0, Math.floor(lvl) || 0);
+    if (l === this.s.clanLvl) return;
+    this.s.clanLvl = l;
+    this.ctx.dirty = true;
+    invalidate(this.ctx);
+    this.changed();
+  }
+  /** Nagrody od serwera (Monety, skrzynie bossa klanowego, ruda od klanu) — każda tylko raz. */
+  serverRewards(list: ServerReward[]): ServerReward[] {
+    const got = takeServerRewards(this.ctx, list);
+    if (got.length) this.changed();
+    return got;
+  }
+  /** Pomoc klanu w ulepszeniu kuźni (liczy ją serwer). Zwraca liczbę nowych pomocy. */
+  clanHelp(lvl: number, n: number): number {
+    const add = applyClanHelp(this.ctx, lvl, n);
+    if (add) this.changed();
+    return add;
+  }
+  /** Płatność złotem lub rudą za akcję klanu (datek, dar rudy). Zwraca false, gdy brakuje. */
+  clanPay(gold: number, ore?: { i: number; n: number }): boolean {
+    const s = this.s;
+    if (gold > s.gold || (ore && !(ore.n > 0 && s.ores[ore.i] >= ore.n))) return false;
+    s.gold -= gold;
+    if (ore) s.ores[ore.i] -= ore.n;
+    this.ctx.dirty = true;
+    this.changed();
+    return true;
+  }
+  /** Zwrot, gdy serwer odrzucił akcję. */
+  clanRefund(gold: number, ore?: { i: number; n: number }): void {
+    this.s.gold += gold;
+    if (ore) this.s.ores[ore.i] += ore.n;
+    this.ctx.dirty = true;
+    this.changed();
+  }
+  buyClan(id: Parameters<typeof buyClanShop>[1]): boolean {
+    const ok = buyClanShop(this.ctx, id);
+    if (ok) this.changed();
+    return ok;
+  }
+
   reset(): void {
     const old = this.s;
     this.ctx.s = newState(this.ctx.now());
     // Imię, ziarna wytopu i kolejki Obiegu zostają: numer wytopu nigdy się nie cofa.
-    Object.assign(this.ctx.s, { name: old.name, sx: old.sx, seeds: old.seeds, obIn: old.obIn, obOut: old.obOut });
+    // Poziom klanu i lista odebranych nagród klanu też zostają — należą do konta, nie do rozgrywki.
+    Object.assign(this.ctx.s, { name: old.name, sx: old.sx, seeds: old.seeds, obIn: old.obIn, obOut: old.obOut, clanLvl: old.clanLvl, clanGot: old.clanGot });
     this.ctx.b = newBattle();
     this.ctx.cache = null;
     this.lastAuto = null;

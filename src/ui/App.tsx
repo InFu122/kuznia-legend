@@ -7,6 +7,7 @@ import { Toasts } from './Toasts';
 import { fmt } from './format';
 import { TabIcon, type Tab } from './icons';
 import { ClanPanel } from './panels/Clan';
+import { clanLife } from '../save/clanlife';
 import { CodexPanel } from './panels/Codex';
 import { getChat } from '../save/chat';
 import { resUrl } from '../art/render';
@@ -136,7 +137,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
-          {tab === 'klan' && <ClanPanel online={save.mode === 'server'} openChat={() => open({ kind: 'chat', ch: 'clan' })} />}
+          {tab === 'klan' && <ClanPanel game={game} online={save.mode === 'server'} openChat={() => open({ kind: 'chat', ch: 'clan' })} />}
           {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} />}
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
         </main>
@@ -146,6 +147,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tabs.map(([id, n]) => (
             <button key={id} data-tab={id} class={`tab${tab === id ? ' on' : ''}`} aria-current={tab === id ? 'page' : undefined} onClick={() => goTab(id)}>
               <TabIcon tab={id} /><span>{n}</span>
+              {id === 'klan' && tab !== 'klan' && clanLife.todo() > 0 && <i class="tab-dot" aria-label="w klanie coś czeka" />}
             </button>
           ))}
         </div>

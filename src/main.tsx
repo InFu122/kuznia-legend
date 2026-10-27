@@ -4,6 +4,7 @@ import { migrate, newState } from './engine/state';
 import type { GameState } from './engine/types';
 import { toast } from './engine/context';
 import { ChatLink, setChat } from './save/chat';
+import { CLAN_SYNC_MS, clanLife } from './save/clanlife';
 import { ServerError, ServerLink, serverConfig, setLink } from './save/server';
 import { connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
@@ -78,6 +79,7 @@ function boot(hotData?: { s?: string }) {
         else if (!(r.conflict && adopt(r.conflict))) r = await l.save(game.s); // nasz zapis jest nowszy — nadpisz
       }
       takeName(r);
+      if (typeof r.clanLvl === 'number') game.setClanLvl(r.clanLvl);
       save.mode = 'server';
       save.error = undefined;
       startChat(l);
@@ -113,6 +115,8 @@ function boot(hotData?: { s?: string }) {
         const r = await l.seeds(need.from, need.n);
         game.addSeeds(r.from, r.seeds);
       }
+      // Klan: nagrody do odebrania, pomoc w ulepszeniu kuźni, poziom klanu.
+      if (Date.now() - clanLife.at >= CLAN_SYNC_MS) await clanLife.sync(game).catch(e => console.warn('Kuźnia Legend: klan —', e));
       if (Date.now() - lastObieg >= OBIEG_MS || game.s.obOut.length >= 5) {
         lastObieg = Date.now();
         const out = game.takeObOut();
@@ -152,6 +156,7 @@ function boot(hotData?: { s?: string }) {
     save.redeem = async (code: string) => {
       const remote = await link.redeem(code);
       if (remote) adopt(remote, true);
+      clanLife.reset();
       if (chat) {
         chat.restart();
         link.clanInfo().then(i => chat?.setClan(i.clan?.id ?? null, i.clan?.name ?? '', i.clan?.ann ?? '')).catch(() => {});

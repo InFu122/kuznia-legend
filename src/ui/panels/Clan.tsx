@@ -1,15 +1,17 @@
 // Zakładka Klan: wyszukiwanie i zakładanie klanu, a w klanie — ogłoszenie, członkowie z rolami,
-// prośby o przyjęcie, ustawienia Przywódcy i odejście z klanu.
+// prośby o przyjęcie, ustawienia Przywódcy i odejście z klanu oraz życie klanu (Wspólna Kuźnia, boss, pomoc, sklep).
 import { useEffect, useState } from 'preact/hooks';
 import { B, LANDS } from '../../data';
+import type { Game } from '../../engine/game';
 import { getChat } from '../../save/chat';
-import { ServerError, getLink, type ClanInfo, type ClanMember, type ClanMode, type ClanRole, type ClanSummary } from '../../save/server';
+import { clanLife } from '../../save/clanlife';
+import { getLink, type ClanInfo, type ClanMember, type ClanMode, type ClanRole, type ClanSummary } from '../../save/server';
 import { fmt } from '../format';
+import { ClanBossTab, ClanForgeTab, ClanHelpTab, ClanShopTab, errText, useClanLife, type ClanTab } from './ClanLife';
 
 const ROLE: Record<ClanRole, string> = { lider: 'Przywódca', zastepca: 'Zastępca', starszy: 'Starszy', czlonek: 'Członek', prosba: 'Prośba' };
 const MODE: Record<ClanMode, string> = { open: 'otwarty', request: 'na prośbę', closed: 'zamknięty' };
 const LANG: Record<string, string> = { pl: 'polski', en: 'angielski', de: 'niemiecki', cs: 'czeski', uk: 'ukraiński' };
-const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
 
 type Action = 'accept' | 'reject' | 'kick' | 'promote' | 'demote' | 'transfer';
 const ACTION_N: Record<Action, string> = { accept: 'Przyjmij', reject: 'Odrzuć', kick: 'Wyrzuć', promote: 'Awansuj', demote: 'Degraduj', transfer: 'Przekaż przywództwo' };
@@ -91,7 +93,7 @@ function Finder({ info, reload }: { info: ClanInfo; reload: (msg?: string) => vo
       <section class="card">
         <div class="eyebrow">Klany</div>
         <div class="h">Razem raźniej</div>
-        <p class="sub">Klan to wspólny czat i — wkrótce — Wspólna Kuźnia, boss klanowy i wojny klanów.</p>
+        <p class="sub">Klan to wspólny czat, Wspólna Kuźnia z premiami dla wszystkich, boss klanowy, pomoc w ulepszeniach kuźni i sklep klanowy.</p>
         <div class="lockline">Odblokujesz po pokonaniu bossa krainy {LANDS[0].n}.</div>
       </section>
     );
@@ -114,7 +116,7 @@ function Finder({ info, reload }: { info: ClanInfo; reload: (msg?: string) => vo
       <section class="card">
         <div class="eyebrow">Klany</div>
         <div class="h">Znajdź klan</div>
-        <p class="sub">Do 30 kowali, wspólny czat klanu. Twoja Moc w rankingu: <b class="num">{fmt(power)}</b>.</p>
+        <p class="sub">Do 30 kowali: czat, Wspólna Kuźnia, boss klanowy, pomoc i sklep. Twoja Moc w rankingu: <b class="num">{fmt(power)}</b>.</p>
         <form class="chat-in" onSubmit={e => { e.preventDefault(); search(); }} style={{ marginTop: '10px' }}>
           <input aria-label="Szukaj klanu" placeholder="Nazwa klanu…" value={q} onInput={e => setQ(e.currentTarget.value)} />
           <button class="btn small">Szukaj</button>
@@ -279,10 +281,6 @@ function MyClan({ info, reload, openChat }: { info: ClanInfo; reload: (msg?: str
         {list(info.members ?? [])}
       </section>
       <section class="card">
-        <div class="eyebrow">Wkrótce</div>
-        <p class="sub">Wspólna Kuźnia Klanu, boss klanowy, pomoc w ulepszeniach, prośby o rudę i wojny klanów.</p>
-      </section>
-      <section class="card">
         {confirm === 'leave' ? (
           <div class="confirm">
             <span>{me === 'lider' && (info.members?.length ?? 0) > 1 ? 'Opuścić klan? Przywództwo przejmie Zastępca, Starszy albo najdawniejszy członek.' : (info.members?.length ?? 0) <= 1 ? 'Jesteś ostatnim członkiem — klan zostanie rozwiązany. Opuścić?' : 'Opuścić klan?'}</span>
@@ -294,15 +292,44 @@ function MyClan({ info, reload, openChat }: { info: ClanInfo; reload: (msg?: str
   );
 }
 
-export function ClanPanel({ online, openChat }: { online: boolean; openChat: () => void }) {
+const SUB: [ClanTab, string][] = [['klan', 'Klan'], ['kuznia', 'Kuźnia'], ['boss', 'Boss'], ['pomoc', 'Pomoc'], ['sklep', 'Sklep']];
+
+/** Zakładki klanu z kropką, gdy coś czeka (datek, atak, komuś można pomóc). */
+function ClanSeg({ tab, setTab }: { tab: ClanTab; setTab: (t: ClanTab) => void }) {
+  const d = useClanLife();
+  const dot: Partial<Record<ClanTab, boolean>> = d?.left ? {
+    kuznia: d.left.don > 0, boss: d.left.atk > 0, pomoc: (d.helps ?? []).some(h => !h.done) || (d.ores ?? []).length > 0,
+  } : {};
+  return (
+    <div class="seg seg5" role="tablist" aria-label="Klan">
+      {SUB.map(([id, n]) => (
+        <button key={id} role="tab" aria-selected={tab === id} class={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
+          {n}{dot[id] && <i class="dot" aria-label="coś czeka" />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function ClanPanel({ game, online, openChat }: { game: Game; online: boolean; openChat: () => void }) {
   const [info, setInfo] = useState<ClanInfo | null>(null);
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
+  const [tab, setTab] = useState<ClanTab>('klan');
   const reload = (msg?: string) => {
     if (msg) setNote(msg);
     getLink()?.clanInfo()
-      .then(i => { setInfo(i); setErr(''); void getChat()?.setClan(i.clan?.id ?? null, i.clan?.name ?? '', i.clan?.ann ?? ''); })
+      .then(i => {
+        const changed = (i.clan?.id ?? null) !== (clanLife.data?.clan?.id ?? null);
+        setInfo(i); setErr('');
+        void getChat()?.setClan(i.clan?.id ?? null, i.clan?.name ?? '', i.clan?.ann ?? '');
+        if (changed || Date.now() - clanLife.at > 20000) clanLife.sync(game).catch(() => {});
+      })
       .catch(e => setErr(errText(e)));
+  };
+  const pick = (t: ClanTab) => {
+    setTab(t);
+    if (Date.now() - clanLife.at > 20000) clanLife.sync(game).catch(() => {});
   };
   useEffect(() => {
     if (!online) return;
@@ -321,7 +348,17 @@ export function ClanPanel({ online, openChat }: { online: boolean; openChat: () 
       {note && <div class="toastline" role="status">{note}</div>}
       {err && <section class="card"><p class="sub" role="alert">{err}</p><button class="btn small" onClick={() => reload()}>Spróbuj ponownie</button></section>}
       {!info && !err && <section class="card"><p class="sub">Wczytywanie klanu…</p></section>}
-      {info && (info.clan ? <MyClan key={info.clan.id} info={info} reload={reload} openChat={openChat} /> : <Finder info={info} reload={reload} />)}
+      {info && !info.clan && <Finder info={info} reload={reload} />}
+      {info?.clan && (
+        <>
+          <ClanSeg tab={tab} setTab={pick} />
+          {tab === 'klan' && <MyClan key={info.clan.id} info={info} reload={reload} openChat={openChat} />}
+          {tab === 'kuznia' && <ClanForgeTab game={game} />}
+          {tab === 'boss' && <ClanBossTab game={game} />}
+          {tab === 'pomoc' && <ClanHelpTab game={game} />}
+          {tab === 'sklep' && <ClanShopTab game={game} />}
+        </>
+      )}
     </>
   );
 }

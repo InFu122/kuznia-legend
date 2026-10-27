@@ -1,7 +1,7 @@
 // Kontrola zapisu wysłanego przez klienta. Odrzuca wartości, których uczciwa gra nie może wytworzyć.
 // Pochodzenie przedmiotów (ziarno wytopu, podpis Obiegu) i tempo rozwoju kuźni sprawdza save.ts.
 import {
-  B, COMPANION_MAX, LANDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
+  B, CLAN, COMPANION_MAX, LANDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
 } from '../../src/data';
 import { maxJump } from '../../src/engine/formulas';
 import type { GameState, Item, SubId } from '../../src/engine/types';
@@ -50,6 +50,9 @@ export function validateSave(s: GameState): string[] {
   if (!Array.isArray(s.obOut) || s.obOut.length > 40) bad('kolejka Obiegu');
   else s.obOut.forEach(it => checkItem(it, 'Obieg', out));
   if (typeof s.name !== 'string' || s.name.length > 16) bad('imię');
+  if (!nonNeg(s.clanCoins)) bad('Monety klanowe');
+  if (!Array.isArray(s.clanGot) || s.clanGot.length > 200 || !s.clanGot.every(x => typeof x === 'string' && x.length <= 40)) bad('nagrody klanu');
+  if (!s.clanHelp || !fin(s.clanHelp.n) || s.clanHelp.n < 0 || s.clanHelp.n > CLAN.HELP_MAX) bad('pomoc klanu');
   return out;
 }
 

@@ -8,6 +8,7 @@ Szablony składają skrypty w tym katalogu (Python 3 + Pillow tylko do podglądu
 - `weapons.py`, `armor.py` — ekwipunek 16×16, 3 poziomy zdobień (litery regionów: M metal, G złoto, L skóra, W drewno, C sukno, J klejnot),
 - `ores.py` — rudy, domieszki, rudy unikalne, zasoby,
 - `skills.py` — umiejętności 24×24, `tech.py` — badania 20×20,
+- `bosses.py` — boss klanowy 32×32 (jeden szablon, 5 palet) i Moneta klanowa,
 - `shade.py`, `shade2.py` — automatyczne cieniowanie (światło z lewej góry) i obrys.
 
 Po zmianach:

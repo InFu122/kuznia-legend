@@ -167,6 +167,7 @@ export function leaveClan(nk: nkruntime.Nakama, userId: string, username: string
     nk.storageDelete([
       { collection: 'clan_names', key: 'n_' + nameKey(g.name), userId: SYSTEM_USER },
       { collection: 'clan_names', key: 't_' + m.tag.toLowerCase(), userId: SYSTEM_USER },
+      { collection: 'clan_state', key: g.id, userId: SYSTEM_USER }, // Wspólna Kuźnia, boss i prośby (clanlife.ts)
     ]);
     return;
   }

@@ -37,6 +37,7 @@ export interface SaveMeta {
   t0: number;        // od kiedy serwer liczy tempo rozwoju kuźni
   f0: number;        // poziom kuźni w chwili t0
   pity: number[];    // numery wytopów z pewnym przeskokiem, które serwer już uznał
+  clMax?: number;    // najwyższy poziom klanu gracza (premia do czasu ulepszeń w kontroli tempa)
 }
 export interface SaveValue { state: GameState; power: number; savedAt: number; meta?: SaveMeta }
 

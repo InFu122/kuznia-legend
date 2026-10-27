@@ -6,3 +6,4 @@ export * from './sets';
 export * from './dungeons';
 export * from './companions';
 export * from './missions';
+export * from './clan';

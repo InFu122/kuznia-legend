@@ -1,4 +1,4 @@
-import { MOUNTS, PETS, TECH, TECH_IDS, companionMult, petTraitValue } from '../data';
+import { MOUNTS, PETS, TECH, TECH_IDS, clanBonus, companionMult, petTraitValue } from '../data';
 import type { GameState, Mods } from './types';
 
 export const techLvl = (s: GameState, id: keyof GameState['tech']['lv']) => s.tech.lv[id] ?? 0;
@@ -32,7 +32,7 @@ export function mountBonus(s: GameState): { dmg: number; hp: number } {
   return { dmg: Math.round(MOUNTS[id].dmg * k * 10) / 10, hp: Math.round(MOUNTS[id].hp * k * 10) / 10 };
 }
 
-/** Wszystkie premie: technologie + cecha chowańca + wierzchowiec. */
+/** Wszystkie premie: technologie + cecha chowańca + wierzchowiec + poziom klanu. */
 export function allMods(s: GameState): Mods {
   const m = techMods(s);
   const t = petTrait(s);
@@ -40,5 +40,6 @@ export function allMods(s: GameState): Mods {
   const mb = mountBonus(s);
   m.dmgPct += mb.dmg;
   m.hpPct += mb.hp;
+  for (const [k, v] of Object.entries(clanBonus(s.clanLvl || 0))) m[k as keyof Mods] += v ?? 0;
   return m;
 }

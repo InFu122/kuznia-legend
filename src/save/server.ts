@@ -1,5 +1,6 @@
 // Połączenie z serwerem gry (Nakama) przez REST. Gra potrzebuje tylko logowania urządzeniem i wywołań RPC,
 // więc obywa się bez biblioteki klienta. Bez skonfigurowanego serwera (np. w artefakcie) gra działa lokalnie.
+import type { ServerReward } from '../engine/clan';
 import type { FoundEvent, GameState, Item, SlotId } from '../engine/types';
 
 const DEVICE_KEY = 'kuznia-legend-device';
@@ -42,6 +43,26 @@ export interface ClanMember { id: string; name: string; role: ClanRole; power: n
 export interface ClanInfo {
   clan: (ClanSummary & { ann: string; annBy: string; annT: number }) | null;
   role?: ClanRole; members?: ClanMember[]; requests?: ClanMember[]; pending?: ClanSummary[]; unlocked: boolean;
+}
+
+/** Życie klanu: Wspólna Kuźnia, boss, prośby o pomoc i rudę, nagrody do odebrania (clan_sync i akcje klanu). */
+export interface ClanBoss { n: string; pal: string; lvl: number; hp: number; max: number; kills: number; mine: number; rank: number; fighters: number; top: { n: string; d: number; me: boolean }[] }
+export interface ClanHelpReq { uid: string; n: string; lvl: number; got: number; done: boolean }
+export interface ClanOreReq { id: string; n: string; ore: number; want: number; got: number }
+export interface ClanLife {
+  clan: { id: string; name: string; tag: string } | null;
+  lvl?: number; xp?: number; cur?: number; next?: number | null;
+  boss?: ClanBoss;
+  left?: { don: number; atk: number; deed: number };
+  oreNext?: number;
+  helps?: ClanHelpReq[];
+  myHelp?: { lvl: number; got: number } | null;
+  helped: { lvl: number; n: number } | null;
+  ores?: ClanOreReq[];
+  myOre?: { id: string; ore: number; want: number; got: number } | null;
+  log?: { t: number; m: string; n?: number }[];
+  rewards: ServerReward[];
+  hit?: { dmg: number; killed: boolean }; levelUp?: number; helpedNow?: number; paid?: number; given?: number;
 }
 
 export class ServerLink {
@@ -144,14 +165,14 @@ export class ServerLink {
    * Zapisuje stan. Gdy serwer ma nowszy zapis z innego urządzenia, zwraca go jako `conflict`
    * (gra wybiera nowszy po `savedAt`).
    */
-  async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number; name?: string; newName?: boolean }> {
-    const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null; name?: string; newName?: boolean }>(
+  async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number; name?: string; newName?: boolean; clanLvl?: number }> {
+    const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null; name?: string; newName?: boolean; clanLvl?: number }>(
       'save_put', { state, version: this.version });
     this.version = r.version ?? this.version;
     if (r.conflict) return { conflict: r.state ?? null, force: !!r.force };
     this.power = r.power ?? null;
     this.unverified = r.unverified ?? [];
-    return { power: r.power, name: r.name, newName: r.newName };
+    return { power: r.power, name: r.name, newName: r.newName, clanLvl: r.clanLvl };
   }
 
   /** Zmiana nicku (unikalny na serwerze, raz na dobę). */
@@ -164,6 +185,14 @@ export class ServerLink {
   clanLeave(cancel?: string): Promise<{ ok: boolean }> { return this.rpc('clan_leave', cancel ? { cancel } : {}); }
   clanManage(action: 'accept' | 'reject' | 'kick' | 'promote' | 'demote' | 'transfer', user: string): Promise<{ ok: boolean }> { return this.rpc('clan_manage', { action, user }); }
   clanSettings(s: { desc?: string; mode?: ClanMode; minPower?: number; lang?: string; ann?: string }): Promise<{ ok: boolean }> { return this.rpc('clan_settings', s); }
+  /** Życie klanu. `up` = trwające ulepszenie kuźni (poziom docelowy, 0 bez ulepszenia) — do pomocy klanu. */
+  clanSync(up: number): Promise<ClanLife> { return this.rpc('clan_sync', { up }); }
+  clanDonate(up: number): Promise<ClanLife> { return this.rpc('clan_donate', { up }); }
+  clanBossAttack(up: number): Promise<ClanLife> { return this.rpc('clan_boss_attack', { up }); }
+  clanHelpAsk(up: number): Promise<ClanLife> { return this.rpc('clan_help_ask', { up }); }
+  clanHelp(up: number, uid?: string): Promise<ClanLife> { return this.rpc('clan_help', uid ? { up, uid } : { up }); }
+  clanOreAsk(up: number, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { up, ore }); }
+  clanOreGive(up: number, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { up, id, n }); }
   /** Karta przedmiotu Mitycznego lub Boskiego na czacie klanu albo globalnym. */
   chatDrop(item: Item, global: boolean): Promise<{ ok: boolean }> { return this.rpc('chat_drop', { item, global }); }
   chatReport(r: { channel: string; message: string; sender: string; name: string; text: string }): Promise<{ ok: boolean }> { return this.rpc('chat_report', r); }

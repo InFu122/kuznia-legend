@@ -1,5 +1,5 @@
 // Zapis gry, ziarna wytopu i sprawdzanie przedmiotów.
-import { B } from '../../src/data';
+import { B, CLAN } from '../../src/data';
 import { upgradeTime } from '../../src/engine/forge';
 import { allMods, techMods } from '../../src/engine/mods';
 import { SAVE_VERSION, migrate } from '../../src/engine/state';
@@ -11,6 +11,7 @@ import {
   INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, userOf,
   type SaveMeta, type SaveValue,
 } from './common';
+import { ackRewards, clanLevelFor, readHelped } from './clanlife';
 import { ensureName } from './names';
 import { submitBoards } from './ranking';
 import { cleanName, validateSave } from './validate';
@@ -65,11 +66,18 @@ export function verifiedEq(p: Proof, s: GameState, pity: number[]): { eq: GameSt
 /** Moc liczona przez serwer z tego samego silnika co w grze — z uznanych przedmiotów. */
 export const powerOf = (s: GameState, eq: GameState['eq']) => computeStats(eq, allMods(s), extraOf(s)).power;
 
-/** Kuźnia nie może rosnąć szybciej, niż pozwalają czasy ulepszeń (liczone od pierwszego zapisu na serwerze). */
-export function paceProblem(s: GameState, meta: SaveMeta, now: number): string | null {
+/**
+ * Kuźnia nie może rosnąć szybciej, niż pozwalają czasy ulepszeń (liczone od pierwszego zapisu na serwerze).
+ * Czasy uwzględniają najwyższy poziom klanu gracza (premia do czasu ulepszeń) i pomoc klanu przy każdym poziomie.
+ */
+export function paceProblem(s: GameState, meta: SaveMeta, now: number, helped: Record<string, number> = {}): string | null {
   const target = s.forge.up || s.forge.lvl;
+  const sp: GameState = { ...s, clanLvl: Math.max(s.clanLvl || 0, meta.clMax || 0) };
   let need = 0;
-  for (let n = meta.f0 + 1; n <= target; n++) need += upgradeTime(s, n);
+  for (let n = meta.f0 + 1; n <= target; n++) {
+    const help = Math.min(CLAN.HELP_MAX, Math.max(0, helped[String(n)] || 0));
+    need += upgradeTime(sp, n) * (1 - (help * CLAN.HELP_PCT) / 100);
+  }
   if (s.forge.up) need -= Math.max(0, s.forge.left);
   if (need > (now - meta.t0) * 1.02 + PACE_SLACK_MS) {
     return `kuźnia rośnie szybciej, niż pozwalają czasy ulepszeń (poziom ${s.forge.lvl})`;
@@ -121,10 +129,13 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
     if (req.version === null || (typeof req.version === 'string' && req.version !== cur.version)) return conflict(cur, now);
     if (s.sx < (cur.value.state.sx || 0)) return conflict(cur, now, true);
   }
+  // Poziom klanu (premie) ustala serwer.
+  s.clanLvl = clanLevelFor(nk, userId);
   const target = s.forge.up || s.forge.lvl;
   let meta: SaveMeta = cur && cur.value.meta ? cur.value.meta : { t0: now, f0: target, pity: [] };
-  if (target < meta.f0) meta = { t0: now, f0: target, pity: meta.pity }; // nowa gra od zera
-  const pace = paceProblem(s, meta, now);
+  if (target < meta.f0) meta = { t0: now, f0: target, pity: meta.pity, clMax: meta.clMax }; // nowa gra od zera
+  meta.clMax = Math.max(meta.clMax || 0, s.clanLvl);
+  const pace = paceProblem(s, meta, now, readHelped(nk, userId));
   if (pace) {
     logger.warn('Odrzucony zapis gracza %s: %s', userId, pace);
     throw err('Zapis odrzucony: ' + pace, INVALID);
@@ -154,7 +165,9 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   }
   submitBoards(nk, logger, userId, ctx.username ?? '', s, power);
   updateArenaHero(nk, logger, userId, ctx.username ?? '', s, ver.eq, power);
-  return JSON.stringify({ version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, serverTime: now });
+  // Nagrody klanu zapisane w grze (numery w clanGot) znikają z kolejki do odebrania.
+  try { ackRewards(nk, userId, s.clanGot); } catch (e) { logger.warn('Kolejka nagród klanu gracza %s: %s', userId, String(e)); }
+  return JSON.stringify({ version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, serverTime: now });
 }
 
 /**

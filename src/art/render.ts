@@ -1,5 +1,5 @@
 // Rysowanie pixel artu w przeglądarce: sprite + paleta → obrazek (data URL), z pamięcią podręczną.
-import { ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from './icons-data';
+import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from './icons-data';
 import { itemPalette, itemSprite, tierOf } from './items';
 import { rgba, sprite, type Palette, type Sprite } from './pixel';
 import { halo } from './rarity';
@@ -45,3 +45,5 @@ export const setOreUrl = (k: string) => once(`s:${k}`, () => icon(SET_ORE_ICONS[
 export const resUrl = (k: string) => once(`r:${k}`, () => icon(RES_ICONS[k]));
 export const skillUrl = (k: string) => once(`k:${k}`, () => icon(SKILL_ICONS[k]));
 export const techUrl = (k: string) => once(`t:${k}`, () => icon(TECH_ICONS[k]));
+/** Boss klanowy 32×32 (paleta: golem, kamien, ogien, lod, upior). */
+export const bossUrl = (k: string) => once(`b:${k}`, () => icon(BOSS_ICONS[k] ?? BOSS_ICONS.golem));

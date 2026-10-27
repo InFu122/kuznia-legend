@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ELEM, KIND_POOL_SIZES, ORES, SETS, SKILLS, SLOTS, TECH } from '../src/data';
-import { ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
+import { CLAN_BOSSES, CLAN_SHOP, ELEM, KIND_POOL_SIZES, ORES, SETS, SKILLS, SLOTS, TECH } from '../src/data';
+import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
 import { ITEM_TEMPLATES } from '../src/art/items-data';
 import { itemPalette } from '../src/art/items';
 import { halo, RARITY_GLOW } from '../src/art/rarity';
@@ -32,7 +32,14 @@ describe('pixel art', () => {
     Object.keys(SETS).forEach(k => check(SET_ORE_ICONS[k], k));
     Object.keys(SKILLS).forEach(k => check(SKILL_ICONS[k], k));
     Object.keys(TECH).forEach(k => check(TECH_ICONS[k], k));
-    ['zloto', 'ksiega', 'zwoj', 'siodlo', 'kamien', 'pieczec', 'jajo0', 'jajo4'].forEach(k => check(RES_ICONS[k], k));
+    ['zloto', 'ksiega', 'zwoj', 'siodlo', 'kamien', 'pieczec', 'jajo0', 'jajo4', 'moneta'].forEach(k => check(RES_ICONS[k], k));
+    for (const b of CLAN_BOSSES) {
+      check(BOSS_ICONS[b.pal], b.n);
+      expect(BOSS_ICONS[b.pal].rows.length).toBe(32);
+      expect(BOSS_ICONS[b.pal].rows.every(r => r.length === 32)).toBe(true);
+    }
+    // towary sklepu klanowego mają ikony
+    for (const it of Object.values(CLAN_SHOP)) expect(it.icon.startsWith('ore') ? ORE_ICONS[it.icon.slice(3)] : RES_ICONS[it.icon], it.n).toBeDefined();
   });
 
   it('historia pul: ostatnia długość to obecna lista, a długości rosną', () => {

@@ -1,6 +1,6 @@
 # Eksport pixel artu do TypeScriptu: src/art/items-data.ts i src/art/icons-data.ts
 import sys, json; sys.path.insert(0, '.')
-import weapons, armor, more, ores, skills, tech
+import weapons, armor, more, ores, skills, tech, bosses
 OUT = sys.argv[1]
 
 def arr(rows, ind='    '):
@@ -30,9 +30,10 @@ groups = [
     ('ORE_ICONS', 'rudy (indeks jak ORES)', [(str(i), f()) for i, f in enumerate(ores.ORE_ICONS.values())]),
     ('ELEM_ICONS', 'domieszki żywiołów', [(k, f()) for k, f in ores.ELEM_ICONS.items()]),
     ('SET_ORE_ICONS', 'rudy unikalne zestawów', [(k, f()) for k, f in ores.SET_ICONS.items()]),
-    ('RES_ICONS', 'zasoby', [(k, f()) for k, f in ores.RES_ICONS.items()]),
+    ('RES_ICONS', 'zasoby', [(k, f()) for k, f in ores.RES_ICONS.items()] + [('moneta', bosses.clan_coin())]),
     ('SKILL_ICONS', 'umiejętności 24×24', [(k, f()) for k, f in skills.SKILL_ICONS.items()]),
     ('TECH_ICONS', 'badania 20×20', [(k, f()) for k, f in tech.TECH_ICONS.items()]),
+    ('BOSS_ICONS', 'bossowie klanowi 32×32', [(k, (bosses.boss_template(), bosses.boss_palette(k))) for k in bosses.PALS]),
 ]
 lines = ["// Wygenerowane przez tools/art/export.py — ikony z własną paletą.",
          "export interface IconData { rows: string[]; pal: Record<string, string> }"]

@@ -1,5 +1,6 @@
 // Typy stanu gry. Silnik nie używa DOM ani zegara przeglądarki, więc da się go
 // później uruchomić także na serwerze (Nakama, środowisko TypeScript).
+import type { ClanShopId } from '../data/clan';
 
 export type SlotId = 'bron' | 'helm' | 'zbroja' | 'rekawice' | 'buty' | 'pas' | 'pierscien' | 'amulet';
 export type ElemKey = 'zar' | 'szron' | 'burz' | 'jad' | 'cien' | 'jasn';
@@ -33,6 +34,7 @@ export interface Reward {
   saddles?: number;
   stones?: number;
   seals?: number;
+  coins?: number;                           // Monety klanowe
 }
 
 export interface LabDoorOpt { kind: LabDoorKind; bless?: number }
@@ -136,6 +138,11 @@ export interface GameState {
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
   obIn: Item[];                                        // przedmioty z Obiegu od serwera, czekające na skrzynię bossa lub Zbrojownię
   obOut: Item[];                                       // twoje przedmioty do wysłania do Obiegu
+  clanLvl: number;                                     // poziom klanu (ustawia serwer przy zapisie; 0 = bez klanu)
+  clanCoins: number;                                   // Monety klanowe
+  clanShop: { week: string; n: Partial<Record<ClanShopId, number>> }; // zakupy w sklepie klanowym w tym tygodniu
+  clanHelp: { lvl: number; n: number };                // pomoc klanu już wliczona do ulepszenia kuźni na poziom `lvl`
+  clanGot: string[];                                   // numery odebranych nagród od serwera (żeby żadnej nie wziąć dwa razy)
   speed: number;
   savedAt: number;
   lastSeen: number;

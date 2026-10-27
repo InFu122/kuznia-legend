@@ -1,7 +1,7 @@
 // Galeria pixel artu (strona HTML do przeglądu): npx vite-node tools/art-gallery.ts plik.html
 import { writeFileSync } from 'node:fs';
-import { ELEM, ORES, RAR, SETS, SKILLS, SLOTS, TECH, TECH_BRANCHES } from '../src/data';
-import { ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
+import { CLAN_BOSSES, ELEM, ORES, RAR, SETS, SKILLS, SLOTS, TECH, TECH_BRANCHES } from '../src/data';
+import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
 import { ITEM_KINDS, METALS, itemPalette, itemSprite, tierOf } from '../src/art/items';
 import { rgba, sprite, type Palette, type Sprite } from '../src/art/pixel';
 import { halo } from '../src/art/rarity';
@@ -16,7 +16,7 @@ const tile = (src: string, name: string, sub = '', size = 16) =>
 
 const RES_N: Record<string, string> = {
   zloto: 'Złoto', ksiega: 'Księga Wiedzy', zwoj: 'Zwój zaklęć', siodlo: 'Siodło', kamien: 'Kamień', pieczec: 'Pieczęć Legendy',
-  jajo0: 'Jajo zwykłe', jajo1: 'Jajo niepospolite', jajo2: 'Jajo rzadkie', jajo3: 'Jajo epickie', jajo4: 'Jajo legendarne',
+  moneta: 'Moneta klanowa', jajo0: 'Jajo zwykłe', jajo1: 'Jajo niepospolite', jajo2: 'Jajo rzadkie', jajo3: 'Jajo epickie', jajo4: 'Jajo legendarne',
 };
 const TIER_N = ['proste', 'zdobione', 'mistrzowskie'];
 
@@ -25,6 +25,7 @@ const elems = (Object.keys(ELEM) as (keyof typeof ELEM)[]).map(k => tile(ic(ELEM
 const sets = (Object.keys(SETS) as (keyof typeof SETS)[]).map(k => tile(ic(SET_ORE_ICONS[k]), SETS[k].ore, SETS[k].n)).join('');
 const res = Object.keys(RES_ICONS).map(k => tile(ic(RES_ICONS[k]), RES_N[k] ?? k)).join('');
 const skills = (Object.keys(SKILLS) as (keyof typeof SKILLS)[]).map(k => tile(ic(SKILL_ICONS[k]), SKILLS[k].n, RAR[SKILLS[k].r].n, 24)).join('');
+const bosses = CLAN_BOSSES.map((b, i) => tile(ic(BOSS_ICONS[b.pal]), b.n, `boss klanowy ${i + 1}.`, 32)).join('');
 const techs = TECH_BRANCHES.map(b => `<div class="branch"><h3>${esc(b.n)}</h3><div class="tiles">${
   (Object.keys(TECH) as (keyof typeof TECH)[]).filter(k => TECH[k].branch === b.id).map(k => tile(ic(TECH_ICONS[k]), TECH[k].n, '', 20)).join('')}</div></div>`).join('');
 
@@ -123,6 +124,7 @@ tr.grp th{text-align:left; font-size:12px; letter-spacing:.1em; text-transform:u
     <div class="rar" aria-label="Kolory rzadkości (ramki w grze)">${RAR.map((r, i) => `<span style="--c:${['#a6afb9', '#63c470', '#55a2f2', '#b281f2', '#f39d40', '#ef5d56', '#f5da74'][i]}">${esc(r.n)}</span>`).join('')}</div>
   </section>
   <section><h2>Umiejętności</h2><p>Ikony 24×24 z tłem w barwie żywiołu.</p><div class="tiles">${skills}</div></section>
+  <section><h2>Bossowie klanowi</h2><p>Kolosy 32×32 — jeden szablon w pięciu paletach; po każdym pokonaniu przychodzi następny, silniejszy.</p><div class="tiles">${bosses}</div></section>
   <section><h2>Badania</h2><p>Odznaki 20×20; kolor ramki to gałąź Akademii Kowalskiej.</p>${techs}</section>
 </div>
 <script>
