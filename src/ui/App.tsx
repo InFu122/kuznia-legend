@@ -23,6 +23,7 @@ export interface SaveInfo {
   error?: string;              // serwer odrzucił zapis
   reason?: string;             // dlaczego nie ma połączenia
   retry?: () => void;          // połącz ponownie teraz
+  redeem?: (code: string) => Promise<void>;  // przejmij konto z kodu przeniesienia
 }
 
 const SAVE_LABEL: Record<SaveInfo['mode'], string> = {
@@ -120,7 +121,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
-          {tab === 'lochy' && <DungeonPanel game={game} />}
+          {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} />}
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
         </main>
       </div>

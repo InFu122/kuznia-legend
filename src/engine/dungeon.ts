@@ -10,7 +10,7 @@ import { Dstar, Hstar, early, goldWave, legStage, todayStr } from './formulas';
 import { rollSubs } from './forge';
 import { addFame } from './legend';
 import { allMods } from './mods';
-import { obiegItem } from './obieg';
+import { obiegItem, takeObieg } from './obieg';
 import { pick, ri } from './rng';
 import { fullStats, invalidate } from './stats';
 import { grant } from './reward';
@@ -57,6 +57,11 @@ export function kryptaRule(now: number): KryptaRuleId {
   return KRYPTA_ORDER[((week % 4) + 4) % 4];
 }
 
+/** Duch strzegący skrzyni w Zbrojowni: z serwerem to kowal przedmiotu, który leży w skrzyni. */
+function ghostName(ctx: Ctx): string {
+  return (ctx.net && ctx.s.obIn[0]?.smith) || pick(ctx.rng, FAKE_PLAYERS);
+}
+
 export function startDungeon(ctx: Ctx, id: DungId, land = -1): boolean {
   const { s, b } = ctx;
   if (b.mode === 'dung' || !dungUnlocked(ctx, id) || dungKeys(ctx, id) < 1) return false;
@@ -67,7 +72,7 @@ export function startDungeon(ctx: Ctx, id: DungId, land = -1): boolean {
     id, floor: id === 'wieza' ? s.dungeons.wieza.best + 1 : 1, loot: {}, tier: dungTier(ctx),
     timeLeft: id === 'skarbiec' ? SKARBIEC_MS : 0, kills: 0, el: id === 'oltarze' ? elementOfDay(ctx.now()) : null, bossLand: land,
     bless: { dmg: 0, hp: 0, ls: 0 }, doors: null, elite: false, items: [], rule: id === 'krypta' ? kryptaRule(ctx.now()) : null,
-    ghost: id === 'zbrojownia' ? pick(ctx.rng, FAKE_PLAYERS) : undefined,
+    ghost: id === 'zbrojownia' ? ghostName(ctx) : undefined,
   };
   b.enemy = null;
   if (id === 'krypta') invalidate(ctx); // walczą tylko przedmioty z legendą
@@ -247,13 +252,21 @@ export function dungFloor(ctx: Ctx): void {
       return;
     }
     case 'zbrojownia': {
-      const it = obiegItem(ctx);
-      it.smith = d.ghost ?? it.smith;
-      it.owners = [it.smith, ...it.owners.filter(o => o !== it.smith)].slice(0, 3);
-      if (ctx.rng.next() < 0.5 && it.r < 6) { it.r++; it.subs = rollSubs(ctx, it.r); }
-      it.fame = ri(ctx.rng, 1000, 6000);
-      const t = (Object.keys(it.kills)[0] ?? 'Bestie') as FoeType;
-      it.kills = { [t]: it.fame - B.FAME_BOSS };
+      // Z serwerem skrzynia kryje prawdziwy przedmiot z Obiegu (podpisany, więc bez zmian w statystykach);
+      // bez serwera albo przy pustej kolejce — przedmiot ducha, z szansą na wyższą rzadkość.
+      const real = ctx.net ? takeObieg(ctx) : null;
+      const it = real ?? obiegItem(ctx);
+      if (!real) {
+        it.smith = d.ghost ?? it.smith;
+        it.owners = [it.smith, ...it.owners.filter(o => o !== it.smith)].slice(0, 3);
+        if (ctx.rng.next() < 0.5 && it.r < 6) { it.r++; it.subs = rollSubs(ctx.rng, it.r); }
+      }
+      const fame = ri(ctx.rng, 1000, 6000);
+      if (fame > it.fame) {
+        const t = (Object.keys(it.kills)[0] ?? 'Bestie') as FoeType;
+        it.fame = fame;
+        it.kills = { [t]: fame - B.FAME_BOSS };
+      }
       it.ls = legStage(it.fame);
       d.items.push(it);
       s.dungeons.zbrojownia.best = Math.max(s.dungeons.zbrojownia.best, d.floor);
@@ -261,7 +274,7 @@ export function dungFloor(ctx: Ctx): void {
       b.heroHp = Math.min(b.heroMax, b.heroHp + 0.3 * b.heroMax);
       if (d.floor >= ZBROJOWNIA_CHESTS) { dungEnd(ctx, false); return; }
       d.floor++;
-      d.ghost = pick(ctx.rng, FAKE_PLAYERS);
+      d.ghost = ghostName(ctx);
       b.pause = 400;
       return;
     }

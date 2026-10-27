@@ -9,11 +9,13 @@ import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
 import type { ModalData } from '../engine/types';
 import { ItemCard } from './ItemCard';
+import { hasProof } from '../engine/verify';
 import { fmt, pct, tfmt } from './format';
 import { Dist } from './panels/Forge';
 import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
 import { RankingView } from './panels/Ranking';
+import { ArenaView } from './panels/Pvp';
 
 export function ModalShell({ locked, onClose, children }: { locked: boolean; onClose: () => void; children: ComponentChildren }) {
   return (
@@ -141,7 +143,7 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
       const worn = s.eq[m.item.slot] === m.item;
       return (
         <>
-          <ItemCard it={m.item} history />
+          <ItemCard it={m.item} history proof={game.net && worn ? hasProof(m.item) : undefined} />
           {worn && s.seals > 0 && (
             <button class="btn" onClick={() => game.useSeal(m.item.slot)}>Użyj Pieczęci Legendy (+{SEAL_FAME} Sławy) · masz {s.seals}</button>
           )}
@@ -171,6 +173,8 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
       return <MissionsView game={game} initial={m.tab} close={close} />;
     case 'ranking':
       return <RankingView close={close} />;
+    case 'arena':
+      return <ArenaView game={game} close={close} />;
     case 'draw': {
       const name = m.what === 'skill' ? SKILLS[m.id as SkillId].n : m.what === 'pet' ? PETS[m.id as PetId].n : MOUNTS[m.id as MountId].n;
       const r = m.what === 'skill' ? SKILLS[m.id as SkillId].r : m.what === 'pet' ? PETS[m.id as PetId].r : MOUNTS[m.id as MountId].r;

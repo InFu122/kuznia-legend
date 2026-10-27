@@ -4,7 +4,7 @@ import { dungFloor, dungEnd, spawnDung } from './dungeon';
 import { allMods } from './mods';
 import { Dstar, Hstar, curG, early, gOf, goldWave } from './formulas';
 import { addFame } from './legend';
-import { obiegItem } from './obieg';
+import { takeObieg } from './obieg';
 import { sell } from './forge';
 import { pick, ri, rnd } from './rng';
 import { invalidate, stats } from './stats';
@@ -256,7 +256,7 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   if (set && uniq) s.uniq[set] = (s.uniq[set] ?? 0) + uniq;
   const extra = bossExtras(ctx, land, first);
   grant(ctx, extra);
-  const found = ctx.rng.next() < B.OBIEG_FIND_FROM_BOSS ? obiegItem(ctx) : null;
+  const found = ctx.rng.next() < B.OBIEG_FIND_FROM_BOSS ? takeObieg(ctx) : null;
   if (found) { if (!s.pending) s.pending = found; else sell(ctx, found, true); }
   b.enemy = null;
   b.heroHp = b.heroMax;

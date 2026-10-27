@@ -328,3 +328,18 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 /* Etap 3a: serwer i rankingi */
 .save-badge.offline, .save-badge.connecting{color:#c9a46a}
 .otable.rank td.oname small{display:block; font-size:11px; color:var(--ash); font-weight:400}
+/* Etap 3b: arena, przeniesienie konta, pochodzenie przedmiotów */
+.seg.seg4{margin:6px 0 4px}
+.inote{font-size:12px; color:var(--ash); border-left:2px solid var(--blood); padding-left:8px}
+.fighters.duel{margin:6px 0 2px}
+.fighters.duel .vs{padding-bottom:30px; font-size:16px}
+.duel-result{display:flex; flex-direction:column; gap:3px; text-align:center; border-radius:12px; padding:12px; background:var(--plate-2); border:1px solid var(--rivet)}
+.duel-result b{font-family:var(--f-display); font-size:26px; font-weight:500}
+.duel-result.win b{color:var(--good)}
+.duel-result.lose b{color:var(--blood)}
+.duel-result span{font-size:14px; font-variant-numeric:tabular-nums}
+.duel-result small{font-size:12px; color:var(--ash)}
+.tcode{font-family:var(--f-display); font-size:34px; letter-spacing:.12em; color:var(--straw); text-align:center; font-variant-numeric:tabular-nums; margin:8px 0 2px; user-select:all}
+.tcode-in{font-size:18px; letter-spacing:.12em; text-transform:uppercase; text-align:center}
+.confirm{display:flex; flex-direction:column; gap:8px; border:1px solid var(--blood); border-radius:10px; padding:10px 12px; font-size:13px}
+.btnrow{display:flex; gap:8px; flex-wrap:wrap}

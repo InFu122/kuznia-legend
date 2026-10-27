@@ -1,5 +1,5 @@
 // Kontrola zapisu wysłanego przez klienta. Odrzuca wartości, których uczciwa gra nie może wytworzyć.
-// Pełna weryfikacja postępu (tempo zdobywania zasobów, wytop na serwerze) dochodzi w etapie 3b.
+// Pochodzenie przedmiotów (ziarno wytopu, podpis Obiegu) i tempo rozwoju kuźni sprawdza save.ts.
 import {
   B, COMPANION_MAX, LANDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
 } from '../../src/data';
@@ -43,6 +43,12 @@ export function validateSave(s: GameState): string[] {
   for (const [slot, it] of Object.entries(s.eq)) if (it) { checkItem(it, `ekwipunek/${slot}`, out); if (it.slot !== slot) bad(`ekwipunek/${slot}: zły slot`); }
   if (s.pending) checkItem(s.pending, 'wytop', out);
   for (const it of s.found) checkItem(it, 'znalezisko', out);
+  if (!Number.isInteger(s.sx) || s.sx < 0) bad('numer wytopu');
+  if (!Array.isArray(s.seeds) || s.seeds.length > 2 * B.SEEDS_RESERVE || !s.seeds.every(x => Number.isInteger(x) && x >= 0 && x <= 0xffffffff)) bad('ziarna wytopu');
+  if (!Array.isArray(s.obIn) || s.obIn.length > B.OBIEG_STOCK + 4) bad('zapas Obiegu');
+  else s.obIn.forEach(it => checkItem(it, 'Obieg', out));
+  if (!Array.isArray(s.obOut) || s.obOut.length > 40) bad('kolejka Obiegu');
+  else s.obOut.forEach(it => checkItem(it, 'Obieg', out));
   if (typeof s.name !== 'string' || s.name.length > 16) bad('imię');
   return out;
 }

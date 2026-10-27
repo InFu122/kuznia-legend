@@ -5,9 +5,10 @@ import { SUBS } from '../data';
 import { f1, fmt } from './format';
 import { SlotIcon } from './icons';
 
-interface Props { it: Item; delta?: number; reveal?: boolean; history?: boolean }
+/** `proof` (tylko z serwerem): czy serwer może potwierdzić pochodzenie przedmiotu. */
+interface Props { it: Item; delta?: number; reveal?: boolean; history?: boolean; proof?: boolean }
 
-export function ItemCard({ it, delta, reveal, history }: Props) {
+export function ItemCard({ it, delta, reveal, history, proof }: Props) {
   const S = SLOTS[it.slot];
   const st = it.ls || 0;
   const next = LEGEND[Math.min(3, st + 1)];
@@ -38,9 +39,10 @@ export function ItemCard({ it, delta, reveal, history }: Props) {
         {history && (kills.length > 0 || it.bosses > 0) && <span>Czyny: {kills.join(' · ')}{it.bosses ? ' · bossowie: ' + it.bosses : ''}</span>}
       </div>
       <div class="isign">
-        Kowal: <b>{it.smith}</b> · {ORES[it.ore].n} · {it.land}
+        Kowal: <b>{it.smith}</b>{it.npc ? ' (kowal-widmo)' : ''} · {ORES[it.ore].n} · {it.land}
         {history && it.owners.length > 1 && <><br />Właściciele: {it.owners.join(' → ')}</>}
       </div>
+      {proof === false && <div class="inote">Serwer nie zna pochodzenia tego przedmiotu (wykuty przed aktualizacją albo bez połączenia) — nie liczy się do rankingu Mocy i na arenie.</div>}
     </div>
   );
 }

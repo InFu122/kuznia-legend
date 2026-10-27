@@ -1,6 +1,6 @@
 // Połączenie z serwerem gry (Nakama) przez REST. Gra potrzebuje tylko logowania urządzeniem i wywołań RPC,
 // więc obywa się bez biblioteki klienta. Bez skonfigurowanego serwera (np. w artefakcie) gra działa lokalnie.
-import type { GameState } from '../engine/types';
+import type { FoundEvent, GameState, Item, SlotId } from '../engine/types';
 
 const DEVICE_KEY = 'kuznia-legend-device';
 const TIMEOUT_MS = 10000;
@@ -21,7 +21,19 @@ export class ServerError extends Error {
 
 export interface RankRow { rank: number; name: string; score: number; sub: number; land: string; me: boolean }
 export interface Ranking { board: string; title: string; records: RankRow[]; mine: RankRow | null }
-export type BoardId = 'moc' | 'wieza' | 'postep';
+export type BoardId = 'moc' | 'wieza' | 'postep' | 'arena';
+
+export interface ArenaOpp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean }
+export interface ArenaState {
+  rating: number; rank: number; left: number; max: number; wins: number; losses: number; power: number;
+  opp: ArenaOpp[]; log: { who: string; won: boolean; d: number; t: number }[];
+}
+export interface ArenaFight extends ArenaState {
+  win: boolean; ms: number; frames: [number, number][]; crits: [number, number]; skills: [number, number];
+  me: { name: string; power: number }; foe: { name: string; power: number; ghost: boolean }; d: number; gold: number;
+}
+
+const newDeviceId = () => 'kl-' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
 
 export class ServerLink {
   private token: string | null = null;
@@ -33,16 +45,22 @@ export class ServerLink {
 
   constructor(private readonly cfg: ServerConfig) {}
 
+  /** Moc bohatera policzona przez serwer (tylko z przedmiotów, które serwer uznał) i miejsca z pozostałymi. */
+  power: number | null = null;
+  unverified: SlotId[] = [];
+  private tmpDevice: string | null = null;
+
   private deviceId(): string {
     try {
       let id = localStorage.getItem(DEVICE_KEY);
       if (!id) {
-        id = 'kl-' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
+        id = newDeviceId();
         localStorage.setItem(DEVICE_KEY, id);
       }
       return id;
     } catch {
-      return 'kl-tmp-' + Math.random().toString(36).slice(2);
+      this.tmpDevice ??= newDeviceId();
+      return this.tmpDevice;
     }
   }
 
@@ -98,16 +116,49 @@ export class ServerLink {
    * Zapisuje stan. Gdy serwer ma nowszy zapis z innego urządzenia, zwraca go jako `conflict`
    * (gra wybiera nowszy po `savedAt`).
    */
-  async save(state: GameState): Promise<{ conflict?: GameState | null; power?: number }> {
-    const r = await this.rpc<{ version?: string; power?: number; conflict?: boolean; state?: GameState | null }>(
+  async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number }> {
+    const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null }>(
       'save_put', { state, version: this.version });
     this.version = r.version ?? this.version;
-    if (r.conflict) return { conflict: r.state ?? null };
+    if (r.conflict) return { conflict: r.state ?? null, force: !!r.force };
+    this.power = r.power ?? null;
+    this.unverified = r.unverified ?? [];
     return { power: r.power };
   }
 
   ranking(board: BoardId): Promise<Ranking> {
     return this.rpc<Ranking>('ranking', { board, limit: 30 });
+  }
+
+  /** Ziarna wytopu od numeru `from`. */
+  seeds(from: number, n: number): Promise<{ from: number; seeds: number[] }> {
+    return this.rpc('seeds', { from, n });
+  }
+
+  /** Wysyła sprzedane przedmioty do Obiegu, bierze znaleziska i wieści. */
+  obiegSync(out: Item[], want: number): Promise<{ accepted: number; items: Item[]; events: FoundEvent[]; real: number }> {
+    return this.rpc('obieg_sync', { out, want });
+  }
+
+  arenaList(refresh = false): Promise<ArenaState> { return this.rpc('arena_list', { refresh }); }
+  arenaFight(i: number, id: string): Promise<ArenaFight> { return this.rpc('arena_fight', { i, id }); }
+
+  /** Kod do przeniesienia tego konta na inne urządzenie (ważny 10 minut). */
+  transferCode(): Promise<{ code: string; exp: number }> { return this.rpc('transfer_code', {}); }
+
+  /**
+   * Przejmuje konto z kodu: serwer dołącza nowy identyfikator tego urządzenia do konta z kodu,
+   * a gra loguje się na nie od nowa i zwraca jego zapis.
+   */
+  async redeem(code: string): Promise<GameState | null> {
+    const device = newDeviceId();
+    await this.rpc('transfer_redeem', { code, device });
+    try { localStorage.setItem(DEVICE_KEY, device); } catch { this.tmpDevice = device; }
+    this.token = null;
+    this.version = null;
+    this.power = null;
+    this.unverified = [];
+    return this.load();
   }
 }
 

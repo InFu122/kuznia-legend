@@ -1,4 +1,4 @@
-// Sprawdza, czy serwer gry działa: logowanie, czas, zapis, ranking.
+// Sprawdza, czy serwer gry działa: logowanie, czas, zapis, ziarna wytopu, Obieg, ranking.
 // Użycie: node tools/server-check.mjs http://ADRES-SERWERA:8080 KLUCZ_SERWERA
 const [base = 'http://127.0.0.1:8080', key = 'defaultkey'] = process.argv.slice(2);
 const url = base.replace(/\/$/, '');
@@ -24,6 +24,8 @@ const ok = await step('logowanie urządzeniem', async () => {
 if (ok) {
   await step('czas serwera', async () => new Date((await rpc('time', {})).serverTime).toLocaleString('pl-PL'));
   await step('odczyt zapisu', async () => ((await rpc('save_get', {})).state ? 'jest zapis' : 'brak zapisu (nowe konto)'));
+  await step('ziarna wytopu', async () => `${(await rpc('seeds', { from: 0, n: 3 })).seeds.length} z 3`);
   await step('ranking Mocy', async () => `${(await rpc('ranking', { board: 'moc' })).records.length} graczy`);
+  await step('ranking areny', async () => `${(await rpc('ranking', { board: 'arena' })).records.length} graczy`);
 }
 process.exit(ok ? 0 : 1);

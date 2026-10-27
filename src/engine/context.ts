@@ -10,6 +10,8 @@ export interface Ctx {
   emit: (e: GameEvent) => void;
   cache: Stats | null;
   dirty: boolean;
+  /** Gra połączona z serwerem: prawdziwy Wielki Obieg zamiast symulowanego. */
+  net: boolean;
 }
 
 export const toast = (ctx: Ctx, msg: string, kind?: 'good' | 'bad') => ctx.emit({ t: 'toast', msg, kind });

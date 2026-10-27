@@ -6,9 +6,10 @@ import type { Battle, DungId, Fx, GameState } from './types';
  * 2 — poziom przedmiotu liczony z poziomu kuźni (wcześniej z postępu w kampanii),
  * 3 — technologie, Księgi Wiedzy, rudy unikalne, wiele lochów,
  * 4 — umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy, kolejne lochy,
- * 5 — misje, kalendarz logowania, samouczek, ustawienia dźwięku.
+ * 5 — misje, kalendarz logowania, samouczek, ustawienia dźwięku,
+ * 6 — ziarna wytopu z serwera, prawdziwy Wielki Obieg.
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];
@@ -30,6 +31,7 @@ export function newState(now: number): GameState {
     missions: { day: '', daily: [], chest: false, week: '', weekly: [] }, login: { last: '', idx: 0 }, tut: 0,
     opts: { sound: true, vol: 0.6 },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0 },
+    sx: 0, seeds: [], obIn: [], obOut: [],
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
 }
@@ -74,8 +76,12 @@ export function migrate(raw: unknown, now: number): GameState {
   out.login = Object.assign(fresh.login, isObj(raw.login) ? raw.login : {});
   out.opts = Object.assign(fresh.opts, isObj(raw.opts) ? raw.opts : {});
   if (typeof out.tut !== 'number') out.tut = 0;
+  if (typeof out.sx !== 'number' || !(out.sx >= 0)) out.sx = 0;
+  if (!Array.isArray(out.seeds)) out.seeds = [];
+  if (!Array.isArray(out.obIn)) out.obIn = [];
+  if (!Array.isArray(out.obOut)) out.obOut = [];
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
-  for (const it of [...Object.values(out.eq), out.pending, ...out.found]) {
+  for (const it of [...Object.values(out.eq), out.pending, ...out.found, ...out.obIn, ...out.obOut]) {
     if (!it) continue;
     it.flvl ??= 0; it.forced ??= ''; it.kills ??= {}; it.bosses ??= 0; it.owners ??= [it.smith]; it.obieg ??= false; it.ls ??= 0; it.aw ??= null;
     it.set ??= null;

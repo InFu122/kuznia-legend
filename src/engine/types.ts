@@ -81,7 +81,13 @@ export interface Item {
   owners: string[];
   obieg: boolean;       // znaleziony w Wielkim Obiegu
   set: SetId | null;    // część zestawu (z rudy unikalnej)
+  sx?: number;          // numer wytopu z ziarnem serwera (serwer może odtworzyć losowanie)
+  sig?: string;         // podpis serwera (przedmiot z Wielkiego Obiegu)
+  npc?: boolean;        // wykuł go kowal-widmo (serwer uzupełnia Obieg, gdy brakuje przedmiotów graczy)
 }
+
+/** Wieść z serwera: inny gracz znalazł twój przedmiot w Wielkim Obiegu. */
+export interface FoundEvent { who: string; n: string; r: number }
 
 export interface Companion { lvl: number; stars: number }
 
@@ -126,6 +132,10 @@ export interface GameState {
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
   opts: { sound: boolean; vol: number };
   stats: { smelted: number; jumps: number; kills: number; bosses: number };
+  sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
+  seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
+  obIn: Item[];                                        // przedmioty z Obiegu od serwera, czekające na skrzynię bossa lub Zbrojownię
+  obOut: Item[];                                       // twoje przedmioty do wysłania do Obiegu
   speed: number;
   savedAt: number;
   lastSeen: number;
@@ -201,6 +211,7 @@ export type ModalData =
   | { kind: 'found' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
   | { kind: 'ranking' }
+  | { kind: 'arena' }
   | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }

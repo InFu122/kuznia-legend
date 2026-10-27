@@ -5,7 +5,7 @@ import { checkLegend } from './legend';
 import { allMods } from './mods';
 import { maybeObieg } from './obieg';
 import { track } from './missions';
-import { pick, ri, rnd, shuffle } from './rng';
+import { mulberry32, ri, rnd, shuffle, type Rng } from './rng';
 import { invalidate, powerDelta, stats } from './stats';
 import type { ElemKey, GameState, Item, SetId, SlotId } from './types';
 
@@ -21,34 +21,47 @@ export const upgradeCost = (s: GameState, n: number) => Math.round(upCost(n) * (
 export const upgradeTime = (s: GameState, n: number) => upTime(n) * (1 - allMods(s).forgeTime / 100);
 
 /** Część zestawu trafia w miejsce, w którym nie masz jeszcze tego zestawu. */
-function setSlot(ctx: Ctx, set: SetId): SlotId {
-  const free = SLOT_ORDER.filter(sl => ctx.s.eq[sl]?.set !== set);
-  return pick(ctx.rng, free.length ? free : SLOT_ORDER);
+function setSlot(s: GameState, set: SetId, u: number): SlotId {
+  const free = SLOT_ORDER.filter(sl => s.eq[sl]?.set !== set);
+  const list = free.length ? free : SLOT_ORDER;
+  return list[Math.floor(u * list.length)];
 }
 
-export function rollSubs(ctx: Ctx, r: number) {
-  return shuffle(ctx.rng, SUB_IDS).slice(0, RAR[r].s).map(id => ({
-    id, v: Math.round(rnd(ctx.rng, SUBS[id].lo, SUBS[id].hi) * (1 + 0.15 * r) * 10) / 10,
+export function rollSubs(rng: Rng, r: number) {
+  return shuffle(rng, SUB_IDS).slice(0, RAR[r].s).map(id => ({
+    id, v: Math.round(rnd(rng, SUBS[id].lo, SUBS[id].hi) * (1 + 0.15 * r) * 10) / 10,
   }));
+}
+
+/**
+ * Losowania jednego wytopu — zawsze w tej samej kolejności, żeby serwer mógł odtworzyć wytop z ziarna:
+ * oszczędność rudy, przeskok, miejsce, rodzaj, poziom, a potem statystyki dodatkowe.
+ */
+export function smeltDraws(rng: Rng) {
+  return { save: rng.next() * 100, roll: rng.next() * 100, slot: rng.next(), kind: rng.next(), lvl: ri(rng, 0, 2) };
 }
 
 /**
  * Wytop: zużywa 1 rudę (i opcjonalnie 1 domieszkę) i zwraca nowy przedmiot.
  * Ruda wyznacza minimalną rzadkość; poziom kuźni daje szansę na przeskok o 1 lub 2.
+ * Z serwerem każdy wytop ma własne ziarno (numer `sx`) — tego samego wytopu nie da się powtórzyć z innym wynikiem.
  */
 export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   const s = ctx.s;
   if (!canSmelt(ctx, ore)) return null;
+  const seeded = s.seeds.length > 0;
+  const rng = seeded ? mulberry32(s.seeds.shift() as number) : ctx.rng;
+  const sx = seeded ? s.sx++ : undefined;
+  const d = smeltDraws(rng);
   const mods = allMods(s);
-  if (ctx.rng.next() * 100 >= mods.saveOre) s.ores[ore]--;
+  if (d.save >= mods.saveOre) s.ores[ore]--;
   const set = uniqActive(s);
   if (set) s.uniq[set] = (s.uniq[set] ?? 0) - 1;
   const [p1, p2] = jumpChances(s.forge.lvl, mods.jumpRel);
   const mj = maxJump(ore);
-  const roll = ctx.rng.next() * 100;
   let jump = 0;
-  if (mj >= 2 && roll < p2) jump = 2;
-  else if (mj >= 1 && roll < p1 + p2) jump = 1;
+  if (mj >= 2 && d.roll < p2) jump = 2;
+  else if (mj >= 1 && d.roll < p1 + p2) jump = 1;
   let forced: Item['forced'] = '';
   if (s.stats.smelted === 2 && mj >= 1 && jump === 0) { jump = 1; forced = 'tut'; } // samouczek
   if (jump === 0 && mj >= 1 && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
@@ -57,8 +70,9 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   const r = Math.min(6, ORES[ore].floor + jump);
 
   const first = s.stats.smelted === 0;
-  const slot: SlotId = first ? 'bron' : set ? setSlot(ctx, set) : pick(ctx.rng, SLOT_ORDER);
-  const kind = first ? SLOTS[slot].kinds[0] : pick(ctx.rng, SLOTS[slot].kinds);
+  const slot: SlotId = first ? 'bron' : set ? setSlot(s, set, d.slot) : SLOT_ORDER[Math.floor(d.slot * SLOT_ORDER.length)];
+  const kinds = SLOTS[slot].kinds;
+  const kind = first ? kinds[0] : kinds[Math.floor(d.kind * kinds.length)];
   let elKey: ElemKey | null = null;
   if (el && s.forge.lvl >= B.ELEM_FORGE_LVL && (s.els[el] ?? 0) > 0) { s.els[el] = (s.els[el] ?? 0) - 1; elKey = el; }
   s.stats.smelted++;
@@ -66,11 +80,13 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   track(ctx, 'smelt');
   if (jump) track(ctx, 'jump');
   ctx.dirty = true;
-  return {
-    id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, ri(ctx.rng, 0, 2)),
-    subs: rollSubs(ctx, r), el: elKey, jump, flvl: s.forge.lvl, forced,
+  const it: Item = {
+    id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, d.lvl),
+    subs: rollSubs(rng, r), el: elKey, jump, flvl: s.forge.lvl, forced,
     smith: s.name, land: LANDS[s.cur.land].n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
+  if (sx !== undefined) it.sx = sx;
+  return it;
 }
 
 /** Zakłada przedmiot. Stary przedmiot z legendą zostaje przetopiony i oddaje połowę Sławy. */

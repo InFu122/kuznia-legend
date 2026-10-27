@@ -1,4 +1,4 @@
-import { DUNGEONS, DUNG_ORDER, DUNG_SOON, ELEM, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
+import { B, DUNGEONS, DUNG_ORDER, DUNG_SOON, ELEM, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
 import { elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
 import type { Game } from '../../engine/game';
 import type { DungId } from '../../engine/types';
@@ -28,13 +28,35 @@ function rewardNow(game: Game, id: DungId): string {
   }
 }
 
-export function DungeonPanel({ game }: { game: Game }) {
+/** Arena z innymi graczami — tylko z serwerem gry. */
+function ArenaCard({ game, online, onArena }: { game: Game; online: boolean; onArena: () => void }) {
+  const open = game.s.maxLand >= B.ARENA_UNLOCK_LAND;
+  return (
+    <section class={`card dung${open ? '' : ' locked'}`} aria-label="Arena">
+      <div class="eyebrow">Gracze · ocena i złoto</div>
+      <div class="row">
+        <div class="h">Arena</div>
+        {open && <span class="keys">{B.ARENA_FIGHTS} walk dziennie</span>}
+      </div>
+      <p class="sub">Walczysz z kopiami bohaterów innych graczy — ekwipunek, umiejętności i chowaniec z ich ostatniego zapisu. Walkę liczy serwer.</p>
+      {!open ? <div class="lockline">Odblokujesz po pokonaniu bossa krainy {LANDS[0].n}</div> : (
+        <div style={{ marginTop: '10px' }}>
+          <button class="btn primary" disabled={!online} onClick={onArena}>Wejdź na arenę</button>
+          {!online && <span class="sub" style={{ marginLeft: '10px' }}>Potrzebne połączenie z serwerem.</span>}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function DungeonPanel({ game, online = false, onArena }: { game: Game; online?: boolean; onArena?: () => void }) {
   const run = game.b.mode === 'dung' ? game.b.dung : null;
   const enter = (id: DungId, land?: number) => {
     if (game.startDung(id, land)) window.scrollTo?.({ top: 0, behavior: 'smooth' });
   };
   return (
     <>
+      {game.net && onArena && <ArenaCard game={game} online={online} onArena={onArena} />}
       {DUNG_ORDER.map(id => {
         const D = DUNGEONS[id];
         const open = game.dungUnlocked(id);

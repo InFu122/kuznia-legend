@@ -8,6 +8,8 @@ import { App, type SaveInfo } from './ui/App';
 import './ui/styles.css';
 
 const RETRY_MS = 60000;
+/** Co ile gra łączy się z Wielkim Obiegiem (wysyłka, znaleziska, wieści). */
+const OBIEG_MS = 120000;
 
 /** Czytelny powód braku połączenia z serwerem (widać go w Kodeksie). */
 function why(e: unknown): string {
@@ -30,14 +32,14 @@ function boot(hotData?: { s?: string }) {
   const cfg = serverConfig();
   const link = cfg ? new ServerLink(cfg) : null;
   setLink(link);
-  const game = new Game(state, { now: () => Date.now() + (link?.offset ?? 0) });
+  const game = new Game(state, { now: () => Date.now() + (link?.offset ?? 0), net: !!link });
   const save: SaveInfo = { mode: link ? 'connecting' : 'local' };
   let cloud: Awaited<ReturnType<typeof connectArtifactCloud>> = null;
 
-  /** Przyjmuje nowszy zapis z innego urządzenia i nalicza czas nieobecności. */
-  const adopt = (remote: GameState) => {
+  /** Przyjmuje nowszy zapis z innego urządzenia i nalicza czas nieobecności. `force` — bez porównywania dat. */
+  const adopt = (remote: GameState, force = false) => {
     const s = migrate(remote, Date.now());
-    if ((s.savedAt || 0) <= (game.s.savedAt || 0)) return false;
+    if (!force && (s.savedAt || 0) <= (game.s.savedAt || 0)) return false;
     game.load(s);
     game.offline(Date.now() - (s.lastSeen || Date.now()));
     return true;
@@ -47,10 +49,12 @@ function boot(hotData?: { s?: string }) {
     try {
       const r = await l.save(game.s);
       if (r.conflict !== undefined) {
-        if (!(r.conflict && adopt(r.conflict))) await l.save(game.s); // nasz zapis jest nowszy — nadpisz
+        if (r.conflict && r.force) adopt(r.conflict, true); // na serwerze są późniejsze wytopy — wygrywa serwer
+        else if (!(r.conflict && adopt(r.conflict))) await l.save(game.s); // nasz zapis jest nowszy — nadpisz
       }
       save.mode = 'server';
       save.error = undefined;
+      void extras(l);
     } catch (e) {
       if (e instanceof ServerError && e.status === 400) { save.error = e.message; return; } // serwer odrzucił zapis
       l.online = false;
@@ -70,6 +74,36 @@ function boot(hotData?: { s?: string }) {
     else if (cloud && !(await saveCloud(cloud.cloud, json))) { cloud = null; save.mode = 'local'; }
   };
 
+  /** Po zapisie: zapas ziaren wytopu i co jakiś czas Wielki Obieg. */
+  let lastObieg = 0;
+  let syncing = false;
+  const extras = async (l: ServerLink) => {
+    if (syncing) return;
+    syncing = true;
+    try {
+      const need = game.seedNeed();
+      if (need.n > 0) {
+        const r = await l.seeds(need.from, need.n);
+        game.addSeeds(r.from, r.seeds);
+      }
+      if (Date.now() - lastObieg >= OBIEG_MS || game.s.obOut.length >= 5) {
+        lastObieg = Date.now();
+        const out = game.takeObOut();
+        try {
+          const r = await l.obiegSync(out, game.obNeed());
+          game.obiegIn(r.items, r.events);
+        } catch (e) {
+          game.s.obOut.unshift(...out); // spróbujemy przy następnym połączeniu
+          throw e;
+        }
+      }
+    } catch (e) {
+      console.warn('Kuźnia Legend: synchronizacja z serwerem nieudana —', e);
+    } finally {
+      syncing = false;
+    }
+  };
+
   let retry: ReturnType<typeof setTimeout> | undefined;
   const connect = async (l: ServerLink) => {
     clearTimeout(retry);
@@ -85,7 +119,18 @@ function boot(hotData?: { s?: string }) {
       retry = setTimeout(() => void connect(l), RETRY_MS);
     }
   };
-  if (link) save.retry = () => { save.mode = 'connecting'; void connect(link); };
+  if (link) {
+    save.retry = () => { save.mode = 'connecting'; void connect(link); };
+    // Przeniesienie konta: to urządzenie dołącza do konta z kodu i przejmuje jego zapis.
+    save.redeem = async (code: string) => {
+      const remote = await link.redeem(code);
+      if (remote) adopt(remote, true);
+      saveLocal(JSON.stringify(game.s));
+      save.mode = 'server';
+      save.reason = undefined;
+      await saveServer(link);
+    };
+  }
 
   const onReady = () => {
     if (!fromHot) game.offline(Date.now() - (game.s.lastSeen || Date.now()));

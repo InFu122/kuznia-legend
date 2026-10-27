@@ -64,6 +64,6 @@ Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich system
    - 2c: misje dzienne i tygodniowe ze skrzynią za komplet, kalendarz logowania (7. dnia epicki Zwój), samouczek pierwszych 15 minut, dźwięki syntezowane w Web Audio. *(gotowe)*
 3. **Serwer** — Nakama
    - 3a: Docker (Nakama 3.30 + PostgreSQL + gra w nginx), konta zakładane automatycznie, zapis na serwerze z kontrolą i wykrywaniem konfliktów, czas serwera, rankingi Mocy, Wieży i postępu. *(gotowe)*
-   - 3b: wytop liczony na serwerze i kontrola tempa postępu, prawdziwy Wielki Obieg, arena.
-4. **Społeczność** — klany, czat, prawdziwy Wielki Obieg, boss i wojny klanów.
+   - 3b: przenoszenie konta na inne urządzenie kodem, wytop z ziarnem serwera (bez cofania i powtarzania wytopów; serwer sprawdza przedmioty i tempo rozwoju kuźni), prawdziwy Wielki Obieg między graczami, arena z oceną i rankingiem. *(gotowe)*
+4. **Społeczność** — klany, czat, boss i wojny klanów.
 5. **Sklep** — aplikacja Capacitor na Androida i iOS, płatności, reklamy z nagrodą, soft launch.

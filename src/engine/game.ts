@@ -9,13 +9,13 @@ import { canSmelt, decideAuto, equip, sell, sellFor, smelt, startUpgrade, tickFo
 import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
-import { obiegEvent } from './obieg';
+import { applyFound, obiegEvent } from './obieg';
 import { applyOffline } from './offline';
 import { mulberry32, rnd, type Rng } from './rng';
 import { newBattle, newState } from './state';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
-import type { DungId, ElemKey, GameEvent, GameState, Item, MountId, PetId, SetId, SkillId, SlotId, TechId } from './types';
+import type { DungId, ElemKey, FoundEvent, GameEvent, GameState, Item, MountId, PetId, SetId, SkillId, SlotId, TechId } from './types';
 
 /**
  * Fasada silnika dla interfejsu: trzyma stan, prowadzi czas gry i wystawia akcje gracza.
@@ -28,13 +28,14 @@ export class Game {
   uiBusy = false;
   lastAuto: { item: Item; equipped: boolean } | null = null;
 
-  constructor(state: GameState, opts: { rng?: Rng; now?: () => number } = {}) {
+  constructor(state: GameState, opts: { rng?: Rng; now?: () => number; net?: boolean } = {}) {
     const now = opts.now ?? (() => Date.now());
     this.ctx = {
       s: state, b: newBattle(),
       rng: opts.rng ?? mulberry32((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0),
-      now, emit: e => this.dispatch(e), cache: null, dirty: false,
+      now, emit: e => this.dispatch(e), cache: null, dirty: false, net: !!opts.net,
     };
+    if (this.ctx.net) state.speed = 1; // na serwerze gra toczy się w normalnym tempie
     invalidate(this.ctx);
     this.ctx.b.heroHp = this.ctx.b.heroMax;
   }
@@ -201,11 +202,50 @@ export class Game {
     this.changed();
     return this.s.name;
   }
-  toggleSpeed(): void { this.s.speed = this.s.speed > 1 ? 1 : 10; this.ctx.dirty = true; this.changed(); }
+  toggleSpeed(): void {
+    if (this.ctx.net) return;
+    this.s.speed = this.s.speed > 1 ? 1 : 10;
+    this.ctx.dirty = true;
+    this.changed();
+  }
+  get net(): boolean { return this.ctx.net; }
+
+  /* ---------- serwer: ziarna wytopu, Wielki Obieg, arena ---------- */
+
+  /** Ile ziaren wytopu warto dobrać i od którego numeru. */
+  seedNeed(): { from: number; n: number } {
+    const have = this.s.seeds.length;
+    return { from: this.s.sx + have, n: have < B.SEEDS_REFILL ? B.SEEDS_RESERVE - have : 0 };
+  }
+  /** Dokłada ziarna od serwera, jeśli pasują do kolejki. */
+  addSeeds(from: number, seeds: number[]): boolean {
+    if (from !== this.s.sx + this.s.seeds.length || !seeds.length) return false;
+    this.s.seeds.push(...seeds.filter(x => Number.isInteger(x) && x >= 0 && x <= 0xffffffff));
+    this.ctx.dirty = true;
+    return true;
+  }
+  /** Przedmioty do wysłania do Obiegu (zabiera je z kolejki). */
+  takeObOut(): Item[] { const out = this.s.obOut; this.s.obOut = []; if (out.length) this.ctx.dirty = true; return out; }
+  /** Ile znalezisk z Obiegu brakuje w zapasie. */
+  obNeed(): number { return Math.max(0, B.OBIEG_STOCK - this.s.obIn.length); }
+  /** Znaleziska z serwera do zapasu i wieści o twoich przedmiotach znalezionych przez innych. */
+  obiegIn(items: Item[], events: FoundEvent[]): void {
+    for (const it of items) if (this.s.obIn.length < B.OBIEG_STOCK) this.s.obIn.push(it);
+    applyFound(this.ctx, events);
+    if (items.length || events.length) { this.ctx.dirty = true; this.changed(); }
+  }
+  /** Nagroda z walki na arenie (liczy ją serwer). */
+  arenaReward(gold: number): void {
+    if (!(gold > 0)) return;
+    this.s.gold += Math.floor(gold);
+    this.ctx.dirty = true;
+    this.changed();
+  }
   reset(): void {
-    const name = this.s.name;
+    const old = this.s;
     this.ctx.s = newState(this.ctx.now());
-    this.ctx.s.name = name;
+    // Imię, ziarna wytopu i kolejki Obiegu zostają: numer wytopu nigdy się nie cofa.
+    Object.assign(this.ctx.s, { name: old.name, sx: old.sx, seeds: old.seeds, obIn: old.obIn, obOut: old.obOut });
     this.ctx.b = newBattle();
     this.ctx.cache = null;
     this.lastAuto = null;

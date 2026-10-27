@@ -62,6 +62,11 @@ export const B = {
   ELEM_DROP: 0.04,
   OBIEG_CHANCE: 0.3,
   OBIEG_FIND_FROM_BOSS: 0.2,
+  OBIEG_STOCK: 6,               // tyle znalezisk z Obiegu gra trzyma w zapasie (z serwerem)
+  SEEDS_RESERVE: 400,           // zapas ziaren wytopu od serwera (wystarcza na Skrzynię nocnej zmiany)
+  SEEDS_REFILL: 300,            // poniżej tylu ziaren gra dobiera nowe
+  ARENA_FIGHTS: 5,              // walki na arenie dziennie
+  ARENA_UNLOCK_LAND: 1,         // arena od drugiej krainy
   FAME_BOSS: 50,
   FAME_DUNGEON: 30,
   OFFLINE_CAP_MS: 8 * 3600 * 1000,
