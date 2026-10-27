@@ -1,9 +1,10 @@
 import { useRef } from 'preact/hooks';
-import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, SLOTS } from '../../data';
-import { canSmelt } from '../../engine/forge';
-import { dist, itemName, mainVal, maxJump, sellPrice, upCost, upTime } from '../../engine/formulas';
+import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS, SLOTS } from '../../data';
+import { canSmelt, sellFor, uniqActive } from '../../engine/forge';
+import { dist, itemName, mainVal, maxJump } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
-import type { ElemKey } from '../../engine/types';
+import { techMods } from '../../engine/mods';
+import type { ElemKey, SetId } from '../../engine/types';
 import { ItemCard } from '../ItemCard';
 import { fmt, pct, tfmt } from '../format';
 
@@ -36,9 +37,13 @@ export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' |
   const mj = maxJump(o);
   const sparkRef = useRef<HTMLDivElement>(null);
   const ok = canSmelt(game.ctx, o) && !s.pending;
-  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}` : `Przetop · ${ORES[o].n}`;
+  const set = uniqActive(s);
+  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}` : `Przetop · ${ORES[o].n}${set ? ' + ' + SETS[set].ore : ''}`;
   const elKeys = ELEM_KEYS.filter(k => (s.els[k] ?? 0) > 0);
+  const uniqKeys = SET_IDS.filter(k => (s.uniq[k] ?? 0) > 0);
+  const rel = techMods(s).jumpRel;
   const n = f.lvl + 1;
+  const cost = game.upgradeCost();
 
   return (
     <>
@@ -61,7 +66,7 @@ export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' |
           })}
         </div>
         <div class="odds">
-          Szanse wytopu: <Dist d={dist(o, f.lvl)} />{mj === 0 ? ' · ta ruda nie przeskakuje' : ''} · <button class="linkbtn" onClick={() => onInfo('forge')}>wszystkie szanse</button>
+          Szanse wytopu: <Dist d={dist(o, f.lvl, rel)} />{mj === 0 ? ' · ta ruda nie przeskakuje' : ''} · <button class="linkbtn" onClick={() => onInfo('forge')}>wszystkie szanse</button>
         </div>
         {mj >= 1 && (
           <div class="pity">
@@ -80,6 +85,27 @@ export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' |
             {elKeys.length === 0 && <span class="sub" style={{ alignSelf: 'center' }}>Domieszki wypadają w krainach z żywiołem (4% na falę).</span>}
           </div>
         )}
+        {(f.lvl >= SET_FORGE_LVL || uniqKeys.length > 0) && (
+          <div class="mix">
+            <span class="eyebrow" style={{ alignSelf: 'center' }}>Ruda unikalna</span>
+            {f.lvl >= SET_FORGE_LVL ? (
+              <>
+                <button class={`chip${!s.uniqSel ? ' on' : ''}`} onClick={() => game.setUniq(null)}>Bez zestawu</button>
+                {uniqKeys.map((k: SetId) => (
+                  <button key={k} class={`chip${s.uniqSel === k ? ' on' : ''}`} onClick={() => game.setUniq(k)}>
+                    <span style={{ color: SETS[k].col }}>{SETS[k].ore}</span> · {s.uniq[k]}
+                  </button>
+                ))}
+                {uniqKeys.length === 0 && <span class="sub" style={{ alignSelf: 'center' }}>Rudy unikalne dają bossowie i Leża Bossów.</span>}
+              </>
+            ) : (
+              <span class="sub" style={{ alignSelf: 'center' }}>
+                Masz {uniqKeys.map(k => `${s.uniq[k]} × ${SETS[k].ore}`).join(', ')}. Części zestawów wytopisz od {SET_FORGE_LVL}. poziomu kuźni.
+              </span>
+            )}
+          </div>
+        )}
+        {set && <p class="sub">Następny wytop będzie częścią zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b> w miejscu, w którym jeszcze go nie nosisz{mj >= 1 ? ', z gwarantowanym przeskokiem o co najmniej 1 rzadkość' : ''}.</p>}
         <div class="anvil">
           <button class="btn primary btn-forge" disabled={!ok} onClick={() => { if (game.smeltManual()) sparks(sparkRef.current); }}>{btnLabel}</button>
           <div class="sparks" ref={sparkRef} />
@@ -102,7 +128,7 @@ export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' |
         ) : f.up ? (
           <>
             <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
-            <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / upTime(f.up)) * 100) + '%' }} /></div>
+            <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
             <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: {FORGE_UNLOCKS[f.up] ?? 'większa szansa na przeskok'}.</p>
           </>
         ) : (
@@ -110,9 +136,9 @@ export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' |
             <div>
               <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
               <div class="h">Ulepsz do poziomu {n}</div>
-              <p class="sub">{FORGE_UNLOCKS[n] ? 'Odblokowuje: ' + FORGE_UNLOCKS[n] : 'Większa szansa na przeskok'} · {fmt(upCost(n))} złota · {tfmt(upTime(n))}</p>
+              <p class="sub">{FORGE_UNLOCKS[n] ? 'Odblokowuje: ' + FORGE_UNLOCKS[n] : 'Większa szansa na przeskok'} · {fmt(cost)} złota · {tfmt(game.upgradeTime())}</p>
             </div>
-            <button class="btn primary small" disabled={s.gold < upCost(n)} onClick={() => game.upgrade()}>Ulepsz</button>
+            <button class="btn primary small" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
           </div>
         )}
       </section>
@@ -138,8 +164,8 @@ function Result({ game }: { game: Game }) {
         {it.jump > 0 && <div class="jump" key={'j' + it.id}>Przeskok +{it.jump}!</div>}
         {!it.obieg && it.flvl > 0 && (
           <p class="sub">
-            Szanse tego wytopu ({ORES[it.ore].n}, kuźnia poz. {it.flvl}): <Dist d={dist(it.ore, it.flvl)} />
-            {it.forced === 'pity' ? ' · przeskok z gwarancji' : it.forced === 'tut' ? ' · pierwszy przeskok gwarantowany' : ''}
+            Szanse tego wytopu ({ORES[it.ore].n}, kuźnia poz. {it.flvl}): <Dist d={dist(it.ore, it.flvl, techMods(s).jumpRel)} />
+            {it.forced === 'pity' ? ' · przeskok z gwarancji' : it.forced === 'tut' ? ' · pierwszy przeskok gwarantowany' : it.forced === 'set' ? ' · przeskok gwarantowany przez rudę unikalną' : ''}
           </p>
         )}
         {it.obieg && <p class="sub">Znalezisko z Wielkiego Obiegu: przedmiot wykuty przez gracza {it.smith}.</p>}
@@ -152,7 +178,7 @@ function Result({ game }: { game: Game }) {
         </p>
         <div class="result-actions">
           <button class={`btn${d >= 0 ? ' primary' : ''}`} onClick={() => game.equipPending()}>Załóż</button>
-          <button class={`btn${d < 0 ? ' primary' : ''}`} onClick={() => game.sellPending()}>Sprzedaj · {fmt(sellPrice(it))} zł.</button>
+          <button class={`btn${d < 0 ? ' primary' : ''}`} onClick={() => game.sellPending()}>Sprzedaj · {fmt(sellFor(s, it))} zł.</button>
         </div>
       </div>
     );

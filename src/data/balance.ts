@@ -42,7 +42,7 @@ export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0, 3.2, 3.4
  * Dodatkowy mnożnik siły wrogów przy bossie krainy L (zdrowie i obrażenia). Skalibrowany symulatorem:
  * gracz zbiera substaty, legendy i rzadkie rudy szybciej niż zakłada sama krzywa rzadkości.
  */
-export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.17, 1.22, 1.36, 1.49, 1.63, 1.74, 1.74, 1.79, 1.85, 1.85, 1.79, 1.74, 1.58, 1.4];
+export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.2, 1.27, 1.42, 1.56, 1.95, 2.2, 2.38, 2.5, 2.55, 2.6, 2.6, 2.55, 2.5, 2.0];
 /** Siła przedmiotu rośnie o 8% na poziom przedmiotu; poziom przedmiotu = 2 × poziom kuźni (+0–2). */
 export const ITEM_LVL_GROWTH = 1.08;
 
@@ -74,4 +74,11 @@ export const B = {
   BOSS_ATK_MULT: 0.11,
   WAVE_HP_MULT: 2.6,
   WAVE_ATK_DIV: 10,
+  BOOK_DROP: 0.0005,            // szansa na Księgę Wiedzy z fali
+  BOOKS_BOSS_FIRST: 3,          // pierwsze pokonanie bossa: 3 + numer krainy
+  BOOKS_BOSS_CHANCE: 0.1,       // kolejne pokonania: szansa na 1 Księgę
+  UNIQ_BOSS_FIRST: 2,           // rudy unikalne za pierwsze pokonanie bossa z zestawem
+  UNIQ_BOSS_CHANCE: 0.05,       // szansa na rudę unikalną przy kolejnych pokonaniach
+  SKARBIEC_MS: 30000,
+  OLTARZE_FLOORS: 5,
 } as const;

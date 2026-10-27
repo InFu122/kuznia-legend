@@ -56,7 +56,7 @@ export function obiegItem(ctx: Ctx): Item {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, ri(ctx.rng, -1, 1)),
     subs: rollSubs(ctx, r), el: L.el && ctx.rng.next() < 0.5 ? L.el : null, jump: 0, flvl: 0, forced: '',
     smith, land: L.n, fame, kills: { [L.type]: fame - B.FAME_BOSS }, bosses: 1, ls: 0, aw: null,
-    owners: ctx.rng.next() < 0.4 ? [smith, pick(ctx.rng, FAKE_PLAYERS.filter(x => x !== smith))] : [smith], obieg: true,
+    owners: ctx.rng.next() < 0.4 ? [smith, pick(ctx.rng, FAKE_PLAYERS.filter(x => x !== smith))] : [smith], obieg: true, set: null,
   };
   it.ls = legStage(it.fame);
   return it;

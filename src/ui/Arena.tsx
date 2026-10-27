@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANDS, ORES, ROMAN } from '../data';
+import { LANDS, ROMAN } from '../data';
 import { bossWaiting } from '../engine/combat';
 import type { Game } from '../engine/game';
 import { fmt } from './format';
 import type { Tab } from './icons';
+import { runHint, runLabel, runMeta, runTitle } from './texts';
 
 interface Float { id: number; text: string; cls: string; x: number; y: number }
 
@@ -47,16 +48,18 @@ export function Arena({ game, onTab }: { game: Game; onTab: (t: Tab) => void }) 
   const waiting = bossWaiting(game.ctx);
   const st = game.stats;
   const hp = Math.max(0, b.heroHp);
-  const label = e?.boss ? 'Boss' : dung ? `Piętro ${dung.floor}` : waiting ? 'Farma' : `Fala ${s.cur.wave}/5`;
+  const label = dung ? runLabel(dung) : e?.boss ? 'Boss' : waiting ? 'Farma' : `Fala ${s.cur.wave}/5`;
 
   return (
     <section class="arena" aria-label="Arena walki">
       <div class="arena-head">
         <div>
-          <div class="land">{dung ? 'Głęboka Sztolnia' : L.n}</div>
-          <div class="ameta">{dung ? `Piętro ${dung.floor} · w worku ${dung.loot} × ${ORES[dung.tier].n}` : `Akt ${ROMAN[L.act]} · etap ${s.cur.stage}/10${waiting ? ' · boss czeka' : ''}`}</div>
+          <div class="land">{dung ? runTitle(dung) : L.n}</div>
+          <div class="ameta">{dung ? runMeta(dung) : `Akt ${ROMAN[L.act]} · etap ${s.cur.stage}/10${waiting ? ' · boss czeka' : ''}`}</div>
         </div>
-        <button class="ghost" onClick={() => onTab('krainy')}>Zmień krainę</button>
+        {dung
+          ? <button class="ghost" onClick={() => game.dungExit()}>Wyjdź z lochu</button>
+          : <button class="ghost" onClick={() => onTab('krainy')}>Zmień krainę</button>}
       </div>
       {!dung && (
         <div class="track">
@@ -84,7 +87,7 @@ export function Arena({ game, onTab }: { game: Game; onTab: (t: Tab) => void }) 
       {(waiting && !e?.boss) && (
         <div class="arena-actions"><button class="btn primary" onClick={() => game.challengeBoss()}>Wyzwij bossa: {L.boss}</button></div>
       )}
-      {dung && <div class="arena-actions"><span class="sub">Sztolnia: co 5 pięter zdecydujesz, czy wyjść z łupem.</span></div>}
+      {dung && <div class="arena-actions"><span class="sub">{runHint(dung)}</span></div>}
       <div class="floats">
         {floats.map(f => <span key={f.id} class={`fl ${f.cls}`} style={{ left: f.x + '%', top: f.y + '%' }}>{f.text}</span>)}
       </div>

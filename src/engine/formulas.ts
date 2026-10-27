@@ -50,25 +50,29 @@ export const recPower = (land: number) => {
   return Math.round((Dstar(g) * 4 * 1.08 + Hstar(g) * 0.4) * early(g));
 };
 
-/** Szansa (w %) na przeskok o 1 i o 2 rzadkości na danym poziomie kuźni. */
-export function jumpChances(lvl: number): [number, number] {
+/**
+ * Szansa (w %) na przeskok o 1 i o 2 rzadkości na danym poziomie kuźni.
+ * `rel` to względna premia z Hartowania (np. 10 = szanse × 1,1).
+ */
+export function jumpChances(lvl: number, rel = 0): [number, number] {
+  const k = 1 + rel / 100;
   for (let i = 0; i < JUMP_TABLE.length - 1; i++) {
     const [a, p1, q1] = JUMP_TABLE[i];
     const [b, p2, q2] = JUMP_TABLE[i + 1];
     if (lvl >= a && lvl <= b) {
       const t = (lvl - a) / (b - a);
-      return [p1 + (p2 - p1) * t, q1 + (q2 - q1) * t];
+      return [(p1 + (p2 - p1) * t) * k, (q1 + (q2 - q1) * t) * k];
     }
   }
   const last = JUMP_TABLE[JUMP_TABLE.length - 1];
-  return [last[1], last[2]];
+  return [last[1] * k, last[2] * k];
 }
 /** Smocza Stal przeskakuje najwyżej o 1, Gwiezdny Kruszec wcale. */
 export const maxJump = (ore: number) => (ore === 6 ? 0 : ore === 5 ? 1 : 2);
 
 /** Rozkład wyniku wytopu: lista [rzadkość, szansa w %]. */
-export function dist(ore: number, lvl: number): [number, number][] {
-  const [p1, p2] = jumpChances(lvl);
+export function dist(ore: number, lvl: number, rel = 0): [number, number][] {
+  const [p1, p2] = jumpChances(lvl, rel);
   const r = ORES[ore].floor;
   const mj = maxJump(ore);
   if (mj === 0) return [[r, 100]];

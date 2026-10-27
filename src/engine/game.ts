@@ -1,16 +1,18 @@
-import { B, ELEM, ORES, RAR } from '../data';
+import { B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH } from '../data';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
-import { dungContinue, dungEnd, dungKeys, dungTier, startDung } from './dungeon';
-import { canSmelt, decideAuto, equip, sell, smelt, startUpgrade, tickForge } from './forge';
-import { itemName, sellPrice, upTime } from './formulas';
+import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, startDungeon } from './dungeon';
+import { canSmelt, decideAuto, equip, sell, sellFor, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime } from './forge';
+import { itemName } from './formulas';
+import { techMods } from './mods';
+import { startResearch, tickResearch } from './tech';
 import { obiegEvent } from './obieg';
 import { applyOffline } from './offline';
 import { mulberry32, rnd, type Rng } from './rng';
 import { newBattle, newState } from './state';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
-import type { ElemKey, GameEvent, GameState, Item } from './types';
+import type { DungId, ElemKey, GameEvent, GameState, Item, SetId, TechId } from './types';
 
 /**
  * Fasada silnika dla interfejsu: trzyma stan, prowadzi czas gry i wystawia akcje gracza.
@@ -50,14 +52,19 @@ export class Game {
     const ctx = this.ctx;
     const ms = realMs * ctx.s.speed;
     if (tickForge(ctx, ms)) this.changed();
+    if (tickResearch(ctx, ms)) this.changed();
     ctx.b.obiegT -= ms;
     if (ctx.b.obiegT <= 0) { ctx.b.obiegT = rnd(ctx.rng, 60000, 150000); obiegEvent(ctx); }
     if (ctx.s.auto && ctx.s.forge.lvl >= B.AUTO_FORGE_LVL && !this.uiBusy) {
       ctx.b.autoT -= ms;
-      if (ctx.b.autoT <= 0) { ctx.b.autoT = B.AUTO_INTERVAL_MS; this.autoStep(); }
+      if (ctx.b.autoT <= 0) { ctx.b.autoT = this.autoInterval(); this.autoStep(); }
     }
+    if (ctx.b.mode === 'dung') dungTick(ctx, ms);
     stepCombat(ctx, ms);
   }
+
+  /** Odstęp auto-wytopu z premią Wprawnych rąk. */
+  autoInterval(): number { return B.AUTO_INTERVAL_MS / (1 + techMods(this.s).autoSpeed / 100); }
 
   private autoStep(): void {
     const ctx = this.ctx;
@@ -106,8 +113,9 @@ export class Game {
     const it = this.s.pending;
     if (!it) return;
     this.s.pending = null;
+    const price = sellFor(this.s, it);
     sell(this.ctx, it, false);
-    toast(this.ctx, `Sprzedano za ${sellPrice(it).toLocaleString('pl-PL')} złota`);
+    toast(this.ctx, `Sprzedano za ${price.toLocaleString('pl-PL')} złota`);
     this.changed();
   }
   pendingDelta(): number { return this.s.pending ? powerDelta(this.ctx, this.s.pending) : 0; }
@@ -118,18 +126,34 @@ export class Game {
     this.changed();
   }
   setElem(k: ElemKey | null): void { this.s.elSel = k && ELEM[k] ? k : null; this.ctx.dirty = true; this.changed(); }
+  setUniq(k: SetId | null): void {
+    if (k && this.s.forge.lvl < SET_FORGE_LVL) { toast(this.ctx, `Zestawy: wytop od ${SET_FORGE_LVL}. poziomu kuźni.`, 'bad'); return; }
+    this.s.uniqSel = k && SETS[k] ? k : null;
+    this.ctx.dirty = true;
+    this.changed();
+  }
   toggleAuto(): void { this.s.auto = !this.s.auto; this.b.autoT = 300; this.ctx.dirty = true; this.changed(); }
   upgrade(): void {
     if (startUpgrade(this.ctx)) toast(this.ctx, `Ulepszanie kuźni do poziomu ${this.s.forge.up}`);
     this.changed();
   }
-  upgradeTotal(): number { return this.s.forge.up ? upTime(this.s.forge.up) : 0; }
+  upgradeTotal(): number { return this.s.forge.up ? upgradeTime(this.s, this.s.forge.up) : 0; }
+  upgradeCost(): number { return upgradeCost(this.s, this.s.forge.lvl + 1); }
+  upgradeTime(): number { return upgradeTime(this.s, this.s.forge.lvl + 1); }
+  research(id: TechId): boolean {
+    const ok = startResearch(this.ctx, id);
+    if (ok) toast(this.ctx, `Badanie rozpoczęte: ${TECH[id].n}`);
+    this.changed();
+    return ok;
+  }
   challengeBoss(): void { challengeBoss(this.ctx); this.changed(); }
   goLand(i: number): void { goLand(this.ctx, i); this.changed(); }
-  startDung(): boolean { const ok = startDung(this.ctx); this.changed(); return ok; }
+  /** Wejście do lochu; `land` wybiera bossa w Leżach Bossów. */
+  startDung(id: DungId, land = -1): boolean { const ok = startDungeon(this.ctx, id, land); this.changed(); return ok; }
   dungGo(): void { dungContinue(this.ctx); this.changed(); }
   dungExit(): void { dungEnd(this.ctx, false); this.changed(); }
-  dungKeys(): number { return dungKeys(this.ctx); }
+  dungKeys(id: DungId): number { return dungKeys(this.ctx, id); }
+  dungUnlocked(id: DungId): boolean { return dungUnlocked(this.ctx, id); }
   dungTier(): number { return dungTier(this.ctx); }
   setName(n: string): string {
     this.s.name = n.trim().slice(0, 16) || 'Kowal';

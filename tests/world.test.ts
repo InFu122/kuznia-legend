@@ -42,19 +42,6 @@ describe('walka i postęp', () => {
   });
 });
 
-describe('Głęboka Sztolnia', () => {
-  it('zużywa klucz, a klucze wracają następnego dnia', () => {
-    const { g, s, advance } = makeGame();
-    expect(g.startDung()).toBe(true);
-    g.dungExit();
-    expect(g.startDung()).toBe(true);
-    g.dungExit();
-    expect(g.startDung()).toBe(false);
-    advance(24 * 3600 * 1000);
-    expect(g.dungKeys()).toBe(B.DUNGEON_KEYS);
-    expect(s.dung.keys).toBe(B.DUNGEON_KEYS);
-  });
-});
 
 describe('nagrody offline', () => {
   it('ignorują krótkie przerwy i mają limit 8 godzin', () => {
@@ -78,14 +65,34 @@ describe('nagrody offline', () => {
   });
 });
 
+describe('nagrody offline i technologie', () => {
+  it('Nocna zmiana wydłuża limit, a badanie kończy się poza grą', () => {
+    const { ctx, s } = makeGame();
+    s.tech.lv.e_noc = 2;
+    s.tech.cur = { id: 'w_ostrze', left: 3600000, total: 3600000 };
+    const r = applyOffline(ctx, 24 * 3600 * 1000)!;
+    expect(r.ms).toBe(B.OFFLINE_CAP_MS + 60 * 60000);
+    expect(r.tech).toBe('w_ostrze');
+    expect(s.tech.lv.w_ostrze).toBe(1);
+    expect(s.tech.cur).toBeNull();
+  });
+});
+
 describe('zapis gry', () => {
   it('migracja uzupełnia brakujące pola starego zapisu', () => {
-    const old: Record<string, unknown> = { ...newState(T0) };
-    delete old.dung;
+    const old: Record<string, unknown> = { ...newState(T0), v: 1 };
+    delete old.dungeons;
     delete old.stats;
+    delete old.tech;
+    delete old.books;
+    old.dung = { day: '2026-1-1', keys: 1, best: 7 };
     old.cleared = [true, false];
     const s = migrate(old, T0);
-    expect(s.dung.keys).toBe(B.DUNGEON_KEYS);
+    expect(s.dungeons.sztolnia.best).toBe(7);
+    expect(s.dungeons.skarbiec.keys).toBe(B.DUNGEON_KEYS);
+    expect('dung' in s).toBe(false);
+    expect(s.tech.lv).toEqual({});
+    expect(s.books).toBe(0);
     expect(s.stats.smelted).toBe(0);
     expect(s.cleared.length).toBe(LANDS.length);
     expect(s.cleared[0]).toBe(true);

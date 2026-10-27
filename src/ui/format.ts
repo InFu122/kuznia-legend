@@ -16,7 +16,7 @@ export function tfmt(ms: number): string {
   const s = Math.max(0, Math.ceil(ms / 1000));
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   if (h) return `${h} h ${m} min`;
-  if (m) return `${m} min ${x} s`;
+  if (m) return x ? `${m} min ${x} s` : `${m} min`;
   return `${x} s`;
 }
 

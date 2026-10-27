@@ -6,6 +6,32 @@ export type ElemKey = 'zar' | 'szron' | 'burz' | 'jad' | 'cien' | 'jasn';
 export type FoeType = 'Bestie' | 'Nieumarli' | 'Demony' | 'Smoki';
 export type SubId = 'crit' | 'critd' | 'spd' | 'ls' | 'dodge' | 'regen' | 'boss';
 export type Gender = 'm' | 'f' | 'p';
+export type TechId =
+  | 'k_hart' | 'k_miech' | 'k_auto' | 'k_oszcz' | 'k_tanie'
+  | 'w_ostrze' | 'w_pancerz' | 'w_precyzja' | 'w_pogromca'
+  | 'e_kupiec' | 'e_gornik' | 'e_noc' | 'e_poszuk';
+export type DungId = 'skarbiec' | 'sztolnia' | 'wieza' | 'leza' | 'oltarze';
+export type SetId = 'lowca' | 'straz' | 'wicher' | 'nekro' | 'smok' | 'gwiazda';
+
+/** Nagroda do przyznania i pokazania w podsumowaniu. */
+export interface Reward {
+  gold?: number;
+  books?: number;
+  ores?: Partial<Record<number, number>>;
+  els?: Partial<Record<ElemKey, number>>;
+  uniq?: Partial<Record<SetId, number>>;
+}
+
+export interface DungRun {
+  id: DungId;
+  floor: number;
+  loot: Reward;        // zebrane w trakcie (przyznawane na końcu)
+  tier: number;        // Sztolnia: indeks rudy
+  timeLeft: number;    // Skarbiec: pozostały czas w ms
+  kills: number;
+  el: ElemKey | null;  // Ołtarze: żywioł dnia
+  bossLand: number;    // Leża Bossów
+}
 
 export interface Sub { id: SubId; v: number }
 
@@ -23,7 +49,7 @@ export interface Item {
   el: ElemKey | null;   // domieszka żywiołu
   jump: number;         // o ile rzadkości przeskoczył ponad minimum rudy
   flvl: number;         // poziom kuźni w chwili wytopu (0 = nieznany, np. z Obiegu)
-  forced: '' | 'tut' | 'pity';
+  forced: '' | 'tut' | 'pity' | 'set';
   smith: string;        // Piętno Kowala
   land: string;         // kraina wykucia
   fame: number;         // Sława Czynów
@@ -33,6 +59,7 @@ export interface Item {
   aw: Awakening | null;
   owners: string[];
   obieg: boolean;       // znaleziony w Wielkim Obiegu
+  set: SetId | null;    // część zestawu (z rudy unikalnej)
 }
 
 export interface GameState {
@@ -54,7 +81,11 @@ export interface GameState {
   oreSel: number;
   elSel: ElemKey | null;
   smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string }[] };
-  dung: { day: string; keys: number; best: number };
+  dungeons: Record<DungId, { day: string; keys: number; best: number }>;
+  books: number;                              // Księgi Wiedzy
+  uniq: Partial<Record<SetId, number>>;       // rudy unikalne
+  uniqSel: SetId | null;
+  tech: { lv: Partial<Record<TechId, number>>; cur: { id: TechId; left: number; total: number } | null };
   stats: { smelted: number; jumps: number; kills: number; bosses: number };
   speed: number;
   savedAt: number;
@@ -81,7 +112,7 @@ export interface Battle {
   ht: number;
   et: number;
   pause: number;
-  dung: { floor: number; loot: number; tier: number } | null;
+  dung: DungRun | null;
   autoT: number;
   obiegT: number;
 }
@@ -90,20 +121,28 @@ export interface Stats {
   dmg: number; hp: number; crit: number; critd: number; spd: number; ls: number; dodge: number; regen: number;
   boss: number; eldmg: number; slow: number; holy: number; pog: number;
   vs: Partial<Record<FoeType, number>>;
+  sets: { id: SetId; count: number }[];
   power: number;
 }
 
+/** Zsumowane efekty technologii. */
+export interface Mods {
+  jumpRel: number; saveOre: number; forgeTime: number; forgeCost: number; autoSpeed: number;
+  dmgPct: number; hpPct: number; crit: number; bossPct: number;
+  goldPct: number; extraOre: number; offlineMin: number; rarePct: number;
+}
+
 export interface OfflineReport {
-  ms: number; capped: boolean; land: number; gold: number; main: number; rare: number; el: number;
-  fame: number; forgeUp: number; chest: { item: Item; equipped: boolean }[]; chestCount: number;
+  ms: number; capped: boolean; land: number; gold: number; main: number; rare: number; el: number; books: number;
+  fame: number; forgeUp: number; tech: TechId | null; chest: { item: Item; equipped: boolean }[]; chestCount: number;
 }
 
 export type ModalData =
   | { kind: 'intro' }
-  | { kind: 'boss'; land: number; gold: number; n: number; found: boolean }
+  | { kind: 'boss'; land: number; gold: number; n: number; found: boolean; books: number; uniq: number }
   | { kind: 'awaken'; item: Item }
-  | { kind: 'dungChoice'; floor: number; loot: number; tier: number }
-  | { kind: 'dungEnd'; lost: boolean; keep: number; tier: number; floor: number }
+  | { kind: 'dungChoice'; floor: number; loot: Reward }
+  | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }
   | { kind: 'info'; k: 'forge' | 'level' }

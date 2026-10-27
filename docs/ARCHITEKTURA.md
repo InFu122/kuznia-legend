@@ -26,12 +26,14 @@ Dzięki temu ten sam kod:
 
 ```
 main.tsx ── pętla requestAnimationFrame ──► Game.tick(ms)
-                                            ├─ tickForge   (ulepszenie kuźni)
-                                            ├─ obiegEvent  (Wielki Obieg)
+                                            ├─ tickForge    (ulepszenie kuźni)
+                                            ├─ tickResearch (badanie w Akademii)
+                                            ├─ obiegEvent   (Wielki Obieg)
                                             ├─ auto-wytop
-                                            └─ stepCombat  (fale, bossowie, Sztolnia)
+                                            ├─ dungTick     (czas Skarbca)
+                                            └─ stepCombat   (fale, bossowie, lochy)
 Game.emit ──► interfejs: toast · float · bump · modal · change
-UI ──► akcje Game: smeltManual, equipPending, upgrade, goLand, startDung…
+UI ──► akcje Game: smeltManual, equipPending, upgrade, research, goLand, startDung(id)…
 ```
 
 `Game` (`src/engine/game.ts`) to jedyny punkt wejścia dla interfejsu. Interfejs niczego nie liczy sam — czyta stan i wywołuje akcje.
@@ -45,24 +47,27 @@ UI ──► akcje Game: smeltManual, equipPending, upgrade, goLand, startDung�
 | `combat.ts` | fale, bossowie, przenoszenie między krainami |
 | `legend.ts` | Sława Czynów, progi legendy, przebudzenie |
 | `obieg.ts` | Piętno Kowala i Wielki Obieg (do etapu 4 symulowany) |
-| `dungeon.ts` | Głęboka Sztolnia |
+| `dungeon.ts` | lochy: Skarbiec Złota, Głęboka Sztolnia, Wieża Wyzwań, Leża Bossów, Ołtarze Żywiołów; klucze dzienne |
+| `tech.ts`, `mods.ts` | Akademia Kowalska: koszty i czas badań, suma efektów technologii (`Mods`) |
 | `offline.ts` | nagrody za czas poza grą, Skrzynia nocnej zmiany |
-| `stats.ts` | statystyki bohatera i Moc |
+| `stats.ts` | statystyki bohatera i Moc, premie technologii i zestawów |
 | `state.ts` | nowy stan i migracja starszych zapisów |
 
 ## Balans i tempo
 
 Siła przedmiotu = baza slotu × 1,08^poziom × mnożnik rzadkości × bonus legendy, a poziom przedmiotu = 2 × poziom kuźni. Postęp w kampanii nie podnosi siły przedmiotów, więc krainy stawiają ściany, które pokonuje się:
 
-- ulepszaniem kuźni (czas: poz. 10 ≈ 40 min, 20 ≈ 9 h, 25 ≈ 31 h, 30 ≈ 108 h gry),
+- ulepszaniem kuźni (czas: poz. 10 ≈ 40 min, 20 ≈ 9 h, 25 ≈ 31 h, 30 ≈ 108 h gry; Wielkie miechy skracają go do 30%),
 - lepszymi rudami i przeskokami,
-- legendami przedmiotów.
+- legendami przedmiotów,
+- technologiami (Księgi Wiedzy z bossów, rzadko z fal, z Wieży Wyzwań),
+- zestawami z rud unikalnych (bossowie i Leża Bossów, wytop od 15. poziomu kuźni).
 
-Wrogowie skalują się z oczekiwanej siły gracza (`forgeExp`, `rarityExp`, `extrasExp`) i kalibracji `ENEMY_SCALE_AT_BOSS`.
+Wrogowie skalują się z oczekiwanej siły gracza (`forgeExp`, `rarityExp`, `extrasExp`) i kalibracji `ENEMY_SCALE_AT_BOSS`. Kalibracja zakłada gracza, który korzysta z technologii, lochów i zestawów. Symulator ma tryb `plain` (bot bez tych systemów) jako punkt odniesienia: `npm run balance -- 150 3 plain`.
 
 ## Zapis
 
-Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każdej zmianie znaczenia pól, a `migrate()` przenosi stare zapisy. Wersja 2 przeliczyła poziomy przedmiotów na model oparty o kuźnię.
+Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każdej zmianie znaczenia pól, a `migrate()` przenosi stare zapisy. Wersja 2 przeliczyła poziomy przedmiotów na model oparty o kuźnię. Wersja 3 dodała technologie, Księgi Wiedzy, rudy unikalne i wiele lochów (stare pole `dung` przechodzi do `dungeons.sztolnia`).
 
 ## Co dalej technicznie
 

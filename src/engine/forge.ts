@@ -1,13 +1,29 @@
-import { B, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
+import { B, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
 import { toast, type Ctx } from './context';
 import { itemLevelFor, itemName, jumpChances, maxJump, sellPrice, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
+import { techMods } from './mods';
 import { maybeObieg } from './obieg';
 import { pick, ri, rnd, shuffle } from './rng';
-import { invalidate, powerDelta } from './stats';
-import type { ElemKey, Item } from './types';
+import { invalidate, powerDelta, stats } from './stats';
+import type { ElemKey, GameState, Item, SetId, SlotId } from './types';
 
 export const canSmelt = (ctx: Ctx, ore: number) => ctx.s.ores[ore] > 0 && ctx.s.forge.lvl >= ORES[ore].lvl;
+/** Czy przy następnym wytopie zostanie użyta ruda unikalna (część zestawu). */
+export const uniqActive = (s: GameState): SetId | null =>
+  s.uniqSel && s.forge.lvl >= SET_FORGE_LVL && (s.uniq[s.uniqSel] ?? 0) > 0 ? s.uniqSel : null;
+
+/** Cena sprzedaży z premią Kupca. */
+export const sellFor = (s: GameState, it: Item) => Math.round(sellPrice(it) * (1 + techMods(s).goldPct / 100));
+/** Koszt i czas ulepszenia kuźni do poziomu n (z technologiami). */
+export const upgradeCost = (s: GameState, n: number) => Math.round(upCost(n) * (1 - techMods(s).forgeCost / 100));
+export const upgradeTime = (s: GameState, n: number) => upTime(n) * (1 - techMods(s).forgeTime / 100);
+
+/** Część zestawu trafia w miejsce, w którym nie masz jeszcze tego zestawu. */
+function setSlot(ctx: Ctx, set: SetId): SlotId {
+  const free = SLOT_ORDER.filter(sl => ctx.s.eq[sl]?.set !== set);
+  return pick(ctx.rng, free.length ? free : SLOT_ORDER);
+}
 
 export function rollSubs(ctx: Ctx, r: number) {
   return shuffle(ctx.rng, SUB_IDS).slice(0, RAR[r].s).map(id => ({
@@ -22,8 +38,11 @@ export function rollSubs(ctx: Ctx, r: number) {
 export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   const s = ctx.s;
   if (!canSmelt(ctx, ore)) return null;
-  s.ores[ore]--;
-  const [p1, p2] = jumpChances(s.forge.lvl);
+  const mods = techMods(s);
+  if (ctx.rng.next() * 100 >= mods.saveOre) s.ores[ore]--;
+  const set = uniqActive(s);
+  if (set) s.uniq[set] = (s.uniq[set] ?? 0) - 1;
+  const [p1, p2] = jumpChances(s.forge.lvl, mods.jumpRel);
   const mj = maxJump(ore);
   const roll = ctx.rng.next() * 100;
   let jump = 0;
@@ -32,11 +51,12 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   let forced: Item['forced'] = '';
   if (s.stats.smelted === 2 && mj >= 1 && jump === 0) { jump = 1; forced = 'tut'; } // samouczek
   if (jump === 0 && mj >= 1 && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
+  if (set && jump === 0 && mj >= 1) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok
   if (mj >= 1) s.pity = jump > 0 ? 0 : s.pity + 1;
   const r = Math.min(6, ORES[ore].floor + jump);
 
   const first = s.stats.smelted === 0;
-  const slot = first ? 'bron' : pick(ctx.rng, SLOT_ORDER);
+  const slot: SlotId = first ? 'bron' : set ? setSlot(ctx, set) : pick(ctx.rng, SLOT_ORDER);
   const kind = first ? SLOTS[slot].kinds[0] : pick(ctx.rng, SLOTS[slot].kinds);
   let elKey: ElemKey | null = null;
   if (el && s.forge.lvl >= B.ELEM_FORGE_LVL && (s.els[el] ?? 0) > 0) { s.els[el] = (s.els[el] ?? 0) - 1; elKey = el; }
@@ -46,7 +66,7 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   return {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, ri(ctx.rng, 0, 2)),
     subs: rollSubs(ctx, r), el: elKey, jump, flvl: s.forge.lvl, forced,
-    smith: s.name, land: LANDS[s.cur.land].n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false,
+    smith: s.name, land: LANDS[s.cur.land].n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
 }
 
@@ -65,7 +85,7 @@ export function equip(ctx: Ctx, it: Item, quiet: boolean): void {
       }
       if (!quiet && t > 0) toast(ctx, `Przetopienie legendy: nowy przedmiot przejmuje ${t} Sławy Czynów`);
     } else maybeObieg(ctx, old, quiet);
-    s.gold += sellPrice(old);
+    s.gold += sellFor(s, old);
   }
   if (!it.owners.includes(s.name)) it.owners.push(s.name);
   s.eq[it.slot] = it;
@@ -75,14 +95,25 @@ export function equip(ctx: Ctx, it: Item, quiet: boolean): void {
 }
 
 export function sell(ctx: Ctx, it: Item, quiet: boolean): void {
-  ctx.s.gold += sellPrice(it);
+  ctx.s.gold += sellFor(ctx.s, it);
   maybeObieg(ctx, it, quiet);
   ctx.dirty = true;
 }
 
-/** Auto-wytop: zakłada przedmiot, jeśli podnosi Moc; w przeciwnym razie sprzedaje. */
+/** Czy założenie przedmiotu zwiększy liczbę noszonych części jego zestawu (do 4). */
+export function advancesSet(s: GameState, it: Item): boolean {
+  if (!it.set) return false;
+  const count = Object.values(s.eq).filter(x => x?.set === it.set).length;
+  return s.eq[it.slot]?.set !== it.set && count < 4;
+}
+
+/**
+ * Auto-wytop: zakłada przedmiot, jeśli podnosi Moc; w przeciwnym razie sprzedaje.
+ * Część zestawu, która przybliża premię za 2 lub 4 części, zostaje założona, jeśli traci najwyżej 5% Mocy.
+ */
 export function decideAuto(ctx: Ctx, it: Item, quiet: boolean): boolean {
-  const better = powerDelta(ctx, it) > 0;
+  const d = powerDelta(ctx, it);
+  const better = d > 0 || (advancesSet(ctx.s, it) && d > -0.05 * stats(ctx).power);
   if (better) equip(ctx, it, quiet); else sell(ctx, it, quiet);
   return better;
 }
@@ -90,10 +121,11 @@ export function decideAuto(ctx: Ctx, it: Item, quiet: boolean): boolean {
 export function startUpgrade(ctx: Ctx): boolean {
   const f = ctx.s.forge;
   const n = f.lvl + 1;
-  if (f.up || n > B.FORGE_MAX || ctx.s.gold < upCost(n)) return false;
-  ctx.s.gold -= upCost(n);
+  const cost = upgradeCost(ctx.s, n);
+  if (f.up || n > B.FORGE_MAX || ctx.s.gold < cost) return false;
+  ctx.s.gold -= cost;
   f.up = n;
-  f.left = upTime(n);
+  f.left = upgradeTime(ctx.s, n);
   ctx.dirty = true;
   return true;
 }
@@ -111,4 +143,5 @@ export function tickForge(ctx: Ctx, ms: number, quiet = false): boolean {
 }
 
 export const elemName = (k: ElemKey) => ELEM[k].n;
+export const setName = (id: SetId) => SETS[id].n;
 export { itemName };

@@ -1,23 +1,35 @@
 // Symulator balansu: bot gra według prostej strategii przez zadany czas gry, a wyniki trafiają do Excela.
-// Uruchom: npm run balance            (domyślnie 48 h gry, 3 przebiegi z różnymi ziarnami)
-//          npm run balance -- 72 5     (72 h, 5 przebiegów)
+// Uruchom: npm run balance                  (domyślnie 48 h gry, 3 przebiegi z różnymi ziarnami)
+//          npm run balance -- 72 5          (72 h, 5 przebiegów)
+//          npm run balance -- 120 3 plain   (bot bez technologii, lochów i zestawów — punkt odniesienia)
 import ExcelJS from 'exceljs';
-import { mkdirSync } from 'node:fs';
-import { B, LANDS, ORES, RAR } from '../src/data';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { B, DUNG_ORDER, LANDS, ORES, RAR, SET_FORGE_LVL, SET_IDS, TECH_IDS } from '../src/data';
 import { bossWaiting } from '../src/engine/combat';
+import { lezaBosses } from '../src/engine/dungeon';
 import { canSmelt } from '../src/engine/forge';
 import { goldWave, jumpChances, recPower, upCost, upTime } from '../src/engine/formulas';
 import { Game } from '../src/engine/game';
 import { mulberry32 } from '../src/engine/rng';
 import { newState } from '../src/engine/state';
+import { techBlock } from '../src/engine/tech';
+import type { TechId } from '../src/engine/types';
 
 const HOURS = Number(process.argv[2] ?? 48);
 const RUNS = Number(process.argv[3] ?? 3);
+const PLAIN = process.argv[4] === 'plain';
 const STEP = 250;          // ms czasu gry na krok
 const BOSS_RETRY = 120000; // bot próbuje bossa co 2 min, gdy ma ≥ 90% zalecanej Mocy
+const TOWER_RETRY = 30 * 60000;
+const SAMPLE = 6 * 60000;  // próbka Mocy co 6 min (do kalibracji)
+/** Kolejność badań bota: pierwsze niezablokowane z listy. */
+const TECH_PRIORITY: TechId[] = ['w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 'e_noc'];
 
-interface HourRow { run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; smelted: number; jumps: number; best: string; }
-interface BossRow { run: number; land: string; boss: string; h: number }
+interface HourRow {
+  run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; smelted: number; jumps: number; best: string;
+  books: number; tech: number; sets: string; tower: number;
+}
+interface BossRow { run: number; land: string; boss: string; h: number; forge: number; power: number }
 
 function runOnce(run: number, seed: number) {
   let t = Date.UTC(2026, 0, 1);
@@ -25,7 +37,9 @@ function runOnce(run: number, seed: number) {
   g.s.auto = false;
   const hours: HourRow[] = [];
   const bosses: BossRow[] = [];
+  const samples: number[] = [];
   let sinceBoss = 0;
+  let sinceTower = TOWER_RETRY;
   let cleared = 0;
   g.on(e => { if (e.t === 'modal') g.uiBusy = false; });
   const total = HOURS * 3600000;
@@ -38,7 +52,31 @@ function runOnce(run: number, seed: number) {
       g.smeltManual();
       if (g.pendingDelta() > 0) g.equipPending(); else g.sellPending();
     }
-    if (!g.s.forge.up && g.s.forge.lvl < B.FORGE_MAX && g.s.gold >= upCost(g.s.forge.lvl + 1)) g.upgrade();
+    if (!g.s.forge.up && g.s.forge.lvl < B.FORGE_MAX && g.s.gold >= g.upgradeCost()) g.upgrade();
+    if (!PLAIN) {
+      // badania: po ulepszeniu kuźni, za resztę złota
+      if (!g.s.tech.cur) for (const id of TECH_PRIORITY) if (!techBlock(g.s, id)) { g.research(id); break; }
+      // zestawy: ruda unikalna, której jest najwięcej
+      if (g.s.forge.lvl >= SET_FORGE_LVL) {
+        const best = SET_IDS.filter(k => (g.s.uniq[k] ?? 0) > 0).sort((a, b) => (g.s.uniq[b] ?? 0) - (g.s.uniq[a] ?? 0))[0] ?? null;
+        if (g.s.uniqSel !== best) g.setUniq(best);
+      }
+      // lochy: codzienne klucze, Wieża co 30 min
+      sinceTower += STEP;
+      if (g.b.mode === 'camp' && !g.b.enemy?.boss) {
+        for (const id of DUNG_ORDER) {
+          if (!g.dungUnlocked(id)) continue;
+          if (id === 'wieza') { if (sinceTower >= TOWER_RETRY && g.startDung('wieza')) { sinceTower = 0; break; } continue; }
+          if (g.dungKeys(id) < 1) continue;
+          if (id === 'leza') { const ls = lezaBosses(g.ctx); if (g.startDung('leza', ls[ls.length - 1])) break; continue; }
+          if (g.startDung(id)) break;
+        }
+      }
+      // Sztolnia: na punkcie kontrolnym schodź dalej, jeśli bohater ma ponad 60% zdrowia
+      if (g.b.dung?.id === 'sztolnia' && g.b.pause === Number.POSITIVE_INFINITY) {
+        if (g.b.heroHp > 0.6 * g.b.heroMax && g.b.dung.floor < 20) g.dungGo(); else g.dungExit();
+      }
+    }
     sinceBoss += STEP;
     if (bossWaiting(g.ctx) && !g.b.enemy?.boss && sinceBoss >= BOSS_RETRY && g.stats.power >= 0.9 * recPower(g.s.cur.land)) {
       g.challengeBoss();
@@ -48,30 +86,38 @@ function runOnce(run: number, seed: number) {
     g.tick(STEP);
     const nowCleared = g.s.cleared.filter(Boolean).length;
     if (nowCleared > cleared) {
-      for (let i = 0; i < LANDS.length; i++) if (g.s.cleared[i] && !bosses.some(b => b.run === run && b.land === LANDS[i].n)) bosses.push({ run, land: LANDS[i].n, boss: LANDS[i].boss, h: ms / 3600000 });
+      for (let i = 0; i < LANDS.length; i++) if (g.s.cleared[i] && !bosses.some(b => b.run === run && b.land === LANDS[i].n)) bosses.push({ run, land: LANDS[i].n, boss: LANDS[i].boss, h: ms / 3600000, forge: g.s.forge.lvl, power: g.stats.power });
       cleared = nowCleared;
     }
+    if (ms % SAMPLE === 0) samples.push(g.stats.power);
     if (ms % 3600000 === 0) {
       const bestR = Math.max(-1, ...Object.values(g.s.eq).map(it => it?.r ?? -1));
       hours.push({
         run, h: ms / 3600000, land: LANDS[g.s.cur.land].n, stage: g.s.cur.stage, forge: g.s.forge.lvl, power: g.stats.power,
         rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, best: bestR >= 0 ? RAR[bestR].n : '—',
+        books: g.s.books, tech: TECH_IDS.reduce((a, id) => a + (g.s.tech.lv[id] ?? 0), 0),
+        sets: g.stats.sets.map(x => `${x.id}:${x.count}`).join(' '), tower: g.s.dungeons.wieza.best,
       });
     }
   }
-  return { hours, bosses };
+  return { hours, bosses, samples };
 }
 
 async function main() {
   const hours: HourRow[] = [];
   const bosses: BossRow[] = [];
+  const samples: number[][] = [];
   for (let r = 1; r <= RUNS; r++) {
     const res = runOnce(r, 1000 + r);
     hours.push(...res.hours);
     bosses.push(...res.bosses);
+    samples.push(res.samples);
     const last = res.hours[res.hours.length - 1];
-    console.log(`Przebieg ${r}: po ${HOURS} h — ${last.land}, etap ${last.stage}, kuźnia ${last.forge}, Moc ${last.power}, pokonani bossowie: ${res.bosses.length}`);
+    console.log(`Przebieg ${r}${PLAIN ? ' (plain)' : ''}: po ${HOURS} h — ${last.land}, etap ${last.stage}, kuźnia ${last.forge}, Moc ${last.power}, Księgi ${last.books}, badania ${last.tech}, zestawy [${last.sets}], wieża ${last.tower}, bossowie: ${res.bosses.length}`);
+    console.log('  bossowie (h): ' + res.bosses.map(b => b.h.toFixed(1)).join(' '));
   }
+  mkdirSync('balans', { recursive: true });
+  writeFileSync(`balans/sim-${PLAIN ? 'plain' : 'full'}.json`, JSON.stringify({ bosses, samples, step: SAMPLE }));
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Kuźnia Legend — symulator balansu';
@@ -90,12 +136,15 @@ async function main() {
     { header: 'Moc / zalecana', key: 'ratio', width: 14, fmt: '0%' }, { header: 'Złoto', key: 'gold', width: 14, fmt: '#,##0' },
     { header: 'Wytopy', key: 'smelted', width: 10, fmt: '#,##0' }, { header: 'Przeskoki', key: 'jumps', width: 10, fmt: '#,##0' },
     { header: 'Najlepsza rzadkość', key: 'best', width: 18 },
+    { header: 'Księgi', key: 'books', width: 9 }, { header: 'Poziomy badań', key: 'tech', width: 14 },
+    { header: 'Zestawy', key: 'sets', width: 18 }, { header: 'Wieża', key: 'tower', width: 8 },
   ]);
   hours.forEach((h, i) => { ws1.addRow(h); ws1.getCell(`H${i + 2}`).value = { formula: `F${i + 2}/G${i + 2}` }; });
 
   const ws2 = sheet('Bossowie', [
     { header: 'Przebieg', key: 'run', width: 10 }, { header: 'Kraina', key: 'land', width: 24 },
     { header: 'Boss', key: 'boss', width: 22 }, { header: 'Pokonany po (h gry)', key: 'h', width: 20, fmt: '0.0' },
+    { header: 'Poziom kuźni', key: 'forge', width: 13 }, { header: 'Moc', key: 'power', width: 14, fmt: '#,##0' },
   ]);
   bosses.forEach(b => ws2.addRow(b));
 
@@ -115,7 +164,6 @@ async function main() {
     ws4.addRow({ l, cost: l === 1 ? 0 : upCost(l), time: l === 1 ? 0 : upTime(l) / 3600000, p1: p1 / 100, p2: p2 / 100 });
   }
 
-  mkdirSync('balans', { recursive: true });
   await wb.xlsx.writeFile('balans/balans.xlsx');
   console.log('Zapisano balans/balans.xlsx');
 }

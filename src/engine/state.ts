@@ -1,8 +1,18 @@
-import { B, LANDS } from '../data';
-import type { Battle, GameState } from './types';
+import { DUNGEONS, DUNG_ORDER, LANDS } from '../data';
+import type { Battle, DungId, GameState } from './types';
 
-/** 2 = poziom przedmiotu liczony z poziomu kuźni (wcześniej z postępu w kampanii). */
-export const SAVE_VERSION = 2;
+/**
+ * Wersje zapisu:
+ * 2 — poziom przedmiotu liczony z poziomu kuźni (wcześniej z postępu w kampanii),
+ * 3 — technologie, Księgi Wiedzy, rudy unikalne, wiele lochów.
+ */
+export const SAVE_VERSION = 3;
+
+function newDungeons(): GameState['dungeons'] {
+  const d = {} as GameState['dungeons'];
+  for (const id of DUNG_ORDER) d[id] = { day: '', keys: DUNGEONS[id].keys, best: 0 };
+  return d;
+}
 
 export function newState(now: number): GameState {
   return {
@@ -10,7 +20,8 @@ export function newState(now: number): GameState {
     forge: { lvl: 1, up: 0, left: 0 }, pity: 0, eq: {}, pending: null,
     cur: { land: 0, stage: 1, wave: 1 }, maxLand: 0, frontStage: 1, cleared: LANDS.map(() => false), bestG: 0,
     auto: false, oreSel: 1, elSel: null,
-    smith: { fame: 0, sent: [], log: [] }, dung: { day: '', keys: B.DUNGEON_KEYS, best: 0 },
+    smith: { fame: 0, sent: [], log: [] },
+    dungeons: newDungeons(), books: 0, uniq: {}, uniqSel: null, tech: { lv: {}, cur: null },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0 },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
@@ -22,22 +33,31 @@ const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 
 export function migrate(raw: unknown, now: number): GameState {
   const d = newState(now);
   if (!isObj(raw)) return d;
-  const out = Object.assign(d, raw) as GameState;
+  const out = Object.assign(d, raw) as GameState & { dung?: { day: string; keys: number; best: number } };
   const fresh = newState(now);
   out.forge = Object.assign(fresh.forge, isObj(raw.forge) ? raw.forge : {});
   out.cur = Object.assign(fresh.cur, isObj(raw.cur) ? raw.cur : {});
   out.smith = Object.assign(fresh.smith, isObj(raw.smith) ? raw.smith : {});
-  out.dung = Object.assign(fresh.dung, isObj(raw.dung) ? raw.dung : {});
   out.stats = Object.assign(fresh.stats, isObj(raw.stats) ? raw.stats : {});
+  out.tech = Object.assign(fresh.tech, isObj(raw.tech) ? raw.tech : {});
+  if (!isObj(out.tech.lv)) out.tech.lv = {};
+  const dungeons = isObj(raw.dungeons) ? raw.dungeons : {};
+  out.dungeons = fresh.dungeons;
+  for (const id of DUNG_ORDER) if (isObj(dungeons[id])) Object.assign(out.dungeons[id as DungId], dungeons[id]);
+  if (isObj(raw.dung)) Object.assign(out.dungeons.sztolnia, raw.dung); // zapis sprzed wersji 3
+  delete out.dung;
   if (!Array.isArray(out.ores) || out.ores.length !== fresh.ores.length) out.ores = fresh.ores;
   if (!Array.isArray(out.cleared)) out.cleared = fresh.cleared;
   while (out.cleared.length < LANDS.length) out.cleared.push(false);
   if (!isObj(out.eq)) out.eq = {};
   if (!isObj(out.els)) out.els = {};
+  if (!isObj(out.uniq)) out.uniq = {};
+  if (typeof out.books !== 'number') out.books = 0;
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
   for (const it of [...Object.values(out.eq), out.pending]) {
     if (!it) continue;
     it.flvl ??= 0; it.forced ??= ''; it.kills ??= {}; it.bosses ??= 0; it.owners ??= [it.smith]; it.obieg ??= false; it.ls ??= 0; it.aw ??= null;
+    it.set ??= null;
     if (oldVersion < 2) it.lvl = 2 * (it.flvl || out.forge.lvl) + 1;
   }
   out.maxLand = Math.min(out.maxLand, LANDS.length - 1);

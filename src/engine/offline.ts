@@ -3,25 +3,30 @@ import type { Ctx } from './context';
 import { canSmelt, decideAuto, smelt, tickForge } from './forge';
 import { curG, goldWave } from './formulas';
 import { checkLegend } from './legend';
+import { techMods } from './mods';
 import { invalidate } from './stats';
+import { tickResearch } from './tech';
 import type { OfflineReport } from './types';
 
 /**
- * Nagrody za czas poza grą: do 8 h walki w obecnej krainie z wydajnością 50%,
- * dokończenie ulepszenia kuźni i — przy włączonym auto-wytopie — „Skrzynia nocnej zmiany”.
+ * Nagrody za czas poza grą: do 8 h (plus Nocna zmiana) walki w obecnej krainie z wydajnością 50%,
+ * dokończenie ulepszenia kuźni i badania oraz — przy włączonym auto-wytopie — „Skrzynia nocnej zmiany”.
  */
 export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   if (ms < 60000) return null;
   const s = ctx.s;
-  const t = Math.min(ms, B.OFFLINE_CAP_MS);
+  const mods = techMods(s);
+  const t = Math.min(ms, B.OFFLINE_CAP_MS + mods.offlineMin * 60000);
   const waves = Math.floor((t / B.OFFLINE_WAVE_MS) * B.OFFLINE_EFFICIENCY);
   if (!waves) return null;
   const L = LANDS[s.cur.land];
-  const gold = waves * goldWave(curG(s));
-  const main = waves * 2;
-  const rare = Math.floor(waves * L.rc + ctx.rng.next());
+  const gold = Math.round(waves * goldWave(curG(s)) * (1 + mods.goldPct / 100));
+  const main = Math.round(waves * 2 * (1 + mods.extraOre / 100));
+  const rare = Math.floor(waves * L.rc * (1 + mods.rarePct / 100) + ctx.rng.next());
   const el = L.el ? Math.floor(waves * B.ELEM_DROP) : 0;
+  const books = Math.floor(waves * B.BOOK_DROP + ctx.rng.next());
   s.gold += gold;
+  s.books += books;
   s.ores[L.main] += main;
   s.ores[L.rare] += rare;
   if (L.el && el) s.els[L.el] = (s.els[L.el] ?? 0) + el;
@@ -34,6 +39,8 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   }
   const before = s.forge.lvl;
   tickForge(ctx, t, true);
+  const tech = s.tech.cur?.id ?? null;
+  const researched = tickResearch(ctx, t, true) ? tech : null;
   const chest: OfflineReport['chest'] = [];
   let chestCount = 0;
   if (s.auto && s.forge.lvl >= B.AUTO_FORGE_LVL) {
@@ -49,7 +56,7 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   invalidate(ctx);
   ctx.dirty = true;
   return {
-    ms: t, capped: ms > t, land: s.cur.land, gold, main, rare, el, fame,
-    forgeUp: s.forge.lvl > before ? s.forge.lvl : 0, chest: chest.slice(0, 3), chestCount,
+    ms: t, capped: ms > t, land: s.cur.land, gold, main, rare, el, books, fame,
+    forgeUp: s.forge.lvl > before ? s.forge.lvl : 0, tech: researched, chest: chest.slice(0, 3), chestCount,
   };
 }

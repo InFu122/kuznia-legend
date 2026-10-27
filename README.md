@@ -14,6 +14,7 @@ npm run dev            # gra w przeglądarce z odświeżaniem na żywo
 npm test               # testy silnika
 npm run balance        # symulator balansu → balans/balans.xlsx (domyślnie 48 h gry, 3 przebiegi)
 npm run balance -- 160 5   # 160 h gry, 5 przebiegów
+npm run balance -- 150 3 plain   # bot bez technologii, lochów i zestawów (punkt odniesienia)
 npm run build          # wersja produkcyjna w dist/
 npm run build:single   # cała gra w jednym pliku: dist-single/index.html
 npm run build:artifact # fragment do publikacji jako artefakt claude.ai
@@ -40,12 +41,15 @@ Szczegóły w [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
 
 Wszystkie liczby siedzą w `src/data/balance.ts`. Po każdej zmianie uruchom `npm run balance` i porównaj w arkuszu **Bossowie**, przy jakim poziomie kuźni bot pokonuje bossów, z krzywą `FORGE_AT_BOSS`.
 
-Obecna kalibracja (bot grający bez przerwy): akt I ≈ 0,6 h, akt II ≈ 7 h, akt III ≈ 25 h, akt IV ≈ 115 h.
+Obecna kalibracja (bot grający bez przerwy i korzystający z technologii, lochów oraz zestawów): akt I ≈ 0,6 h, akt II ≈ 7 h, akt III ≈ 25 h, akt IV ≈ 105–145 h (zależnie od szczęścia do zestawu).
 
 ## Plan
 
 1. **Fundament** — projekt, silnik w modułach, testy, symulator balansu. *(gotowe)*
-2. **Pełna gra offline** — wszystkie lochy, drzewko technologii, chowańce, wierzchowce, zestawy, samouczek, dźwięki.
+2. **Pełna gra offline**
+   - 2a: drzewko technologii (Akademia Kowalska, Księgi Wiedzy), lochy Skarbiec Złota, Wieża Wyzwań, Leża Bossów i Ołtarze Żywiołów, rudy unikalne i 6 zestawów. *(gotowe)*
+   - 2b: chowańce, wierzchowce, umiejętności, Labirynt Minotaura, Krypta Bohaterów, Zapomniana Zbrojownia.
+   - 2c: misje dzienne, kalendarz logowania, samouczek, dźwięki.
 3. **Serwer** — Nakama: konta, zapis, wytop liczony na serwerze, rankingi, arena.
 4. **Społeczność** — klany, czat, prawdziwy Wielki Obieg, boss i wojny klanów.
 5. **Sklep** — aplikacja Capacitor na Androida i iOS, płatności, reklamy z nagrodą, soft launch.

@@ -11,8 +11,9 @@ import { DungeonPanel } from './panels/Dungeon';
 import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
+import { ResearchPanel } from './panels/Research';
 
-const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['krainy', 'Krainy'], ['sztolnia', 'Sztolnia'], ['kodeks', 'Kodeks']];
+const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['kodeks', 'Kodeks']];
 
 export interface SaveInfo { mode: 'local' | 'cloud' }
 
@@ -56,14 +57,16 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             <span><small>Moc</small><b>{fmt(game.stats.power)}</b></span>
             <span class="gold"><small>Złoto</small><b>{fmt(s.gold)}</b></span>
             <span><small>Kuźnia</small><b>{s.forge.lvl}{s.forge.up ? '↑' : ''}</b></span>
+            <span class="books"><small>Księgi</small><b>{fmt(s.books)}</b></span>
           </div>
         </header>
         <Arena game={game} onTab={t => goTab(t, true)} />
         <main class="panel" ref={panelRef}>
           {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} />}
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
+          {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
-          {tab === 'sztolnia' && <DungeonPanel game={game} />}
+          {tab === 'lochy' && <DungeonPanel game={game} />}
           {tab === 'kodeks' && <CodexPanel game={game} saveMode={save.mode} onReset={() => open({ kind: 'reset' })} />}
         </main>
       </div>

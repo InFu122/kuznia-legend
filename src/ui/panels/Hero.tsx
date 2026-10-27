@@ -1,4 +1,4 @@
-import { LANDS, SLOTS, SLOT_ORDER } from '../../data';
+import { LANDS, SETS, SLOTS, SLOT_ORDER } from '../../data';
 import { itemName, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { FoeType, Item } from '../../engine/types';
@@ -29,6 +29,20 @@ export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => 
         </div>
         {extra.length > 0 && <p class="sub" style={{ marginTop: '8px' }}>{extra.join(' · ')}</p>}
       </section>
+      {c.sets.length > 0 && (
+        <section class="card">
+          <div class="eyebrow">Zestawy</div>
+          <ul class="sets">
+            {c.sets.map(({ id, count }) => (
+              <li key={id}>
+                <b style={{ color: SETS[id].col }}>{SETS[id].n}</b> · {count}/4 części
+                <div class={count >= 2 ? 'on' : 'off'}>2 części: {SETS[id].d2}</div>
+                <div class={count >= 4 ? 'on' : 'off'}>4 części: {SETS[id].d4}</div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section class="card">
         <div class="row"><div class="eyebrow">Ekwipunek</div><span class="sub">Kropki = progi legendy</span></div>
         <div class="slots" style={{ marginTop: '10px' }}>

@@ -33,7 +33,9 @@ export function CodexPanel({ game, saveMode, onReset }: { game: Game; saveMode: 
           <div class="stat"><small>Wrogowie</small><b>{fmt(s.stats.kills)}</b></div>
           <div class="stat"><small>Bossowie</small><b>{fmt(s.stats.bosses)}</b></div>
           <div class="stat"><small>Krainy</small><b>{s.cleared.filter(Boolean).length}/{LANDS.length}</b></div>
-          <div class="stat"><small>Sztolnia</small><b>{s.dung.best || '—'}</b></div>
+          <div class="stat"><small>Sztolnia</small><b>{s.dungeons.sztolnia.best || '—'}</b></div>
+          <div class="stat"><small>Wieża Wyzwań</small><b>{s.dungeons.wieza.best || '—'}</b></div>
+          <div class="stat"><small>Technologie</small><b>{Object.values(s.tech.lv).reduce((a, b) => a + (b ?? 0), 0)}</b></div>
         </div>
       </section>
       <section class="card settings">

@@ -1,6 +1,7 @@
-import { B, ELEM, LANDS, ORES } from '../data';
+import { B, ELEM, LANDS, ORES, SETS, setOfLand } from '../data';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
+import { techMods } from './mods';
 import { Dstar, Hstar, curG, early, gOf, goldWave } from './formulas';
 import { addFame } from './legend';
 import { obiegItem } from './obieg';
@@ -95,11 +96,12 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   if (b.mode === 'dung') { dungFloor(ctx); return; }
   if (e.boss) { bossWon(ctx, e); return; }
   const L = LANDS[s.cur.land];
-  s.gold += goldWave(curG(s));
-  const nOre = ri(ctx.rng, 1, 3);
+  const mods = techMods(s);
+  s.gold += Math.round(goldWave(curG(s)) * (1 + mods.goldPct / 100));
+  const nOre = ri(ctx.rng, 1, 3) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
   s.ores[L.main] += nOre;
   let loot = `+${nOre} ${ORES[L.main].n}`;
-  if (ctx.rng.next() < L.rc) {
+  if (ctx.rng.next() < L.rc * (1 + mods.rarePct / 100)) {
     s.ores[L.rare]++;
     loot += ` · ${ORES[L.rare].n}!`;
     toast(ctx, 'Rzadka ruda: ' + ORES[L.rare].n, 'good');
@@ -107,6 +109,10 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   if (L.el && ctx.rng.next() < B.ELEM_DROP) {
     s.els[L.el] = (s.els[L.el] ?? 0) + 1;
     loot += ' · ' + ELEM[L.el].n;
+  }
+  if (ctx.rng.next() < B.BOOK_DROP) {
+    s.books++;
+    loot += ' · Księga Wiedzy';
   }
   ctx.emit({ t: 'float', side: 'foe', text: loot, cls: 'loot', force: true });
   addFame(ctx, e.count, e.type, false);
@@ -130,17 +136,23 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   const L = LANDS[land];
   s.stats.bosses++;
   addFame(ctx, 0, e.type, true);
-  const gold = goldWave(gOf(land, B.STAGES_PER_LAND)) * 10;
+  const first = !s.cleared[land];
+  const gold = Math.round(goldWave(gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + techMods(s).goldPct / 100));
   const n = ri(ctx.rng, 2, 4);
+  const books = first ? B.BOOKS_BOSS_FIRST + land : ctx.rng.next() < B.BOOKS_BOSS_CHANCE ? 1 : 0;
+  const set = setOfLand(land);
+  const uniq = set ? (first ? B.UNIQ_BOSS_FIRST : ctx.rng.next() < B.UNIQ_BOSS_CHANCE ? 1 : 0) : 0;
   s.gold += gold;
   s.ores[L.rare] += n;
+  s.books += books;
+  if (set && uniq) s.uniq[set] = (s.uniq[set] ?? 0) + uniq;
   const found = ctx.rng.next() < B.OBIEG_FIND_FROM_BOSS ? obiegItem(ctx) : null;
   if (found) { if (!s.pending) s.pending = found; else sell(ctx, found, true); }
   b.enemy = null;
   b.heroHp = b.heroMax;
   b.pause = 600;
   ctx.dirty = true;
-  if (!s.cleared[land]) {
+  if (first) {
     s.cleared[land] = true;
     if (land < LANDS.length - 1) {
       s.maxLand = Math.max(s.maxLand, land + 1);
@@ -148,11 +160,12 @@ function bossWon(ctx: Ctx, e: Enemy): void {
       s.frontStage = 1;
       s.bestG = Math.max(s.bestG, gOf(land + 1, 1));
     } else s.cur = { land, stage: 1, wave: 1 };
-    ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, found: !!found } });
+    ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, found: !!found, books, uniq } });
   } else {
     s.cur.stage = 1;
     s.cur.wave = 1;
-    toast(ctx, `Pokonano: ${L.boss} · +${fmtN(gold)} złota, ${n} × ${ORES[L.rare].n}` + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
+    toast(ctx, `Pokonano: ${L.boss} · +${fmtN(gold)} złota, ${n} × ${ORES[L.rare].n}` + (books ? ', Księga Wiedzy' : '') +
+      (uniq && set ? ` · ${SETS[set].ore}!` : '') + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
   }
 }
 
@@ -177,7 +190,7 @@ function onHeroDown(ctx: Ctx, e: Enemy): void {
 export function goLand(ctx: Ctx, i: number): boolean {
   const { s, b } = ctx;
   if (i < 0 || i > s.maxLand) return false;
-  if (b.mode === 'dung') { toast(ctx, 'Najpierw wyjdź ze Sztolni.', 'bad'); return false; }
+  if (b.mode === 'dung') { toast(ctx, 'Najpierw wyjdź z lochu.', 'bad'); return false; }
   const front = i === s.maxLand && !s.cleared[i];
   s.cur = { land: i, stage: front ? s.frontStage : 1, wave: 1 };
   b.enemy = null;
