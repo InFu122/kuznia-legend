@@ -67,6 +67,16 @@ Jeśli port 8080 jest zajęty (np. przez inną aplikację CasaOS), zmień `WEB_P
 - Rankingi (Moc, Wieża Wyzwań co tydzień, postęp) liczy serwer z zapisu — gracz nie może wysłać sobie wyniku.
 - Bez połączenia gra działa dalej i zapisuje lokalnie; co minutę próbuje połączyć się znowu.
 
+## Gdy coś nie działa
+
+| Objaw | Przyczyna | Co zrobić |
+| --- | --- | --- |
+| `nakama` ciągle się restartuje, w logach `password authentication failed for user "nakama"` | `POSTGRES_PASSWORD` zmienione w `.env` po pierwszym uruchomieniu — baza pamięta stare hasło | `docker compose exec postgres psql -U nakama -d nakama -c "ALTER USER nakama PASSWORD '$(grep '^POSTGRES_PASSWORD=' .env \| cut -d= -f2)';"` a potem `docker compose restart nakama` |
+| W grze „Brak serwera”, w Kodeksie „serwer odrzucił klucz gry” | `NAKAMA_SERVER_KEY` zmieniony bez przebudowania gry | `docker compose up -d --build` |
+| W Kodeksie „błąd serwera 502” | gra działa, ale Nakama nie wstała | `docker compose logs nakama` — przyczyna jest w ostatnich liniach |
+
+Przyczynę braku połączenia gra pokazuje w zakładce Kodeks, w karcie **Serwer gry**.
+
 ## Bezpieczeństwo
 
 - Nie wystawiaj portów 7350, 7351 i 8080 do internetu bez HTTPS. Publiczny adres z domeną i certyfikatem przygotujemy przed wydaniem aplikacji (etap 5).
