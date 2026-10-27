@@ -46,6 +46,9 @@ export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.6, 1.75, 2.0, 2.65, 2.9, 
 /** Siła przedmiotu rośnie o 8% na poziom przedmiotu; poziom przedmiotu = 2 × poziom kuźni (+0–2). */
 export const ITEM_LVL_GROWTH = 1.08;
 
+/** Tempa testowe (przyspieszenie walki, kuźni i timerów). Z serwerem — tylko gdy serwer ma włączony tryb testowy. */
+export const TEST_SPEEDS = [1, 10, 50, 100] as const;
+
 export const B = {
   PITY_MAX: 30,                 // po tylu wytopach bez przeskoku następny przeskakuje na pewno
   FORGE_MAX: 30,

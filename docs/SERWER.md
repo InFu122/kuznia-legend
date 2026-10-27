@@ -58,6 +58,15 @@ docker compose down                                       # wyłączenie (dane z
 
 Jeśli port 8080 jest zajęty (np. przez inną aplikację CasaOS), zmień `WEB_PORT` w `.env` i uruchom `docker compose up -d` ponownie.
 
+### Tempo testowe
+
+Na czas testów serwer pozwala przyspieszyć grę: **Kodeks → Ustawienia → Tempo testowe ×1 / ×10 / ×50 / ×100** (walka, kuźnia, badania, wykluwanie i inne timery). Gdy tempo jest włączone, obok nazwy gry widać plakietkę „×10” itp. Limit ustawia zmienna `TEST_SPEED` w `.env` (bez niej: do ×100):
+
+- `TEST_SPEED=100` — do ×100, `TEST_SPEED=10` — do ×10, `TEST_SPEED=1` — tempo testowe wyłączone.
+- Po zmianie: `docker compose up -d` (w logach Nakamy: „tempo testowe: do ×100” albo „wyłączone”).
+
+W trybie testowym serwer nie pilnuje tempa rozwoju kuźni. Po wyłączeniu pilnuje go od ostatniego zapisu, więc konta z testów grają dalej. Dzienne limity (arena, klan, klucze lochów) liczą się w prawdziwym czasie także przy przyspieszeniu. **Przed udostępnieniem gry innym graczom ustaw `TEST_SPEED=1`.**
+
 ## Jak gra korzysta z serwera
 
 - Przy pierwszym uruchomieniu na urządzeniu gra zakłada konto sama (logowanie identyfikatorem urządzenia).
@@ -138,6 +147,7 @@ Przyczynę braku połączenia gra pokazuje w zakładce Kodeks, w karcie **Serwer
 ## Bezpieczeństwo
 
 - Nie wystawiaj portów 7350, 7351 i 8080 do internetu bez HTTPS. Publiczny adres z domeną i certyfikatem przygotujemy przed wydaniem aplikacji (etap 5).
+- Przed udostępnieniem gry innym graczom wyłącz tempo testowe: `TEST_SPEED=1` w `.env`.
 - `NAKAMA_SERVER_KEY` jest wbudowany w grę — to normalne w Nakamie. Tajne są pozostałe klucze i hasła z `.env`; plik `.env` nie trafia do repozytorium.
 
 ## Praca nad serwerem bez Dockera

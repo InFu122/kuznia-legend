@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import { B } from './data';
 import { Game } from './engine/game';
 import { migrate, newState } from './engine/state';
 import type { GameState } from './engine/types';
@@ -80,6 +81,7 @@ function boot(hotData?: { s?: string }) {
       }
       takeName(r);
       if (typeof r.clanLvl === 'number') game.setClanLvl(r.clanLvl);
+      game.setMaxSpeed(l.testSpeed);
       save.mode = 'server';
       save.error = undefined;
       startChat(l);
@@ -140,6 +142,7 @@ function boot(hotData?: { s?: string }) {
     clearTimeout(retry);
     try {
       const remote = await l.load();
+      game.setMaxSpeed(l.testSpeed);
       save.reason = undefined;
       if (remote) adopt(remote);
       await saveServer(l);
@@ -196,6 +199,14 @@ function boot(hotData?: { s?: string }) {
   requestAnimationFrame(frame);
 
   setInterval(() => { if (game.takeDirty()) void persist(); }, link ? 30000 : 15000);
+  // Tempo testowe z serwerem: wytopy zużywają ziarna szybciej — gdy zapas maleje, zapis od razu (po nim gra dobiera ziarna).
+  let refill = false;
+  if (link) setInterval(() => {
+    if (refill || !link.online || game.s.speed <= 1 || game.s.seeds.length >= B.SEEDS_REFILL) return;
+    refill = true;
+    game.takeDirty();
+    void persist().finally(() => { refill = false; });
+  }, 2000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) void persist(); });
   window.claude?.hot?.snapshot?.(() => ({ s: JSON.stringify(game.s) }));
 }

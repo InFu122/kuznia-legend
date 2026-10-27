@@ -100,7 +100,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         <header class="top">
           <div class="top-row">
             <div>
-              <div class="brand">Kuźnia Legend</div>
+              <div class="brand">Kuźnia Legend{s.speed > 1 && <span class="speed-badge" title="Tempo testowe">×{s.speed}</span>}</div>
               <div class={`save-badge ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
             </div>
             <div class="top-btns">

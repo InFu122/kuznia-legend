@@ -156,15 +156,36 @@ describe('Wielki Obieg z serwerem', () => {
     expect(takeObieg(g.ctx)).toBeNull(); // pusty zapas: z serwerem nie ma symulowanych znalezisk
   });
 
-  it('z serwerem nie ma symulowanych wieści ani tempa ×10', async () => {
+  it('z serwerem nie ma symulowanych wieści, a tempo testowe tylko gdy pozwala serwer', async () => {
     const { g, ctx, s } = netGame();
     const { obiegEvent } = await import('../src/engine/obieg');
     s.smith.sent.push({ n: 'Miecz', r: 3 });
     s.smith.fame = 100;
     obiegEvent(ctx);
     expect(s.smith.fame).toBe(100);
+    g.setMaxSpeed(1);                // serwer bez trybu testowego
     g.toggleSpeed();
     expect(s.speed).toBe(1);
+    expect(g.speeds).toEqual([1]);
+    g.setMaxSpeed(100);              // tryb testowy serwera
+    g.setSpeed(50);
+    expect(s.speed).toBe(50);
+    g.setMaxSpeed(10);               // serwer obniżył limit — najszybsze dozwolone
+    expect(s.speed).toBe(10);
+    g.setMaxSpeed(100);              // wybór gracza wraca, gdy znów wolno
+    expect(s.speed).toBe(50);
+    g.setMaxSpeed(1);
+    expect(s.speed).toBe(1);
+  });
+
+  it('bez serwera tempo testowe: ×1, ×10, ×50, ×100', () => {
+    const { g, s } = makeGame(1);
+    expect(g.speeds).toEqual([1, 10, 50, 100]);
+    g.toggleSpeed(); expect(s.speed).toBe(10);
+    g.toggleSpeed(); expect(s.speed).toBe(50);
+    g.toggleSpeed(); expect(s.speed).toBe(100);
+    g.toggleSpeed(); expect(s.speed).toBe(1);
+    g.setSpeed(7); expect(s.speed).toBe(1);
   });
 });
 

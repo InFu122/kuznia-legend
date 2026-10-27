@@ -186,10 +186,14 @@ export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; sav
               onInput={e => game.setSound(true, Number(e.currentTarget.value) / 100)} />
           </label>
         )}
-        {!game.net && (
-          <div class="row">
-            <span class="sub">Tempo testowe ×10 przyspiesza walkę i timery, żeby szybciej sprawdzić progresję.</span>
-            <button class={`toggle${s.speed > 1 ? ' on' : ''}`} aria-pressed={s.speed > 1} onClick={() => game.toggleSpeed()}><span class="knob" />Tempo ×10</button>
+        {game.speeds.length > 1 && (
+          <div class="speed-set">
+            <span class="sub">Tempo testowe przyspiesza walkę, kuźnię, badania i inne timery, żeby szybciej sprawdzić progresję.{game.net ? ' Działa, bo serwer ma włączony tryb testowy.' : ''}</span>
+            <div class="seg speed-seg" role="radiogroup" aria-label="Tempo testowe">
+              {game.speeds.map(v => (
+                <button key={v} role="radio" aria-checked={s.speed === v} class={s.speed === v ? 'on' : ''} onClick={() => game.setSpeed(v)}>×{v}</button>
+              ))}
+            </div>
           </div>
         )}
         <div class="row">

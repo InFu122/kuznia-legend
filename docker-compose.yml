@@ -43,6 +43,7 @@ services:
         --console.username "${NAKAMA_CONSOLE_USER:-admin}"
         --console.password "${NAKAMA_CONSOLE_PASSWORD:?Ustaw NAKAMA_CONSOLE_PASSWORD}"
         --console.signing_key "${NAKAMA_CONSOLE_KEY:?Ustaw NAKAMA_CONSOLE_KEY}"
+        --runtime.env "TEST_SPEED=${TEST_SPEED:-100}"
     ports:
       - "${NAKAMA_PORT:-7350}:7350"           # API (aplikacja na telefon połączy się tu bezpośrednio)
       - "${NAKAMA_CONSOLE_PORT:-7351}:7351"   # konsola administratora

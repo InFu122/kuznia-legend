@@ -7,7 +7,7 @@ import { rpcArenaFight, rpcArenaList } from './arena';
 import { chatBlock, chatJoin, chatSend, rpcChatDrop, rpcChatReport } from './chat';
 import { blockGroupApi, rpcClanCreate, rpcClanInfo, rpcClanJoin, rpcClanLeave, rpcClanList, rpcClanManage, rpcClanSettings } from './clan';
 import { rpcClanBossAttack, rpcClanDonate, rpcClanHelp, rpcClanHelpAsk, rpcClanOreAsk, rpcClanOreGive, rpcClanSync } from './clanlife';
-import { SYSTEM_USER, signSecret } from './common';
+import { SYSTEM_USER, signSecret, testSpeed } from './common';
 import { rpcNameSet } from './names';
 import { rpcObiegSync } from './obieg';
 import { createBoards, rpcRanking } from './ranking';
@@ -71,7 +71,8 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerBeforeDemoteGroupUsers(blockGroupApi);
   // Nick i nazwę konta zmienia tylko serwer.
   initializer.registerBeforeUpdateAccount(blockAccountApi);
-  logger.info('Kuźnia Legend: moduł serwera gotowy (zapis v%d)', SAVE_VERSION);
+  const speed = testSpeed(_ctx);
+  logger.info('Kuźnia Legend: moduł serwera gotowy (zapis v%d, tempo testowe: %s)', SAVE_VERSION, speed > 1 ? 'do ×' + speed : 'wyłączone');
 }
 
 // Odwołanie, żeby bundler nie usunął nieeksportowanej funkcji startowej.

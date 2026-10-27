@@ -98,5 +98,11 @@ export function updateObject<T>(
   throw err('Serwer jest zajęty, spróbuj za chwilę.', EXHAUSTED);
 }
 
+/** Najwyższe tempo testowe gry na tym serwerze (zmienna TEST_SPEED w .env; 1 = tryb testowy wyłączony). */
+export function testSpeed(ctx: nkruntime.Context): number {
+  const v = Math.floor(Number((ctx.env || {})['TEST_SPEED']));
+  return Number.isFinite(v) && v > 1 ? Math.min(100, v) : 1;
+}
+
 /** Dzień według zegara serwera (UTC). */
 export const serverDay = (now: number) => new Date(now).toISOString().slice(0, 10);

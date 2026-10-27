@@ -497,3 +497,10 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .inl .px{display:inline-block; vertical-align:-3px; margin:0 3px 0 2px}
 .clog .times{color:var(--straw); font-weight:600; margin-left:4px}
 @media (prefers-reduced-motion: reduce){ .boss-art.hit img, .bhit{animation:none} }
+
+/* tempo testowe */
+.speed-set{display:flex; flex-direction:column; gap:8px}
+.seg.speed-seg{grid-template-columns:repeat(auto-fit, minmax(0,1fr))}
+.speed-badge{display:inline-block; margin-left:8px; padding:2px 7px; border-radius:8px; background:var(--ember); color:#1a0d05;
+  font-family:var(--f-ui); font-size:12px; font-weight:700; letter-spacing:0; vertical-align:6px}
+.toast-n{color:var(--straw)}

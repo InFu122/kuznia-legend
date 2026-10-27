@@ -8,7 +8,7 @@ import type { GameState, Item, SlotId } from '../../src/engine/types';
 import { verifySmelt } from '../../src/engine/verify';
 import { updateArenaHero } from './arena';
 import {
-  INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, userOf,
+  INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, testSpeed, userOf,
   type SaveMeta, type SaveValue,
 } from './common';
 import { ackRewards, clanLevelFor, readHelped } from './clanlife';
@@ -94,6 +94,7 @@ export function rpcSaveGet(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
   return JSON.stringify({
     state: obj ? obj.value.state : null,
     version: obj ? obj.version : null,
+    testSpeed: testSpeed(ctx),
     serverTime: Date.now(),
   });
 }
@@ -117,7 +118,9 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   const now = Date.now();
   const s = migrate(raw, now);
   s.name = cleanName(s.name);
-  s.speed = 1;
+  // Tempo testowe tylko na serwerze z włączonym trybem testowym (TEST_SPEED w .env).
+  const maxSpeed = testSpeed(ctx);
+  s.speed = Math.max(1, Math.min(maxSpeed, Math.floor(Number(s.speed)) || 1));
   const problems = validateSave(s);
   if (problems.length) {
     logger.warn('Odrzucony zapis gracza %s: %s', userId, problems.slice(0, 5).join('; '));
@@ -135,7 +138,10 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   let meta: SaveMeta = cur && cur.value.meta ? cur.value.meta : { t0: now, f0: target, pity: [] };
   if (target < meta.f0) meta = { t0: now, f0: target, pity: meta.pity, clMax: meta.clMax }; // nowa gra od zera
   meta.clMax = Math.max(meta.clMax || 0, s.clanLvl);
-  const pace = paceProblem(s, meta, now, readHelped(nk, userId));
+  // W trybie testowym serwer nie pilnuje tempa kuźni, tylko przesuwa punkt odniesienia — po wyłączeniu
+  // trybu testowego tempo liczy się od ostatniego zapisu, a nie od początku testów.
+  if (maxSpeed > 1) { meta.t0 = now; meta.f0 = target; }
+  const pace = maxSpeed > 1 ? null : paceProblem(s, meta, now, readHelped(nk, userId));
   if (pace) {
     logger.warn('Odrzucony zapis gracza %s: %s', userId, pace);
     throw err('Zapis odrzucony: ' + pace, INVALID);
@@ -167,7 +173,7 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   updateArenaHero(nk, logger, userId, ctx.username ?? '', s, ver.eq, power);
   // Nagrody klanu zapisane w grze (numery w clanGot) znikają z kolejki do odebrania.
   try { ackRewards(nk, userId, s.clanGot); } catch (e) { logger.warn('Kolejka nagród klanu gracza %s: %s', userId, String(e)); }
-  return JSON.stringify({ version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, serverTime: now });
+  return JSON.stringify({ version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, testSpeed: maxSpeed, serverTime: now });
 }
 
 /**
@@ -182,7 +188,8 @@ export function rpcSeeds(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: 
   if (!Number.isFinite(from) || from < 0) throw err('Zły numer wytopu.', INVALID);
   const cur = readSave(nk, userId);
   const base = cur ? cur.value.state.sx || 0 : 0;
-  const to = Math.min(from + n, base + SEEDS_AHEAD);
+  // W trybie testowym gra wytapia szybciej, więc serwer wydaje ziarna dalej naprzód.
+  const to = Math.min(from + n, base + SEEDS_AHEAD * (testSpeed(ctx) > 1 ? 4 : 1));
   const secret = smeltSecret(nk, userId);
   const seeds: number[] = [];
   for (let i = from; i < to; i++) seeds.push(seedOf(nk, secret, i));
@@ -190,6 +197,6 @@ export function rpcSeeds(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: 
 }
 
 /** Czas serwera — gra liczy od niego dzienne resety. */
-export function rpcTime(_ctx: nkruntime.Context, _logger: nkruntime.Logger, _nk: nkruntime.Nakama, _payload: string): string {
-  return JSON.stringify({ serverTime: Date.now() });
+export function rpcTime(ctx: nkruntime.Context, _logger: nkruntime.Logger, _nk: nkruntime.Nakama, _payload: string): string {
+  return JSON.stringify({ serverTime: Date.now(), testSpeed: testSpeed(ctx) });
 }

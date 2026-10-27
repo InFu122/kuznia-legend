@@ -1,4 +1,4 @@
-import { B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH } from '../data';
+import { B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS } from '../data';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
@@ -27,6 +27,10 @@ export class Game {
   private listeners = new Set<(e: GameEvent) => void>();
   /** Gdy interfejs pokazuje okno, auto-wytop czeka. */
   uiBusy = false;
+  /** Najwyższe dozwolone tempo testowe: bez serwera ×100, z serwerem tyle, ile pozwala serwer (domyślnie ×1). */
+  maxSpeed: number;
+  /** Tempo wybrane przez gracza, przywracane, gdy serwer pozwoli (np. po ponownym uruchomieniu gry). */
+  private wantSpeed = 1;
   lastAuto: { item: Item; equipped: boolean } | null = null;
 
   constructor(state: GameState, opts: { rng?: Rng; now?: () => number; net?: boolean } = {}) {
@@ -36,7 +40,9 @@ export class Game {
       rng: opts.rng ?? mulberry32((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0),
       now, emit: e => this.dispatch(e), cache: null, dirty: false, net: !!opts.net,
     };
-    if (this.ctx.net) state.speed = 1; // na serwerze gra toczy się w normalnym tempie
+    this.maxSpeed = this.ctx.net ? 1 : TEST_SPEEDS[TEST_SPEEDS.length - 1];
+    this.wantSpeed = state.speed || 1;
+    if (this.ctx.net) state.speed = 1; // z serwerem przyspieszenie dopiero, gdy serwer ma włączony tryb testowy
     invalidate(this.ctx);
     this.ctx.b.heroHp = this.ctx.b.heroMax;
   }
@@ -205,12 +211,29 @@ export class Game {
     this.changed();
     return this.s.name;
   }
-  toggleSpeed(): void {
-    if (this.ctx.net) return;
-    this.s.speed = this.s.speed > 1 ? 1 : 10;
+  /** Tempa testowe dostępne teraz. */
+  get speeds(): number[] { return TEST_SPEEDS.filter(v => v <= this.maxSpeed); }
+  setSpeed(v: number): void {
+    if (!this.speeds.includes(v)) return;
+    this.wantSpeed = v;
+    if (this.s.speed === v) return;
+    this.s.speed = v;
     this.ctx.dirty = true;
     this.changed();
   }
+  /** Następne tempo testowe (×1 → ×10 → …). */
+  toggleSpeed(): void {
+    const l = this.speeds;
+    this.setSpeed(l[(l.indexOf(this.s.speed) + 1) % l.length]);
+  }
+  /** Najwyższe tempo, na które pozwala serwer (tryb testowy serwera). */
+  setMaxSpeed(n: number): void {
+    this.maxSpeed = Math.max(1, Math.floor(n) || 1);
+    const v = this.allowedSpeed(this.wantSpeed);
+    if (this.s.speed !== v) { this.s.speed = v; this.changed(); }
+  }
+  /** Najszybsze dozwolone tempo nie większe niż `v`. */
+  private allowedSpeed(v: number): number { return Math.max(...this.speeds.filter(x => x <= v)); }
   get net(): boolean { return this.ctx.net; }
   /** Nick nadany albo potwierdzony przez serwer. */
   applyServerName(name: string): void {
@@ -304,7 +327,7 @@ export class Game {
     this.ctx.s = newState(this.ctx.now());
     // Imię, ziarna wytopu i kolejki Obiegu zostają: numer wytopu nigdy się nie cofa.
     // Poziom klanu i lista odebranych nagród klanu też zostają — należą do konta, nie do rozgrywki.
-    Object.assign(this.ctx.s, { name: old.name, sx: old.sx, seeds: old.seeds, obIn: old.obIn, obOut: old.obOut, clanLvl: old.clanLvl, clanGot: old.clanGot });
+    Object.assign(this.ctx.s, { name: old.name, sx: old.sx, seeds: old.seeds, obIn: old.obIn, obOut: old.obOut, clanLvl: old.clanLvl, clanGot: old.clanGot, speed: old.speed });
     this.ctx.b = newBattle();
     this.ctx.cache = null;
     this.lastAuto = null;
@@ -321,6 +344,7 @@ export class Game {
   }
   /** Podmiana stanu (np. nowszy zapis z chmury). */
   load(state: GameState): void {
+    state.speed = this.allowedSpeed(this.wantSpeed); // tempo testowe to ustawienie tego urządzenia
     this.ctx.s = state;
     this.ctx.b = newBattle();
     this.ctx.cache = null;

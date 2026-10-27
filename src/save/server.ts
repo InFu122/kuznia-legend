@@ -73,6 +73,8 @@ export class ServerLink {
   online = false;
   /** Różnica: czas serwera − czas urządzenia (ms). */
   offset = 0;
+  /** Najwyższe tempo testowe, na które pozwala serwer (1 = tryb testowy wyłączony). */
+  testSpeed = 1;
 
   constructor(private readonly cfg: ServerConfig) {}
 
@@ -148,8 +150,9 @@ export class ServerLink {
       try { msg = (JSON.parse(text) as { message?: string }).message ?? text; } catch { /* zostaje surowy tekst */ }
       throw new ServerError(res.status, msg);
     }
-    const data = JSON.parse(text) as T & { serverTime?: number };
+    const data = JSON.parse(text) as T & { serverTime?: number; testSpeed?: number };
     if (typeof data.serverTime === 'number') this.offset = data.serverTime - Date.now();
+    if (typeof data.testSpeed === 'number') this.testSpeed = data.testSpeed;
     return data;
   }
 
