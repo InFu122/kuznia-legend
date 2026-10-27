@@ -22,7 +22,7 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   if (!waves) return null;
   const L = LANDS[s.cur.land];
   const gold = Math.round(waves * goldWave(curG(s)) * (1 + mods.goldPct / 100));
-  const main = Math.round(waves * 2 * (1 + mods.extraOre / 100));
+  const main = Math.round(waves * B.ORE_DROP * (2 + mods.extraOre / 100));
   const rare = Math.floor(waves * L.rc * (1 + mods.rarePct / 100) + ctx.rng.next());
   const el = L.el ? Math.floor(waves * B.ELEM_DROP) : 0;
   const books = Math.floor(waves * B.BOOK_DROP + ctx.rng.next());

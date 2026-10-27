@@ -293,3 +293,10 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .skpip{width:22px; height:5px; border-radius:3px; background:#2a333d; overflow:hidden}
 .skpip i{display:block; height:100%; background:var(--ash)}
 .skpip.ready i{background:var(--straw)}
+/* Drop rudy: kamień leci z wroga do zakładki Kuźnia */
+.ore-fly{position:fixed; z-index:40; width:16px; height:16px; pointer-events:none; will-change:transform, opacity}
+.ore-fly i{position:absolute; inset:2px; background:var(--c); transform:rotate(45deg); border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,.35), 0 0 10px var(--c)}
+.ore-fly.rare{width:22px; height:22px}
+.ore-fly.rare i{box-shadow:0 0 0 1px rgba(0,0,0,.35), 0 0 16px var(--c), 0 0 4px #fff}
+.tab.got svg{animation:tabgot .5s ease-out}
+@keyframes tabgot{30%{transform:scale(1.3); color:var(--straw)} 100%{transform:none}}

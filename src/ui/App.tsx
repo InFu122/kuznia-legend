@@ -73,7 +73,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       <nav class="tabs" aria-label="Zakładki">
         <div class="tabs-in">
           {TABS.map(([id, n]) => (
-            <button key={id} class={`tab${tab === id ? ' on' : ''}`} aria-current={tab === id ? 'page' : undefined} onClick={() => goTab(id)}>
+            <button key={id} data-tab={id} class={`tab${tab === id ? ' on' : ''}`} aria-current={tab === id ? 'page' : undefined} onClick={() => goTab(id)}>
               <TabIcon tab={id} /><span>{n}</span>
             </button>
           ))}

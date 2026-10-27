@@ -112,7 +112,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
         </div>
         {f.lvl >= B.AUTO_FORGE_LVL ? (
           <div class="auto">
-            <span>Auto-wytop zakłada lepsze przedmioty, resztę sprzedaje.</span>
+            <span>{game.autoWaiting ? `Auto-wytop czeka na rudę: ${ORES[o].n}. Ruda wypada z części fal.` : 'Auto-wytop zakłada lepsze przedmioty, resztę sprzedaje.'}</span>
             <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />Auto-wytop</button>
           </div>
         ) : (

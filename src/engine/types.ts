@@ -203,4 +203,5 @@ export type GameEvent =
   | { t: 'float'; side: 'hero' | 'foe'; text: string; cls: 'crit' | 'dmg' | 'hurt' | 'loot' | 'miss' | 'pet'; force?: boolean }
   | { t: 'bump'; who: 'hero' | 'foe'; cls: 'lunge' | 'hit' }
   | { t: 'modal'; m: ModalData }
+  | { t: 'drop'; ore: number; n: number; rare: boolean }
   | { t: 'change' };

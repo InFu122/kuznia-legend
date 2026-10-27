@@ -41,7 +41,7 @@ Szczegóły w [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
 
 Wszystkie liczby siedzą w `src/data/balance.ts`. Po każdej zmianie uruchom `npm run balance` i porównaj w arkuszu **Bossowie**, przy jakim poziomie kuźni bot pokonuje bossów, z krzywą `FORGE_AT_BOSS`.
 
-Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich systemów: technologii, lochów, zestawów, umiejętności, chowańców i wierzchowców): akt I ≈ 0,6 h, akt II ≈ 7 h, akt III ≈ 24 h, akt IV ≈ 100–120 h.
+Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich systemów: technologii, lochów, zestawów, umiejętności, chowańców i wierzchowców): akt I ≈ 0,6 h, akt II ≈ 7 h, akt III ≈ 24 h, akt IV ≈ 100–120 h. Złoto wypada z każdej fali, ruda z 35% fal (`B.ORE_DROP`).
 
 ## Plan
 

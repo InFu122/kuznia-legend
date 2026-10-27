@@ -32,6 +32,34 @@ describe('walka i postęp', () => {
     expect(events.some(e => e.t === 'modal' && e.m.kind === 'boss')).toBe(true);
   });
 
+  it('złoto wypada z każdej fali, ruda tylko z części fal', () => {
+    const { g, s, events } = makeGame(9);
+    s.forge.lvl = 30; s.ores[4] = 8; s.stats.smelted = 10;
+    for (let i = 0; i < 8; i++) equip(g.ctx, smelt(g.ctx, 4, null)!, true);
+    s.ores[0] = 0;
+    let waves = 0, gold = 0;
+    g.on(e => { if (e.t === 'float' && e.cls === 'loot' && e.text.includes('zł.')) waves++; });
+    const before = s.gold;
+    simulate(g, 20 * 60 * 1000);
+    gold = s.gold - before;
+    const drops = events.filter(e => e.t === 'drop' && !e.rare).length;
+    expect(waves).toBeGreaterThan(200);
+    expect(gold).toBeGreaterThan(0);
+    expect(drops / waves).toBeGreaterThan(B.ORE_DROP - 0.08);
+    expect(drops / waves).toBeLessThan(B.ORE_DROP + 0.08);
+  });
+
+  it('auto-wytop bez rudy czeka zamiast się wyłączać', () => {
+    const { g, s } = makeGame();
+    s.forge.lvl = 5; s.auto = true; s.ores[1] = 0; s.oreSel = 1;
+    simulate(g, 3000);
+    expect(s.auto).toBe(true);
+    expect(g.autoWaiting).toBe(true);
+    s.ores[1] = 2;
+    simulate(g, 3000);
+    expect(s.ores[1]).toBe(0);
+  });
+
   it('każda kraina ma poprawne rudy i domieszki', () => {
     expect(LANDS.length).toBe(16);
     for (const L of LANDS) {

@@ -65,6 +65,9 @@ export class Game {
     stepCombat(ctx, ms);
   }
 
+  /** Auto-wytop jest włączony, ale brakuje wybranej rudy. */
+  get autoWaiting(): boolean { return this.s.auto && this.s.forge.lvl >= B.AUTO_FORGE_LVL && !canSmelt(this.ctx, this.s.oreSel); }
+
   /** Odstęp auto-wytopu z premią Wprawnych rąk. */
   autoInterval(): number { return B.AUTO_INTERVAL_MS / (1 + allMods(this.s).autoSpeed / 100); }
 
@@ -76,12 +79,8 @@ export class Game {
       s.pending = null;
       this.lastAuto = { item: it, equipped: decideAuto(ctx, it, true) };
     }
-    if (!canSmelt(ctx, s.oreSel)) {
-      s.auto = false;
-      toast(ctx, `Auto-wytop zatrzymany: brak rudy ${ORES[s.oreSel].n}.`, 'bad');
-      this.changed();
-      return;
-    }
+    // Brak rudy nie wyłącza auto-wytopu: kuźnia czeka, aż wypadnie następna.
+    if (!canSmelt(ctx, s.oreSel)) return;
     const it = smelt(ctx, s.oreSel, s.elSel);
     if (!it) return;
     const equipped = decideAuto(ctx, it, false);

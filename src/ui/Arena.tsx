@@ -5,6 +5,7 @@ import type { Game } from '../engine/game';
 import { fmt } from './format';
 import type { Tab } from './icons';
 import { runHint, runLabel, runMeta, runTitle } from './texts';
+import { flyOre } from './drops';
 
 interface Float { id: number; text: string; cls: string; x: number; y: number }
 
@@ -28,6 +29,8 @@ export function Arena({ game, onTab }: { game: Game; onTab: (t: Tab) => void }) 
         void el.offsetWidth;
         el.classList.add(e.cls);
         setTimeout(() => el.classList.remove(e.cls), 130);
+      } else if (e.t === 'drop') {
+        flyOre(foeRef.current, e.ore, e.n, e.rare);
       } else if (e.t === 'float') {
         const now = performance.now();
         if (!e.force && now - lastFloat.current < 110) return;

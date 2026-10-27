@@ -42,7 +42,7 @@ export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0, 3.2, 3.4
  * Dodatkowy mnożnik siły wrogów przy bossie krainy L (zdrowie i obrażenia). Skalibrowany symulatorem:
  * gracz zbiera substaty, legendy i rzadkie rudy szybciej niż zakłada sama krzywa rzadkości.
  */
-export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.6, 1.75, 2.0, 2.65, 2.9, 3.3, 3.6, 3.6, 3.6, 3.55, 3.55, 3.7, 3.1];
+export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.6, 1.75, 2.0, 2.65, 2.9, 3.25, 3.45, 3.45, 3.55, 3.55, 3.55, 3.7, 3.1];
 /** Siła przedmiotu rośnie o 8% na poziom przedmiotu; poziom przedmiotu = 2 × poziom kuźni (+0–2). */
 export const ITEM_LVL_GROWTH = 1.08;
 
@@ -58,6 +58,7 @@ export const B = {
   WAVES_PER_STAGE: 5,
   STAGES_PER_LAND: 10,
   WAVE_HEAL: 0.3,
+  ORE_DROP: 0.35,               // szansa, że fala zostawi główną rudę (złoto wypada zawsze)
   ELEM_DROP: 0.04,
   OBIEG_CHANCE: 0.3,
   OBIEG_FIND_FROM_BOSS: 0.2,

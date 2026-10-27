@@ -182,13 +182,20 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   if (e.boss) { bossWon(ctx, e); return; }
   const L = LANDS[s.cur.land];
   const mods = allMods(s);
-  s.gold += Math.round(goldWave(curG(s)) * (1 + mods.goldPct / 100));
-  const nOre = ri(ctx.rng, 1, 3) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
-  s.ores[L.main] += nOre;
-  let loot = `+${nOre} ${ORES[L.main].n}`;
+  // Złoto wypada z każdej fali; ruda tylko czasem — wtedy interfejs pokazuje animację dropu.
+  const gold = Math.round(goldWave(curG(s)) * (1 + mods.goldPct / 100));
+  s.gold += gold;
+  let loot = `+${fmtN(gold)} zł.`;
+  if (ctx.rng.next() < B.ORE_DROP) {
+    const nOre = ri(ctx.rng, 1, 3) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
+    s.ores[L.main] += nOre;
+    loot += ` · +${nOre} ${ORES[L.main].n}`;
+    ctx.emit({ t: 'drop', ore: L.main, n: nOre, rare: false });
+  }
   if (ctx.rng.next() < L.rc * (1 + mods.rarePct / 100)) {
     s.ores[L.rare]++;
     loot += ` · ${ORES[L.rare].n}!`;
+    ctx.emit({ t: 'drop', ore: L.rare, n: 1, rare: true });
     toast(ctx, 'Rzadka ruda: ' + ORES[L.rare].n, 'good');
   }
   if (L.el && ctx.rng.next() < B.ELEM_DROP) {
