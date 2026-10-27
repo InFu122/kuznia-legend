@@ -424,14 +424,26 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 @keyframes burst{0%{opacity:.85; transform:scale(1)} 100%{opacity:0; transform:scale(var(--burst, 18))}}
 .icard.reveal.r5{--burst:30} .icard.reveal.r6{--burst:42}
 /* Sloty bohatera */
-.slot.r3, .slot.r4{box-shadow:0 6px 14px -8px var(--rc)}
-.slot.r5, .slot.r6{box-shadow:0 6px 16px -6px var(--rc); animation:slotglow 2.6s ease-in-out infinite}
-@keyframes slotglow{50%{box-shadow:0 6px 22px -4px var(--rc)}}
+/* Sloty bohatera: to samo tło rzadkości co ikona na karcie przedmiotu */
+.slot{position:relative; overflow:hidden; isolation:isolate}
+.slot:not(.empty):not(.r0){background:radial-gradient(circle at 50% 30px, color-mix(in srgb, var(--rc) 32%, var(--plate-2)), var(--plate-2) 70%)}
+.slot:not(.empty):not(.r0) span{color:color-mix(in srgb, var(--rc) 70%, #ffffff)}
+.slot.r2{box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 55%, transparent)}
+.slot.r3, .slot.r4, .slot.r5, .slot.r6{box-shadow:inset 0 0 0 1px var(--rc), 0 0 12px -3px var(--rc)}
+.slot.r4, .slot.r5, .slot.r6{animation:slotglow 2.4s ease-in-out infinite}
+@keyframes slotglow{50%{box-shadow:inset 0 0 0 1px var(--rc), 0 0 18px 0 var(--rc)}}
+.slot.r5::before, .slot.r6::before{content:""; position:absolute; left:50%; top:26px; width:150px; height:150px; margin:-75px 0 0 -75px; z-index:-1; pointer-events:none;
+  background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 45%, transparent) 0 14deg, transparent 14deg 36deg);
+  animation:rspin 9s linear infinite}
+.slot.r6::before{background:repeating-conic-gradient(from 0deg, #ff4f6477 0 10deg, #ffa23a77 10deg 20deg, #ffe06677 20deg 30deg, #5be37a77 30deg 40deg, #45a6ff77 40deg 50deg, #b77bff77 50deg 60deg)}
+.slot.r6::after{content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg, transparent 35%, rgba(255,240,180,.18) 48%, transparent 61%); background-size:250% 100%; animation:sheen 3.2s ease-in-out infinite}
 /* Iskry spod młota w kolorze rzadkości */
 .spark.r1{--sc:var(--r1)} .spark.r2{--sc:var(--r2)} .spark.r3{--sc:var(--r3)} .spark.r4{--sc:var(--r4)} .spark.r5{--sc:var(--r5)}
 .spark.r6{--sc:hsl(calc(var(--h) * 1deg) 95% 65%)}
 .spark[class*=" r"]:not(.r0){background:var(--sc); box-shadow:0 0 8px var(--sc)}
 @media (prefers-reduced-motion: reduce){
-  .icard .ico, .icard .ico::before, .icard::after, .slot{animation:none !important}
+  .icard .ico, .icard .ico::before, .icard::after, .slot, .slot::before, .slot::after{animation:none !important}
   .icard.reveal::before{display:none}
 }
+.slot.r4 span, .slot.r5 span, .slot.r6 span{text-shadow:0 1px 2px #000, 0 0 4px #000}
