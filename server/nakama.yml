@@ -1,0 +1,14 @@
+# Konfiguracja Nakamy dla Kuźni Legend. Hasła i klucze przekazuje docker-compose z pliku .env (flagi w `command`).
+name: kuznia-legend
+logger:
+  level: INFO
+  stdout: true
+session:
+  token_expiry_sec: 86400            # sesja: 1 dzień
+  refresh_token_expiry_sec: 2592000  # odświeżenie: 30 dni
+runtime:
+  js_entrypoint: index.js
+socket:
+  max_request_size_bytes: 262144
+leaderboard:
+  blacklist_rank_cache: []

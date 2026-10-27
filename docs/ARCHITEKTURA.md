@@ -82,5 +82,6 @@ Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każ
 
 ## Co dalej technicznie
 
-- **Etap 3:** `src/save/` dostanie adapter Nakama; wytop przeniesie się na serwer (klient wyśle „przetop rudę X”, serwer odpowie przedmiotem).
+- **Etap 3a (gotowe):** `src/save/server.ts` łączy grę z Nakamą przez REST (logowanie urządzeniem, RPC). Moduł `server/src/main.ts` używa tego samego silnika co klient: migruje i sprawdza zapis (`validate.ts`), liczy Moc do rankingów. Funkcje RPC: `save_get`, `save_put` (wersjonowanie — wykrywa zapis z innego urządzenia), `time`, `ranking`. Nakama wymaga, żeby `InitModule` i funkcje RPC były globalnymi deklaracjami — `server/build.mjs` pakuje moduł bez eksportów.
+- **Etap 3b:** wytop przeniesie się na serwer (klient wyśle „przetop rudę X”, serwer odpowie przedmiotem), serwer sprawdzi tempo zdobywania zasobów.
 - **Etap 5:** Capacitor opakuje `dist/` w aplikacje. Fonty trzeba wtedy dołączyć lokalnie, żeby gra działała bez internetu.

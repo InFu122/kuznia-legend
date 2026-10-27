@@ -325,3 +325,6 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 @keyframes tuthl{50%{outline-color:rgba(231,190,98,.25)}}
 @media (prefers-reduced-motion: reduce){ .tut-hl{animation:none} }
 .field input[type=range]{width:100%; accent-color:var(--straw); padding:0; border:0; background:none}
+/* Etap 3a: serwer i rankingi */
+.save-badge.offline, .save-badge.connecting{color:#c9a46a}
+.otable.rank td.oname small{display:block; font-size:11px; color:var(--ash); font-weight:400}

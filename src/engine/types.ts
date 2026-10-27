@@ -200,6 +200,7 @@ export type ModalData =
   | { kind: 'labChoice'; room: number; doors: LabDoorOpt[]; loot: Reward }
   | { kind: 'found' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
+  | { kind: 'ranking' }
   | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }

@@ -13,6 +13,7 @@ import { fmt, pct, tfmt } from './format';
 import { Dist } from './panels/Forge';
 import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
+import { RankingView } from './panels/Ranking';
 
 export function ModalShell({ locked, onClose, children }: { locked: boolean; onClose: () => void; children: ComponentChildren }) {
   return (
@@ -168,6 +169,8 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
       return <FoundView game={game} close={close} />;
     case 'missions':
       return <MissionsView game={game} initial={m.tab} close={close} />;
+    case 'ranking':
+      return <RankingView close={close} />;
     case 'draw': {
       const name = m.what === 'skill' ? SKILLS[m.id as SkillId].n : m.what === 'pet' ? PETS[m.id as PetId].n : MOUNTS[m.id as MountId].n;
       const r = m.what === 'skill' ? SKILLS[m.id as SkillId].r : m.what === 'pet' ? PETS[m.id as PetId].r : MOUNTS[m.id as MountId].r;

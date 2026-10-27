@@ -12,8 +12,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "balance": "vite-node tools/balance-sim.ts"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p server",
+    "balance": "vite-node tools/balance-sim.ts",
+    "build:server": "tsc --noEmit -p server && node server/build.mjs"
   },
   "dependencies": {
     "preact": "10.24.3"

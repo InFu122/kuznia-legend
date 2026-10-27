@@ -2,8 +2,9 @@ import { LANDS } from '../../data';
 import { nextSmithTitle, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { fmt } from '../format';
+import type { SaveInfo } from '../App';
 
-export function CodexPanel({ game, saveMode, onReset }: { game: Game; saveMode: 'local' | 'cloud'; onReset: () => void }) {
+export function CodexPanel({ game, saveMode, onReset, onRanking }: { game: Game; saveMode: SaveInfo['mode']; onReset: () => void; onRanking: () => void }) {
   const s = game.s;
   const sm = s.smith;
   const t = smithTitle(sm.fame);
@@ -19,6 +20,15 @@ export function CodexPanel({ game, saveMode, onReset }: { game: Game; saveMode: 
           Rzadkie i lepsze przedmioty, które sprzedajesz, z szansą 30% trafiają do Wielkiego Obiegu. Gdy ktoś je znajdzie, dostajesz Sławę. Do czasu podłączenia serwera inni gracze są symulowani.
         </p>
       </section>
+      {(saveMode === 'server' || saveMode === 'offline') && (
+        <section class="card">
+          <div class="row">
+            <div><div class="eyebrow">Serwer gry</div><div class="h">Rankingi</div></div>
+            <button class="btn primary small" disabled={saveMode !== 'server'} onClick={onRanking}>Pokaż</button>
+          </div>
+          <p class="sub">Moc, Wieża Wyzwań i postęp w kampanii. Serwer liczy Moc sam z twojego zapisu.</p>
+        </section>
+      )}
       <section class="card">
         <div class="eyebrow">Wieści z Obiegu</div>
         {sm.log.length ? (
@@ -61,7 +71,7 @@ export function CodexPanel({ game, saveMode, onReset }: { game: Game; saveMode: 
           <button class={`toggle${s.speed > 1 ? ' on' : ''}`} aria-pressed={s.speed > 1} onClick={() => game.toggleSpeed()}><span class="knob" />Tempo ×10</button>
         </div>
         <div class="row">
-          <span class="sub">{saveMode === 'cloud' ? 'Postęp zapisuje się w chmurze — zagrasz dalej na innym urządzeniu.' : 'Postęp zapisuje się w tej przeglądarce.'}</span>
+          <span class="sub">{saveMode === 'server' ? 'Postęp zapisuje się na serwerze gry.' : saveMode === 'cloud' ? 'Postęp zapisuje się w chmurze — zagrasz dalej na innym urządzeniu.' : 'Postęp zapisuje się w tej przeglądarce.'}</span>
           <button class="btn danger small" onClick={onReset}>Zacznij od nowa</button>
         </div>
       </section>

@@ -1,0 +1,17 @@
+# Gra w przeglądarce (nginx). API Nakamy jest pod tym samym adresem (/v2), więc telefon w sieci domowej
+# otwiera tylko http://adres-serwera:8080.
+
+# 1) Build gry
+FROM node:20-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+ARG VITE_SERVER_KEY=defaultkey
+ENV VITE_SERVER_URL=/ VITE_SERVER_KEY=${VITE_SERVER_KEY}
+RUN npm run build
+
+# 2) Serwer WWW
+FROM nginx:1.27-alpine
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html

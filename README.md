@@ -18,9 +18,19 @@ npm run balance -- 150 3 plain   # bot bez technologii, lochów i zestawów (pun
 npm run build          # wersja produkcyjna w dist/
 npm run build:single   # cała gra w jednym pliku: dist-single/index.html
 npm run build:artifact # fragment do publikacji jako artefakt claude.ai
+npm run build:server   # moduł serwera Nakama → server/build/index.js
 ```
 
 W trakcie testów w zakładce Kodeks jest przełącznik **Tempo ×10**, który przyspiesza walkę i timery.
+
+## Serwer gry (Docker)
+
+```bash
+cp .env.example .env      # ustaw własne hasła i klucze
+docker compose up -d --build
+```
+
+Gra: `http://ADRES-SERWERA:8080`, konsola Nakamy: `:7351`. Szczegóły, CasaOS i kopie zapasowe: [docs/SERWER.md](docs/SERWER.md).
 
 ## Struktura
 
@@ -29,7 +39,9 @@ src/
   data/       dane gry: rudy, rzadkości, sloty, krainy, liczby balansu
   engine/     silnik gry — czysty TypeScript, bez DOM i bez zegara przeglądarki
   ui/         interfejs w Preact (arena, panele, okna)
-  save/       zapis gry (przeglądarka, a później serwer)
+  save/       zapis gry (przeglądarka, chmura artefaktu, serwer Nakama)
+server/       moduł serwera Nakama (TypeScript, korzysta z silnika z src/), Dockerfile
+deploy/       obraz gry z nginx
 tests/        testy silnika (Vitest)
 tools/        symulator balansu, pakowanie artefaktu
 docs/         dokumentacja techniczna
@@ -50,6 +62,8 @@ Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich system
    - 2a: drzewko technologii (Akademia Kowalska, Księgi Wiedzy), lochy Skarbiec Złota, Wieża Wyzwań, Leża Bossów i Ołtarze Żywiołów, rudy unikalne i 6 zestawów. *(gotowe)*
    - 2b: umiejętności (Zwoje zaklęć), chowańce (jaja i wykluwanie), wierzchowce (Siodła), Kamienie z Kopalni Kryształów, Labirynt Minotaura, Krypta Bohaterów z Pieczęciami Legendy, Zapomniana Zbrojownia. *(gotowe)*
    - 2c: misje dzienne i tygodniowe ze skrzynią za komplet, kalendarz logowania (7. dnia epicki Zwój), samouczek pierwszych 15 minut, dźwięki syntezowane w Web Audio. *(gotowe)*
-3. **Serwer** — Nakama: konta, zapis, wytop liczony na serwerze, rankingi, arena.
+3. **Serwer** — Nakama
+   - 3a: Docker (Nakama 3.30 + PostgreSQL + gra w nginx), konta zakładane automatycznie, zapis na serwerze z kontrolą i wykrywaniem konfliktów, czas serwera, rankingi Mocy, Wieży i postępu. *(gotowe)*
+   - 3b: wytop liczony na serwerze i kontrola tempa postępu, prawdziwy Wielki Obieg, arena.
 4. **Społeczność** — klany, czat, prawdziwy Wielki Obieg, boss i wojny klanów.
 5. **Sklep** — aplikacja Capacitor na Androida i iOS, płatności, reklamy z nagrodą, soft launch.

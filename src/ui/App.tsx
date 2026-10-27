@@ -18,7 +18,15 @@ import { play, setSound, unlockAudio } from './sound';
 
 const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['kodeks', 'Kodeks']];
 
-export interface SaveInfo { mode: 'local' | 'cloud' }
+export interface SaveInfo { mode: 'local' | 'cloud' | 'server' | 'connecting' | 'offline'; error?: string }
+
+const SAVE_LABEL: Record<SaveInfo['mode'], string> = {
+  local: 'Zapis w przeglądarce',
+  cloud: 'Zapis w chmurze',
+  server: 'Zapis na serwerze',
+  connecting: 'Łączenie z serwerem…',
+  offline: 'Brak serwera — zapis lokalny',
+};
 
 export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onReady?: () => void }) {
   const [tab, setTab] = useState<Tab>('kuznia');
@@ -53,6 +61,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   });
   setSound(game.s.opts.sound, game.s.opts.vol);
 
+  // Wstęp jest dla nowego gracza — znika, gdy z serwera przyszedł zapis z postępem.
+  if (queue.current[0]?.kind === 'intro' && game.s.stats.smelted > 0) queue.current.shift();
   const modal = queue.current[0] ?? null;
   game.uiBusy = !!modal;
   const close = () => { queue.current.shift(); force(x => x + 1); };
@@ -76,7 +86,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           <div class="top-row">
             <div>
               <div class="brand">Kuźnia Legend</div>
-              <div class="save-badge">{save.mode === 'cloud' ? 'Zapis w chmurze' : 'Zapis w przeglądarce'}</div>
+              <div class={`save-badge ${save.mode}`} title={save.error}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
             </div>
             <button class="quests" onClick={() => open({ kind: 'missions' })} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
               <TabIcon tab="kodeks" /><span>Zadania</span>{nClaim > 0 && <i class="badge">{nClaim}</i>}
@@ -106,7 +116,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
           {tab === 'lochy' && <DungeonPanel game={game} />}
-          {tab === 'kodeks' && <CodexPanel game={game} saveMode={save.mode} onReset={() => open({ kind: 'reset' })} />}
+          {tab === 'kodeks' && <CodexPanel game={game} saveMode={save.mode} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
         </main>
       </div>
       <nav class="tabs" aria-label="Zakładki">
