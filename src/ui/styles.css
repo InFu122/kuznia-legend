@@ -19,7 +19,7 @@ img { max-width: 100%; }
   --ember:#ff8d4f;     /* żar: trafienia, ogień kuźni */
   --blood:#e35a52;
   --good:#6dc57b;
-  --r0:#a6afb9; --r1:#63c470; --r2:#55a2f2; --r3:#b281f2; --r4:#f39d40; --r5:#ef5d56; --r6:#f5da74;
+  --r0:#a6afb9; --r1:#5be37a; --r2:#45a6ff; --r3:#b77bff; --r4:#ffa23a; --r5:#ff4f64; --r6:#ffd84a;
   --f-display:"Grenze Gotisch", "Times New Roman", Georgia, serif;
   --f-ui:"Barlow", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
@@ -157,7 +157,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .icard.reveal{animation:reveal .45s ease-out}
 @keyframes reveal{from{opacity:0; transform:translateY(8px) scale(.98); box-shadow:0 0 0 0 var(--rc)} 60%{box-shadow:0 0 24px 2px var(--rc)} to{opacity:1; transform:none; box-shadow:0 0 0 0 transparent}}
 .ihead{display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center}
-.ico{width:42px; height:42px; border-radius:8px; display:grid; place-items:center; background:#11161b; color:var(--rc); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 45%, transparent)}
+.ico{width:46px; height:46px; border-radius:9px; display:grid; place-items:center; background:#11161b; color:var(--rc); position:relative; isolation:isolate; overflow:hidden}
 .ico svg{width:22px; height:22px}
 .iname{font-weight:700; font-size:16px; line-height:1.15}
 .iname.aw{font-family:var(--f-display); font-size:21px; font-weight:500; color:var(--rc)}
@@ -398,3 +398,40 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .ore-fly img{position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; filter:drop-shadow(0 0 4px var(--c))}
 .ore-fly:has(img){width:24px; height:24px}
 .ore-fly.rare:has(img){width:32px; height:32px}
+/* Barwy rzadkości: od szarego Zwykłego po tęczowy Boski — im rzadszy przedmiot, tym mocniejszy efekt */
+.icard{position:relative; overflow:hidden}
+.icard:not(.r0) .ico{background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #11161b), #11161b 74%)}
+.icard:not(.r0) .iname{color:color-mix(in srgb, var(--rc) 78%, #ffffff)}
+.icard.r2 .ico{box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
+.icard.r3, .icard.r4, .icard.r5, .icard.r6{background:linear-gradient(118deg, color-mix(in srgb, var(--rc) 15%, var(--plate-2)) 0%, var(--plate-2) 58%)}
+.icard.r3 .ico, .icard.r4 .ico, .icard.r5 .ico, .icard.r6 .ico{box-shadow:inset 0 0 0 1px var(--rc), 0 0 12px -2px var(--rc)}
+.icard.r4 .ico, .icard.r5 .ico, .icard.r6 .ico{animation:rpulse 2.4s ease-in-out infinite}
+@keyframes rpulse{50%{box-shadow:inset 0 0 0 1px var(--rc), 0 0 20px 1px var(--rc)}}
+/* Mityczny: obracające się promienie; Boski: tęczowe promienie i połysk przesuwający się po karcie */
+.icard.r5 .ico::before, .icard.r6 .ico::before{content:""; position:absolute; inset:-60%; z-index:-1;
+  background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 50%, transparent) 0 14deg, transparent 14deg 36deg);
+  animation:rspin 9s linear infinite}
+.icard.r6 .ico::before{background:repeating-conic-gradient(from 0deg, #ff4f6488 0 10deg, #ffa23a88 10deg 20deg, #ffe06688 20deg 30deg, #5be37a88 30deg 40deg, #45a6ff88 40deg 50deg, #b77bff88 50deg 60deg)}
+@keyframes rspin{to{transform:rotate(360deg)}}
+.icard.r6::after{content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg, transparent 35%, rgba(255,240,180,.16) 48%, transparent 61%); background-size:250% 100%; animation:sheen 3.2s ease-in-out infinite}
+@keyframes sheen{from{background-position:120% 0} to{background-position:-120% 0}}
+/* Błysk przy wykuciu w kolorze rzadkości */
+.icard.reveal::before{content:""; position:absolute; left:34px; top:34px; width:12px; height:12px; margin:-6px; border-radius:50%; pointer-events:none;
+  background:var(--rc); opacity:0; z-index:2}
+.icard.reveal.r2::before, .icard.reveal.r3::before, .icard.reveal.r4::before, .icard.reveal.r5::before, .icard.reveal.r6::before{animation:burst .8s ease-out}
+.icard.reveal.r5::before, .icard.reveal.r6::before{animation-duration:1.1s}
+@keyframes burst{0%{opacity:.85; transform:scale(1)} 100%{opacity:0; transform:scale(var(--burst, 18))}}
+.icard.reveal.r5{--burst:30} .icard.reveal.r6{--burst:42}
+/* Sloty bohatera */
+.slot.r3, .slot.r4{box-shadow:0 6px 14px -8px var(--rc)}
+.slot.r5, .slot.r6{box-shadow:0 6px 16px -6px var(--rc); animation:slotglow 2.6s ease-in-out infinite}
+@keyframes slotglow{50%{box-shadow:0 6px 22px -4px var(--rc)}}
+/* Iskry spod młota w kolorze rzadkości */
+.spark.r1{--sc:var(--r1)} .spark.r2{--sc:var(--r2)} .spark.r3{--sc:var(--r3)} .spark.r4{--sc:var(--r4)} .spark.r5{--sc:var(--r5)}
+.spark.r6{--sc:hsl(calc(var(--h) * 1deg) 95% 65%)}
+.spark[class*=" r"]:not(.r0){background:var(--sc); box-shadow:0 0 8px var(--sc)}
+@media (prefers-reduced-motion: reduce){
+  .icard .ico, .icard .ico::before, .icard::after, .slot{animation:none !important}
+  .icard.reveal::before{display:none}
+}

@@ -25,14 +25,24 @@ export const RAR = [
 export interface SlotDef { n: string; stat: 'dmg' | 'hp'; base: number; kinds: [string, Gender][] }
 
 export const SLOTS: Record<SlotId, SlotDef> = {
-  bron: { n: 'Broń', stat: 'dmg', base: 12, kinds: [['Miecz', 'm'], ['Topór', 'm'], ['Młot', 'm'], ['Włócznia', 'f'], ['Buława', 'f']] },
-  helm: { n: 'Hełm', stat: 'hp', base: 30, kinds: [['Hełm', 'm']] },
-  zbroja: { n: 'Napierśnik', stat: 'hp', base: 50, kinds: [['Napierśnik', 'm']] },
-  rekawice: { n: 'Rękawice', stat: 'hp', base: 20, kinds: [['Rękawice', 'p']] },
-  buty: { n: 'Buty', stat: 'hp', base: 25, kinds: [['Buty', 'p']] },
-  pas: { n: 'Pas', stat: 'hp', base: 25, kinds: [['Pas', 'm']] },
-  pierscien: { n: 'Pierścień', stat: 'dmg', base: 5, kinds: [['Pierścień', 'm']] },
-  amulet: { n: 'Amulet', stat: 'dmg', base: 6, kinds: [['Amulet', 'm']] },
+  bron: { n: 'Broń', stat: 'dmg', base: 12, kinds: [['Miecz', 'm'], ['Topór', 'm'], ['Młot', 'm'], ['Włócznia', 'f'], ['Buława', 'f'],
+    ['Sztylet', 'm'], ['Szabla', 'f'], ['Halabarda', 'f'], ['Kostur', 'm'], ['Łuk', 'm']] },
+  helm: { n: 'Hełm', stat: 'hp', base: 30, kinds: [['Hełm', 'm'], ['Kaptur', 'm'], ['Diadem', 'm']] },
+  zbroja: { n: 'Napierśnik', stat: 'hp', base: 50, kinds: [['Napierśnik', 'm'], ['Kolczuga', 'f'], ['Szata', 'f']] },
+  rekawice: { n: 'Rękawice', stat: 'hp', base: 20, kinds: [['Rękawice', 'p'], ['Karwasze', 'p'], ['Szpony', 'p']] },
+  buty: { n: 'Buty', stat: 'hp', base: 25, kinds: [['Buty', 'p'], ['Nagolenniki', 'p'], ['Trzewiki', 'p']] },
+  pas: { n: 'Pas', stat: 'hp', base: 25, kinds: [['Pas', 'm'], ['Sakwa', 'f'], ['Rzemień', 'm']] },
+  pierscien: { n: 'Pierścień', stat: 'dmg', base: 5, kinds: [['Pierścień', 'm'], ['Sygnet', 'm'], ['Obrączka', 'f']] },
+  amulet: { n: 'Amulet', stat: 'dmg', base: 6, kinds: [['Amulet', 'm'], ['Medalion', 'm'], ['Talizman', 'm']] },
+};
+
+/**
+ * Długości list rodzajów w kolejnych wersjach gry. Rodzaj przedmiotu losuje się jako kinds[⌊u·długość⌋],
+ * więc serwer sprawdza przedmioty z ziarnem także dla wcześniejszych długości. Nowe rodzaje dopisujemy
+ * zawsze na końcu listy i dodajemy tu nową długość.
+ */
+export const KIND_POOL_SIZES: Record<SlotId, number[]> = {
+  bron: [5, 10], helm: [1, 3], zbroja: [1, 3], rekawice: [1, 3], buty: [1, 3], pas: [1, 3], pierscien: [1, 3], amulet: [1, 3],
 };
 
 export const SLOT_ORDER: SlotId[] = ['bron', 'helm', 'zbroja', 'rekawice', 'buty', 'pas', 'pierscien', 'amulet'];

@@ -73,7 +73,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
             if (!it) return <button key={slot} class="slot empty" disabled><SlotIcon slot={slot} /><span>{SLOTS[slot].n}</span><div class="pips" /></button>;
             return (
               <button key={slot} class={`slot r${it.r}`} aria-label={itemName(it)} onClick={() => onItem(it)}>
-                <Px src={itemUrl(it.kind, it.ore)} size={32} />
+                <Px src={itemUrl(it.kind, it.ore, it.r)} size={36} />
                 <span>{itemName(it)}</span>
                 <div class="pips">{[1, 2, 3].map(i => <i key={i} class={(it.ls || 0) >= i ? 'on' : ''} />)}</div>
               </button>

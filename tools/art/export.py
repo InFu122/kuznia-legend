@@ -1,13 +1,13 @@
 # Eksport pixel artu do TypeScriptu: src/art/items-data.ts i src/art/icons-data.ts
 import sys, json; sys.path.insert(0, '.')
-import weapons, armor, ores, skills, tech
+import weapons, armor, more, ores, skills, tech
 OUT = sys.argv[1]
 
 def arr(rows, ind='    '):
     return '[\n' + ''.join(f"{ind}  '{r}',\n" for r in rows) + f"{ind}]"
 
 # --- ekwipunek: szablony (paleta wspólna, metal z rudy) ---
-kinds = {**weapons.KINDS, **armor.KINDS}
+kinds = {**weapons.KINDS, **armor.KINDS, **more.KINDS}
 lines = ["// Wygenerowane przez tools/art/export.py — szablony ekwipunku 16×16 (3 poziomy zdobień).",
          "// Znaki: k obrys, 1-4 metal rudy, a b c drewno, l m n skóra, y Y Z złoto, g h klejnot, r s sukno, w błysk.",
          "export const ITEM_TEMPLATES: Record<string, [string[], string[], string[]]> = {"]

@@ -18,7 +18,7 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
   return (
     <div class={`icard r${it.r}${reveal ? ' reveal' : ''}`}>
       <div class="ihead">
-        <div class="ico"><Px src={itemUrl(it.kind, it.ore)} size={32} alt="" /></div>
+        <div class="ico"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} alt="" /></div>
         <div>
           <div class={`iname${it.aw ? ' aw' : ''}`}>{itemName(it)}{it.obieg && <span class="tag">Z Obiegu</span>}{it.set && <span class="tag">Zestaw</span>}</div>
           <div class="irar">{it.aw ? baseName(it) + ' · ' : ''}{RAR[it.r].n} · poz. {it.lvl}</div>

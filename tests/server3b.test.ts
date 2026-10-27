@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { B, ORES, SET_FORGE_LVL } from '../src/data';
+import { B, KIND_POOL_SIZES, ORES, SET_FORGE_LVL, SLOTS } from '../src/data';
 import { duel, eloDelta, scaleFighter, type Fighter } from '../src/engine/duel';
-import { equip, sell, smelt } from '../src/engine/forge';
+import { equip, sell, smelt, smeltDraws } from '../src/engine/forge';
 import { techMods } from '../src/engine/mods';
 import { mulberry32 } from '../src/engine/rng';
 import { migrate } from '../src/engine/state';
@@ -67,6 +67,25 @@ describe('wytop z ziarnem serwera', () => {
     expect(check({ ...plain, flvl: 30 })).not.toBeNull();                                        // kuźnia z przyszłości
     expect(check({ ...plain, forced: 'pity', r: plain.r + 1, jump: 1, subs: plain.subs })).not.toBeNull();
     expect(verifySmelt(plain, seedFor(plain.sx! + 1), 0, s.forge.lvl)).not.toBeNull();          // cudze ziarno
+  });
+
+  it('przedmiot wykuty przy dawnej, krótszej liście rodzajów nadal przechodzi kontrolę', () => {
+    const { ctx, s } = seededGame(8);
+    s.forge.lvl = 20; s.ores[2] = 500; s.stats.smelted = 5;
+    let checked = 0;
+    for (let i = 0; i < 300 && checked < 10; i++) {
+      const it = smelt(ctx, 2, null)!;
+      if (it.set) continue;
+      const kinds = SLOTS[it.slot].kinds;
+      const u = smeltDraws(mulberry32(seedFor(it.sx!))).kind;
+      const old = kinds[Math.floor(u * KIND_POOL_SIZES[it.slot][0])];
+      const legacy = { ...it, kind: old[0], g: old[1] };
+      expect(verifySmelt(legacy, seedFor(it.sx!), 0, s.forge.lvl)).toBeNull();
+      const wrong = kinds.find(k => k[0] !== old[0] && k[0] !== it.kind);
+      if (wrong) expect(verifySmelt({ ...it, kind: wrong[0], g: wrong[1] }, seedFor(it.sx!), 0, s.forge.lvl)).not.toBeNull();
+      checked++;
+    }
+    expect(checked).toBe(10);
   });
 
   it('bez ziaren gra wytapia jak dawniej, a przedmiot nie ma dowodu pochodzenia', () => {

@@ -19,13 +19,16 @@ export const InfoBtn = ({ onClick, label }: { onClick: () => void; label: string
   <button class="info" onClick={onClick} aria-label={label}>i</button>
 );
 
-function sparks(box: HTMLElement | null) {
+/** Iskry spod młota w kolorze rzadkości wykutego przedmiotu — im rzadszy, tym więcej i dalej. */
+function sparks(box: HTMLElement | null, r = 0) {
   if (!box || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  for (let i = 0; i < 14; i++) {
+  const n = 12 + r * 5;
+  for (let i = 0; i < n; i++) {
     const s = document.createElement('span');
-    s.className = 'spark';
+    s.className = `spark r${r}`;
+    if (r >= 6) s.style.setProperty('--h', String(Math.floor(Math.random() * 360)));
     const a = -Math.PI * Math.random();
-    const d = 40 + Math.random() * 70;
+    const d = 40 + Math.random() * (70 + r * 18);
     s.style.setProperty('--dx', Math.cos(a) * d + 'px');
     s.style.setProperty('--dy', Math.sin(a) * d + 'px');
     box.appendChild(s);
@@ -110,7 +113,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
         )}
         {set && <p class="sub">Następny wytop będzie częścią zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b> w miejscu, w którym jeszcze go nie nosisz{mj >= 1 ? ', z gwarantowanym przeskokiem o co najmniej 1 rzadkość' : ''}.</p>}
         <div class="anvil">
-          <button class="btn primary btn-forge" disabled={!ok} onClick={() => { if (game.smeltManual()) sparks(sparkRef.current); }}>{btnLabel}</button>
+          <button class="btn primary btn-forge" disabled={!ok} onClick={() => { const it = game.smeltManual(); if (it) sparks(sparkRef.current, it.r); }}>{btnLabel}</button>
           <div class="sparks" ref={sparkRef} />
         </div>
         {f.lvl >= B.AUTO_FORGE_LVL ? (

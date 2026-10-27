@@ -1,6 +1,6 @@
 // Sprawdzanie przedmiotów po stronie serwera. Silnik losuje wytop z ziarna, które zna tylko serwer
 // (numer wytopu `sx`), więc serwer może odtworzyć losowanie i sprawdzić, czy przedmiot jest prawdziwy.
-import { B, ORES, SET_FORGE_LVL, SLOTS, SLOT_ORDER } from '../data';
+import { B, KIND_POOL_SIZES, ORES, SET_FORGE_LVL, SLOTS, SLOT_ORDER } from '../data';
 import { rollSubs, smeltDraws } from './forge';
 import { itemLevelFor, jumpChances, maxJump } from './formulas';
 import { mulberry32 } from './rng';
@@ -49,8 +49,10 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
   const kinds = SLOTS[it.slot].kinds;
   const first = it.slot === 'bron' && it.kind === kinds[0][0] && it.flvl <= 2;
   if (!it.set && !first && SLOT_ORDER[Math.floor(d.slot * SLOT_ORDER.length)] !== it.slot) return 'miejsce';
-  const kind = kinds[Math.floor(d.kind * kinds.length)];
-  if (!first && (kind[0] !== it.kind || kind[1] !== it.g)) return 'rodzaj przedmiotu';
+  // Rodzaj losowany z puli o długości z wersji gry, w której wykuto przedmiot (pule tylko rosną).
+  const sizes = [...(KIND_POOL_SIZES[it.slot] ?? []), kinds.length].filter(n => n >= 1 && n <= kinds.length);
+  const kindOk = sizes.some(n => { const k = kinds[Math.floor(d.kind * n)]; return k[0] === it.kind && k[1] === it.g; });
+  if (!first && !kindOk) return 'rodzaj przedmiotu';
   if (it.lvl !== itemLevelFor(it.flvl, d.lvl)) return 'poziom przedmiotu';
   const subs = rollSubs(rng, it.r);
   if (!Array.isArray(it.subs) || subs.length !== it.subs.length || subs.some((x, i) => x.id !== it.subs[i].id || x.v !== it.subs[i].v)) return 'statystyki dodatkowe';

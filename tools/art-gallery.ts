@@ -1,9 +1,10 @@
 // Galeria pixel artu (strona HTML do przeglądu): npx vite-node tools/art-gallery.ts plik.html
 import { writeFileSync } from 'node:fs';
-import { ELEM, ORES, SETS, SKILLS, TECH, TECH_BRANCHES, RAR } from '../src/data';
+import { ELEM, ORES, RAR, SETS, SKILLS, SLOTS, TECH, TECH_BRANCHES } from '../src/data';
 import { ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
 import { ITEM_KINDS, METALS, itemPalette, itemSprite, tierOf } from '../src/art/items';
 import { rgba, sprite, type Palette, type Sprite } from '../src/art/pixel';
+import { halo } from '../src/art/rarity';
 import { png } from './png';
 
 const out = process.argv[2] || 'galeria.html';
@@ -28,8 +29,17 @@ const techs = TECH_BRANCHES.map(b => `<div class="branch"><h3>${esc(b.n)}</h3><d
   (Object.keys(TECH) as (keyof typeof TECH)[]).filter(k => TECH[k].branch === b.id).map(k => tile(ic(TECH_ICONS[k]), TECH[k].n, '', 20)).join('')}</div></div>`).join('');
 
 const head = `<tr><th scope="col"></th>${METALS.map((m, i) => `<th scope="col">${esc(m.n)}<small>${TIER_N[tierOf(i)]}</small></th>`).join('')}</tr>`;
-const body = ITEM_KINDS.map(k => `<tr><th scope="row">${esc(k)}</th>${METALS.map((_, i) =>
-  `<td><img src="${uri(itemSprite(k, tierOf(i)), itemPalette(i))}" width="16" height="16" style="--s:16" alt="${esc(k)} — ${esc(METALS[i].n)}"></td>`).join('')}</tr>`).join('');
+const body = Object.values(SLOTS).map(sl => `<tr class="grp"><th colspan="8" scope="rowgroup">${esc(sl.n)} · ${sl.kinds.length}</th></tr>` + sl.kinds.map(([k]) => `<tr><th scope="row">${esc(k)}</th>${METALS.map((_, i) =>
+  `<td><img src="${uri(itemSprite(k, tierOf(i)), itemPalette(i))}" width="16" height="16" style="--s:16" alt="${esc(k)} — ${esc(METALS[i].n)}"></td>`).join('')}</tr>`).join('')).join('');
+
+const RC = ['#a6afb9', '#5be37a', '#45a6ff', '#b77bff', '#ffa23a', '#ff4f64', '#ffd84a'];
+const RAR_DEMO: [string, number][] = [['Miecz', 0], ['Topór', 1], ['Hełm', 2], ['Kostur', 3], ['Napierśnik', 4], ['Szabla', 5], ['Łuk', 6]];
+const rarity = RAR_DEMO.map(([kind, ore], r) => {
+  const s = itemSprite(kind, tierOf(ore));
+  const h = halo(rgba(s, itemPalette(ore)), s.w, s.h, r);
+  const src = 'data:image/png;base64,' + png(h.w, h.h, h.px).toString('base64');
+  return `<figure class="tile rar-tile r${r}" style="--rc:${RC[r]}"><div class="glow"><img src="${src}" width="18" height="18" style="--s:18" alt="${esc(kind)}"></div><figcaption>${esc(RAR[r].n)}<small>${esc(kind)} · ${esc(METALS[ore].n)}</small></figcaption></figure>`;
+}).join('');
 
 const html = `<title>Grafiki Kuźni Legend</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -71,6 +81,21 @@ thead th{font-size:12px; font-weight:600; color:var(--frost); vertical-align:bot
 thead small{display:block; color:var(--ash); font-weight:400}
 tbody th{text-align:left; font-weight:600; font-size:14px; white-space:nowrap; padding-left:14px}
 tbody tr + tr td, tbody tr + tr th{border-top:1px solid var(--plate-2)}
+tr.grp th{text-align:left; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--straw); background:var(--plate-2); padding:6px 14px}
+.rar-tile .glow{position:relative; isolation:isolate; overflow:hidden; border-radius:10px; padding:8px; display:grid; place-items:center;
+  background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #11161b), #11161b 74%)}
+.rar-tile.r0 .glow{background:#11161b}
+.rar-tile figcaption{color:color-mix(in srgb, var(--rc) 80%, #fff)}
+.rar-tile.r3 .glow, .rar-tile.r4 .glow, .rar-tile.r5 .glow, .rar-tile.r6 .glow{box-shadow:inset 0 0 0 1px var(--rc), 0 0 14px -2px var(--rc)}
+.rar-tile.r5 .glow::before, .rar-tile.r6 .glow::before{content:""; position:absolute; inset:-60%; z-index:-1;
+  background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 50%, transparent) 0 14deg, transparent 14deg 36deg)}
+.rar-tile.r6 .glow::before{background:repeating-conic-gradient(from 0deg, #ff4f6488 0 10deg, #ffa23a88 10deg 20deg, #ffe06688 20deg 30deg, #5be37a88 30deg 40deg, #45a6ff88 40deg 50deg, #b77bff88 50deg 60deg)}
+@media (prefers-reduced-motion: no-preference){
+  .rar-tile.r5 .glow::before, .rar-tile.r6 .glow::before{animation:spin 9s linear infinite}
+  .rar-tile.r4 .glow, .rar-tile.r5 .glow, .rar-tile.r6 .glow{animation:pulse 2.4s ease-in-out infinite}
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 1px var(--rc), 0 0 22px 1px var(--rc)}}
 .rar{display:flex; gap:6px; flex-wrap:wrap}
 .rar span{font-size:12px; font-weight:600; border:1px solid var(--rivet); border-left:3px solid var(--c); border-radius:6px; padding:3px 8px}
 @media (prefers-reduced-motion: no-preference){ img{transition:width .15s} }
@@ -78,7 +103,7 @@ tbody tr + tr td, tbody tr + tr th{border-top:1px solid var(--plate-2)}
 <div class="wrap" lang="pl">
   <header>
     <h1>Grafiki Kuźni Legend</h1>
-    <p class="lead">Pixel art do gry: rudy, domieszki, rudy unikalne, zasoby, cały ekwipunek w 7 metalach, umiejętności i badania. Przedmioty mają trzy poziomy zdobień — im lepsza ruda, tym bogatsza forma. W grze ikony mają rozmiar ok. 48 px (×3).</p>
+    <p class="lead">Pixel art do gry: rudy, domieszki, rudy unikalne, zasoby, barwy rzadkości, cały ekwipunek w 7 metalach, umiejętności i badania. Przedmioty mają trzy poziomy zdobień — im lepsza ruda, tym bogatsza forma. W grze ikony mają rozmiar ok. 48 px (×3).</p>
     <div class="zoom" role="group" aria-label="Powiększenie">Powiększenie:
       <button type="button" id="z2" data-z="2" aria-pressed="false">×2</button>
       <button type="button" id="z3" data-z="3" aria-pressed="true">×3 (jak w grze)</button>
@@ -90,9 +115,10 @@ tbody tr + tr td, tbody tr + tr th{border-top:1px solid var(--plate-2)}
   <section><h2>Domieszki żywiołów</h2><p>Dodawane przy wytopie od 10. poziomu kuźni.</p><div class="tiles">${elems}</div></section>
   <section><h2>Rudy unikalne</h2><p>Z bossów krain; każda daje część jednego zestawu.</p><div class="tiles">${sets}</div></section>
   <section><h2>Zasoby</h2><div class="tiles">${res}</div></section>
+  <section><h2>Rzadkość</h2><p>Każdy wykuty przedmiot ma barwę swojej rzadkości: obwódkę wokół rysunku, poświatę, kolor nazwy i iskry przy wykuciu. Od Legendarnego poświata pulsuje, Mityczny dostaje obracające się promienie, a Boski — tęczową obwódkę, tęczowe promienie i połysk karty.</p><div class="tiles">${rarity}</div></section>
   <section>
     <h2>Ekwipunek</h2>
-    <p>12 rodzajów przedmiotów × 7 metali. Ten sam rysunek przemalowuje paleta rudy; Srebro, Mithril i Adamantyt dostają złote zdobienia i klejnot, Smocza Stal i Gwiezdny Kruszec — formę mistrzowską.</p>
+    <p>${ITEM_KINDS.length} rodzajów przedmiotów × 7 metali. Ten sam rysunek przemalowuje paleta rudy; Srebro, Mithril i Adamantyt dostają złote zdobienia i klejnot, Smocza Stal i Gwiezdny Kruszec — formę mistrzowską.</p>
     <div class="table-wrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
     <div class="rar" aria-label="Kolory rzadkości (ramki w grze)">${RAR.map((r, i) => `<span style="--c:${['#a6afb9', '#63c470', '#55a2f2', '#b281f2', '#f39d40', '#ef5d56', '#f5da74'][i]}">${esc(r.n)}</span>`).join('')}</div>
   </section>
