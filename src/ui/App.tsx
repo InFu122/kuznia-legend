@@ -18,7 +18,12 @@ import { play, setSound, unlockAudio } from './sound';
 
 const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['kodeks', 'Kodeks']];
 
-export interface SaveInfo { mode: 'local' | 'cloud' | 'server' | 'connecting' | 'offline'; error?: string }
+export interface SaveInfo {
+  mode: 'local' | 'cloud' | 'server' | 'connecting' | 'offline';
+  error?: string;              // serwer odrzucił zapis
+  reason?: string;             // dlaczego nie ma połączenia
+  retry?: () => void;          // połącz ponownie teraz
+}
 
 const SAVE_LABEL: Record<SaveInfo['mode'], string> = {
   local: 'Zapis w przeglądarce',
@@ -86,7 +91,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           <div class="top-row">
             <div>
               <div class="brand">Kuźnia Legend</div>
-              <div class={`save-badge ${save.mode}`} title={save.error}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
+              <div class={`save-badge ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
             </div>
             <button class="quests" onClick={() => open({ kind: 'missions' })} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
               <TabIcon tab="kodeks" /><span>Zadania</span>{nClaim > 0 && <i class="badge">{nClaim}</i>}
@@ -116,7 +121,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
           {tab === 'lochy' && <DungeonPanel game={game} />}
-          {tab === 'kodeks' && <CodexPanel game={game} saveMode={save.mode} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
+          {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
         </main>
       </div>
       <nav class="tabs" aria-label="Zakładki">

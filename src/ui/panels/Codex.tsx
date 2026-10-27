@@ -4,7 +4,8 @@ import type { Game } from '../../engine/game';
 import { fmt } from '../format';
 import type { SaveInfo } from '../App';
 
-export function CodexPanel({ game, saveMode, onReset, onRanking }: { game: Game; saveMode: SaveInfo['mode']; onReset: () => void; onRanking: () => void }) {
+export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; save: SaveInfo; onReset: () => void; onRanking: () => void }) {
+  const saveMode = save.mode;
   const s = game.s;
   const sm = s.smith;
   const t = smithTitle(sm.fame);
@@ -20,13 +21,20 @@ export function CodexPanel({ game, saveMode, onReset, onRanking }: { game: Game;
           Rzadkie i lepsze przedmioty, które sprzedajesz, z szansą 30% trafiają do Wielkiego Obiegu. Gdy ktoś je znajdzie, dostajesz Sławę. Do czasu podłączenia serwera inni gracze są symulowani.
         </p>
       </section>
-      {(saveMode === 'server' || saveMode === 'offline') && (
+      {(saveMode === 'server' || saveMode === 'offline' || saveMode === 'connecting') && (
         <section class="card">
           <div class="row">
             <div><div class="eyebrow">Serwer gry</div><div class="h">Rankingi</div></div>
             <button class="btn primary small" disabled={saveMode !== 'server'} onClick={onRanking}>Pokaż</button>
           </div>
           <p class="sub">Moc, Wieża Wyzwań i postęp w kampanii. Serwer liczy Moc sam z twojego zapisu.</p>
+          {saveMode !== 'server' && save.reason && (
+            <div class="lockline">
+              Brak połączenia: {save.reason}
+              {save.retry && <div style={{ marginTop: '8px' }}><button class="btn small" onClick={save.retry}>Połącz ponownie</button></div>}
+            </div>
+          )}
+          {save.error && <div class="lockline">Serwer odrzucił zapis: {save.error}</div>}
         </section>
       )}
       <section class="card">

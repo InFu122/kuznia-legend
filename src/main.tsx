@@ -9,6 +9,16 @@ import './ui/styles.css';
 
 const RETRY_MS = 60000;
 
+/** Czytelny powód braku połączenia z serwerem (widać go w Kodeksie). */
+function why(e: unknown): string {
+  if (e instanceof ServerError) {
+    if (e.status === 401) return 'serwer odrzucił klucz gry — klucz w grze różni się od NAKAMA_SERVER_KEY (przebuduj: docker compose up -d --build)';
+    return `błąd serwera ${e.status}: ${e.message}`;
+  }
+  if (e instanceof DOMException && e.name === 'AbortError') return 'serwer nie odpowiedział w 10 sekund';
+  return 'brak połączenia z serwerem (' + (e instanceof Error ? e.message : String(e)) + ')';
+}
+
 function boot(hotData?: { s?: string }) {
   const now = Date.now();
   let fromHot = false;
@@ -45,7 +55,9 @@ function boot(hotData?: { s?: string }) {
       if (e instanceof ServerError && e.status === 400) { save.error = e.message; return; } // serwer odrzucił zapis
       l.online = false;
       save.mode = 'offline';
-      setTimeout(() => void connect(l), RETRY_MS);
+      save.reason = why(e);
+      clearTimeout(retry);
+      retry = setTimeout(() => void connect(l), RETRY_MS);
     }
   };
 
@@ -58,16 +70,22 @@ function boot(hotData?: { s?: string }) {
     else if (cloud && !(await saveCloud(cloud.cloud, json))) { cloud = null; save.mode = 'local'; }
   };
 
+  let retry: ReturnType<typeof setTimeout> | undefined;
   const connect = async (l: ServerLink) => {
+    clearTimeout(retry);
     try {
       const remote = await l.load();
+      save.reason = undefined;
       if (remote) adopt(remote);
       await saveServer(l);
-    } catch {
+    } catch (e) {
       save.mode = 'offline';
-      setTimeout(() => void connect(l), RETRY_MS);
+      save.reason = why(e);
+      console.warn('Kuźnia Legend: serwer niedostępny —', save.reason);
+      retry = setTimeout(() => void connect(l), RETRY_MS);
     }
   };
+  if (link) save.retry = () => { save.mode = 'connecting'; void connect(link); };
 
   const onReady = () => {
     if (!fromHot) game.offline(Date.now() - (game.s.lastSeen || Date.now()));
