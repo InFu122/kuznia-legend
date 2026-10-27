@@ -2,10 +2,30 @@ import { LANDS, SETS, SLOTS, SLOT_ORDER } from '../../data';
 import { itemName, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { FoeType, Item } from '../../engine/types';
+import { useState } from 'preact/hooks';
 import { f1, fmt, pct } from '../format';
 import { SlotIcon } from '../icons';
+import { MountsView, PetsView, SkillsView } from './Companions';
+
+type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
+const SUBS: [Sub, string][] = [['eq', 'Ekwipunek'], ['skills', 'Umiejętności'], ['pets', 'Chowaniec'], ['mounts', 'Wierzchowiec']];
 
 export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
+  const [sub, setSub] = useState<Sub>('eq');
+  return (
+    <>
+      <div class="seg" role="tablist" aria-label="Bohater">
+        {SUBS.map(([id, n]) => <button key={id} role="tab" aria-selected={sub === id} class={sub === id ? 'on' : ''} onClick={() => setSub(id)}>{n}</button>)}
+      </div>
+      {sub === 'eq' && <Equipment game={game} onItem={onItem} />}
+      {sub === 'skills' && <SkillsView game={game} />}
+      {sub === 'pets' && <PetsView game={game} />}
+      {sub === 'mounts' && <MountsView game={game} />}
+    </>
+  );
+}
+
+function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
   const s = game.s;
   const c = game.stats;
   const st: [string, string][] = [
@@ -44,7 +64,7 @@ export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => 
         </section>
       )}
       <section class="card">
-        <div class="row"><div class="eyebrow">Ekwipunek</div><span class="sub">Kropki = progi legendy</span></div>
+        <div class="row"><div class="eyebrow">Ekwipunek</div><span class="sub">Kropki = progi legendy{s.seals ? ` · Pieczęcie Legendy: ${s.seals}` : ''}</span></div>
         <div class="slots" style={{ marginTop: '10px' }}>
           {SLOT_ORDER.map(slot => {
             const it = s.eq[slot];

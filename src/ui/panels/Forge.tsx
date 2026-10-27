@@ -30,7 +30,7 @@ function sparks(box: HTMLElement | null) {
   }
 }
 
-export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' | 'level') => void }) {
+export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 'forge' | 'level') => void; onFound: () => void }) {
   const s = game.s;
   const f = s.forge;
   const o = s.oreSel;
@@ -121,6 +121,15 @@ export function ForgePanel({ game, onInfo }: { game: Game; onInfo: (k: 'forge' |
       </section>
 
       <section><Result game={game} /></section>
+
+      {s.found.length > 0 && (
+        <section class="card">
+          <div class="row">
+            <div><div class="eyebrow">Zapomniana Zbrojownia</div><div class="h">Znaleziska: {s.found.length}</div></div>
+            <button class="btn primary small" onClick={onFound}>Przejrzyj</button>
+          </div>
+        </section>
+      )}
 
       <section class="card">
         {f.lvl >= B.FORGE_MAX ? (

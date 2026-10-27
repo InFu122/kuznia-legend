@@ -4,3 +4,4 @@ export * from './balance';
 export * from './tech';
 export * from './sets';
 export * from './dungeons';
+export * from './companions';

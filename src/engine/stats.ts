@@ -1,8 +1,42 @@
-import { ELEM, SETS, SLOTS, STAT_CAPS } from '../data';
+import { ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue } from '../data';
 import type { Ctx } from './context';
 import { mainVal } from './formulas';
-import { techMods } from './mods';
-import type { FoeType, GameState, Item, Mods, SetId, Stats } from './types';
+import { allMods } from './mods';
+import type { FoeType, GameState, Item, Mods, SetId, SkillId, Stats } from './types';
+
+/** Chowaniec i umiejętności — liczą się do Mocy, ale nie są częścią ekwipunku. */
+export interface Extra { pet?: { atk: number; int: number } | null; skills?: { id: SkillId; lvl: number }[] }
+
+export function extraOf(s: GameState): Extra {
+  const p = s.petSel ? s.pets[s.petSel] : null;
+  return {
+    pet: s.petSel && p ? { atk: petAtkPct(s.petSel, p.lvl, p.stars), int: PETS[s.petSel].int } : null,
+    skills: s.skills.eq.filter((x): x is SkillId => !!x).map(id => ({ id, lvl: s.skills.lv[id] ?? 1 })),
+  };
+}
+
+/**
+ * Szacunkowy wkład umiejętności do Mocy: [mnożnik obrażeń, mnożnik wytrzymałości].
+ * Zakłada walkę trwającą ~10 s; dokładne działanie liczy walka.
+ */
+export function skillFactor(skills: Extra['skills'], spd: number): [number, number] {
+  let d = 1, h = 1;
+  for (const { id, lvl } of skills ?? []) {
+    const S = SKILLS[id];
+    const v = skillValue(id, lvl);
+    const per = S.cd / 1000;
+    switch (S.kind) {
+      case 'dmg': d += v / 100 / per / (1 + spd / 100); break;
+      case 'buffDmg': d += (v / 100) * (S.dur / S.cd); break;
+      case 'buffSpd': d += (v / 100) * (S.dur / S.cd) / (1 + spd / 100); break;
+      case 'buffLs': h += (v / 100) * (S.dur / S.cd) * 0.5; break;
+      case 'shield': h += (v / 100) * Math.min(1, 10000 / S.cd); break;
+      case 'heal': h += (v / 100) * Math.min(1, 10000 / S.cd); break;
+      case 'stun': h += Math.min(0.5, (v * 1000) / S.cd); break;
+    }
+  }
+  return [d, h];
+}
 
 /** Ile części każdego zestawu jest założonych. */
 export function setCounts(eq: GameState['eq']): { id: SetId; count: number }[] {
@@ -11,7 +45,7 @@ export function setCounts(eq: GameState['eq']): { id: SetId; count: number }[] {
   return (Object.entries(c) as [SetId, number][]).map(([id, count]) => ({ id, count }));
 }
 
-export function computeStats(eq: GameState['eq'], mods: Mods): Stats {
+export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {}): Stats {
   let dmg = 10, hp = 100, crit = 5, critd = 50, spd = 0, ls = 0, dodge = 0, regen = 0.5, boss = 0, eldmg = 0, slow = 0, holy = 0, pog = 0;
   const vs: Partial<Record<FoeType, number>> = {};
   for (const it of Object.values(eq)) {
@@ -42,6 +76,7 @@ export function computeStats(eq: GameState['eq'], mods: Mods): Stats {
   let dmgPct = mods.dmgPct, hpPct = mods.hpPct;
   crit += mods.crit;
   boss += mods.bossPct;
+  spd += mods.spd; ls += mods.ls; regen += mods.regen; eldmg += mods.eldmg;
   const sets = setCounts(eq);
   for (const { id, count } of sets) {
     for (const b of [count >= 2 ? SETS[id].b2 : null, count >= 4 ? SETS[id].b4 : null]) {
@@ -55,15 +90,29 @@ export function computeStats(eq: GameState['eq'], mods: Mods): Stats {
   hp *= 1 + hpPct / 100;
   crit = Math.min(crit, STAT_CAPS.crit); critd = Math.min(critd, STAT_CAPS.critd); spd = Math.min(spd, STAT_CAPS.spd);
   ls = Math.min(ls, STAT_CAPS.ls); dodge = Math.min(dodge, STAT_CAPS.dodge); regen = Math.min(regen, STAT_CAPS.regen);
-  // Moc = średnie obrażenia na sekundę × 4 + zdrowie efektywne × 0,4 (te same wzory co w walce)
-  const power = Math.round(dmg * 4 * (1 + (crit / 100) * (critd / 100)) * (1 + spd / 100) * (1 + eldmg / 100) + hp * 0.4 / (1 - dodge / 100));
-  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, vs, sets, power };
+  const petAtk = extra.pet ? dmg * extra.pet.atk / 100 : 0;
+  const petInt = extra.pet ? extra.pet.int : 0;
+  // Moc = średnie obrażenia na sekundę × 4 + zdrowie efektywne × 0,4 (te same wzory co w walce),
+  // plus chowaniec i szacunkowy wkład umiejętności
+  const [sd, sh] = skillFactor(extra.skills, spd);
+  const dps = dmg * (1 + (crit / 100) * (critd / 100)) * (1 + spd / 100) * (1 + eldmg / 100) + (petInt ? petAtk * 1000 / petInt : 0);
+  const power = Math.round(dps * 4 * sd + (hp * 0.4 / (1 - dodge / 100)) * sh);
+  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, vs, sets, petAtk, petInt, power };
+}
+
+/** Ekwipunek, którym walczy bohater: w Krypcie Bohaterów tylko przedmioty z legendą. */
+export function fightEq(ctx: Ctx): GameState['eq'] {
+  if (ctx.b.dung?.id !== 'krypta') return ctx.s.eq;
+  return Object.fromEntries(Object.entries(ctx.s.eq).filter(([, it]) => it && it.ls >= 1));
 }
 
 export function stats(ctx: Ctx): Stats {
-  if (!ctx.cache) ctx.cache = computeStats(ctx.s.eq, techMods(ctx.s));
+  if (!ctx.cache) ctx.cache = computeStats(fightEq(ctx), allMods(ctx.s), extraOf(ctx.s));
   return ctx.cache;
 }
+
+/** Pełne statystyki (cały ekwipunek), niezależnie od lochu. */
+export const fullStats = (ctx: Ctx): Stats => computeStats(ctx.s.eq, allMods(ctx.s), extraOf(ctx.s));
 
 /** Przelicza statystyki po zmianie ekwipunku lub technologii i zachowuje procent zdrowia bohatera. */
 export function invalidate(ctx: Ctx): void {
@@ -76,5 +125,5 @@ export function invalidate(ctx: Ctx): void {
 
 /** Ile Mocy zyska (lub straci) bohater po założeniu przedmiotu. */
 export function powerDelta(ctx: Ctx, it: Item): number {
-  return computeStats({ ...ctx.s.eq, [it.slot]: it }, techMods(ctx.s)).power - stats(ctx).power;
+  return computeStats({ ...ctx.s.eq, [it.slot]: it }, allMods(ctx.s), extraOf(ctx.s)).power - fullStats(ctx).power;
 }

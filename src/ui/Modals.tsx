@@ -1,5 +1,9 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { B, DUNGEONS, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, ROMAN, SETS, SET_FORGE_LVL, TECH, TECH_UNLOCK_FORGE, setOfLand } from '../data';
+import {
+  B, DUNGEONS, ELEM, FORGE_UNLOCKS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
+  SKILLS, TECH, TECH_UNLOCK_FORGE, setOfLand,
+} from '../data';
+import type { MountId, PetId, SkillId } from '../engine/types';
 import { baseName, dist, itemName, jumpChances } from '../engine/formulas';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
@@ -49,6 +53,7 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
             {set && m.uniq ? <>, {m.uniq} × <b style={{ color: SETS[set].col }}>{SETS[set].ore}</b></> : null}.
             {m.found ? ' Ze skrzyni bossa wypadł przedmiot z Wielkiego Obiegu — sprawdź go w Kuźni.' : ''}
           </p>
+          {Object.keys(m.extra).length > 0 && <p class="sub">Do tego: <b>{rewardText(m.extra)}</b>.</p>}
           {set && m.uniq > 0 && (
             <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej część zestawu <b>{SETS[set].n}</b>. Więcej dają Leża Bossów.</p>
           )}
@@ -84,14 +89,20 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
     case 'dungEnd': {
       const halves = m.id === 'sztolnia' || m.id === 'oltarze';
       const head = m.id === 'skarbiec' ? 'Czas minął' : m.id === 'wieza' ? (m.lost ? 'Strażnik cię zatrzymał' : 'Zejście z wieży') : m.lost ? 'Bohater padł' : 'Zwycięstwo';
-      const where = m.id === 'skarbiec' ? `pokonane gobliny: ${m.floor}` : m.id === 'wieza' ? `najwyżej: piętro ${m.floor}` : m.id === 'oltarze' ? `strażnicy: ${m.lost ? m.floor - 1 : m.floor}/5` : m.id === 'sztolnia' ? `piętro ${m.floor}` : '';
+      const where: Partial<Record<typeof m.id, string>> = {
+        skarbiec: `pokonane gobliny: ${m.floor}`, wieza: `najwyżej: piętro ${m.floor}`, oltarze: `strażnicy: ${m.floor}/5`,
+        sztolnia: `piętro ${m.floor}`, kopalnia: `fale: ${m.floor}/10`, labirynt: `komnaty: ${m.floor}/${LAB_ROOMS}`,
+        zbrojownia: `skrzynie: ${m.floor}/3`, krypta: `strażnicy: ${m.floor}/5`,
+      };
+      const w = where[m.id];
       return (
         <>
-          <div class="eyebrow">{DUNGEONS[m.id].n}{where ? ' · ' + where : ''}</div>
+          <div class="eyebrow">{DUNGEONS[m.id].n}{w ? ' · ' + w : ''}</div>
           <div class="h">{head}</div>
           <p class="sub">
             {m.lost && halves ? 'Uciekasz z połową łupu. ' : ''}
             {m.id === 'leza' && m.lost ? 'Boss był za silny. Klucz przepadł — spróbuj jutro albo wzmocnij ekwipunek.' : <>Zdobyto: <b>{rewardText(m.reward)}</b>.</>}
+            {m.items > 0 ? ` Przedmioty ze skrzyń: ${m.items} — zdecyduj, które założyć.` : ''}
           </p>
           <Close onClose={close} label="Wróć do krainy" />
         </>
@@ -112,6 +123,7 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
             <li>+{fmt(r.fame)} Sławy Czynów dla każdego założonego przedmiotu</li>
             {r.forgeUp > 0 && <li>Kuźnia osiągnęła poziom {r.forgeUp}.</li>}
             {r.tech && <li>Zbadano: {TECH[r.tech].n} (poziom {s.tech.lv[r.tech] ?? 1}).</li>}
+            {r.hatched && <li>Z jaja wykluł się chowaniec: {PETS[r.hatched].n}.</li>}
           </ul>
           {r.chestCount > 0 && (
             <>
@@ -123,8 +135,49 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
         </>
       );
     }
-    case 'item':
-      return (<><ItemCard it={m.item} history /><Close onClose={close} label="Zamknij" /></>);
+    case 'item': {
+      const worn = s.eq[m.item.slot] === m.item;
+      return (
+        <>
+          <ItemCard it={m.item} history />
+          {worn && s.seals > 0 && (
+            <button class="btn" onClick={() => game.useSeal(m.item.slot)}>Użyj Pieczęci Legendy (+{SEAL_FAME} Sławy) · masz {s.seals}</button>
+          )}
+          <Close onClose={close} label="Zamknij" />
+        </>
+      );
+    }
+    case 'labChoice':
+      return (
+        <>
+          <div class="eyebrow">Labirynt Minotaura · komnata {m.room}/{LAB_ROOMS}</div>
+          <div class="h">Które drzwi?</div>
+          {Object.keys(m.loot).length > 0 && <p class="sub">Zebrane: {rewardText(m.loot)}</p>}
+          <div class="doors">
+            {m.doors.map((d, i) => (
+              <button key={i} class={`door d-${d.kind}`} onClick={() => { close(); game.labChoose(i); }}>
+                <b>{LAB_DOORS[d.kind].n}</b>
+                <small>{d.kind === 'oltarz' ? LAB_BLESSINGS[d.bless ?? 0].n : LAB_DOORS[d.kind].d}</small>
+              </button>
+            ))}
+          </div>
+        </>
+      );
+    case 'found':
+      return <FoundView game={game} close={close} />;
+    case 'draw': {
+      const name = m.what === 'skill' ? SKILLS[m.id as SkillId].n : m.what === 'pet' ? PETS[m.id as PetId].n : MOUNTS[m.id as MountId].n;
+      const r = m.what === 'skill' ? SKILLS[m.id as SkillId].r : m.what === 'pet' ? PETS[m.id as PetId].r : MOUNTS[m.id as MountId].r;
+      const what = m.what === 'skill' ? 'Umiejętność' : m.what === 'pet' ? 'Chowaniec' : 'Wierzchowiec';
+      return (
+        <>
+          <div class="eyebrow">{m.what === 'pet' ? 'Jajo się wykluło' : m.what === 'skill' ? 'Zwój zaklęć' : 'Siodło'}</div>
+          <div class={`h rt${r}`}>{name}</div>
+          <p class="sub">{what} · {RAR[r].n}. {m.dupe ? (m.what === 'skill' ? 'Kopia przybliża następny poziom.' : 'Kopia dodaje gwiazdkę (albo Kamienie, gdy gwiazdek jest już 5).') : 'Nowość w kolekcji!'}</p>
+          <Close onClose={close} label="Dalej" />
+        </>
+      );
+    }
     case 'reset':
       return (
         <>
@@ -169,6 +222,31 @@ export function ModalView({ m, game, close }: { m: ModalData; game: Game; close:
         </>
       );
   }
+}
+
+function FoundView({ game, close }: { game: Game; close: () => void }) {
+  const found = game.s.found;
+  if (!found.length) return <><div class="h">Wszystko rozdzielone</div><Close onClose={close} label="Zamknij" /></>;
+  return (
+    <>
+      <div class="eyebrow">Zapomniana Zbrojownia</div>
+      <div class="h">Znaleziska: {found.length}</div>
+      <p class="sub">Każdy przedmiot ma historię dawnego właściciela. Załóż go albo sprzedaj; niezdecydowane czekają w Kuźni.</p>
+      {found.map((it, i) => {
+        const d = game.foundDelta(i);
+        return (
+          <div key={it.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <ItemCard it={it} delta={d} history />
+            <div class="result-actions">
+              <button class={`btn${d >= 0 ? ' primary' : ''}`} onClick={() => game.takeFound(i, true)}>Załóż</button>
+              <button class={`btn${d < 0 ? ' primary' : ''}`} onClick={() => game.takeFound(i, false)}>Sprzedaj</button>
+            </div>
+          </div>
+        );
+      })}
+      <button class="btn" onClick={close}>Zdecyduję później</button>
+    </>
+  );
 }
 
 function LevelInfo({ game, close }: { game: Game; close: () => void }) {

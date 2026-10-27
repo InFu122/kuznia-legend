@@ -1,14 +1,15 @@
-import { B, ELEM, LANDS, ORES, SETS, setOfLand } from '../data';
+import { B, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, setOfLand, skillValue } from '../data';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
-import { techMods } from './mods';
+import { allMods } from './mods';
 import { Dstar, Hstar, curG, early, gOf, goldWave } from './formulas';
 import { addFame } from './legend';
 import { obiegItem } from './obieg';
 import { sell } from './forge';
 import { pick, ri, rnd } from './rng';
 import { invalidate, stats } from './stats';
-import type { Enemy, Stats } from './types';
+import { grant } from './dungeon';
+import type { Enemy, Fx, Reward, Stats } from './types';
 
 const fmtN = (n: number) => Math.round(n).toLocaleString('pl-PL');
 
@@ -47,6 +48,21 @@ export function challengeBoss(ctx: Ctx): boolean {
   return true;
 }
 
+/** Modyfikatory walki z lochu: błogosławieństwa Labiryntu i zasada tygodnia w Krypcie. */
+function arena(ctx: Ctx) {
+  const d = ctx.b.dung;
+  const rule = d?.rule ?? null;
+  return {
+    dmg: 1 + (d?.bless.dmg ?? 0) / 100,
+    tough: 1 + (d?.bless.hp ?? 0) / 100,
+    ls: d?.bless.ls ?? 0,
+    lsMul: rule === 'krew' ? 2 : 1,
+    regen: rule !== 'krew',
+    pace: rule === 'szybkosc' ? 1.5 : 1,
+    elem: rule !== 'zywioly',
+  };
+}
+
 /** Jeden krok walki o `ms` czasu gry. */
 export function stepCombat(ctx: Ctx, ms: number): void {
   const b = ctx.b;
@@ -55,40 +71,109 @@ export function stepCombat(ctx: Ctx, ms: number): void {
   const e = b.enemy as Enemy;
   const st = stats(ctx);
   if (b.heroMax !== st.hp) invalidate(ctx);
-  const hInt = 1000 / (1 + st.spd / 100);
+  const a = arena(ctx);
+  tickFx(b.fx, ms);
+  castSkills(ctx, st, e);
+  const hInt = 1000 / (1 + (st.spd + (b.fx.spdT > 0 ? b.fx.spdV : 0)) / 100) / a.pace;
   b.ht += ms;
   let guard = 0;
   while (b.ht >= hInt && e.hp > 0 && b.heroHp > 0 && guard++ < 50) { b.ht -= hInt; heroHit(ctx, st, e); }
-  const eInt = e.int * (1 + st.slow / 100);
-  b.et += ms;
+  if (st.petInt && e.hp > 0) {
+    b.pt += ms;
+    guard = 0;
+    while (b.pt >= st.petInt && e.hp > 0 && guard++ < 20) { b.pt -= st.petInt; petHit(ctx, st, e); }
+  }
+  const eInt = (e.int * (1 + (a.elem ? st.slow : 0) / 100)) / a.pace;
+  if (b.fx.stunT <= 0) b.et += ms;
   guard = 0;
   while (b.et >= eInt && e.hp > 0 && b.heroHp > 0 && guard++ < 50) { b.et -= eInt; enemyHit(ctx, st, e); }
-  if (e.hp > 0 && b.heroHp > 0) b.heroHp = Math.min(b.heroMax, b.heroHp + (b.heroMax * st.regen / 100) * ms / 1000);
+  if (e.hp > 0 && b.heroHp > 0 && a.regen) b.heroHp = Math.min(b.heroMax, b.heroHp + (b.heroMax * st.regen / 100) * ms / 1000);
   if (e.hp <= 0) onEnemyDown(ctx, e);
   else if (b.heroHp <= 0) onHeroDown(ctx, e);
 }
 
-function heroHit(ctx: Ctx, st: Stats, e: Enemy): void {
-  let bonus = st.eldmg + (st.vs[e.type] ?? 0);
+function tickFx(fx: Fx, ms: number): void {
+  for (let i = 0; i < fx.cd.length; i++) fx.cd[i] = Math.max(0, fx.cd[i] - ms);
+  fx.dmgT -= ms; fx.spdT -= ms; fx.lsT -= ms; fx.stunT -= ms;
+  fx.shieldT -= ms;
+  if (fx.shieldT <= 0) fx.shield = 0;
+}
+
+/** Premia procentowa do obrażeń wobec danego wroga (żywioły, typ, bossowie). */
+function bonusVs(ctx: Ctx, st: Stats, e: Enemy): number {
+  const a = arena(ctx);
+  let bonus = (a.elem ? st.eldmg : 0) + (st.vs[e.type] ?? 0);
   if (e.boss) bonus += st.boss + st.pog;
-  if (e.type === 'Nieumarli' || e.type === 'Demony') bonus += st.holy;
-  let d = st.dmg * rnd(ctx.rng, 0.92, 1.08) * (1 + bonus / 100);
+  if (a.elem && (e.type === 'Nieumarli' || e.type === 'Demony')) bonus += st.holy;
+  if (ctx.b.fx.dmgT > 0) bonus += ctx.b.fx.dmgV;
+  return bonus;
+}
+
+/** Umiejętności rzucają się same, gdy są gotowe i jest w kogo. */
+function castSkills(ctx: Ctx, st: Stats, e: Enemy): void {
+  const { b, s } = ctx;
+  if (e.hp <= 0 || b.heroHp <= 0) return;
+  const fx = b.fx;
+  s.skills.eq.forEach((id, i) => {
+    if (!id || fx.cd[i] > 0) return;
+    const S = SKILLS[id];
+    const v = skillValue(id, s.skills.lv[id] ?? 1);
+    switch (S.kind) {
+      case 'dmg': {
+        const d = st.dmg * (v / 100) * (1 + bonusVs(ctx, st, e) / 100) * arena(ctx).dmg;
+        e.hp -= d;
+        ctx.emit({ t: 'float', side: 'foe', text: `${S.n}! ${fmtN(d)}`, cls: 'crit', force: true });
+        ctx.emit({ t: 'bump', who: 'foe', cls: 'hit' });
+        break;
+      }
+      case 'heal':
+        if (b.heroHp > 0.6 * b.heroMax) return; // czeka, aż będzie potrzebny
+        b.heroHp = Math.min(b.heroMax, b.heroHp + b.heroMax * v / 100);
+        ctx.emit({ t: 'float', side: 'hero', text: `${S.n} +${fmtN(b.heroMax * v / 100)}`, cls: 'loot', force: true });
+        break;
+      case 'shield': fx.shield = b.heroMax * v / 100; fx.shieldT = S.dur; break;
+      case 'buffDmg': fx.dmgT = S.dur; fx.dmgV = v; break;
+      case 'buffSpd': fx.spdT = S.dur; fx.spdV = v; break;
+      case 'buffLs': fx.lsT = S.dur; fx.lsV = v; break;
+      case 'stun': fx.stunT = v * 1000; break;
+    }
+    if (S.kind !== 'dmg' && S.kind !== 'heal') ctx.emit({ t: 'float', side: 'hero', text: S.n, cls: 'loot', force: true });
+    fx.cd[i] = S.cd;
+  });
+}
+
+function heroHit(ctx: Ctx, st: Stats, e: Enemy): void {
+  const a = arena(ctx);
+  let d = st.dmg * rnd(ctx.rng, 0.92, 1.08) * (1 + bonusVs(ctx, st, e) / 100) * a.dmg;
   const crit = ctx.rng.next() < st.crit / 100;
   if (crit) d *= 1 + st.critd / 100;
   e.hp -= d;
-  ctx.b.heroHp = Math.min(ctx.b.heroMax, ctx.b.heroHp + d * st.ls / 100);
+  const ls = (st.ls + a.ls + (ctx.b.fx.lsT > 0 ? ctx.b.fx.lsV : 0)) * a.lsMul;
+  ctx.b.heroHp = Math.min(ctx.b.heroMax, ctx.b.heroHp + d * ls / 100);
   ctx.emit({ t: 'bump', who: 'hero', cls: 'lunge' });
   ctx.emit({ t: 'bump', who: 'foe', cls: 'hit' });
   ctx.emit({ t: 'float', side: 'foe', text: fmtN(d), cls: crit ? 'crit' : 'dmg', force: crit });
 }
 
+function petHit(ctx: Ctx, st: Stats, e: Enemy): void {
+  const d = st.petAtk * rnd(ctx.rng, 0.9, 1.1) * arena(ctx).dmg;
+  e.hp -= d;
+  ctx.emit({ t: 'float', side: 'foe', text: fmtN(d), cls: 'pet' });
+}
+
 function enemyHit(ctx: Ctx, st: Stats, e: Enemy): void {
   if (ctx.rng.next() < st.dodge / 100) { ctx.emit({ t: 'float', side: 'hero', text: 'unik', cls: 'miss' }); return; }
-  const d = e.atk * rnd(ctx.rng, 0.9, 1.1);
+  let d = (e.atk * rnd(ctx.rng, 0.9, 1.1)) / arena(ctx).tough;
+  const fx = ctx.b.fx;
+  if (fx.shield > 0) {
+    const absorbed = Math.min(fx.shield, d);
+    fx.shield -= absorbed;
+    d -= absorbed;
+  }
   ctx.b.heroHp -= d;
   ctx.emit({ t: 'bump', who: 'foe', cls: 'lunge' });
   ctx.emit({ t: 'bump', who: 'hero', cls: 'hit' });
-  ctx.emit({ t: 'float', side: 'hero', text: '−' + fmtN(d), cls: 'hurt', force: e.boss });
+  ctx.emit({ t: 'float', side: 'hero', text: d > 0 ? '−' + fmtN(d) : 'tarcza', cls: d > 0 ? 'hurt' : 'miss', force: e.boss });
 }
 
 function onEnemyDown(ctx: Ctx, e: Enemy): void {
@@ -96,7 +181,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   if (b.mode === 'dung') { dungFloor(ctx); return; }
   if (e.boss) { bossWon(ctx, e); return; }
   const L = LANDS[s.cur.land];
-  const mods = techMods(s);
+  const mods = allMods(s);
   s.gold += Math.round(goldWave(curG(s)) * (1 + mods.goldPct / 100));
   const nOre = ri(ctx.rng, 1, 3) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
   s.ores[L.main] += nOre;
@@ -114,6 +199,10 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
     s.books++;
     loot += ' · Księga Wiedzy';
   }
+  if (s.bestG >= SKILLS_UNLOCK_G && ctx.rng.next() < B.SCROLL_DROP) {
+    s.scrolls++;
+    loot += ' · Zwój zaklęć';
+  }
   ctx.emit({ t: 'float', side: 'foe', text: loot, cls: 'loot', force: true });
   addFame(ctx, e.count, e.type, false);
   s.stats.kills += e.count;
@@ -124,7 +213,12 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
     if (s.cur.stage < B.STAGES_PER_LAND) s.cur.stage++;
   }
   if (s.cur.land === s.maxLand && !s.cleared[s.cur.land]) s.frontStage = Math.max(s.frontStage, s.cur.stage);
+  const before = s.bestG;
   s.bestG = Math.max(s.bestG, curG(s));
+  if (before < SKILLS_UNLOCK_G && s.bestG >= SKILLS_UNLOCK_G) {
+    s.scrolls += B.SCROLLS_START;
+    toast(ctx, `Odblokowano umiejętności: masz ${B.SCROLLS_START} Zwoje zaklęć (zakładka Bohater)`, 'good');
+  }
   b.enemy = null;
   b.pause = 320;
   ctx.dirty = true;
@@ -137,7 +231,7 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   s.stats.bosses++;
   addFame(ctx, 0, e.type, true);
   const first = !s.cleared[land];
-  const gold = Math.round(goldWave(gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + techMods(s).goldPct / 100));
+  const gold = Math.round(goldWave(gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + allMods(s).goldPct / 100));
   const n = ri(ctx.rng, 2, 4);
   const books = first ? B.BOOKS_BOSS_FIRST + land : ctx.rng.next() < B.BOOKS_BOSS_CHANCE ? 1 : 0;
   const set = setOfLand(land);
@@ -146,6 +240,8 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   s.ores[L.rare] += n;
   s.books += books;
   if (set && uniq) s.uniq[set] = (s.uniq[set] ?? 0) + uniq;
+  const extra = bossExtras(ctx, land, first);
+  grant(ctx, extra);
   const found = ctx.rng.next() < B.OBIEG_FIND_FROM_BOSS ? obiegItem(ctx) : null;
   if (found) { if (!s.pending) s.pending = found; else sell(ctx, found, true); }
   b.enemy = null;
@@ -160,13 +256,33 @@ function bossWon(ctx: Ctx, e: Enemy): void {
       s.frontStage = 1;
       s.bestG = Math.max(s.bestG, gOf(land + 1, 1));
     } else s.cur = { land, stage: 1, wave: 1 };
-    ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, found: !!found, books, uniq } });
+    ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, found: !!found, books, uniq, extra } });
   } else {
     s.cur.stage = 1;
     s.cur.wave = 1;
     toast(ctx, `Pokonano: ${L.boss} · +${fmtN(gold)} złota, ${n} × ${ORES[L.rare].n}` + (books ? ', Księga Wiedzy' : '') +
       (uniq && set ? ` · ${SETS[set].ore}!` : '') + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
   }
+}
+
+/** Rzadkość jaja z bossa krainy (od 4. krainy). */
+export const eggRarity = (land: number) => Math.max(0, Math.min(4, Math.floor((land - 3) / 3)));
+
+/** Zwoje, Jaja, Siodła i Kamienie z bossa. Za pierwsze pokonanie pewne, potem z niewielką szansą. */
+function bossExtras(ctx: Ctx, land: number, first: boolean): Reward {
+  const r: Reward = {};
+  const act = LANDS[land].act;
+  if (first) r.scrolls = B.SCROLLS_BOSS_FIRST + act;
+  else if (ctx.rng.next() < B.SCROLL_BOSS_CHANCE) r.scrolls = 1;
+  if (land >= PETS_UNLOCK_LAND - 1) {
+    if (first || ctx.rng.next() < B.EGG_BOSS_CHANCE) r.eggs = { [eggRarity(land)]: 1 };
+    if (first) r.stones = 10 + 2 * land;
+  }
+  if (land >= MOUNTS_UNLOCK_LAND - 1) {
+    if (first) r.saddles = B.SADDLES_BOSS_FIRST;
+    else if (ctx.rng.next() < B.SADDLE_BOSS_CHANCE) r.saddles = 1;
+  }
+  return r;
 }
 
 function onHeroDown(ctx: Ctx, e: Enemy): void {

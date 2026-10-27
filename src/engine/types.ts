@@ -10,8 +10,13 @@ export type TechId =
   | 'k_hart' | 'k_miech' | 'k_auto' | 'k_oszcz' | 'k_tanie'
   | 'w_ostrze' | 'w_pancerz' | 'w_precyzja' | 'w_pogromca'
   | 'e_kupiec' | 'e_gornik' | 'e_noc' | 'e_poszuk';
-export type DungId = 'skarbiec' | 'sztolnia' | 'wieza' | 'leza' | 'oltarze';
+export type DungId = 'skarbiec' | 'sztolnia' | 'wieza' | 'leza' | 'oltarze' | 'kopalnia' | 'labirynt' | 'zbrojownia' | 'krypta';
 export type SetId = 'lowca' | 'straz' | 'wicher' | 'nekro' | 'smok' | 'gwiazda';
+export type SkillId = 'deszcz' | 'tarcza' | 'okrzyk' | 'eliksir' | 'kula' | 'nova' | 'krwawe' | 'burza' | 'oddech';
+export type PetId = 'wilczek' | 'kruk' | 'zolw' | 'salamandra' | 'sowa' | 'gryfiatko' | 'wilkor' | 'feniks' | 'smoczek';
+export type MountId = 'kon' | 'dzik' | 'wilk' | 'niedzwiedz' | 'jaszczur' | 'jednorozec' | 'gryf' | 'smok';
+export type LabDoorKind = 'walka' | 'elita' | 'skarb' | 'zrodlo' | 'oltarz';
+export type KryptaRuleId = 'zywioly' | 'szybkosc' | 'krew' | 'giganci';
 
 /** Nagroda do przyznania i pokazania w podsumowaniu. */
 export interface Reward {
@@ -20,7 +25,14 @@ export interface Reward {
   ores?: Partial<Record<number, number>>;
   els?: Partial<Record<ElemKey, number>>;
   uniq?: Partial<Record<SetId, number>>;
+  scrolls?: number;
+  eggs?: Partial<Record<number, number>>;   // jaja według rzadkości
+  saddles?: number;
+  stones?: number;
+  seals?: number;
 }
+
+export interface LabDoorOpt { kind: LabDoorKind; bless?: number }
 
 export interface DungRun {
   id: DungId;
@@ -31,6 +43,12 @@ export interface DungRun {
   kills: number;
   el: ElemKey | null;  // Ołtarze: żywioł dnia
   bossLand: number;    // Leża Bossów
+  bless: { dmg: number; hp: number; ls: number };  // Labirynt: błogosławieństwa biegu
+  doors: LabDoorOpt[] | null;                       // Labirynt: drzwi do wyboru
+  elite: boolean;                                   // Labirynt: trwa walka z elitą
+  items: Item[];                                    // Zbrojownia: zdobyte przedmioty
+  rule: KryptaRuleId | null;                        // Krypta: zasada tygodnia
+  ghost?: string;                                   // Zbrojownia: duch, który strzeże skrzyni
 }
 
 export interface Sub { id: SubId; v: number }
@@ -62,6 +80,8 @@ export interface Item {
   set: SetId | null;    // część zestawu (z rudy unikalnej)
 }
 
+export interface Companion { lvl: number; stars: number }
+
 export interface GameState {
   v: number;
   name: string;
@@ -86,6 +106,18 @@ export interface GameState {
   uniq: Partial<Record<SetId, number>>;       // rudy unikalne
   uniqSel: SetId | null;
   tech: { lv: Partial<Record<TechId, number>>; cur: { id: TechId; left: number; total: number } | null };
+  scrolls: number;                                     // Zwoje zaklęć
+  skills: { lv: Partial<Record<SkillId, number>>; cards: Partial<Record<SkillId, number>>; eq: (SkillId | null)[] };
+  eggs: number[];                                      // jaja według rzadkości 0–4
+  hatch: { r: number; left: number; total: number } | null;
+  pets: Partial<Record<PetId, Companion>>;
+  petSel: PetId | null;
+  saddles: number;                                     // Siodła
+  mounts: Partial<Record<MountId, Companion>>;
+  mountSel: MountId | null;
+  stones: number;                                      // Kamienie
+  seals: number;                                       // Pieczęcie Legendy
+  found: Item[];                                       // znaleziska ze Zbrojowni czekające na decyzję
   stats: { smelted: number; jumps: number; kills: number; bosses: number };
   speed: number;
   savedAt: number;
@@ -104,6 +136,16 @@ export interface Enemy {
   int: number;          // odstęp między atakami w ms
 }
 
+/** Stan umiejętności i efektów w trakcie walki (nie trafia do zapisu). */
+export interface Fx {
+  cd: number[];        // pozostałe odnowienie każdego slotu umiejętności (ms)
+  dmgT: number; dmgV: number;
+  spdT: number; spdV: number;
+  lsT: number; lsV: number;
+  shield: number; shieldT: number;
+  stunT: number;
+}
+
 export interface Battle {
   mode: 'camp' | 'dung';
   enemy: Enemy | null;
@@ -111,10 +153,12 @@ export interface Battle {
   heroMax: number;
   ht: number;
   et: number;
+  pt: number;          // licznik ataku chowańca
   pause: number;
   dung: DungRun | null;
   autoT: number;
   obiegT: number;
+  fx: Fx;
 }
 
 export interface Stats {
@@ -122,27 +166,33 @@ export interface Stats {
   boss: number; eldmg: number; slow: number; holy: number; pog: number;
   vs: Partial<Record<FoeType, number>>;
   sets: { id: SetId; count: number }[];
+  petAtk: number;      // obrażenia chowańca na trafienie (wartość)
+  petInt: number;      // odstęp ataków chowańca (ms), 0 = brak
   power: number;
 }
 
-/** Zsumowane efekty technologii. */
+/** Zsumowane efekty technologii, chowańca i wierzchowca. */
 export interface Mods {
   jumpRel: number; saveOre: number; forgeTime: number; forgeCost: number; autoSpeed: number;
   dmgPct: number; hpPct: number; crit: number; bossPct: number;
   goldPct: number; extraOre: number; offlineMin: number; rarePct: number;
+  spd: number; ls: number; regen: number; eldmg: number;
 }
 
 export interface OfflineReport {
   ms: number; capped: boolean; land: number; gold: number; main: number; rare: number; el: number; books: number;
-  fame: number; forgeUp: number; tech: TechId | null; chest: { item: Item; equipped: boolean }[]; chestCount: number;
+  fame: number; forgeUp: number; tech: TechId | null; hatched: PetId | null; chest: { item: Item; equipped: boolean }[]; chestCount: number;
 }
 
 export type ModalData =
   | { kind: 'intro' }
-  | { kind: 'boss'; land: number; gold: number; n: number; found: boolean; books: number; uniq: number }
+  | { kind: 'boss'; land: number; gold: number; n: number; found: boolean; books: number; uniq: number; extra: Reward }
   | { kind: 'awaken'; item: Item }
   | { kind: 'dungChoice'; floor: number; loot: Reward }
-  | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward }
+  | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward; items: number }
+  | { kind: 'labChoice'; room: number; doors: LabDoorOpt[]; loot: Reward }
+  | { kind: 'found' }
+  | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }
   | { kind: 'info'; k: 'forge' | 'level' }
@@ -150,7 +200,7 @@ export type ModalData =
 
 export type GameEvent =
   | { t: 'toast'; msg: string; kind?: 'good' | 'bad' }
-  | { t: 'float'; side: 'hero' | 'foe'; text: string; cls: 'crit' | 'dmg' | 'hurt' | 'loot' | 'miss'; force?: boolean }
+  | { t: 'float'; side: 'hero' | 'foe'; text: string; cls: 'crit' | 'dmg' | 'hurt' | 'loot' | 'miss' | 'pet'; force?: boolean }
   | { t: 'bump'; who: 'hero' | 'foe'; cls: 'lunge' | 'hit' }
   | { t: 'modal'; m: ModalData }
   | { t: 'change' };

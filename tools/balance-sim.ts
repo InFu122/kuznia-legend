@@ -13,7 +13,10 @@ import { Game } from '../src/engine/game';
 import { mulberry32 } from '../src/engine/rng';
 import { newState } from '../src/engine/state';
 import { techBlock } from '../src/engine/tech';
-import type { TechId } from '../src/engine/types';
+import { mountsUnlocked, petsUnlocked, skillsUnlocked, upgradeCost } from '../src/engine/companions';
+import { fullStats, skillFactor } from '../src/engine/stats';
+import { MOUNT_IDS, PET_IDS, SKILL_IDS } from '../src/data';
+import type { LabDoorKind, MountId, PetId, SkillId, TechId } from '../src/engine/types';
 
 const HOURS = Number(process.argv[2] ?? 48);
 const RUNS = Number(process.argv[3] ?? 3);
@@ -27,9 +30,55 @@ const TECH_PRIORITY: TechId[] = ['w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 
 
 interface HourRow {
   run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; smelted: number; jumps: number; best: string;
-  books: number; tech: number; sets: string; tower: number;
+  books: number; tech: number; sets: string; tower: number; skills: string; pet: string; mount: string;
 }
 interface BossRow { run: number; land: string; boss: string; h: number; forge: number; power: number }
+
+/** Bot dba o umiejętności, chowańce i wierzchowce (co minutę gry). */
+function manageCompanions(g: Game): void {
+  const s = g.s;
+  if (skillsUnlocked(s)) {
+    while (s.scrolls > 0) g.openScroll();
+    const spd = g.stats.spd;
+    const ranked = SKILL_IDS.filter(id => s.skills.lv[id])
+      .map(id => { const [d, h] = skillFactor([{ id, lvl: s.skills.lv[id]! }], spd); return { id, v: d * h }; })
+      .sort((a, b) => b.v - a.v).slice(0, 3).map(x => x.id as SkillId);
+    if (ranked.join() !== s.skills.eq.filter(Boolean).join()) ranked.forEach((id, i) => g.equipSkill(id, i));
+  }
+  if (petsUnlocked(s)) {
+    if (!s.hatch) for (let r = 4; r >= 0; r--) if (s.eggs[r] > 0) { g.startHatch(r); break; }
+    pickBest(g, PET_IDS.filter(id => s.pets[id]), id => g.selectPet(id as PetId));
+  }
+  if (mountsUnlocked(s)) {
+    while (s.saddles > 0) g.openSaddle();
+    pickBest(g, MOUNT_IDS.filter(id => s.mounts[id]), id => g.selectMount(id as MountId));
+  }
+  // Kamienie: tańsze ulepszenie z dwóch (chowaniec, wierzchowiec)
+  for (let guard = 0; guard < 50; guard++) {
+    const opts: ['pet' | 'mount', PetId | MountId, number][] = [];
+    if (s.petSel) opts.push(['pet', s.petSel, upgradeCost('pet', s.petSel, s.pets[s.petSel]!.lvl)]);
+    if (s.mountSel) opts.push(['mount', s.mountSel, upgradeCost('mount', s.mountSel, s.mounts[s.mountSel]!.lvl)]);
+    opts.sort((a, b) => a[2] - b[2]);
+    if (!opts.length || !g.levelUp(opts[0][0], opts[0][1])) break;
+  }
+  while (s.seals > 0 && s.eq.bron) g.useSeal('bron');
+  while (s.found.length) g.takeFound(0, g.foundDelta(0) > 0);
+}
+
+/** Wybiera to, co daje najwięcej Mocy. */
+function pickBest(g: Game, ids: string[], select: (id: string) => void): void {
+  let best = '', bp = -1;
+  for (const id of ids) { select(id); const p = fullStats(g.ctx).power; if (p > bp) { bp = p; best = id; } }
+  if (best) select(best);
+}
+
+/** Labirynt: ołtarz, potem elita przy dobrym zdrowiu, źródło przy złym. */
+function labPick(g: Game): number {
+  const doors = g.b.dung!.doors!;
+  const hp = g.b.heroHp / g.b.heroMax;
+  const score = (k: LabDoorKind) => ({ oltarz: 5, elita: hp > 0.7 ? 4 : 1, zrodlo: hp < 0.5 ? 6 : 0, skarb: 3, walka: 2 })[k];
+  return score(doors[0].kind) >= score(doors[1].kind) ? 0 : 1;
+}
 
 function runOnce(run: number, seed: number) {
   let t = Date.UTC(2026, 0, 1);
@@ -72,6 +121,8 @@ function runOnce(run: number, seed: number) {
           if (g.startDung(id)) break;
         }
       }
+      if (g.b.dung?.id === 'labirynt' && g.b.dung.doors) g.labChoose(labPick(g));
+      if (ms % 60000 === 0) manageCompanions(g);
       // Sztolnia: na punkcie kontrolnym schodź dalej, jeśli bohater ma ponad 60% zdrowia
       if (g.b.dung?.id === 'sztolnia' && g.b.pause === Number.POSITIVE_INFINITY) {
         if (g.b.heroHp > 0.6 * g.b.heroMax && g.b.dung.floor < 20) g.dungGo(); else g.dungExit();
@@ -97,6 +148,8 @@ function runOnce(run: number, seed: number) {
         rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, best: bestR >= 0 ? RAR[bestR].n : '—',
         books: g.s.books, tech: TECH_IDS.reduce((a, id) => a + (g.s.tech.lv[id] ?? 0), 0),
         sets: g.stats.sets.map(x => `${x.id}:${x.count}`).join(' '), tower: g.s.dungeons.wieza.best,
+        skills: g.s.skills.eq.filter(Boolean).map(id => `${id}${g.s.skills.lv[id!]}`).join(' '),
+        pet: g.s.petSel ? `${g.s.petSel}${g.s.pets[g.s.petSel]!.lvl}` : '', mount: g.s.mountSel ? `${g.s.mountSel}${g.s.mounts[g.s.mountSel]!.lvl}` : '',
       });
     }
   }
@@ -113,7 +166,7 @@ async function main() {
     bosses.push(...res.bosses);
     samples.push(res.samples);
     const last = res.hours[res.hours.length - 1];
-    console.log(`Przebieg ${r}${PLAIN ? ' (plain)' : ''}: po ${HOURS} h — ${last.land}, etap ${last.stage}, kuźnia ${last.forge}, Moc ${last.power}, Księgi ${last.books}, badania ${last.tech}, zestawy [${last.sets}], wieża ${last.tower}, bossowie: ${res.bosses.length}`);
+    console.log(`Przebieg ${r}${PLAIN ? ' (plain)' : ''}: po ${HOURS} h — ${last.land}, etap ${last.stage}, kuźnia ${last.forge}, Moc ${last.power}, Księgi ${last.books}, badania ${last.tech}, zestawy [${last.sets}], wieża ${last.tower}, umiejętności [${last.skills}], chowaniec ${last.pet}, wierzchowiec ${last.mount}, bossowie: ${res.bosses.length}`);
     console.log('  bossowie (h): ' + res.bosses.map(b => b.h.toFixed(1)).join(' '));
   }
   mkdirSync('balans', { recursive: true });
@@ -138,6 +191,7 @@ async function main() {
     { header: 'Najlepsza rzadkość', key: 'best', width: 18 },
     { header: 'Księgi', key: 'books', width: 9 }, { header: 'Poziomy badań', key: 'tech', width: 14 },
     { header: 'Zestawy', key: 'sets', width: 18 }, { header: 'Wieża', key: 'tower', width: 8 },
+    { header: 'Umiejętności', key: 'skills', width: 26 }, { header: 'Chowaniec', key: 'pet', width: 14 }, { header: 'Wierzchowiec', key: 'mount', width: 14 },
   ]);
   hours.forEach((h, i) => { ws1.addRow(h); ws1.getCell(`H${i + 2}`).value = { formula: `F${i + 2}/G${i + 2}` }; });
 

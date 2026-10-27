@@ -1,13 +1,22 @@
 // Lochy. Każdy loch to osobny tryb walki w arenie; nagrody zbierają się w `loot` i trafiają do gracza na końcu.
-import { B, DUNGEONS, DUNGEON_FOES, ELEM, ELEM_KEYS, LANDS, TECH_UNLOCK_FORGE, setOfLand } from '../data';
+import {
+  B, DUNGEONS, DUNGEON_FOES, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS,
+  LAB_DOORS, LAB_ROOMS, LANDS, PETS_UNLOCK_LAND, TECH_UNLOCK_FORGE, ZBROJOWNIA_CHESTS, setOfLand,
+  type LabDoor,
+} from '../data';
+import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import type { Ctx } from './context';
-import { Dstar, Hstar, early, goldWave, todayStr } from './formulas';
+import { Dstar, Hstar, early, goldWave, legStage, todayStr } from './formulas';
+import { rollSubs } from './forge';
 import { addFame } from './legend';
-import { techMods } from './mods';
+import { allMods } from './mods';
+import { obiegItem } from './obieg';
 import { pick, ri } from './rng';
-import type { DungId, ElemKey, Reward, SetId } from './types';
+import { fullStats, invalidate } from './stats';
+import type { DungId, ElemKey, FoeType, KryptaRuleId, LabDoorOpt, Reward, SetId } from './types';
 
 const { SKARBIEC_MS, OLTARZE_FLOORS } = B;
+const ACT2 = PETS_UNLOCK_LAND;
 
 /** Czy loch jest dostępny dla gracza. */
 export function dungUnlocked(ctx: Ctx, id: DungId): boolean {
@@ -18,6 +27,8 @@ export function dungUnlocked(ctx: Ctx, id: DungId): boolean {
     case 'wieza': return s.forge.lvl >= TECH_UNLOCK_FORGE;
     case 'leza': return lezaBosses(ctx).length > 0;
     case 'oltarze': return s.forge.lvl >= B.ELEM_FORGE_LVL;
+    case 'kopalnia': case 'labirynt': case 'zbrojownia': return s.maxLand >= ACT2;
+    case 'krypta': return s.dungeons.krypta.best > 0 || Object.values(s.eq).some(it => it && it.ls >= 1);
   }
 }
 
@@ -36,6 +47,11 @@ export const dungTier = (ctx: Ctx) => Math.min(6, LANDS[ctx.s.maxLand].main + 1)
 export const elementOfDay = (now: number): ElemKey => ELEM_KEYS[new Date(now).getDay() % ELEM_KEYS.length];
 /** Pokonane krainy, których bossowie dają rudy unikalne. */
 export const lezaBosses = (ctx: Ctx) => LANDS.map((_, i) => i).filter(i => ctx.s.cleared[i] && setOfLand(i));
+/** Zasada tygodnia w Krypcie Bohaterów (zmienia się w poniedziałek). */
+export function kryptaRule(now: number): KryptaRuleId {
+  const week = Math.floor((now / 86400000 + 3) / 7); // 1970-01-01 to czwartek, więc +3 dni daje tygodnie od poniedziałku
+  return KRYPTA_ORDER[((week % 4) + 4) % 4];
+}
 
 export function startDungeon(ctx: Ctx, id: DungId, land = -1): boolean {
   const { s, b } = ctx;
@@ -46,10 +62,14 @@ export function startDungeon(ctx: Ctx, id: DungId, land = -1): boolean {
   b.dung = {
     id, floor: id === 'wieza' ? s.dungeons.wieza.best + 1 : 1, loot: {}, tier: dungTier(ctx),
     timeLeft: id === 'skarbiec' ? SKARBIEC_MS : 0, kills: 0, el: id === 'oltarze' ? elementOfDay(ctx.now()) : null, bossLand: land,
+    bless: { dmg: 0, hp: 0, ls: 0 }, doors: null, elite: false, items: [], rule: id === 'krypta' ? kryptaRule(ctx.now()) : null,
+    ghost: id === 'zbrojownia' ? pick(ctx.rng, FAKE_PLAYERS) : undefined,
   };
   b.enemy = null;
+  if (id === 'krypta') invalidate(ctx); // walczą tylko przedmioty z legendą
   b.heroHp = b.heroMax;
   b.pause = 300;
+  if (id === 'labirynt') offerDoors(ctx);
   ctx.dirty = true;
   return true;
 }
@@ -62,6 +82,9 @@ function dungDifficulty(ctx: Ctx): [number, number] {
     case 'sztolnia': return [Math.max(0, Math.min(159, s.bestG - 4 + d.floor * 1.5)), 1];
     case 'wieza': return [Math.min(159, d.floor - 1), Math.pow(1.06, Math.max(0, d.floor - 160))];
     case 'leza': return [Math.min(159, Math.max(d.bossLand * 10 + 9, s.bestG - 2)), 1];
+    case 'kopalnia': return [Math.max(0, Math.min(159, s.bestG - 3 + d.floor)), 1];
+    case 'labirynt': return [s.bestG, 1 + 0.05 * d.floor];
+    case 'zbrojownia': return [s.bestG, 1 + 0.2 * (d.floor - 1)];
     default: return [s.bestG, 1];
   }
 }
@@ -74,36 +97,48 @@ export function spawnDung(ctx: Ctx): void {
   const e = early(g) * extra;
   const wHp = B.WAVE_HP_MULT * Dstar(g) * e;
   const wAtk = (Hstar(g) / B.WAVE_ATK_DIV) * e;
+  const foe = (name: string, type: 'Bestie' | 'Nieumarli' | 'Demony' | 'Smoki', hp: number, atk: number, boss = false) => {
+    b.enemy = { name, count: 1, type, max: hp, hp, atk, boss, int: boss ? 1300 : 1200 };
+  };
   switch (d.id) {
-    case 'sztolnia':
-      b.enemy = { name: pick(ctx.rng, DUNGEON_FOES), count: 1, type: 'Bestie', max: wHp * 1.3, hp: wHp * 1.3, atk: wAtk * 1.1, boss: false, int: 1200 };
-      break;
-    case 'skarbiec':
-      b.enemy = { name: 'Goblin z workiem', count: 1, type: 'Bestie', max: wHp * 0.6, hp: wHp * 0.6, atk: wAtk * 0.5, boss: false, int: 1200 };
-      break;
-    case 'wieza': {
-      const max = 5 * Dstar(g) * e;
-      b.enemy = { name: `Strażnik ${d.floor}. piętra`, count: 1, type: 'Demony', max, hp: max, atk: Hstar(g) * 0.12 * e, boss: false, int: 1300 };
-      break;
-    }
+    case 'sztolnia': foe(pick(ctx.rng, DUNGEON_FOES), 'Bestie', wHp * 1.3, wAtk * 1.1); break;
+    case 'skarbiec': foe('Goblin z workiem', 'Bestie', wHp * 0.6, wAtk * 0.5); break;
+    case 'wieza': foe(`Strażnik ${d.floor}. piętra`, 'Demony', 5 * Dstar(g) * e, Hstar(g) * 0.12 * e); break;
     case 'leza': {
       const L = LANDS[d.bossLand];
-      const max = B.BOSS_HP_MULT * Dstar(g) * e;
-      b.enemy = { name: L.boss, count: 1, type: L.type, max, hp: max, atk: Hstar(g) * B.BOSS_ATK_MULT * e, boss: true, int: 1300 };
+      foe(L.boss, L.type, B.BOSS_HP_MULT * Dstar(g) * e, Hstar(g) * B.BOSS_ATK_MULT * e, true);
       break;
     }
-    case 'oltarze': {
-      const el = d.el ?? 'zar';
-      b.enemy = { name: `Strażnik: ${ELEM[el].el}`, count: 1, type: 'Demony', max: wHp * 1.6, hp: wHp * 1.6, atk: wAtk * 1.2, boss: false, int: 1200 };
+    case 'oltarze': foe(`Strażnik: ${ELEM[d.el ?? 'zar'].el}`, 'Demony', wHp * 1.6, wAtk * 1.2); break;
+    case 'kopalnia': foe('Kryształowy golem', 'Bestie', wHp * 1.2, wAtk); break;
+    case 'labirynt':
+      if (d.floor >= LAB_ROOMS) foe('Minotaur', 'Bestie', B.BOSS_HP_MULT * 0.9 * Dstar(g) * e, Hstar(g) * B.BOSS_ATK_MULT * e, true);
+      else if (d.elite) foe('Elitarny strażnik', 'Bestie', wHp * 2.4, wAtk * 1.4);
+      else foe('Strażnik Labiryntu', 'Bestie', wHp * 1.2, wAtk);
+      break;
+    case 'zbrojownia': foe(`Duch: ${d.ghost ?? pick(ctx.rng, FAKE_PLAYERS)}`, 'Nieumarli', wHp * 2, wAtk * 1.3); break;
+    case 'krypta': {
+      // Strażnicy skalują się z pełną siłą bohatera, a walczą z nim tylko przedmioty z legendą.
+      const f = fullStats(ctx);
+      const dps = f.dmg * (1 + (f.crit / 100) * (f.critd / 100)) * (1 + f.spd / 100);
+      let hp = dps * (4 + 2 * d.floor), atk = f.hp * (0.02 + 0.01 * d.floor);
+      if (d.rule === 'giganci') { hp *= 2; atk *= 0.6; }
+      foe(`Strażnik Krypty ${d.floor}/${KRYPTA_FLOORS}`, 'Nieumarli', hp, atk);
       break;
     }
   }
   b.et = 0;
 }
 
-const add = (r: Reward, k: 'gold' | 'books', n: number) => { r[k] = (r[k] ?? 0) + n; };
+const add = (r: Reward, k: 'gold' | 'books' | 'scrolls' | 'stones' | 'saddles' | 'seals', n: number) => { r[k] = (r[k] ?? 0) + n; };
+const addOre = (r: Reward, ore: number, n: number) => { r.ores = { ...r.ores, [ore]: (r.ores?.[ore] ?? 0) + n }; };
+const addEgg = (r: Reward, rar: number) => { r.eggs = { ...r.eggs, [rar]: (r.eggs?.[rar] ?? 0) + 1 }; };
 /** Księgi Wiedzy za piętro Wieży podzielne przez 5. */
 export const towerBooks = (floor: number) => 1 + Math.floor(floor / 20);
+/** Kamienie za falę Kopalni Kryształów. */
+export const mineStones = (maxLand: number) => 2 + Math.floor(maxLand / 3);
+/** Rzadkość jaj z lochów: rośnie z postępem. */
+const dungEggRarity = (maxLand: number) => Math.max(0, Math.min(4, Math.floor((maxLand - 3) / 3)));
 
 /** Wróg w lochu pokonany. */
 export function dungFloor(ctx: Ctx): void {
@@ -112,15 +147,15 @@ export function dungFloor(ctx: Ctx): void {
   if (!d) return;
   b.enemy = null;
   ctx.dirty = true;
-  const gold = 1 + techMods(s).goldPct / 100;
+  const gold = 1 + allMods(s).goldPct / 100;
   switch (d.id) {
     case 'sztolnia': {
       const n = 1 + (d.floor % 3 === 0 ? 1 : 0);
-      d.loot.ores = { [d.tier]: (d.loot.ores?.[d.tier] ?? 0) + n };
+      addOre(d.loot, d.tier, n);
       addFame(ctx, 3, 'Bestie', false);
       s.dungeons.sztolnia.best = Math.max(s.dungeons.sztolnia.best, d.floor);
       b.heroHp = Math.min(b.heroMax, b.heroHp + 0.25 * b.heroMax);
-      ctx.emit({ t: 'float', side: 'foe', text: `Łup: ${d.loot.ores[d.tier]}`, cls: 'loot', force: true });
+      ctx.emit({ t: 'float', side: 'foe', text: `Łup: ${d.loot.ores?.[d.tier]}`, cls: 'loot', force: true });
       if (d.floor % B.DUNGEON_CHECKPOINT === 0) {
         b.pause = Number.POSITIVE_INFINITY;
         ctx.emit({ t: 'modal', m: { kind: 'dungChoice', floor: d.floor, loot: d.loot } });
@@ -141,6 +176,7 @@ export function dungFloor(ctx: Ctx): void {
       add(d.loot, 'gold', Math.round(goldWave(g) * 3 * gold));
       let text = `Piętro ${d.floor} zdobyte`;
       if (d.floor % 5 === 0) { const bk = towerBooks(d.floor); add(d.loot, 'books', bk); text += ` · +${bk} Ks.`; }
+      if (d.floor % 10 === 0 && skillsUnlocked(s)) { add(d.loot, 'scrolls', 1); text += ' · Zwój'; }
       s.dungeons.wieza.best = Math.max(s.dungeons.wieza.best, d.floor);
       addFame(ctx, 5, 'Demony', false);
       ctx.emit({ t: 'float', side: 'foe', text, cls: 'loot', force: true });
@@ -153,6 +189,8 @@ export function dungFloor(ctx: Ctx): void {
       const set = setOfLand(d.bossLand);
       if (set) d.loot.uniq = { [set]: ri(ctx.rng, 2, 3) };
       add(d.loot, 'books', 1);
+      if (petsUnlocked(s) && ctx.rng.next() < 0.2) addEgg(d.loot, dungEggRarity(s.maxLand));
+      if (mountsUnlocked(s) && ctx.rng.next() < 0.25) add(d.loot, 'saddles', 1);
       addFame(ctx, 0, LANDS[d.bossLand].type, true);
       s.dungeons.leza.best++; // liczba zwycięstw
       dungEnd(ctx, false);
@@ -169,8 +207,130 @@ export function dungFloor(ctx: Ctx): void {
       b.pause = 300;
       return;
     }
+    case 'kopalnia': {
+      const n = mineStones(s.maxLand);
+      add(d.loot, 'stones', n);
+      s.dungeons.kopalnia.best = Math.max(s.dungeons.kopalnia.best, d.floor);
+      ctx.emit({ t: 'float', side: 'foe', text: `+${n} Kamieni`, cls: 'loot', force: true });
+      b.heroHp = Math.min(b.heroMax, b.heroHp + 0.25 * b.heroMax);
+      if (d.floor >= KOPALNIA_WAVES) {
+        if (mountsUnlocked(s)) add(d.loot, 'saddles', 1); else add(d.loot, 'stones', 5);
+        dungEnd(ctx, false);
+        return;
+      }
+      d.floor++;
+      b.pause = 300;
+      return;
+    }
+    case 'labirynt': {
+      const rare = LANDS[s.maxLand].rare;
+      if (d.floor >= LAB_ROOMS) { // Minotaur
+        add(d.loot, 'books', 3);
+        add(d.loot, 'scrolls', 1);
+        addOre(d.loot, rare, 3);
+        if (petsUnlocked(s) && ctx.rng.next() < 0.4) addEgg(d.loot, dungEggRarity(s.maxLand));
+        addFame(ctx, 0, 'Bestie', true);
+        s.dungeons.labirynt.best = LAB_ROOMS;
+        dungEnd(ctx, false);
+        return;
+      }
+      if (d.elite) { addOre(d.loot, rare, 2); add(d.loot, 'books', 1); } else addOre(d.loot, rare, 1);
+      d.elite = false;
+      b.heroHp = Math.min(b.heroMax, b.heroHp + 0.2 * b.heroMax);
+      s.dungeons.labirynt.best = Math.max(s.dungeons.labirynt.best, d.floor);
+      nextRoom(ctx);
+      return;
+    }
+    case 'zbrojownia': {
+      const it = obiegItem(ctx);
+      it.smith = d.ghost ?? it.smith;
+      it.owners = [it.smith, ...it.owners.filter(o => o !== it.smith)].slice(0, 3);
+      if (ctx.rng.next() < 0.5 && it.r < 6) { it.r++; it.subs = rollSubs(ctx, it.r); }
+      it.fame = ri(ctx.rng, 1000, 6000);
+      const t = (Object.keys(it.kills)[0] ?? 'Bestie') as FoeType;
+      it.kills = { [t]: it.fame - B.FAME_BOSS };
+      it.ls = legStage(it.fame);
+      d.items.push(it);
+      s.dungeons.zbrojownia.best = Math.max(s.dungeons.zbrojownia.best, d.floor);
+      ctx.emit({ t: 'float', side: 'foe', text: 'Skrzynia otwarta!', cls: 'loot', force: true });
+      b.heroHp = Math.min(b.heroMax, b.heroHp + 0.3 * b.heroMax);
+      if (d.floor >= ZBROJOWNIA_CHESTS) { dungEnd(ctx, false); return; }
+      d.floor++;
+      d.ghost = pick(ctx.rng, FAKE_PLAYERS);
+      b.pause = 400;
+      return;
+    }
+    case 'krypta': {
+      add(d.loot, 'seals', d.floor >= KRYPTA_FLOORS ? 2 : 1);
+      s.dungeons.krypta.best = Math.max(s.dungeons.krypta.best, d.floor);
+      ctx.emit({ t: 'float', side: 'foe', text: 'Pieczęć Legendy', cls: 'loot', force: true });
+      b.heroHp = Math.min(b.heroMax, b.heroHp + 0.3 * b.heroMax);
+      if (d.floor >= KRYPTA_FLOORS) { dungEnd(ctx, false); return; }
+      d.floor++;
+      b.pause = 400;
+      return;
+    }
   }
 }
+
+/* ---------- Labirynt Minotaura ---------- */
+
+function rollDoor(ctx: Ctx, not?: LabDoor): LabDoorOpt {
+  const kinds = (Object.keys(LAB_DOORS) as LabDoor[]).filter(k => k !== not);
+  let x = ctx.rng.next() * kinds.reduce((a, k) => a + LAB_DOORS[k].w, 0);
+  let kind = kinds[0];
+  for (const k of kinds) { x -= LAB_DOORS[k].w; if (x < 0) { kind = k; break; } }
+  return kind === 'oltarz' ? { kind, bless: ri(ctx.rng, 0, LAB_BLESSINGS.length - 1) } : { kind };
+}
+
+/** Pokazuje dwoje drzwi i zatrzymuje walkę do wyboru. */
+function offerDoors(ctx: Ctx): void {
+  const d = ctx.b.dung!;
+  const a = rollDoor(ctx);
+  d.doors = [a, rollDoor(ctx, a.kind)];
+  ctx.b.pause = Number.POSITIVE_INFINITY;
+  ctx.emit({ t: 'modal', m: { kind: 'labChoice', room: d.floor, doors: d.doors, loot: d.loot } });
+}
+
+function nextRoom(ctx: Ctx): void {
+  const d = ctx.b.dung!;
+  d.floor++;
+  if (d.floor >= LAB_ROOMS) { d.doors = null; ctx.b.pause = 500; return; } // Minotaur
+  offerDoors(ctx);
+}
+
+/** Gracz wybiera drzwi w Labiryncie. */
+export function labChoose(ctx: Ctx, i: number): boolean {
+  const { s, b } = ctx;
+  const d = b.dung;
+  if (!d || d.id !== 'labirynt' || !d.doors?.[i]) return false;
+  const door = d.doors[i];
+  d.doors = null;
+  ctx.dirty = true;
+  switch (door.kind) {
+    case 'walka': case 'elita':
+      d.elite = door.kind === 'elita';
+      b.enemy = null;
+      b.pause = 300;
+      return true;
+    case 'skarb':
+      add(d.loot, 'gold', Math.round(goldWave(s.bestG) * 8 * (1 + allMods(s).goldPct / 100)));
+      addOre(d.loot, LANDS[s.maxLand].rare, 1);
+      break;
+    case 'zrodlo':
+      b.heroHp = b.heroMax;
+      break;
+    case 'oltarz': {
+      const bl = LAB_BLESSINGS[door.bless ?? 0];
+      d.bless[bl.k] += bl.v;
+      break;
+    }
+  }
+  nextRoom(ctx);
+  return true;
+}
+
+/* ---------- wspólne ---------- */
 
 /** Upływ czasu w lochu (Skarbiec ma limit 30 sekund). */
 export function dungTick(ctx: Ctx, ms: number): void {
@@ -191,9 +351,14 @@ export function grant(ctx: Ctx, r: Reward): void {
   const s = ctx.s;
   s.gold += r.gold ?? 0;
   s.books += r.books ?? 0;
+  s.scrolls += r.scrolls ?? 0;
+  s.saddles += r.saddles ?? 0;
+  s.stones += r.stones ?? 0;
+  s.seals += r.seals ?? 0;
   for (const [k, v] of Object.entries(r.ores ?? {})) s.ores[Number(k)] += v ?? 0;
   for (const [k, v] of Object.entries(r.els ?? {})) s.els[k as ElemKey] = (s.els[k as ElemKey] ?? 0) + (v ?? 0);
   for (const [k, v] of Object.entries(r.uniq ?? {})) s.uniq[k as SetId] = (s.uniq[k as SetId] ?? 0) + (v ?? 0);
+  for (const [k, v] of Object.entries(r.eggs ?? {})) s.eggs[Number(k)] += v ?? 0;
 }
 
 function halve(r: Reward): Reward {
@@ -207,18 +372,22 @@ function halve(r: Reward): Reward {
 
 /** Koniec lochu. Porażka w Sztolni i na Ołtarzach zabiera połowę łupu. */
 export function dungEnd(ctx: Ctx, lost: boolean): void {
-  const b = ctx.b;
+  const { s, b } = ctx;
   const d = b.dung;
   if (!d) return;
   const reward = lost && (d.id === 'sztolnia' || d.id === 'oltarze') ? halve(d.loot) : d.loot;
   grant(ctx, reward);
   if (!lost && d.id === 'sztolnia') addFame(ctx, B.FAME_DUNGEON, 'Bestie', false);
-  const floor = d.id === 'wieza' ? d.floor - 1 : d.floor; // w Wieży `floor` to piętro, na które dopiero wchodzisz
+  // W Wieży `floor` to piętro, na które dopiero wchodzisz; w pozostałych lochach porażka nie zalicza bieżącego piętra.
+  const floor = d.id === 'wieza' ? d.floor - 1 : d.id === 'skarbiec' ? d.kills : lost ? d.floor - 1 : d.floor;
   b.mode = 'camp';
   b.dung = null;
   b.enemy = null;
+  if (d.id === 'krypta') invalidate(ctx);
   b.heroHp = b.heroMax;
   b.pause = 400;
+  if (d.items.length) s.found.push(...d.items);
   ctx.dirty = true;
-  ctx.emit({ t: 'modal', m: { kind: 'dungEnd', id: d.id, lost, floor: d.id === 'skarbiec' ? d.kills : floor, reward } });
+  ctx.emit({ t: 'modal', m: { kind: 'dungEnd', id: d.id, lost, floor, reward, items: d.items.length } });
+  if (d.items.length) ctx.emit({ t: 'modal', m: { kind: 'found' } });
 }

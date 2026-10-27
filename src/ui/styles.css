@@ -264,3 +264,32 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .sets .on{color:var(--frost)}
 .sets .off{color:var(--ash)}
 .lockline{margin-top:10px; font-size:13px; color:var(--ash); border:1px dashed var(--rivet); border-radius:10px; padding:8px 12px}
+.fl.pet{color:#b8e3a5; font-size:13px}
+/* Etap 2b: podzakładki bohatera, umiejętności, chowańce, wierzchowce, Labirynt */
+.seg{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:4px; background:var(--plate); border:1px solid var(--rivet); border-radius:12px; padding:4px}
+.seg button{background:none; border:0; border-radius:9px; padding:8px 0; font-size:12px; font-weight:600; color:var(--ash); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+@media (max-width:400px){ .seg button{font-size:11px} }
+.seg button.on{background:var(--plate-2); color:var(--straw)}
+.skslots{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin-top:10px}
+.skslot{--rc:var(--rivet); background:var(--plate-2); border:1px solid var(--rivet); border-bottom:3px solid var(--rc); border-radius:10px; padding:8px 6px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0; text-align:center}
+.skslot b{font-size:13px; line-height:1.15}
+.skslot small{font-size:11px; color:var(--ash)}
+.skslot.empty{border-style:dashed}
+.skslot.r0{--rc:var(--r0)} .skslot.r1{--rc:var(--r1)} .skslot.r2{--rc:var(--r2)} .skslot.r3{--rc:var(--r3)} .skslot.r4{--rc:var(--r4)}
+.clist{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column}
+.clist li{display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--rivet)}
+.clist li:first-child{border-top:0; padding-top:2px}
+.cmain{flex:1; min-width:0}
+.cname{font-weight:600}
+.cbtns{display:flex; flex-direction:column; gap:6px; align-items:stretch; flex:none; min-width:96px}
+.cbtns .tech-busy{min-width:0}
+.stars{color:var(--straw); font-size:12px; letter-spacing:1px}
+.doors{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.door{background:var(--plate-2); border:1px solid var(--rivet); border-top:3px solid var(--straw); border-radius:12px; padding:16px 10px; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; min-height:110px; justify-content:center}
+.door b{font-family:var(--f-display); font-size:22px; font-weight:400}
+.door small{font-size:12px; color:var(--ash)}
+.door.d-elita{border-top-color:var(--blood)} .door.d-skarb{border-top-color:var(--r4)} .door.d-zrodlo{border-top-color:var(--r2)} .door.d-oltarz{border-top-color:var(--r3)} .door.d-walka{border-top-color:var(--r0)}
+.skpips{display:flex; gap:4px; margin-top:4px; justify-content:center}
+.skpip{width:22px; height:5px; border-radius:3px; background:#2a333d; overflow:hidden}
+.skpip i{display:block; height:100%; background:var(--ash)}
+.skpip.ready i{background:var(--straw)}

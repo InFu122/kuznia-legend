@@ -28,10 +28,11 @@ Dzięki temu ten sam kod:
 main.tsx ── pętla requestAnimationFrame ──► Game.tick(ms)
                                             ├─ tickForge    (ulepszenie kuźni)
                                             ├─ tickResearch (badanie w Akademii)
+                                            ├─ tickHatch    (wykluwanie jaja)
                                             ├─ obiegEvent   (Wielki Obieg)
                                             ├─ auto-wytop
                                             ├─ dungTick     (czas Skarbca)
-                                            └─ stepCombat   (fale, bossowie, lochy)
+                                            └─ stepCombat   (fale, bossowie, lochy, umiejętności, chowaniec)
 Game.emit ──► interfejs: toast · float · bump · modal · change
 UI ──► akcje Game: smeltManual, equipPending, upgrade, research, goLand, startDung(id)…
 ```
@@ -47,8 +48,9 @@ UI ──► akcje Game: smeltManual, equipPending, upgrade, research, goLand, s
 | `combat.ts` | fale, bossowie, przenoszenie między krainami |
 | `legend.ts` | Sława Czynów, progi legendy, przebudzenie |
 | `obieg.ts` | Piętno Kowala i Wielki Obieg (do etapu 4 symulowany) |
-| `dungeon.ts` | lochy: Skarbiec Złota, Głęboka Sztolnia, Wieża Wyzwań, Leża Bossów, Ołtarze Żywiołów; klucze dzienne |
-| `tech.ts`, `mods.ts` | Akademia Kowalska: koszty i czas badań, suma efektów technologii (`Mods`) |
+| `dungeon.ts` | 9 lochów (Skarbiec, Sztolnia, Wieża, Leża Bossów, Ołtarze, Kopalnia Kryształów, Labirynt, Zbrojownia, Krypta); klucze dzienne |
+| `tech.ts`, `mods.ts` | Akademia Kowalska: koszty i czas badań; `allMods` sumuje technologie, cechę chowańca i wierzchowca |
+| `companions.ts` | Zwoje i umiejętności, jaja i chowańce, Siodła i wierzchowce, ulepszanie Kamieniami, Pieczęcie Legendy |
 | `offline.ts` | nagrody za czas poza grą, Skrzynia nocnej zmiany |
 | `stats.ts` | statystyki bohatera i Moc, premie technologii i zestawów |
 | `state.ts` | nowy stan i migracja starszych zapisów |
@@ -61,13 +63,14 @@ Siła przedmiotu = baza slotu × 1,08^poziom × mnożnik rzadkości × bonus leg
 - lepszymi rudami i przeskokami,
 - legendami przedmiotów,
 - technologiami (Księgi Wiedzy z bossów, rzadko z fal, z Wieży Wyzwań),
-- zestawami z rud unikalnych (bossowie i Leża Bossów, wytop od 15. poziomu kuźni).
+- zestawami z rud unikalnych (bossowie i Leża Bossów, wytop od 15. poziomu kuźni),
+- umiejętnościami, chowańcem i wierzchowcem (Moc liczy ich szacunkowy wkład: `skillFactor` w `stats.ts`).
 
 Wrogowie skalują się z oczekiwanej siły gracza (`forgeExp`, `rarityExp`, `extrasExp`) i kalibracji `ENEMY_SCALE_AT_BOSS`. Kalibracja zakłada gracza, który korzysta z technologii, lochów i zestawów. Symulator ma tryb `plain` (bot bez tych systemów) jako punkt odniesienia: `npm run balance -- 150 3 plain`.
 
 ## Zapis
 
-Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każdej zmianie znaczenia pól, a `migrate()` przenosi stare zapisy. Wersja 2 przeliczyła poziomy przedmiotów na model oparty o kuźnię. Wersja 3 dodała technologie, Księgi Wiedzy, rudy unikalne i wiele lochów (stare pole `dung` przechodzi do `dungeons.sztolnia`).
+Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każdej zmianie znaczenia pól, a `migrate()` przenosi stare zapisy. Wersja 2 przeliczyła poziomy przedmiotów na model oparty o kuźnię. Wersja 3 dodała technologie, Księgi Wiedzy, rudy unikalne i wiele lochów (stare pole `dung` przechodzi do `dungeons.sztolnia`). Wersja 4 dodała umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy i znaleziska ze Zbrojowni.
 
 ## Co dalej technicznie
 

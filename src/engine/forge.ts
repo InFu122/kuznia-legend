@@ -2,7 +2,7 @@ import { B, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, SETS, SET_FORGE_LVL, SLOTS, S
 import { toast, type Ctx } from './context';
 import { itemLevelFor, itemName, jumpChances, maxJump, sellPrice, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
-import { techMods } from './mods';
+import { allMods } from './mods';
 import { maybeObieg } from './obieg';
 import { pick, ri, rnd, shuffle } from './rng';
 import { invalidate, powerDelta, stats } from './stats';
@@ -14,10 +14,10 @@ export const uniqActive = (s: GameState): SetId | null =>
   s.uniqSel && s.forge.lvl >= SET_FORGE_LVL && (s.uniq[s.uniqSel] ?? 0) > 0 ? s.uniqSel : null;
 
 /** Cena sprzedaży z premią Kupca. */
-export const sellFor = (s: GameState, it: Item) => Math.round(sellPrice(it) * (1 + techMods(s).goldPct / 100));
+export const sellFor = (s: GameState, it: Item) => Math.round(sellPrice(it) * (1 + allMods(s).goldPct / 100));
 /** Koszt i czas ulepszenia kuźni do poziomu n (z technologiami). */
-export const upgradeCost = (s: GameState, n: number) => Math.round(upCost(n) * (1 - techMods(s).forgeCost / 100));
-export const upgradeTime = (s: GameState, n: number) => upTime(n) * (1 - techMods(s).forgeTime / 100);
+export const upgradeCost = (s: GameState, n: number) => Math.round(upCost(n) * (1 - allMods(s).forgeCost / 100));
+export const upgradeTime = (s: GameState, n: number) => upTime(n) * (1 - allMods(s).forgeTime / 100);
 
 /** Część zestawu trafia w miejsce, w którym nie masz jeszcze tego zestawu. */
 function setSlot(ctx: Ctx, set: SetId): SlotId {
@@ -38,7 +38,7 @@ export function rollSubs(ctx: Ctx, r: number) {
 export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   const s = ctx.s;
   if (!canSmelt(ctx, ore)) return null;
-  const mods = techMods(s);
+  const mods = allMods(s);
   if (ctx.rng.next() * 100 >= mods.saveOre) s.ores[ore]--;
   const set = uniqActive(s);
   if (set) s.uniq[set] = (s.uniq[set] ?? 0) - 1;

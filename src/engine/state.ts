@@ -1,12 +1,13 @@
-import { DUNGEONS, DUNG_ORDER, LANDS } from '../data';
-import type { Battle, DungId, GameState } from './types';
+import { DUNGEONS, DUNG_ORDER, LANDS, SKILL_SLOTS } from '../data';
+import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
  * Wersje zapisu:
  * 2 — poziom przedmiotu liczony z poziomu kuźni (wcześniej z postępu w kampanii),
- * 3 — technologie, Księgi Wiedzy, rudy unikalne, wiele lochów.
+ * 3 — technologie, Księgi Wiedzy, rudy unikalne, wiele lochów,
+ * 4 — umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy, kolejne lochy.
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];
@@ -22,6 +23,9 @@ export function newState(now: number): GameState {
     auto: false, oreSel: 1, elSel: null,
     smith: { fame: 0, sent: [], log: [] },
     dungeons: newDungeons(), books: 0, uniq: {}, uniqSel: null, tech: { lv: {}, cur: null },
+    scrolls: 0, skills: { lv: {}, cards: {}, eq: Array(SKILL_SLOTS).fill(null) },
+    eggs: [0, 0, 0, 0, 0], hatch: null, pets: {}, petSel: null,
+    saddles: 0, mounts: {}, mountSel: null, stones: 0, seals: 0, found: [],
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0 },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
@@ -53,8 +57,17 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!isObj(out.els)) out.els = {};
   if (!isObj(out.uniq)) out.uniq = {};
   if (typeof out.books !== 'number') out.books = 0;
+  out.skills = Object.assign(fresh.skills, isObj(raw.skills) ? raw.skills : {});
+  if (!isObj(out.skills.lv)) out.skills.lv = {};
+  if (!isObj(out.skills.cards)) out.skills.cards = {};
+  if (!Array.isArray(out.skills.eq)) out.skills.eq = fresh.skills.eq;
+  while (out.skills.eq.length < SKILL_SLOTS) out.skills.eq.push(null);
+  if (!Array.isArray(out.eggs) || out.eggs.length !== 5) out.eggs = fresh.eggs;
+  for (const k of ['pets', 'mounts'] as const) if (!isObj(out[k])) out[k] = {};
+  for (const k of ['scrolls', 'saddles', 'stones', 'seals'] as const) if (typeof out[k] !== 'number') out[k] = 0;
+  if (!Array.isArray(out.found)) out.found = [];
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
-  for (const it of [...Object.values(out.eq), out.pending]) {
+  for (const it of [...Object.values(out.eq), out.pending, ...out.found]) {
     if (!it) continue;
     it.flvl ??= 0; it.forced ??= ''; it.kills ??= {}; it.bosses ??= 0; it.owners ??= [it.smith]; it.obieg ??= false; it.ls ??= 0; it.aw ??= null;
     it.set ??= null;
@@ -66,6 +79,10 @@ export function migrate(raw: unknown, now: number): GameState {
   return out;
 }
 
+export function newFx(): Fx {
+  return { cd: Array(SKILL_SLOTS).fill(1500), dmgT: 0, dmgV: 0, spdT: 0, spdV: 0, lsT: 0, lsV: 0, shield: 0, shieldT: 0, stunT: 0 };
+}
+
 export function newBattle(): Battle {
-  return { mode: 'camp', enemy: null, heroHp: 1, heroMax: 1, ht: 0, et: 0, pause: 0, dung: null, autoT: 0, obiegT: 75000 };
+  return { mode: 'camp', enemy: null, heroHp: 1, heroMax: 1, ht: 0, et: 0, pt: 0, pause: 0, dung: null, autoT: 0, obiegT: 75000, fx: newFx() };
 }

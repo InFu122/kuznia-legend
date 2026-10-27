@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANDS, ROMAN } from '../data';
+import { LANDS, ROMAN, SKILLS } from '../data';
 import { bossWaiting } from '../engine/combat';
 import type { Game } from '../engine/game';
 import { fmt } from './format';
@@ -74,7 +74,16 @@ export function Arena({ game, onTab }: { game: Game; onTab: (t: Tab) => void }) 
           <div class="token" ref={heroRef}>{(s.name[0] || 'K').toUpperCase()}</div>
           <div class="fname">{s.name}</div>
           <div class="hp"><i style={{ width: (hp / b.heroMax) * 100 + '%' }} /></div>
-          <div class="hpnum">{fmt(hp)} / {fmt(st.hp)}</div>
+          <div class="hpnum">{fmt(hp)} / {fmt(st.hp)}{b.fx.shield > 0 ? ` · tarcza ${fmt(b.fx.shield)}` : ''}</div>
+          {s.skills.eq.some(Boolean) && (
+            <div class="skpips" aria-label="Umiejętności">
+              {s.skills.eq.map((id, i) => id && (
+                <span key={i} class={`skpip rb${SKILLS[id].r}${b.fx.cd[i] <= 0 ? ' ready' : ''}`} title={SKILLS[id].n}>
+                  <i style={{ width: Math.max(0, 100 - (b.fx.cd[i] / SKILLS[id].cd) * 100) + '%' }} />
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div class={`vs${e?.boss ? ' boss' : ''}`}>{label}</div>
         <div class="fighter foe">

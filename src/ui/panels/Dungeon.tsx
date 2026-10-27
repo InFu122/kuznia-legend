@@ -1,5 +1,5 @@
-import { DUNGEONS, DUNG_ORDER, DUNG_SOON, ELEM, LANDS, ORES, SETS, setOfLand } from '../../data';
-import { elementOfDay, lezaBosses } from '../../engine/dungeon';
+import { DUNGEONS, DUNG_ORDER, DUNG_SOON, ELEM, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
+import { elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
 import type { Game } from '../../engine/game';
 import type { DungId } from '../../engine/types';
 import { fmt } from '../format';
@@ -11,6 +11,10 @@ function best(game: Game, id: DungId): string {
     case 'skarbiec': return `${fmt(b)} goblinów`;
     case 'oltarze': return `${b}/5`;
     case 'leza': return fmt(b);
+    case 'kopalnia': return `fala ${b}`;
+    case 'labirynt': return `komnata ${b}`;
+    case 'zbrojownia': return `skrzynie: ${b}`;
+    case 'krypta': return `${b}/5`;
     default: return `piętro ${b}`;
   }
 }
@@ -19,6 +23,7 @@ function rewardNow(game: Game, id: DungId): string {
   switch (id) {
     case 'sztolnia': return ORES[game.dungTier()].n;
     case 'oltarze': return ELEM[elementOfDay(game.ctx.now())].n;
+    case 'krypta': return KRYPTA_RULES[kryptaRule(game.ctx.now())].n;
     default: return DUNGEONS[id].short;
   }
 }
@@ -44,11 +49,11 @@ export function DungeonPanel({ game }: { game: Game }) {
               <div class="h">{D.n}</div>
               {open && <span class="keys" aria-label="Klucze na dziś">{unlimited ? 'Bez limitu' : `Klucze: ${keys}/${D.keys}`}</span>}
             </div>
-            <p class="sub">{D.how}</p>
+            <p class="sub">{D.how}{id === 'krypta' && open ? ` W tym tygodniu: ${KRYPTA_RULES[kryptaRule(game.ctx.now())].d}.` : ''}</p>
             {open && (
               <div class="stats" style={{ marginTop: '8px' }}>
                 <div class="stat"><small>{id === 'leza' ? 'Zwycięstwa' : 'Rekord'}</small><b>{best(game, id)}</b></div>
-                <div class="stat"><small>{id === 'oltarze' ? 'Żywioł dnia' : 'Nagroda'}</small><b>{rewardNow(game, id)}</b></div>
+                <div class="stat"><small>{id === 'oltarze' ? 'Żywioł dnia' : id === 'krypta' ? 'Zasada tygodnia' : 'Nagroda'}</small><b>{rewardNow(game, id)}</b></div>
               </div>
             )}
             {!open ? <div class="lockline">Odblokujesz {D.unlock}</div> : <div style={{ marginTop: '10px' }}>

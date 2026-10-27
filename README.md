@@ -41,14 +41,14 @@ Szczegóły w [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
 
 Wszystkie liczby siedzą w `src/data/balance.ts`. Po każdej zmianie uruchom `npm run balance` i porównaj w arkuszu **Bossowie**, przy jakim poziomie kuźni bot pokonuje bossów, z krzywą `FORGE_AT_BOSS`.
 
-Obecna kalibracja (bot grający bez przerwy i korzystający z technologii, lochów oraz zestawów): akt I ≈ 0,6 h, akt II ≈ 7 h, akt III ≈ 25 h, akt IV ≈ 105–145 h (zależnie od szczęścia do zestawu).
+Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich systemów: technologii, lochów, zestawów, umiejętności, chowańców i wierzchowców): akt I ≈ 0,6 h, akt II ≈ 7 h, akt III ≈ 24 h, akt IV ≈ 100–120 h.
 
 ## Plan
 
 1. **Fundament** — projekt, silnik w modułach, testy, symulator balansu. *(gotowe)*
 2. **Pełna gra offline**
    - 2a: drzewko technologii (Akademia Kowalska, Księgi Wiedzy), lochy Skarbiec Złota, Wieża Wyzwań, Leża Bossów i Ołtarze Żywiołów, rudy unikalne i 6 zestawów. *(gotowe)*
-   - 2b: chowańce, wierzchowce, umiejętności, Labirynt Minotaura, Krypta Bohaterów, Zapomniana Zbrojownia.
+   - 2b: umiejętności (Zwoje zaklęć), chowańce (jaja i wykluwanie), wierzchowce (Siodła), Kamienie z Kopalni Kryształów, Labirynt Minotaura, Krypta Bohaterów z Pieczęciami Legendy, Zapomniana Zbrojownia. *(gotowe)*
    - 2c: misje dzienne, kalendarz logowania, samouczek, dźwięki.
 3. **Serwer** — Nakama: konta, zapis, wytop liczony na serwerze, rankingi, arena.
 4. **Społeczność** — klany, czat, prawdziwy Wielki Obieg, boss i wojny klanów.

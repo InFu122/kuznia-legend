@@ -3,9 +3,10 @@ import type { Ctx } from './context';
 import { canSmelt, decideAuto, smelt, tickForge } from './forge';
 import { curG, goldWave } from './formulas';
 import { checkLegend } from './legend';
-import { techMods } from './mods';
+import { allMods } from './mods';
 import { invalidate } from './stats';
 import { tickResearch } from './tech';
+import { tickHatch } from './companions';
 import type { OfflineReport } from './types';
 
 /**
@@ -15,7 +16,7 @@ import type { OfflineReport } from './types';
 export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   if (ms < 60000) return null;
   const s = ctx.s;
-  const mods = techMods(s);
+  const mods = allMods(s);
   const t = Math.min(ms, B.OFFLINE_CAP_MS + mods.offlineMin * 60000);
   const waves = Math.floor((t / B.OFFLINE_WAVE_MS) * B.OFFLINE_EFFICIENCY);
   if (!waves) return null;
@@ -41,6 +42,7 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   tickForge(ctx, t, true);
   const tech = s.tech.cur?.id ?? null;
   const researched = tickResearch(ctx, t, true) ? tech : null;
+  const hatched = tickHatch(ctx, ms, true); // jaja wykluwają się przez cały czas nieobecności, bez limitu
   const chest: OfflineReport['chest'] = [];
   let chestCount = 0;
   if (s.auto && s.forge.lvl >= B.AUTO_FORGE_LVL) {
@@ -57,6 +59,6 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   ctx.dirty = true;
   return {
     ms: t, capped: ms > t, land: s.cur.land, gold, main, rare, el, books, fame,
-    forgeUp: s.forge.lvl > before ? s.forge.lvl : 0, tech: researched, chest: chest.slice(0, 3), chestCount,
+    forgeUp: s.forge.lvl > before ? s.forge.lvl : 0, tech: researched, hatched, chest: chest.slice(0, 3), chestCount,
   };
 }

@@ -62,7 +62,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </header>
         <Arena game={game} onTab={t => goTab(t, true)} />
         <main class="panel" ref={panelRef}>
-          {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} />}
+          {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} onFound={() => open({ kind: 'found' })} />}
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
@@ -80,7 +80,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </div>
       </nav>
       {modal && (
-        <ModalShell locked={modal.kind === 'dungChoice'} onClose={close}>
+        <ModalShell locked={modal.kind === 'dungChoice' || modal.kind === 'labChoice'} onClose={close}>
           <ModalView m={modal} game={game} close={close} />
         </ModalShell>
       )}

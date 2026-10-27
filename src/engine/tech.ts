@@ -6,7 +6,7 @@ import { techLvl } from './mods';
 import { invalidate } from './stats';
 import type { GameState, TechId } from './types';
 
-export { techLvl, techMods } from './mods';
+export { allMods, techLvl, techMods } from './mods';
 
 /** Koszt kolejnego poziomu badania (poziom `l` liczony od 0). */
 export function techCost(id: TechId, l: number) {
