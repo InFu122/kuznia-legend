@@ -122,7 +122,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             <span class="books"><small>Księgi</small><b><Px src={resUrl('ksiega')} size={16} />{fmt(s.books)}</b></span>
           </div>
         </header>
-        <Arena game={game} onTab={t => goTab(t, true)} />
+        <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} />
         {step && (
           <section class="tutbar" aria-label="Samouczek">
             <div class="cmain">
@@ -137,7 +137,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} onFound={() => open({ kind: 'found' })} onMix={what => open({ kind: 'mix', what })} onDecide={() => open({ kind: 'decide' })} />}
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
           {tab === 'nauka' && <ResearchPanel game={game} />}
-          {tab === 'krainy' && <LandsPanel game={game} />}
+          {tab === 'krainy' && <LandsPanel game={game} onInfo={land => open({ kind: 'landinfo', land })} />}
           {tab === 'klan' && <ClanPanel game={game} online={save.mode === 'server'} openChat={() => open({ kind: 'chat', ch: 'clan' })} />}
           {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} />}
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}

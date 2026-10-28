@@ -1,10 +1,11 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
   B, DUNGEONS, ELEM, ELEM_KEYS, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
-  SKILLS, TECH, TECH_UNLOCK_FORGE, setOfLand,
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, TECH, TECH_UNLOCK_FORGE, oreShares, setOfLand,
 } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
-import { baseName, dist, itemName, jumpChances } from '../engine/formulas';
+import { baseName, dist, gOf, goldWave, itemName, jumpChances, recPower } from '../engine/formulas';
+import { allMods } from '../engine/mods';
 import { upgradeCost, upgradeTime } from '../engine/forge';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
@@ -12,7 +13,7 @@ import type { ModalData } from '../engine/types';
 import { ItemCard } from './ItemCard';
 import { DecisionView } from './Decision';
 import { Px } from './Px';
-import { elemUrl, setOreUrl } from '../art/render';
+import { elemUrl, landBgUrl, oreUrl, resUrl, setOreUrl } from '../art/render';
 import { hasProof } from '../engine/verify';
 import { fmt, pct, pctS, tfmt } from './format';
 import { Dist } from './panels/Forge';
@@ -179,6 +180,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <DecisionView game={game} src="pending" close={close} />;
     case 'mix':
       return <MixView game={game} what={m.what} close={close} />;
+    case 'landinfo':
+      return <LandInfoView game={game} land={m.land} close={close} />;
     case 'missions':
       return <MissionsView game={game} initial={m.tab} close={close} />;
     case 'ranking':
@@ -244,6 +247,52 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         </>
       );
   }
+}
+
+/** Co wypada w krainie: z fal i z bossa (przycisk „i” na polu walki). */
+function LandInfoView({ game, land, close }: { game: Game; land: number; close: () => void }) {
+  const s = game.s;
+  const L = LANDS[land];
+  const mods = techMods(s);
+  const shares = oreShares(L, allMods(s).rarePct);
+  const set = setOfLand(land);
+  const wave = goldWave(gOf(land, 5));
+  const first = !s.cleared[land];
+  const act = L.act;
+  return (
+    <>
+      <div class="li-head" style={{ '--bg': `url(${landBgUrl(land)})` } as Record<string, string>}>
+        <div class="eyebrow">Akt {ROMAN[act]} · kraina {land + 1}</div>
+        <div class="h">{L.n}</div>
+      </div>
+      <div class="eyebrow">Z każdej fali</div>
+      <ul class="droplist">
+        <li><Px src={resUrl('zloto')} size={24} /><span>Złoto</span><b>ok. {fmt(wave)} na falę</b></li>
+        <li class="dl-sub"><span>Ruda — z {pct(B.ORE_DROP * 100)} fal (główna 1–3 sztuki, rzadsze po 1):</span></li>
+        {shares.map(([o, p]) => (
+          <li key={o} class={o > L.main ? 'rare' : ''}>
+            <Px src={oreUrl(o)} size={24} /><span>{ORES[o].n}{o === L.main ? ' · główna' : o > L.main ? ' · rzadka' : ''}</span><b>{pctS(p)} dropów</b>
+          </li>
+        ))}
+        {L.el && <li><Px src={elemUrl(L.el)} size={24} /><span>Domieszka: {ELEM[L.el].n}</span><b>{pct(B.ELEM_DROP * 100)} fal</b></li>}
+        <li><Px src={resUrl('ksiega')} size={24} /><span>Księga Wiedzy</span><b>{pctS(B.BOOK_DROP * 100)} fal</b></li>
+        <li><Px src={resUrl('zwoj')} size={24} /><span>Zwój zaklęć</span><b>{pctS(B.SCROLL_DROP * 100)} fal</b></li>
+      </ul>
+      <div class="eyebrow">Boss: {L.boss}{first ? ' · pierwsze pokonanie' : ''}</div>
+      <ul class="droplist">
+        <li><Px src={resUrl('zloto')} size={24} /><span>Złoto</span><b>ok. {fmt(goldWave(gOf(land, B.STAGES_PER_LAND)) * 10)}</b></li>
+        <li><Px src={oreUrl(L.rare)} size={24} /><span>{ORES[L.rare].n}</span><b>2–4 sztuki</b></li>
+        <li><Px src={resUrl('ksiega')} size={24} /><span>Księgi Wiedzy</span><b>{first ? `${B.BOOKS_BOSS_FIRST + land} (pierwsze)` : `1 · ${pct(B.BOOKS_BOSS_CHANCE * 100)}`}</b></li>
+        <li><Px src={resUrl('zwoj')} size={24} /><span>Zwoje zaklęć</span><b>{first ? `${B.SCROLLS_BOSS_FIRST + act} (pierwsze)` : `1 · ${pct(B.SCROLL_BOSS_CHANCE * 100)}`}</b></li>
+        {set && <li><Px src={setOreUrl(set)} size={24} /><span style={{ color: SETS[set].col }}>{SETS[set].ore}</span><b>{first ? `${B.UNIQ_BOSS_FIRST} (pierwsze)` : `1 · ${pct(B.UNIQ_BOSS_CHANCE * 100)}`}</b></li>}
+        {land >= PETS_UNLOCK_LAND - 1 && <li><Px src={resUrl('jajo' + Math.max(0, Math.min(4, Math.floor((land - 3) / 3))))} size={24} /><span>Jajo chowańca</span><b>{first ? 'pewne' : pct(B.EGG_BOSS_CHANCE * 100)}</b></li>}
+        {land >= MOUNTS_UNLOCK_LAND - 1 && <li><Px src={resUrl('siodlo')} size={24} /><span>Siodło</span><b>{first ? `${B.SADDLES_BOSS_FIRST} (pierwsze)` : pct(B.SADDLE_BOSS_CHANCE * 100)}</b></li>}
+        <li><span class="li-chest" aria-hidden="true">✦</span><span>Przedmiot z Wielkiego Obiegu (do decyzji)</span><b>{pct(B.OBIEG_FIND_FROM_BOSS * 100)}</b></li>
+      </ul>
+      <p class="sub">Zalecana Moc krainy: <b>{fmt(recPower(land))}</b> (twoja: {fmt(game.stats.power)}).{mods.rarePct ? ` Premia do rzadkich rud (+${pct(mods.rarePct)}) jest już wliczona.` : ''}</p>
+      <Close onClose={close} label="Zamknij" />
+    </>
+  );
 }
 
 /** Wybór domieszki żywiołu albo rudy unikalnej do wytopu — osobno od wyboru rudy, żeby nie zaznaczyć jej przypadkiem. */

@@ -598,3 +598,65 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .bookbal small{font-size:12px; font-weight:500; color:var(--ash)}
 .tech-now{justify-content:flex-start; gap:10px; margin-top:8px}
 .tech-now .cmain{flex:1}
+
+/* ---------- tła krain: pole walki, karty krain ---------- */
+.arena{isolation:isolate}
+.arena::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(9,11,15,.62), rgba(9,11,15,.18) 38%, rgba(9,11,15,.25) 62%, rgba(9,11,15,.82)), var(--bg, none);
+  background-size:cover; background-position:center 78%; image-rendering:pixelated}
+.arena .land, .arena .ameta, .arena .fname, .arena .hpnum, .arena .vs{text-shadow:0 1px 2px #000, 0 0 6px rgba(0,0,0,.6)}
+.arena .ameta{color:#c8d0d8}
+.arena-btns{display:flex; align-items:center; gap:6px}
+.arena .ghost{background:rgba(12,15,18,.55); backdrop-filter:blur(2px)}
+.skicons{display:flex; gap:4px; margin-top:6px; justify-content:center}
+.skic{--rc:var(--r0); position:relative; width:28px; height:28px; border-radius:7px; display:grid; place-items:center; overflow:hidden; background:#0c0f12; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
+.skic.rb1{--rc:var(--r1)} .skic.rb2{--rc:var(--r2)} .skic.rb3{--rc:var(--r3)} .skic.rb4{--rc:var(--r4)}
+.skic::after{content:""; position:absolute; inset:0; background:conic-gradient(rgba(5,7,9,.72) var(--cd), transparent 0); pointer-events:none}
+.skic.ready{box-shadow:inset 0 0 0 1px var(--rc), 0 0 8px -1px var(--rc)}
+.skic b{position:absolute; z-index:1; font-size:11px; color:#fff; text-shadow:0 1px 2px #000}
+.geargrid{display:grid; grid-template-columns:repeat(4, 20px); gap:2px; justify-content:center; margin-top:5px}
+.gi{--rc:transparent; width:20px; height:20px; border-radius:4px; background:rgba(12,15,18,.7); display:grid; place-items:center; box-shadow:inset 0 -2px 0 var(--rc)}
+.gi.r0{--rc:var(--r0)} .gi.r1{--rc:var(--r1)} .gi.r2{--rc:var(--r2)} .gi.r3{--rc:var(--r3)} .gi.r4{--rc:var(--r4)} .gi.r5{--rc:var(--r5)} .gi.r6{--rc:var(--r6)}
+.gi.empty{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.landcard{position:relative; isolation:isolate; overflow:hidden; border:1px solid var(--rivet); border-radius:12px; margin-top:8px; min-height:118px; display:flex; flex-direction:column; justify-content:space-between; padding:10px 12px}
+.landcard::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(9,11,15,.45), rgba(9,11,15,.05) 40%, rgba(9,11,15,.88)), var(--bg); background-size:cover; background-position:center 72%; image-rendering:pixelated}
+.landcard.locked::before{filter:grayscale(.85) brightness(.55)}
+.landcard.cur{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw)}
+.lc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px}
+.lc-name{display:flex; flex-wrap:wrap; align-items:center; gap:6px}
+.landcard .ln{font-family:var(--f-display); font-size:21px; text-shadow:0 1px 2px #000, 0 0 8px rgba(0,0,0,.7)}
+.lc-bot{display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-top:22px}
+.lc-info{min-width:0}
+.lc-ores{display:flex; flex-wrap:wrap; gap:3px 9px; font-size:12px; font-variant-numeric:tabular-nums; text-shadow:0 1px 2px #000}
+.lc-ores .lo{display:inline-flex; align-items:center; gap:3px}
+.lc-ores .lo.rare{color:var(--straw)}
+.lc-boss{font-size:12px; color:#c8d0d8; margin-top:3px; text-shadow:0 1px 2px #000}
+.lc-lock, .lc-here{font-size:12px; color:var(--ash); white-space:nowrap; text-shadow:0 1px 2px #000}
+.lc-here{color:var(--straw)}
+.li-head{position:relative; isolation:isolate; overflow:hidden; border-radius:12px; padding:34px 12px 10px; margin:-4px 0 2px}
+.li-head::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(transparent, rgba(9,11,15,.85)), var(--bg); background-size:cover; background-position:center 72%; image-rendering:pixelated}
+.li-head .h{text-shadow:0 1px 2px #000}
+.droplist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+.droplist li{display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--plate-2); font-size:13px}
+.droplist li:first-child{border-top:0}
+.droplist li b{font-variant-numeric:tabular-nums; font-weight:600; text-align:right}
+.droplist li.rare span{color:var(--straw)}
+.droplist li.dl-sub{grid-template-columns:1fr; color:var(--ash); font-size:12px}
+.li-chest{display:grid; place-items:center; width:24px; color:var(--r5)}
+
+/* ---------- Lochy: kafelki z tłem ---------- */
+.dgrid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px}
+.card.dung.tile{position:relative; isolation:isolate; overflow:hidden; margin:0; padding:10px; display:flex; flex-direction:column; gap:4px; min-height:132px; justify-content:flex-end}
+.card.dung.tile::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(9,11,15,.35), rgba(9,11,15,.25) 30%, rgba(9,11,15,.9) 78%), var(--bg); background-size:cover; background-position:center 70%; image-rendering:pixelated}
+.card.dung.tile.locked::before{filter:grayscale(.85) brightness(.5)}
+.card.dung.tile.wide{grid-column:1 / -1}
+.card.dung.tile.here{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw)}
+.dt-top{display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:auto}
+.dt-reward{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px 2px 3px; border-radius:999px; background:rgba(9,11,15,.7); max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+.dt-name{font-family:var(--f-display); font-size:19px; line-height:1.05; text-shadow:0 1px 2px #000}
+.dt-meta{font-size:11px; color:#c8d0d8; text-shadow:0 1px 2px #000}
+.dt-more{background:rgba(9,11,15,.75); border-radius:8px; padding:6px 8px; margin:2px 0}
+.dt-here{font-size:12px; color:var(--straw)}
+.card.dung.tile .btn{align-self:flex-start; margin-top:4px}
+.card.dung.tile .info{width:26px; height:26px; flex:none}
+.arena-tile{min-height:180px; gap:8px}
+@media (max-width:340px){ .dt-name{font-size:17px} }

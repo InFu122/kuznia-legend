@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANDS, ROMAN, SKILLS } from '../data';
+import { LANDS, ROMAN, SKILLS, SLOT_ORDER } from '../data';
+import { dungeonBgUrl, itemUrl, landBgUrl, skillUrl } from '../art/render';
+import { Px } from './Px';
 import { bossWaiting } from '../engine/combat';
 import type { Game } from '../engine/game';
 import { fmt } from './format';
@@ -9,7 +11,7 @@ import { flyOre } from './drops';
 
 interface Float { id: number; text: string; cls: string; x: number; y: number }
 
-export function Arena({ game, onTab }: { game: Game; onTab: (t: Tab) => void }) {
+export function Arena({ game, onTab, onInfo }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void }) {
   const [, setFrame] = useState(0);
   const [floats, setFloats] = useState<Float[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -53,16 +55,20 @@ export function Arena({ game, onTab }: { game: Game; onTab: (t: Tab) => void }) 
   const hp = Math.max(0, b.heroHp);
   const label = dung ? runLabel(dung) : e?.boss ? 'Boss' : waiting ? 'Farma' : `Fala ${s.cur.wave}/5`;
 
+  const bg = dung ? dungeonBgUrl(dung.id) : landBgUrl(s.cur.land);
   return (
-    <section class="arena" aria-label="Arena walki">
+    <section class="arena" aria-label="Arena walki" style={{ '--bg': `url(${bg})` } as Record<string, string>}>
       <div class="arena-head">
         <div>
           <div class="land">{dung ? runTitle(dung) : L.n}</div>
           <div class="ameta">{dung ? runMeta(dung) : `Akt ${ROMAN[L.act]} · etap ${s.cur.stage}/10${waiting ? ' · boss czeka' : ''}`}</div>
         </div>
-        {dung
-          ? <button class="ghost" onClick={() => game.dungExit()}>Wyjdź z lochu</button>
-          : <button class="ghost" onClick={() => onTab('krainy')}>Zmień krainę</button>}
+        <div class="arena-btns">
+          {!dung && <button class="info" onClick={() => onInfo(s.cur.land)} aria-label={`Co wypada w krainie ${L.n} i z bossa`}>i</button>}
+          {dung
+            ? <button class="ghost" onClick={() => game.dungExit()}>Wyjdź z lochu</button>
+            : <button class="ghost" onClick={() => onTab('krainy')}>Zmień krainę</button>}
+        </div>
       </div>
       {!dung && (
         <div class="track">
@@ -79,14 +85,25 @@ export function Arena({ game, onTab }: { game: Game; onTab: (t: Tab) => void }) 
           <div class="hp"><i style={{ width: (hp / b.heroMax) * 100 + '%' }} /></div>
           <div class="hpnum">{fmt(hp)} / {fmt(st.hp)}{b.fx.shield > 0 ? ` · tarcza ${fmt(b.fx.shield)}` : ''}</div>
           {s.skills.eq.some(Boolean) && (
-            <div class="skpips" aria-label="Umiejętności">
-              {s.skills.eq.map((id, i) => id && (
-                <span key={i} class={`skpip rb${SKILLS[id].r}${b.fx.cd[i] <= 0 ? ' ready' : ''}`} title={SKILLS[id].n}>
-                  <i style={{ width: Math.max(0, 100 - (b.fx.cd[i] / SKILLS[id].cd) * 100) + '%' }} />
-                </span>
-              ))}
+            <div class="skicons" aria-label="Umiejętności">
+              {s.skills.eq.map((id, i) => {
+                if (!id) return null;
+                const left = Math.max(0, b.fx.cd[i] / SKILLS[id].cd);
+                return (
+                  <span key={i} class={`skic rb${SKILLS[id].r}${left <= 0 ? ' ready' : ''}`} title={SKILLS[id].n} style={{ '--cd': `${Math.round(left * 360)}deg` } as Record<string, string>}>
+                    <Px src={skillUrl(id)} size={24} alt={SKILLS[id].n} />
+                    {left > 0 && <b>{Math.ceil(b.fx.cd[i] / 1000)}</b>}
+                  </span>
+                );
+              })}
             </div>
           )}
+          <div class="geargrid" aria-label="Ekwipunek bohatera">
+            {SLOT_ORDER.map(sl => {
+              const it = s.eq[sl];
+              return <span key={sl} class={`gi${it ? ' r' + it.r : ' empty'}`}>{it && <Px src={itemUrl(it.kind, it.ore, it.r)} size={18} />}</span>;
+            })}
+          </div>
         </div>
         <div class={`vs${e?.boss ? ' boss' : ''}`}>{label}</div>
         <div class="fighter foe">

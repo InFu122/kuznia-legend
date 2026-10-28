@@ -219,6 +219,7 @@ export type ModalData =
   | { kind: 'found' }
   | { kind: 'decide' }
   | { kind: 'mix'; what: 'el' | 'set' }
+  | { kind: 'landinfo'; land: number }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
   | { kind: 'ranking' }
   | { kind: 'arena' }

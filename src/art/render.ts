@@ -3,6 +3,7 @@ import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICON
 import { itemPalette, itemSprite, tierOf } from './items';
 import { rgba, sprite, type Palette, type Sprite } from './pixel';
 import { halo } from './rarity';
+import { DUNGEON_SCENES, LAND_SCENES, SCENE_H, SCENE_W, renderScene } from './scenes';
 
 const cache = new Map<string, string>();
 
@@ -47,3 +48,7 @@ export const skillUrl = (k: string) => once(`k:${k}`, () => icon(SKILL_ICONS[k])
 export const techUrl = (k: string) => once(`t:${k}`, () => icon(TECH_ICONS[k]));
 /** Boss klanowy 32×32 (paleta: golem, kamien, ogien, lod, upior). */
 export const bossUrl = (k: string) => once(`b:${k}`, () => icon(BOSS_ICONS[k] ?? BOSS_ICONS.golem));
+/** Tło krainy (160×96, pixel art) jako obrazek. */
+export const landBgUrl = (land: number) => cached(`bg:l${land}`, () => pxUrl(renderScene(LAND_SCENES[Math.max(0, Math.min(LAND_SCENES.length - 1, land))]), SCENE_W, SCENE_H));
+/** Tło lochu albo areny (klucz jak w DUNGEON_SCENES). */
+export const dungeonBgUrl = (id: string) => cached(`bg:d${id}`, () => pxUrl(renderScene(DUNGEON_SCENES[id] ?? DUNGEON_SCENES.arena), SCENE_W, SCENE_H));
