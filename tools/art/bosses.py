@@ -130,3 +130,42 @@ def hourglass():
     rows = outline(rows)
     pal = {**K, 'a': '#a06c42', 'b': '#6e4528', 'g': '#bfe6f2', 'y': '#e8b84a'}
     return rows, pal
+
+def crossed_swords():
+    # Moc: dwa skrzyżowane miecze 16×16.
+    g = [['.'] * 16 for _ in range(16)]
+    def put(x, y, c):
+        if 0 <= x < 16 and 0 <= y < 16: g[y][x] = c
+    for i in range(10):  # ostrza po przekątnych
+        put(2 + i, 2 + i, 'p'); put(3 + i, 2 + i, 'q')
+        put(13 - i, 2 + i, 'p'); put(12 - i, 2 + i, 'q')
+    for (x, y) in [(10, 12), (12, 10), (11, 11), (5, 12), (3, 10), (4, 11)]: put(x, y, 'y')  # jelce
+    for (x, y) in [(12, 12), (13, 13), (14, 14), (3, 12), (2, 13), (1, 14)]: put(x, y, 'b')    # rękojeści
+    put(2, 2, 'w'); put(13, 2, 'w')
+    rows = outline([''.join(r) for r in g])
+    pal = {**K, 'p': '#e8ecf0', 'q': '#9aa4ae', 'y': '#e8b84a', 'b': '#7a4a2a', 'w': '#ffffff'}
+    return rows, pal
+
+def anvil():
+    # Kuźnia: kowadło z żarzącą się sztabą 16×16.
+    rows = [
+        "................",
+        "................",
+        "................",
+        "......rrrr......",
+        "..pppppppppppp..",
+        ".pppppppppppppp.",
+        "..qqqqqqqqqqqp..",
+        "......qqqqp.....",
+        "......qqqqp.....",
+        ".....qqqqqqp....",
+        "....qqqqqqqqp...",
+        "...ssssssssssp..",
+        "................",
+        "................",
+        "................",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'p': '#9aa4ae', 'q': '#5d646d', 's': '#3a3f46', 'r': '#ff8a3c'}
+    return rows, pal

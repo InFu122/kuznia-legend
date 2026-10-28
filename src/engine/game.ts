@@ -148,8 +148,9 @@ export class Game {
     this.changed();
   }
   pendingDelta(): number { return this.s.pending ? powerDelta(this.ctx, this.s.pending) : 0; }
+  /** Wybór rudy; zablokowaną też można wybrać — kuźnia pokaże jej szanse („wytop od poziomu…”). */
   setOre(i: number): void {
-    if (this.s.forge.lvl < ORES[i].lvl) { toast(this.ctx, `${ORES[i].n}: wytop od ${ORES[i].lvl}. poziomu kuźni.`, 'bad'); return; }
+    if (!ORES[i]) return;
     this.s.oreSel = i;
     this.ctx.dirty = true;
     this.changed();

@@ -111,7 +111,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
           </div>
         )}
         {set && <p class="sub">Następny wytop: część zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b>{mj >= 1 ? ' z pewnym przeskokiem o co najmniej 1 rzadkość' : ''}.</p>}
-        {f.lvl >= ORES[o].lvl && <OddsBar d={dist(o, f.lvl, rel)} note={set && mj >= 1 ? 'z zestawem bez najniższej' : undefined} />}
+        <OddsBar d={dist(o, Math.max(f.lvl, ORES[o].lvl), rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && mj >= 1 ? 'z zestawem bez najniższej' : undefined} />
         {mj >= 1 && (
           <div class="pity">
             <span>Gwarancja przeskoku</span>
@@ -126,7 +126,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
         {f.lvl >= B.AUTO_FORGE_LVL ? (
           <div class="auto2">
             <div class="row">
-              <div><b>Auto-wytop</b>{game.autoWaiting && <div class="tech-cost warn">czeka na rudę: {ORES[o].n}</div>}{game.autoPaused && <div class="tech-cost warn">czeka na twoją decyzję</div>}</div>
+              <div><b>Auto-wytop</b>{game.autoWaiting && <div class="tech-cost warn">{f.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `czeka na rudę: ${ORES[o].n}`}</div>}{game.autoPaused && <div class="tech-cost warn">czeka na twoją decyzję</div>}</div>
               <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />{s.auto ? 'Włączony' : 'Wyłączony'}</button>
             </div>
             <div class="autostop" role="radiogroup" aria-label="Zatrzymaj auto-wytop na rzadkości">

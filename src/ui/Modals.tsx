@@ -13,7 +13,7 @@ import type { ModalData } from '../engine/types';
 import { ItemCard } from './ItemCard';
 import { DecisionView } from './Decision';
 import { Px } from './Px';
-import { elemUrl, landBgUrl, oreUrl, resUrl, setOreUrl } from '../art/render';
+import { elemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, techUrl } from '../art/render';
 import { hasProof } from '../engine/verify';
 import { fmt, pct, pctS, tfmt } from './format';
 import { Dist } from './panels/Forge';
@@ -221,7 +221,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
           <div class="h">Jak działa wytop</div>
           <p class="sub">Kuźnia zamienia rudę zdobytą w walce na ekwipunek. Jedna ruda to jeden wytop i jeden losowy przedmiot: losuje się slot, poziom przedmiotu i dodatkowe statystyki.</p>
           <p class="sub">Ruda gwarantuje minimalną rzadkość. Na przykład z Mithrilu zawsze wyjdzie co najmniej Epicki przedmiot. Poziom kuźni daje szansę, że przedmiot przeskoczy o jedną lub dwie rzadkości wyżej.</p>
-          <div class="eyebrow">Szanse na twoim poziomie kuźni</div>
+          <div class="eyebrow">Szanse na twoim poziomie kuźni (zablokowane rudy — po odblokowaniu)</div>
           <div class="otable-wrap">
             <table class="otable">
               <thead><tr><th>Ruda</th><th>Co może wyjść</th></tr></thead>
@@ -230,19 +230,19 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
                   const off = s.forge.lvl < o.lvl;
                   return (
                     <tr key={o.n} class={`${i === s.oreSel ? 'sel' : ''}${off ? ' off' : ''}`}>
-                      <td class="oname"><span class="gem" style={{ '--c': o.col } as Record<string, string>} />{o.n}</td>
-                      <td>{off ? `wytop od ${o.lvl}. poziomu kuźni` : <Dist d={dist(i, s.forge.lvl, techMods(s).jumpRel)} />}</td>
+                      <td class="oname"><span class="orow"><Px src={oreUrl(i)} size={24} />{o.n}</span>{off && <small class="unl">od {o.lvl}. poz. kuźni</small>}</td>
+                      <td><Dist d={dist(i, Math.max(s.forge.lvl, o.lvl), techMods(s).jumpRel)} /></td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          <p class="sub"><b>Gwarancja przeskoku:</b> jeśli {B.PITY_MAX} wytopów z rzędu nie przeskoczy, następny przeskakuje na pewno. Twój licznik: {s.pity}/{B.PITY_MAX}. Smocza Stal przeskakuje najwyżej o 1 rzadkość, a Gwiezdny Kruszec wcale.</p>
-          <p class="sub"><b>Domieszki</b> (od {B.ELEM_FORGE_LVL}. poziomu kuźni) nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans na rzadkość.</p>
-          <p class="sub"><b>Rudy unikalne</b> (od {SET_FORGE_LVL}. poziomu kuźni) dodane do wytopu robią z przedmiotu część zestawu. 2 i 4 części tego samego zestawu dają premie. Taki wytop zawsze przeskakuje o co najmniej 1 rzadkość (jeśli ruda bazowa w ogóle może przeskoczyć).</p>
-          <p class="sub"><b>Hartowanie</b> w Nauce (od {TECH_UNLOCK_FORGE}. poziomu kuźni) mnoży szanse na przeskok{techMods(s).jumpRel ? `; twoja premia: +${pct(techMods(s).jumpRel)} względnie, już wliczona w tabelę` : ''}.</p>
-          <p class="sub"><b>Po wytopie</b> porównujesz przedmiot z założonym: zielona liczba to zysk Mocy. Załóż go albo sprzedaj za złoto. Sprzedane przedmioty Rzadkie i lepsze mogą trafić do Wielkiego Obiegu.</p>
+          <p class="sub iline"><Px src={resUrl('czas')} size={20} /><span><b>Gwarancja przeskoku:</b> jeśli {B.PITY_MAX} wytopów z rzędu nie przeskoczy, następny przeskakuje na pewno. Twój licznik: {s.pity}/{B.PITY_MAX}. Smocza Stal przeskakuje najwyżej o 1 rzadkość, a Gwiezdny Kruszec wcale.</span></p>
+          <p class="sub iline"><Px src={elemUrl('zar')} size={20} /><span><b>Domieszki</b> (od {B.ELEM_FORGE_LVL}. poziomu kuźni) nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans na rzadkość.</span></p>
+          <p class="sub iline"><Px src={setOreUrl('lowca')} size={20} /><span><b>Rudy unikalne</b> (od {SET_FORGE_LVL}. poziomu kuźni) dodane do wytopu robią z przedmiotu część zestawu. 2 i 4 części tego samego zestawu dają premie. Taki wytop zawsze przeskakuje o co najmniej 1 rzadkość (jeśli ruda bazowa w ogóle może przeskoczyć).</span></p>
+          <p class="sub iline"><Px src={techUrl('k_hart')} size={20} /><span><b>Hartowanie</b> w Nauce (od {TECH_UNLOCK_FORGE}. poziomu kuźni) mnoży szanse na przeskok{techMods(s).jumpRel ? `; twoja premia: +${pct(techMods(s).jumpRel)} względnie, już wliczona w tabelę` : ''}.</span></p>
+          <p class="sub iline"><Px src={resUrl('zloto')} size={20} /><span><b>Po wytopie</b> porównujesz przedmiot z założonym: zielona liczba to zysk Mocy. Załóż go albo sprzedaj za złoto. Sprzedane przedmioty Rzadkie i lepsze mogą trafić do Wielkiego Obiegu.</span></p>
           <Close onClose={close} label="Rozumiem" />
         </>
       );
@@ -362,7 +362,7 @@ function LevelInfo({ game, close }: { game: Game; close: () => void }) {
               const [q1, q2] = l > 1 ? jumpChances(l - 1, rel) : [p1, p2];
               return (
                 <tr key={l} class={l === lvl ? 'sel' : l < lvl ? 'done' : ''}>
-                  <td class="oname">{l}{l === lvl ? ' ◀' : ''}{(l === 1 || FORGE_UNLOCKS[l]) && <small class="unl">{l === 1 ? 'Miedź, Żelazo' : FORGE_UNLOCKS[l]}</small>}</td>
+                  <td class="oname">{l}{l === lvl ? ' ◀' : ''}{(l === 1 || FORGE_UNLOCKS[l]) && <small class="unl">{ORES.map((o, i) => (o.lvl === l ? <Px key={i} src={oreUrl(i)} size={16} /> : null))}{l === 1 ? 'Miedź, Żelazo' : FORGE_UNLOCKS[l]}</small>}</td>
                   <td>{pct(p1 + p2)}<small class="muted"> ({pct(p2)} o 2)</small></td>
                   <td class="up">{l > 1 ? '+' + pct(p1 + p2 - q1 - q2) : '—'}</td>
                   <td>{l === 1 ? '—' : <>{tfmt(upgradeTime(s, l))}<br /><small class="muted">{fmt(upgradeCost(s, l))} zł</small></>}</td>

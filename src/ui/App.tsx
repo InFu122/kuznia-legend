@@ -115,11 +115,15 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
               </button>
             </div>
           </div>
-          <div class="res">
-            <span><small>Moc</small><b>{fmt(game.stats.power)}</b></span>
-            <span class="gold"><small>Złoto</small><b><Px src={resUrl('zloto')} size={16} />{fmt(s.gold)}</b></span>
-            <span><small>Kuźnia</small><b>{s.forge.lvl}{s.forge.up ? '↑' : ''}</b></span>
-            <span class="books"><small>Księgi</small><b><Px src={resUrl('ksiega')} size={16} />{fmt(s.books)}</b></span>
+          <div class="res2">
+            <div class="rchip moc"><Px src={resUrl('moc')} size={20} /><div><b>{fmt(game.stats.power)}</b><small>Moc</small></div></div>
+            <div class="rchip gold"><Px src={resUrl('zloto')} size={20} /><div><b>{fmt(s.gold)}</b><small>Złoto</small></div></div>
+            <div class="rchip forge" title={s.forge.up ? `Ulepszanie do ${s.forge.up}` : undefined}>
+              <Px src={resUrl('kowadlo')} size={20} />
+              <div><b>{s.forge.lvl}{s.forge.up ? <span class="up">→{s.forge.up}</span> : ''}</b><small>Kuźnia</small></div>
+              {s.forge.up > 0 && <i class="rmini" style={{ width: Math.max(0, (1 - s.forge.left / game.upgradeTotal()) * 100) + '%' }} />}
+            </div>
+            <div class="rchip books"><Px src={resUrl('ksiega')} size={20} /><div><b>{fmt(s.books)}</b><small>Księgi</small></div></div>
           </div>
         </header>
         <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} />

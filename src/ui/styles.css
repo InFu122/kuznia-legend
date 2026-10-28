@@ -5,17 +5,17 @@ body { margin: 0; }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
 
-/* Układ: jedna kolumna jak warsztat kowala: arena walki u góry, kowadło i panele pod nią, zakładki przy kciuku na dole. Świat jednej nocy w kuźni, więc jeden ciemny motyw. */
+/* Układ: jedna kolumna jak warsztat kowala: arena walki u góry, kowadło i panele pod nią, zakładki przy kciuku na dole. Świat jednej nocy w kuźni, więc jeden ciemny, ciepły motyw (sadza, dąb, skóra, mosiądz). */
 :root{
   color-scheme: dark;
-  --iron:#13171c;      /* tło: zimna stal */
-  --plate:#1b2128;     /* płyty paneli */
-  --plate-2:#232b34;   /* płyty podniesione */
-  --rivet:#33404c;     /* krawędzie, nity */
-  --ash:#8f9aa7;       /* tekst pomocniczy */
-  --frost:#e9edf1;     /* tekst główny */
+  --iron:#16120f;      /* tło: sadza w kuźni */
+  --plate:#221b16;     /* płyty paneli: ciemny dąb */
+  --plate-2:#2d241d;   /* płyty podniesione: skóra */
+  --rivet:#4a3c2f;     /* krawędzie, nity: mosiądz w cieniu */
+  --ash:#ab9a86;       /* tekst pomocniczy: popiół */
+  --frost:#f3eadc;     /* tekst główny: pergamin */
   --straw:#e7be62;     /* akcent: barwa nalotowa „słomkowa” hartowanej stali */
-  --straw-ink:#241a05;
+  --straw-ink:#2a1a06;
   --ember:#ff8d4f;     /* żar: trafienia, ogień kuźni */
   --blood:#e35a52;
   --good:#6dc57b;
@@ -52,7 +52,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .ghost:hover{border-color:var(--ash)}
 .track{display:grid; grid-template-columns:repeat(9,1fr) 1.6fr; gap:4px; margin:12px 0 10px}
 .track i{height:6px; border-radius:3px; background:var(--plate-2)}
-.track i.done{background:#55606c}
+.track i.done{background:#6b5a48}
 .track i.now{background:var(--straw)}
 .track i.boss{background:#5a3532}
 .track i.boss.now{background:var(--blood)}
@@ -61,14 +61,14 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .fighter{display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0}
 .token{width:62px; height:70px; display:grid; place-items:center; font-family:var(--f-display); font-size:34px; line-height:1;
   clip-path:polygon(50% 100%, 0 72%, 0 0, 100% 0, 100% 72%); padding-bottom:10px; transition:transform .12s}
-.hero .token{background:linear-gradient(160deg, #3b4a5a, #222b35); color:var(--straw)}
+.hero .token{background:linear-gradient(160deg, #5a4634, #2e231a); color:var(--straw)}
 .foe .token{background:linear-gradient(160deg, #4a3a3a, #2a2222); color:#f1d6cf}
 .foe .token.t-Nieumarli{background:linear-gradient(160deg, #3d4a48, #1f2827); color:#cfe8df}
 .foe .token.t-Demony{background:linear-gradient(160deg, #4c2f3f, #261823); color:#f4c6df}
 .foe .token.t-Smoki{background:linear-gradient(160deg, #533527, #2a1a13); color:#ffd2b5}
 .foe .token.boss{width:76px; height:86px; font-size:42px; outline:0; filter:drop-shadow(0 0 10px rgba(227,90,82,.55))}
 .fname{font-size:13px; font-weight:600; text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.hp{width:100%; max-width:150px; height:8px; border-radius:4px; background:#0c0f12; overflow:hidden}
+.hp{width:100%; max-width:150px; height:8px; border-radius:4px; background:#100c09; overflow:hidden}
 .hp i{display:block; height:100%; width:100%; background:var(--good); transition:width .12s linear}
 .hp.foe i{background:var(--blood)}
 .hpnum{font-size:11px; color:var(--ash); font-variant-numeric:tabular-nums}
@@ -134,7 +134,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .odds{font-size:13px; color:var(--ash); font-variant-numeric:tabular-nums}
 .odds b{color:var(--frost)}
 .pity{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; font-size:12px; color:var(--ash); margin-top:8px}
-.bar{height:6px; border-radius:3px; background:#0c0f12; overflow:hidden}
+.bar{height:6px; border-radius:3px; background:#100c09; overflow:hidden}
 .bar i{display:block; height:100%; background:var(--straw)}
 .mix{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
 .chip{border:1px solid var(--rivet); background:transparent; border-radius:999px; padding:5px 10px; font-size:12px}
@@ -146,7 +146,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 @keyframes spark{to{transform:translate(var(--dx), var(--dy)); opacity:0}}
 .auto{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; font-size:13px; color:var(--ash); flex-wrap:wrap}
 .toggle{display:inline-flex; align-items:center; gap:8px; background:var(--plate-2); border:1px solid var(--rivet); border-radius:999px; padding:5px 12px 5px 6px; font-size:13px; font-weight:600; color:var(--frost)}
-.toggle .knob{width:30px; height:18px; border-radius:9px; background:#0c0f12; position:relative}
+.toggle .knob{width:30px; height:18px; border-radius:9px; background:#100c09; position:relative}
 .toggle .knob::after{content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--ash); transition:left .15s}
 .toggle.on .knob{background:var(--straw)}
 .toggle.on .knob::after{left:14px; background:var(--straw-ink)}
@@ -157,13 +157,13 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .icard.reveal{animation:reveal .45s ease-out}
 @keyframes reveal{from{opacity:0; transform:translateY(8px) scale(.98); box-shadow:0 0 0 0 var(--rc)} 60%{box-shadow:0 0 24px 2px var(--rc)} to{opacity:1; transform:none; box-shadow:0 0 0 0 transparent}}
 .ihead{display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center}
-.ico{width:46px; height:46px; border-radius:9px; display:grid; place-items:center; background:#11161b; color:var(--rc); position:relative; isolation:isolate; overflow:hidden}
+.ico{width:46px; height:46px; border-radius:9px; display:grid; place-items:center; background:#140f0c; color:var(--rc); position:relative; isolation:isolate; overflow:hidden}
 .ico svg{width:22px; height:22px}
 .iname{font-weight:700; font-size:16px; line-height:1.15}
 .iname.aw{font-family:var(--f-display); font-size:21px; font-weight:500; color:var(--rc)}
 .irar{font-size:12px; color:var(--rc); font-weight:600}
 .imain{font-size:15px; font-weight:700; font-variant-numeric:tabular-nums}
-.isubs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; font-size:13px; color:#c8d0d8; font-variant-numeric:tabular-nums}
+.isubs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; font-size:13px; color:#e0d4c4; font-variant-numeric:tabular-nums}
 .iel{font-size:13px; color:var(--ember)}
 .itrait{font-size:13px; font-weight:700; background:rgba(231,190,98,.12); color:var(--straw); border-radius:6px; padding:4px 8px}
 .ileg{font-size:12px; color:var(--ash); display:flex; flex-direction:column; gap:4px}
@@ -186,10 +186,10 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .slot{--rc:var(--rivet); background:var(--plate-2); border:1px solid var(--rivet); border-bottom:3px solid var(--rc); border-radius:10px; padding:8px 6px; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0}
 .slot.r0{--rc:var(--r0)} .slot.r1{--rc:var(--r1)} .slot.r2{--rc:var(--r2)} .slot.r3{--rc:var(--r3)} .slot.r4{--rc:var(--r4)} .slot.r5{--rc:var(--r5)} .slot.r6{--rc:var(--r6)}
 .slot svg{width:24px; height:24px; color:var(--rc)}
-.slot.empty svg{color:#4a5560}
+.slot.empty svg{color:#5a4a3b}
 .slot span{font-size:11px; color:var(--ash); text-align:center; line-height:1.15; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .slot .pips{display:flex; gap:3px; height:5px}
-.slot .pips i{width:5px; height:5px; border-radius:50%; background:#3b4652}
+.slot .pips i{width:5px; height:5px; border-radius:50%; background:#4a3c30}
 .slot .pips i.on{background:var(--straw)}
 
 /* krainy */
@@ -200,7 +200,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .landrow.locked{opacity:.5}
 .landrow .ln{font-weight:700}
 .landrow .lm{font-size:12px; color:var(--ash); grid-column:1 / -1}
-.lstat{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:#2b333d; color:var(--ash); margin-left:6px}
+.lstat{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:#352a21; color:var(--ash); margin-left:6px}
 .lstat.done{background:rgba(109,197,123,.15); color:var(--good)}
 .lstat.front{background:rgba(231,190,98,.15); color:var(--straw)}
 .pw-ok{color:var(--good)} .pw-mid{color:var(--straw)} .pw-low{color:var(--blood)}
@@ -210,12 +210,12 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .log li{background:var(--plate-2); border-radius:8px; padding:7px 10px}
 .log time{color:var(--ash); font-size:11px; margin-right:6px; font-variant-numeric:tabular-nums}
 .field{display:flex; flex-direction:column; gap:4px; font-size:13px}
-.field input{background:#0f1317; border:1px solid var(--rivet); border-radius:8px; padding:9px 10px; color:var(--frost); font:inherit}
+.field input{background:#120e0b; border:1px solid var(--rivet); border-radius:8px; padding:9px 10px; color:var(--frost); font:inherit}
 .settings{display:flex; flex-direction:column; gap:12px}
-.list{margin:0; padding-left:18px; font-size:13px; color:#c8d0d8; display:flex; flex-direction:column; gap:3px}
+.list{margin:0; padding-left:18px; font-size:13px; color:#e0d4c4; display:flex; flex-direction:column; gap:3px}
 
 /* nawigacja */
-.tabs{position:fixed; left:0; right:0; bottom:0; z-index:20; background:rgba(19,23,28,.96); border-top:1px solid var(--rivet);
+.tabs{position:fixed; left:0; right:0; bottom:0; z-index:20; background:rgba(26,20,15,.96); border-top:1px solid var(--rivet);
   padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-bottom:env(safe-area-inset-bottom, 0px)}
 .tabs-in{max-width:560px; margin:0 auto; display:grid; grid-template-columns:repeat(6, 1fr)}
 .tab{background:none; border:0; padding:10px 0 11px; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:600; color:var(--ash)}
@@ -223,11 +223,11 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .tab.on{color:var(--straw)}
 
 /* modal i komunikaty */
-.modal{position:fixed; inset:0; z-index:40; background:rgba(5,7,9,.72); display:grid; place-items:center; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px}
+.modal{position:fixed; inset:0; z-index:40; background:rgba(10,7,5,.74); display:grid; place-items:center; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px}
 .modal-box{width:100%; max-width:440px; max-height:100%; overflow:auto; background:var(--plate); border:1px solid var(--rivet); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:12px}
 .modal-box .h{font-size:26px; color:var(--straw)}
 .toasts{position:fixed; z-index:50; left:0; right:0; top:calc(env(safe-area-inset-top, 0px) + 10px); display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
-.toast{max-width:460px; background:#0e1216; border:1px solid var(--rivet); border-left:3px solid var(--straw); border-radius:10px; padding:8px 12px; font-size:13px; box-shadow:0 6px 18px rgba(0,0,0,.4); animation:tin .25s ease-out}
+.toast{max-width:460px; background:#110d0a; border:1px solid var(--rivet); border-left:3px solid var(--straw); border-radius:10px; padding:8px 12px; font-size:13px; box-shadow:0 6px 18px rgba(0,0,0,.4); animation:tin .25s ease-out}
 .toast.bad{border-left-color:var(--blood)}
 .toast.good{border-left-color:var(--good)}
 @keyframes tin{from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:none}}
@@ -290,7 +290,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .door small{font-size:12px; color:var(--ash)}
 .door.d-elita{border-top-color:var(--blood)} .door.d-skarb{border-top-color:var(--r4)} .door.d-zrodlo{border-top-color:var(--r2)} .door.d-oltarz{border-top-color:var(--r3)} .door.d-walka{border-top-color:var(--r0)}
 .skpips{display:flex; gap:4px; margin-top:4px; justify-content:center}
-.skpip{width:22px; height:5px; border-radius:3px; background:#2a333d; overflow:hidden}
+.skpip{width:22px; height:5px; border-radius:3px; background:#352a21; overflow:hidden}
 .skpip i{display:block; height:100%; background:var(--ash)}
 .skpip.ready i{background:var(--straw)}
 /* Drop rudy: kamień leci z wroga do zakładki Kuźnia */
@@ -358,7 +358,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .cm .cn{font-size:13px; color:var(--frost)}
 .cm.mine .cn{color:var(--straw)}
 .cm time{font-size:11px; color:var(--ash); font-variant-numeric:tabular-nums}
-.cm-t{color:#d6dde4}
+.cm-t{color:#ebe0d0}
 .cm-more{margin-left:auto; background:none; border:0; color:var(--ash); font-size:16px; line-height:1; padding:2px 6px; border-radius:6px}
 .cm-menu{margin-top:6px}
 .cm.sys{font-size:12px; color:var(--ash); font-style:italic; text-align:center}
@@ -368,11 +368,11 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .cm.drop .rar{color:var(--rc)}
 .cm-subs{font-size:12px; color:var(--ash); font-variant-numeric:tabular-nums}
 .chat-in{display:flex; gap:8px; align-items:stretch}
-.chat-in input{flex:1; min-width:0; background:#0f1317; border:1px solid var(--rivet); border-radius:8px; padding:9px 10px; color:var(--frost); font:inherit}
+.chat-in input{flex:1; min-width:0; background:#120e0b; border:1px solid var(--rivet); border-radius:8px; padding:9px 10px; color:var(--frost); font:inherit}
 .chat-in input:disabled{opacity:.5}
 .pin{font-size:13px; background:rgba(231,190,98,.1); border:1px solid rgba(231,190,98,.3); border-radius:10px; padding:8px 10px; color:var(--straw)}
 .ctag{color:var(--ash); font-weight:500; font-size:12px}
-.role{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 6px; border-radius:5px; background:#2b333d; color:var(--ash); margin-left:4px; vertical-align:1px}
+.role{display:inline-block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 6px; border-radius:5px; background:#352a21; color:var(--ash); margin-left:4px; vertical-align:1px}
 .role.r-lider{background:rgba(231,190,98,.18); color:var(--straw)}
 .role.r-zastepca{background:rgba(124,211,223,.14); color:#9fdbe4}
 .role.r-starszy{background:rgba(109,197,123,.14); color:var(--good)}
@@ -380,7 +380,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .member .cmain{min-width:0}
 .toastline{font-size:13px; border:1px solid var(--rivet); border-left:3px solid var(--good); border-radius:10px; padding:8px 12px; background:var(--plate)}
 .form2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.field select, .ann-in{background:#0f1317; border:1px solid var(--rivet); border-radius:8px; padding:9px 10px; color:var(--frost); font:inherit; width:100%}
+.field select, .ann-in{background:#120e0b; border:1px solid var(--rivet); border-radius:8px; padding:9px 10px; color:var(--frost); font:inherit; width:100%}
 .ann-in{resize:vertical; min-height:70px}
 .ann{margin:6px 0 0; font-size:14px; white-space:pre-wrap; overflow-wrap:anywhere}
 .ann small{color:var(--ash); font-size:12px}
@@ -400,7 +400,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .ore-fly.rare:has(img){width:32px; height:32px}
 /* Barwy rzadkości: od szarego Zwykłego po tęczowy Boski — im rzadszy przedmiot, tym mocniejszy efekt */
 .icard{position:relative; overflow:hidden}
-.icard:not(.r0) .ico{background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #11161b), #11161b 74%)}
+.icard:not(.r0) .ico{background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #140f0c), #140f0c 74%)}
 .icard:not(.r0) .iname{color:color-mix(in srgb, var(--rc) 78%, #ffffff)}
 .icard.r2 .ico{box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
 .icard.r3, .icard.r4, .icard.r5, .icard.r6{background:linear-gradient(118deg, color-mix(in srgb, var(--rc) 15%, var(--plate-2)) 0%, var(--plate-2) 58%)}
@@ -455,7 +455,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .tab-dot{position:absolute; top:7px; left:calc(50% + 9px); width:8px; height:8px; border-radius:50%; background:var(--blood); box-shadow:0 0 0 2px var(--iron)}
 .clevels{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:4px}
 .clevels li{display:grid; grid-template-columns:26px 1fr auto; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; background:var(--plate-2); color:var(--ash); font-size:13px}
-.clevels li b{display:grid; place-items:center; width:22px; height:22px; border-radius:6px; background:#0c0f12; color:var(--ash); font-size:12px}
+.clevels li b{display:grid; place-items:center; width:22px; height:22px; border-radius:6px; background:#100c09; color:var(--ash); font-size:12px}
 .clevels li small{font-size:11px}
 .clevels li.on{color:var(--frost)}
 .clevels li.on b{background:var(--straw); color:var(--straw-ink)}
@@ -466,7 +466,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .clog time{color:var(--ash); font-size:11px; font-variant-numeric:tabular-nums}
 .cboss .h{margin-bottom:4px}
 .boss-art{position:relative; display:grid; place-items:center; height:150px; margin:4px 0 8px; border-radius:12px;
-  background:radial-gradient(circle at 50% 60%, rgba(255,141,79,.18), transparent 65%), #0f1317}
+  background:radial-gradient(circle at 50% 60%, rgba(255,141,79,.18), transparent 65%), #120e0b}
 .boss-art img{filter:drop-shadow(0 6px 0 rgba(0,0,0,.45))}
 .boss-art.hit img{animation:bossShake .35s ease-out}
 .bhit{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-family:var(--f-display); font-size:30px; font-weight:700; color:var(--ember);
@@ -534,7 +534,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .mixopt:not(:has(img)) .mx-n{grid-column:1 / span 2}
 .mixopt.on{border-color:var(--straw); box-shadow:inset 0 0 0 1px var(--straw)}
 .oddsbar{margin-top:10px}
-.ob-bar{display:flex; gap:2px; height:10px; border-radius:5px; overflow:hidden; background:#0c0f12}
+.ob-bar{display:flex; gap:2px; height:10px; border-radius:5px; overflow:hidden; background:#100c09}
 .ob-bar i{display:block; min-width:3px}
 .rb-0{background:var(--r0)} .rb-1{background:var(--r1)} .rb-2{background:var(--r2)} .rb-3{background:var(--r3)} .rb-4{background:var(--r4)} .rb-5{background:var(--r5)}
 .rb-6{background:linear-gradient(90deg,#ff5f6d,#ffc371,#5bff9a,#58c7ff,#c77dff)}
@@ -555,7 +555,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .dec{--rc:var(--r0); display:flex; flex-direction:column; gap:10px}
 .dec.r1{--rc:var(--r1)} .dec.r2{--rc:var(--r2)} .dec.r3{--rc:var(--r3)} .dec.r4{--rc:var(--r4)} .dec.r5{--rc:var(--r5)} .dec.r6{--rc:var(--r6)}
 .dec-drop{position:relative; display:grid; place-items:center; height:112px; border-radius:14px; overflow:hidden;
-  background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 28%, #0f1317), #0f1317 70%)}
+  background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 28%, #120e0b), #120e0b 70%)}
 .dec-ico{position:relative; z-index:1; animation:decDrop .7s cubic-bezier(.2,.9,.3,1.25) both; filter:drop-shadow(0 6px 0 rgba(0,0,0,.45)) drop-shadow(0 0 10px var(--rc))}
 .dec-burst{position:absolute; inset:-40%; background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 55%, transparent) 0 8deg, transparent 8deg 24deg);
   opacity:0; animation:decBurst 1.2s ease-out .25s both; mask:radial-gradient(circle, #000 20%, transparent 62%); -webkit-mask:radial-gradient(circle, #000 20%, transparent 62%)}
@@ -601,24 +601,24 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 
 /* ---------- tła krain: pole walki, karty krain ---------- */
 .arena{isolation:isolate}
-.arena::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(9,11,15,.62), rgba(9,11,15,.18) 38%, rgba(9,11,15,.25) 62%, rgba(9,11,15,.82)), var(--bg, none);
+.arena::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(14,10,7,.62), rgba(14,10,7,.18) 38%, rgba(14,10,7,.25) 62%, rgba(14,10,7,.82)), var(--bg, none);
   background-size:cover; background-position:center 78%; image-rendering:pixelated}
 .arena .land, .arena .ameta, .arena .fname, .arena .hpnum, .arena .vs{text-shadow:0 1px 2px #000, 0 0 6px rgba(0,0,0,.6)}
-.arena .ameta{color:#c8d0d8}
+.arena .ameta{color:#e0d4c4}
 .arena-btns{display:flex; align-items:center; gap:6px}
-.arena .ghost{background:rgba(12,15,18,.55); backdrop-filter:blur(2px)}
+.arena .ghost{background:rgba(18,13,10,.55); backdrop-filter:blur(2px)}
 .skicons{display:flex; gap:4px; margin-top:6px; justify-content:center}
-.skic{--rc:var(--r0); position:relative; width:28px; height:28px; border-radius:7px; display:grid; place-items:center; overflow:hidden; background:#0c0f12; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
+.skic{--rc:var(--r0); position:relative; width:28px; height:28px; border-radius:7px; display:grid; place-items:center; overflow:hidden; background:#100c09; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
 .skic.rb1{--rc:var(--r1)} .skic.rb2{--rc:var(--r2)} .skic.rb3{--rc:var(--r3)} .skic.rb4{--rc:var(--r4)}
-.skic::after{content:""; position:absolute; inset:0; background:conic-gradient(rgba(5,7,9,.72) var(--cd), transparent 0); pointer-events:none}
+.skic::after{content:""; position:absolute; inset:0; background:conic-gradient(rgba(10,7,5,.74) var(--cd), transparent 0); pointer-events:none}
 .skic.ready{box-shadow:inset 0 0 0 1px var(--rc), 0 0 8px -1px var(--rc)}
 .skic b{position:absolute; z-index:1; font-size:11px; color:#fff; text-shadow:0 1px 2px #000}
 .geargrid{display:grid; grid-template-columns:repeat(4, 20px); gap:2px; justify-content:center; margin-top:5px}
-.gi{--rc:transparent; width:20px; height:20px; border-radius:4px; background:rgba(12,15,18,.7); display:grid; place-items:center; box-shadow:inset 0 -2px 0 var(--rc)}
+.gi{--rc:transparent; width:20px; height:20px; border-radius:4px; background:rgba(18,13,10,.7); display:grid; place-items:center; box-shadow:inset 0 -2px 0 var(--rc)}
 .gi.r0{--rc:var(--r0)} .gi.r1{--rc:var(--r1)} .gi.r2{--rc:var(--r2)} .gi.r3{--rc:var(--r3)} .gi.r4{--rc:var(--r4)} .gi.r5{--rc:var(--r5)} .gi.r6{--rc:var(--r6)}
 .gi.empty{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .landcard{position:relative; isolation:isolate; overflow:hidden; border:1px solid var(--rivet); border-radius:12px; margin-top:8px; min-height:118px; display:flex; flex-direction:column; justify-content:space-between; padding:10px 12px}
-.landcard::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(9,11,15,.45), rgba(9,11,15,.05) 40%, rgba(9,11,15,.88)), var(--bg); background-size:cover; background-position:center 72%; image-rendering:pixelated}
+.landcard::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(14,10,7,.45), rgba(14,10,7,.05) 40%, rgba(14,10,7,.88)), var(--bg); background-size:cover; background-position:center 72%; image-rendering:pixelated}
 .landcard.locked::before{filter:grayscale(.85) brightness(.55)}
 .landcard.cur{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw)}
 .lc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px}
@@ -629,11 +629,11 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .lc-ores{display:flex; flex-wrap:wrap; gap:3px 9px; font-size:12px; font-variant-numeric:tabular-nums; text-shadow:0 1px 2px #000}
 .lc-ores .lo{display:inline-flex; align-items:center; gap:3px}
 .lc-ores .lo.rare{color:var(--straw)}
-.lc-boss{font-size:12px; color:#c8d0d8; margin-top:3px; text-shadow:0 1px 2px #000}
+.lc-boss{font-size:12px; color:#e0d4c4; margin-top:3px; text-shadow:0 1px 2px #000}
 .lc-lock, .lc-here{font-size:12px; color:var(--ash); white-space:nowrap; text-shadow:0 1px 2px #000}
 .lc-here{color:var(--straw)}
 .li-head{position:relative; isolation:isolate; overflow:hidden; border-radius:12px; padding:34px 12px 10px; margin:-4px 0 2px}
-.li-head::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(transparent, rgba(9,11,15,.85)), var(--bg); background-size:cover; background-position:center 72%; image-rendering:pixelated}
+.li-head::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(transparent, rgba(14,10,7,.85)), var(--bg); background-size:cover; background-position:center 72%; image-rendering:pixelated}
 .li-head .h{text-shadow:0 1px 2px #000}
 .droplist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
 .droplist li{display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--plate-2); font-size:13px}
@@ -646,15 +646,15 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 /* ---------- Lochy: kafelki z tłem ---------- */
 .dgrid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px}
 .card.dung.tile{position:relative; isolation:isolate; overflow:hidden; margin:0; padding:10px; display:flex; flex-direction:column; gap:4px; min-height:132px; justify-content:flex-end}
-.card.dung.tile::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(9,11,15,.35), rgba(9,11,15,.25) 30%, rgba(9,11,15,.9) 78%), var(--bg); background-size:cover; background-position:center 70%; image-rendering:pixelated}
+.card.dung.tile::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(14,10,7,.35), rgba(14,10,7,.25) 30%, rgba(14,10,7,.9) 78%), var(--bg); background-size:cover; background-position:center 70%; image-rendering:pixelated}
 .card.dung.tile.locked::before{filter:grayscale(.85) brightness(.5)}
 .card.dung.tile.wide{grid-column:1 / -1}
 .card.dung.tile.here{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw)}
 .dt-top{display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:auto}
-.dt-reward{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px 2px 3px; border-radius:999px; background:rgba(9,11,15,.7); max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+.dt-reward{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px 2px 3px; border-radius:999px; background:rgba(14,10,7,.7); max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
 .dt-name{font-family:var(--f-display); font-size:19px; line-height:1.05; text-shadow:0 1px 2px #000}
-.dt-meta{font-size:11px; color:#c8d0d8; text-shadow:0 1px 2px #000}
-.dt-more{background:rgba(9,11,15,.75); border-radius:8px; padding:6px 8px; margin:2px 0}
+.dt-meta{font-size:11px; color:#e0d4c4; text-shadow:0 1px 2px #000}
+.dt-more{background:rgba(14,10,7,.75); border-radius:8px; padding:6px 8px; margin:2px 0}
 .dt-here{font-size:12px; color:var(--straw)}
 .card.dung.tile .btn{align-self:flex-start; margin-top:4px}
 .card.dung.tile .info{width:26px; height:26px; flex:none}
@@ -667,3 +667,25 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .log.compact li:first-child{border-top:0}
 .log.compact li.found span{color:var(--straw)}
 .log.compact time{margin:0; padding-top:1px}
+
+/* info kuźni z ikonami */
+.otable .orow{display:inline-flex; align-items:center; gap:6px}
+.otable tr.off td{opacity:.75}
+.otable td small.unl{display:flex; align-items:center; gap:3px; color:var(--straw); font-size:11px; font-weight:500}
+.sub.iline{display:grid; grid-template-columns:20px 1fr; gap:8px; align-items:start}
+.sub.iline img{margin-top:1px}
+
+/* pasek zasobów: ciepłe żetony z ikonami */
+.res2{display:grid; grid-template-columns:1.2fr 1.35fr .9fr .9fr; gap:6px; width:100%; margin-top:2px}
+.rchip{position:relative; overflow:hidden; display:flex; align-items:center; gap:6px; min-width:0; padding:6px 7px; border-radius:12px;
+  background:linear-gradient(180deg, #33281f, var(--plate)); border:1px solid var(--rivet); box-shadow:inset 0 1px 0 rgba(255,230,190,.07), 0 2px 6px rgba(0,0,0,.25)}
+.rchip > div{display:flex; flex-direction:column; min-width:0; line-height:1.05}
+.rchip b{font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rchip small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); font-weight:600}
+.rchip .px{flex:none}
+.rchip.gold b{color:var(--straw)}
+.rchip.books b{color:#d2c2ff}
+.rchip.forge .up{font-size:11px; color:var(--ember); margin-left:2px}
+.rmini{position:absolute; left:0; bottom:0; height:2px; background:var(--ember)}
+@media (max-width:380px){ .res2{grid-template-columns:1fr 1fr} .rchip{padding:5px 8px} }
+@media (max-width:380px){ .land{font-size:21px} .arena .ghost{font-size:12px; padding:4px 9px} .arena-btns{gap:4px} }

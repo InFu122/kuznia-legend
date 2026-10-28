@@ -30,7 +30,7 @@ groups = [
     ('ORE_ICONS', 'rudy (indeks jak ORES)', [(str(i), f()) for i, f in enumerate(ores.ORE_ICONS.values())]),
     ('ELEM_ICONS', 'domieszki żywiołów', [(k, f()) for k, f in ores.ELEM_ICONS.items()]),
     ('SET_ORE_ICONS', 'rudy unikalne zestawów', [(k, f()) for k, f in ores.SET_ICONS.items()]),
-    ('RES_ICONS', 'zasoby', [(k, f()) for k, f in ores.RES_ICONS.items()] + [('moneta', bosses.clan_coin()), ('czas', bosses.hourglass())]),
+    ('RES_ICONS', 'zasoby', [(k, f()) for k, f in ores.RES_ICONS.items()] + [('moneta', bosses.clan_coin()), ('czas', bosses.hourglass()), ('moc', bosses.crossed_swords()), ('kowadlo', bosses.anvil())]),
     ('SKILL_ICONS', 'umiejętności 24×24', [(k, f()) for k, f in skills.SKILL_ICONS.items()]),
     ('TECH_ICONS', 'badania 20×20', [(k, f()) for k, f in tech.TECH_ICONS.items()]),
     ('BOSS_ICONS', 'bossowie klanowi 32×32', [(k, (bosses.boss_template(), bosses.boss_palette(k))) for k in bosses.PALS]),
