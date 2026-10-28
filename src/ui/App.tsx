@@ -116,14 +116,14 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             </div>
           </div>
           <div class="res2">
-            <div class="rchip moc"><Px src={resUrl('moc')} size={20} /><div><b>{fmt(game.stats.power)}</b><small>Moc</small></div></div>
-            <div class="rchip gold"><Px src={resUrl('zloto')} size={20} /><div><b>{fmt(s.gold)}</b><small>Złoto</small></div></div>
-            <div class="rchip forge" title={s.forge.up ? `Ulepszanie do ${s.forge.up}` : undefined}>
+            <div class="hchip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><div><b>{fmt(game.stats.power)}</b><small>Moc</small></div></div>
+            <div class="hchip gold" title="Złoto"><Px src={resUrl('zloto')} size={20} /><div><b>{fmt(s.gold)}</b><small>Złoto</small></div></div>
+            <div class="hchip forge" title={s.forge.up ? `Kuźnia: ulepszanie do ${s.forge.up}` : 'Poziom kuźni'}>
               <Px src={resUrl('kowadlo')} size={20} />
               <div><b>{s.forge.lvl}{s.forge.up ? <span class="up">→{s.forge.up}</span> : ''}</b><small>Kuźnia</small></div>
               {s.forge.up > 0 && <i class="rmini" style={{ width: Math.max(0, (1 - s.forge.left / game.upgradeTotal()) * 100) + '%' }} />}
             </div>
-            <div class="rchip books"><Px src={resUrl('ksiega')} size={20} /><div><b>{fmt(s.books)}</b><small>Księgi</small></div></div>
+            <div class="hchip books" title="Księgi Wiedzy"><Px src={resUrl('ksiega')} size={20} /><div><b>{fmt(s.books)}</b><small>Księgi</small></div></div>
           </div>
         </header>
         <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} />

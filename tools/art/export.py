@@ -44,3 +44,6 @@ for name, desc, items in groups:
     lines.append('};')
 open(f'{OUT}/icons-data.ts', 'w').write('\n'.join(lines) + '\n')
 print('ok', sum(len(i) for _, _, i in groups), 'ikon,', len(kinds) * 3, 'szablonów')
+
+import actors
+actors.export_ts(OUT)

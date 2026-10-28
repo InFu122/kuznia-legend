@@ -31,7 +31,8 @@ export interface ArenaState {
 }
 export interface ArenaFight extends ArenaState {
   win: boolean; ms: number; frames: [number, number][]; crits: [number, number]; skills: [number, number];
-  me: { name: string; power: number }; foe: { name: string; power: number; ghost: boolean }; d: number; gold: number;
+  me: { name: string; power: number; look?: Record<string, { kind: string; ore: number }> };
+  foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }> }; d: number; gold: number;
 }
 
 const newDeviceId = () => 'kl-' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));

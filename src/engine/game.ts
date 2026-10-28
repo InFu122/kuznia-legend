@@ -125,7 +125,7 @@ export class Game {
     ctx.s.pending = it;
     this.lastAuto = null;
     this.dispatch({ t: 'forged', item: it });
-    this.dispatch({ t: 'sfx', k: it.jump ? 'jump' : 'smelt', r: it.r });
+    // Dźwięk przeskoku gra animacja wykuwania (żeby nie zdradzić wyniku przed czasem).
     this.dispatch({ t: 'modal', m: { kind: 'decide' } });
     this.changed();
     return it;

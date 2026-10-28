@@ -8,6 +8,7 @@ import { SlotIcon } from '../icons';
 import { itemUrl } from '../../art/render';
 import { Px } from '../Px';
 import { MountsView, PetsView, SkillsView } from './Companions';
+import { HeroSprite, bestRarity } from '../Arena';
 
 type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
 const SUBS: [Sub, string][] = [['eq', 'Ekwipunek'], ['skills', 'Umiejętności'], ['pets', 'Chowaniec'], ['mounts', 'Wierzchowiec']];
@@ -43,9 +44,14 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
   return (
     <>
       <section class="card">
-        <div class="eyebrow">Bohater</div>
-        <div class="h">{s.name}</div>
-        <p class="sub">{smithTitle(s.smith.fame).n} · najdalej: {LANDS[s.maxLand].n}</p>
+        <div class="hero-head">
+          <div class={`actor hero doll${bestRarity(s.eq) >= 2 ? ' r' + bestRarity(s.eq) : ''}`} aria-hidden="true"><HeroSprite eq={s.eq} /></div>
+          <div>
+            <div class="eyebrow">Bohater</div>
+            <div class="h">{s.name}</div>
+            <p class="sub">{smithTitle(s.smith.fame).n} · najdalej: {LANDS[s.maxLand].n}</p>
+          </div>
+        </div>
         <div class="stats" style={{ marginTop: '10px' }}>
           {st.map(([k, v]) => <div class="stat" key={k}><small>{k}</small><b>{v}</b></div>)}
         </div>

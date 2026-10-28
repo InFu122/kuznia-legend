@@ -5,6 +5,7 @@ import { dist, itemName, jumpChances, maxJump } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
 import { Brag } from '../Decision';
+import { sparks } from '../fx';
 import { ClanHelpLine } from './ClanLife';
 import { Costs, Px } from '../Px';
 import { elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
@@ -17,23 +18,6 @@ export const Dist = ({ d }: { d: [number, number][] }) => (
 export const InfoBtn = ({ onClick, label }: { onClick: () => void; label: string }) => (
   <button class="info" onClick={onClick} aria-label={label}>i</button>
 );
-
-/** Iskry spod młota w kolorze rzadkości wykutego przedmiotu — im rzadszy, tym więcej i dalej. */
-function sparks(box: HTMLElement | null, r = 0) {
-  if (!box || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const n = 12 + r * 5;
-  for (let i = 0; i < n; i++) {
-    const s = document.createElement('span');
-    s.className = `spark r${r}`;
-    if (r >= 6) s.style.setProperty('--h', String(Math.floor(Math.random() * 360)));
-    const a = -Math.PI * Math.random();
-    const d = 40 + Math.random() * (70 + r * 18);
-    s.style.setProperty('--dx', Math.cos(a) * d + 'px');
-    s.style.setProperty('--dy', Math.sin(a) * d + 'px');
-    box.appendChild(s);
-    setTimeout(() => s.remove(), 650);
-  }
-}
 
 /** Pasek szans wytopu: segmenty w kolorach rzadkości, z procentami pod spodem. */
 function OddsBar({ d, note }: { d: [number, number][]; note?: string }) {

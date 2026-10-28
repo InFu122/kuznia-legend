@@ -2,7 +2,7 @@
 // Przeglądarki pozwalają włączyć dźwięk dopiero po geście gracza, więc kontekst powstaje przy pierwszym dotknięciu.
 import type { SfxKind } from '../engine/types';
 
-type Kind = SfxKind | 'drop' | 'dropRare';
+type Kind = SfxKind | 'drop' | 'dropRare' | 'strike';
 
 let ac: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -77,6 +77,10 @@ export function play(k: Kind, r = 0): void {
   const t = ac.currentTime + 0.005;
   switch (k) {
     case 'smelt': clang(t); break;
+    case 'strike': // uderzenie w animacji wykuwania: przy każdej wyższej rzadkości wyższy ton
+      clang(t, 1 + r * 0.06, 0.2);
+      if (r > 0) { tone(PENTA[Math.min(7, r)], t + 0.05, 0.3, 'triangle', 0.1); tone(PENTA[Math.min(7, r)] * 2, t + 0.05, 0.2, 'sine', 0.04); }
+      break;
     case 'jump': // młot + arpeggio: im wyższa rzadkość, tym dłuższe
       clang(t);
       for (let i = 0; i <= Math.min(6, r + 1); i++) tone(PENTA[i], t + 0.12 + i * 0.07, 0.35, 'triangle', 0.12);

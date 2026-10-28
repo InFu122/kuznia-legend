@@ -57,23 +57,11 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .track i.boss{background:#5a3532}
 .track i.boss.now{background:var(--blood)}
 .track i.boss.done{background:#8a4a45}
-.fighters{display:grid; grid-template-columns:1fr auto 1fr; align-items:end; gap:10px}
-.fighter{display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0}
-.token{width:62px; height:70px; display:grid; place-items:center; font-family:var(--f-display); font-size:34px; line-height:1;
-  clip-path:polygon(50% 100%, 0 72%, 0 0, 100% 0, 100% 72%); padding-bottom:10px; transition:transform .12s}
-.hero .token{background:linear-gradient(160deg, #5a4634, #2e231a); color:var(--straw)}
-.foe .token{background:linear-gradient(160deg, #4a3a3a, #2a2222); color:#f1d6cf}
-.foe .token.t-Nieumarli{background:linear-gradient(160deg, #3d4a48, #1f2827); color:#cfe8df}
-.foe .token.t-Demony{background:linear-gradient(160deg, #4c2f3f, #261823); color:#f4c6df}
-.foe .token.t-Smoki{background:linear-gradient(160deg, #533527, #2a1a13); color:#ffd2b5}
-.foe .token.boss{width:76px; height:86px; font-size:42px; outline:0; filter:drop-shadow(0 0 10px rgba(227,90,82,.55))}
 .fname{font-size:13px; font-weight:600; text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .hp{width:100%; max-width:150px; height:8px; border-radius:4px; background:#100c09; overflow:hidden}
 .hp i{display:block; height:100%; width:100%; background:var(--good); transition:width .12s linear}
 .hp.foe i{background:var(--blood)}
 .hpnum{font-size:11px; color:var(--ash); font-variant-numeric:tabular-nums}
-.vs{font-family:var(--f-display); font-size:18px; color:var(--ash); padding-bottom:34px; text-align:center; white-space:nowrap}
-.vs.boss{color:var(--blood)}
 .arena-actions{display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap}
 .arena-actions:empty{display:none}
 .lunge{transform:translateX(10px)}
@@ -331,8 +319,6 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 /* Etap 3b: arena, przeniesienie konta, pochodzenie przedmiotów */
 .seg.seg4{margin:6px 0 4px}
 .inote{font-size:12px; color:var(--ash); border-left:2px solid var(--blood); padding-left:8px}
-.fighters.duel{margin:6px 0 2px}
-.fighters.duel .vs{padding-bottom:30px; font-size:16px}
 .duel-result{display:flex; flex-direction:column; gap:3px; text-align:center; border-radius:12px; padding:12px; background:var(--plate-2); border:1px solid var(--rivet)}
 .duel-result b{font-family:var(--f-display); font-size:26px; font-weight:500}
 .duel-result.win b{color:var(--good)}
@@ -676,16 +662,114 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .sub.iline img{margin-top:1px}
 
 /* pasek zasobów: ciepłe żetony z ikonami */
-.res2{display:grid; grid-template-columns:1.2fr 1.35fr .9fr .9fr; gap:6px; width:100%; margin-top:2px}
-.rchip{position:relative; overflow:hidden; display:flex; align-items:center; gap:6px; min-width:0; padding:6px 7px; border-radius:12px;
+.res2{display:flex; gap:6px; width:100%; margin-top:2px}
+.hchip{position:relative; overflow:hidden; display:flex; align-items:center; gap:6px; min-width:0; padding:6px 7px; border-radius:12px;
   background:linear-gradient(180deg, #33281f, var(--plate)); border:1px solid var(--rivet); box-shadow:inset 0 1px 0 rgba(255,230,190,.07), 0 2px 6px rgba(0,0,0,.25)}
-.rchip > div{display:flex; flex-direction:column; min-width:0; line-height:1.05}
-.rchip b{font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.rchip small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); font-weight:600}
-.rchip .px{flex:none}
-.rchip.gold b{color:var(--straw)}
-.rchip.books b{color:#d2c2ff}
-.rchip.forge .up{font-size:11px; color:var(--ember); margin-left:2px}
+.hchip > div{display:flex; flex-direction:column; min-width:0; line-height:1.05}
+.hchip b{font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.hchip small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); font-weight:600}
+.hchip .px{flex:none}
+.hchip.gold b{color:var(--straw)}
+.hchip.books b{color:#d2c2ff}
+.hchip.forge .up{font-size:11px; color:var(--ember); margin-left:2px}
 .rmini{position:absolute; left:0; bottom:0; height:2px; background:var(--ember)}
-@media (max-width:380px){ .res2{grid-template-columns:1fr 1fr} .rchip{padding:5px 8px} }
+.hchip{flex:1 1 auto}
+@media (max-width:440px){ .hchip small{display:none} .hchip{padding:7px 8px; gap:5px} .hchip b{font-size:15px} }
+@media (max-width:370px){ .res2{display:grid; grid-template-columns:1fr 1fr} .hchip small{display:block} .hchip{padding:5px 8px} }
 @media (max-width:380px){ .land{font-size:21px} .arena .ghost{font-size:12px; padding:4px 9px} .arena-btns{gap:4px} }
+
+/* ---------- animacja wykuwania ---------- */
+.fanim{--gc:#ff9a3c; position:relative; height:220px; border-radius:16px; overflow:hidden; cursor:pointer; isolation:isolate;
+  background:radial-gradient(circle at 50% 62%, color-mix(in srgb, var(--gc) 30%, #120c08), #0d0906 68%)}
+.fanim.r0{--gc:var(--r0)} .fanim.r1{--gc:var(--r1)} .fanim.r2{--gc:var(--r2)} .fanim.r3{--gc:var(--r3)} .fanim.r4{--gc:var(--r4)} .fanim.r5{--gc:var(--r5)} .fanim.r6{--gc:var(--r6)}
+.fanim > .spark{z-index:4; top:auto; bottom:116px}
+.fa-glow{position:absolute; left:50%; top:58%; width:220px; height:220px; translate:-50% -50%; border-radius:50%; z-index:-1;
+  background:radial-gradient(circle, color-mix(in srgb, var(--gc) 70%, transparent), transparent 62%); animation:faPulse .42s ease-out infinite}
+.fanim.climb .fa-glow{animation:faBurst .42s ease-out}
+.fanim.r6 .fa-glow{background:conic-gradient(from 0deg, #ff5f6d, #ffc371, #5bff9a, #58c7ff, #c77dff, #ff5f6d); mask:radial-gradient(circle, #000 15%, transparent 62%); -webkit-mask:radial-gradient(circle, #000 15%, transparent 62%); animation:rspin 2s linear infinite}
+.fa-anvil{position:absolute; left:50%; bottom:46px; translate:-50% 0; z-index:1; filter:drop-shadow(0 6px 0 rgba(0,0,0,.5))}
+.fa-ingot{position:absolute; left:50%; bottom:112px; width:40px; height:10px; translate:-50% 0; z-index:2; border-radius:3px;
+  background:linear-gradient(180deg, #fff6d8, var(--gc)); box-shadow:0 0 14px 4px var(--gc), 0 0 30px 6px color-mix(in srgb, var(--gc) 55%, transparent); animation:faIngot .42s ease-out}
+.fa-hammer{position:absolute; left:calc(50% + 6px); bottom:118px; z-index:3; transform-origin:85% 85%; animation:faHammer .42s cubic-bezier(.5,0,.75,0) both}
+.fa-hammer img{transform:scaleX(-1)}
+.fa-label{position:absolute; left:0; right:0; bottom:24px; text-align:center; font-family:var(--f-display); font-size:24px; z-index:3; animation:faLabel .3s ease-out}
+.fa-label b{font-weight:700; text-shadow:0 2px 0 #000, 0 0 3px #000, 0 0 14px currentColor}
+.fa-up{position:absolute; left:0; right:0; top:12px; text-align:center; z-index:3; font-family:var(--f-ui); font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--straw); text-shadow:0 2px 0 #000; animation:pulse .5s ease-out}
+.fa-skip{position:absolute; top:8px; right:10px; font-size:10px; color:var(--ash); z-index:3}
+.fanim.climb .fa-skip{display:none}
+@keyframes faHammer{0%{transform:rotate(-55deg) translate(6px,-10px)} 70%{transform:rotate(12deg)} 82%{transform:rotate(4deg)} 100%{transform:rotate(-20deg)}}
+@keyframes faIngot{0%{transform:scale(1.25, .7); filter:brightness(2)} 100%{transform:none; filter:none}}
+@keyframes faPulse{0%{opacity:.75} 30%{opacity:1} 100%{opacity:.75}}
+@keyframes faBurst{0%{transform:scale(.6); opacity:.5} 40%{transform:scale(1.35); opacity:1} 100%{transform:scale(1); opacity:.85}}
+@keyframes faLabel{from{transform:translateY(6px) scale(.9); opacity:0} to{transform:none; opacity:1}}
+.dec.forging{gap:8px}
+.fa-ladder{position:absolute; left:14px; right:14px; bottom:10px; display:flex; gap:4px; z-index:3}
+.fa-ladder i{flex:1; height:6px; border-radius:3px; opacity:.35; outline:1px solid rgba(255,255,255,.12)}
+.fa-ladder i.out{opacity:.12}
+.fa-ladder i.lit{opacity:1; box-shadow:0 0 8px var(--gc)}
+
+/* ---------- pole walki: postaci w pixel arcie ---------- */
+.stage{position:relative; height:136px; margin:6px -4px 0; display:flex; align-items:flex-end; justify-content:space-between; padding:0 5% 0 4%}
+.st-tag{position:absolute; top:0; left:50%; translate:-50% 0; z-index:2; font-family:var(--f-display); font-size:15px; line-height:1; color:#f3eadc; padding:4px 11px 5px; border-radius:999px; background:rgba(14,10,7,.62); border:1px solid rgba(255,240,220,.12); white-space:nowrap}
+.st-tag.boss{color:#fff; background:rgba(140,28,24,.82); border-color:rgba(255,140,120,.5); box-shadow:0 0 14px rgba(227,90,82,.5)}
+.actor{position:relative; bottom:6px; z-index:1; display:flex; align-items:flex-end; justify-content:center}
+.actor.lunge, .actor.hit{transform:none; animation:none}
+.actor::before{content:""; position:absolute; left:50%; bottom:-5px; width:76%; height:12px; translate:-50% 0; border-radius:50%; background:radial-gradient(closest-side, rgba(0,0,0,.6), transparent); z-index:-1}
+.actor .sprite{display:block; image-rendering:pixelated; width:90px; height:90px; transform-origin:50% 100%; animation:idle 1.4s steps(2) infinite}
+.actor.foe .sprite{width:86px; height:86px}
+.actor .enter{position:relative; display:flex; align-items:flex-end; animation:foeIn .32s ease-out}
+.actor.foe.boss .sprite{width:118px; height:118px; filter:drop-shadow(0 0 10px rgba(227,90,82,.55))}
+.actor.foe .sprite.back{position:absolute; width:64px; height:64px; z-index:-1; filter:brightness(.62) saturate(.8)}
+.actor.foe .sprite.back.b1{right:-24px; bottom:16px}
+.actor.foe .sprite.back.b2{right:16px; bottom:30px; width:56px; height:56px; filter:brightness(.48) saturate(.7)}
+.actor.hero.r2 .sprite{filter:drop-shadow(0 0 2px color-mix(in srgb, var(--r2) 70%, transparent))}
+.actor.hero.r3 .sprite{filter:drop-shadow(0 0 3px color-mix(in srgb, var(--r3) 80%, transparent))}
+.actor.hero.r4 .sprite{filter:drop-shadow(0 0 3px var(--r4)) drop-shadow(0 0 8px color-mix(in srgb, var(--r4) 45%, transparent))}
+.actor.hero.r5 .sprite{filter:drop-shadow(0 0 3px var(--r5)) drop-shadow(0 0 10px color-mix(in srgb, var(--r5) 55%, transparent))}
+.actor.hero.r6 .sprite{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #c77dff); animation:idle 1.4s steps(2) infinite, divine 3s linear infinite}
+.actor.hero.lunge .sprite{animation:heroAtk .26s ease-out}
+.actor.foe.lunge .sprite:not(.back){animation:foeAtk .26s ease-out}
+.actor.hero.hit .sprite{animation:hitL .22s ease-out}
+.actor.foe.hit .sprite:not(.back){animation:hitR .22s ease-out}
+.actor.foe.dead .sprite{animation:die .32s ease-in forwards}
+.actor.hero.dead .sprite{animation:none; filter:grayscale(1) brightness(.6); transform:rotate(-14deg) translateY(4px)}
+.actor.tp-upior .sprite{opacity:.9; animation:hover 2.2s ease-in-out infinite}
+.actor.tp-ptak .sprite, .actor.tp-gryf .sprite{animation:hover 1.1s ease-in-out infinite}
+@keyframes idle{0%{transform:translateY(0)} 50%{transform:translateY(-2px)} 100%{transform:translateY(0)}}
+@keyframes hover{0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)}}
+@keyframes heroAtk{0%{transform:none} 35%{transform:translateX(26px) rotate(9deg)} 55%{transform:translateX(22px) rotate(-4deg)} 100%{transform:none}}
+@keyframes foeAtk{0%{transform:none} 35%{transform:translateX(-26px) rotate(-9deg)} 55%{transform:translateX(-22px) rotate(4deg)} 100%{transform:none}}
+@keyframes hitL{0%{transform:translateX(-6px); filter:brightness(2.4) saturate(0)} 100%{transform:none; filter:none}}
+@keyframes hitR{0%{transform:translateX(6px); filter:brightness(2.4) saturate(0)} 100%{transform:none}}
+@keyframes die{to{transform:translateY(10px) rotate(22deg) scale(.9); opacity:0; filter:brightness(2) saturate(0)}}
+@keyframes foeIn{from{transform:translateX(34px); opacity:0}}
+@keyframes divine{to{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #c77dff) hue-rotate(360deg)}}
+.stage .floats{z-index:3}
+.bars{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:6px}
+.bar-side{display:flex; flex-direction:column; gap:4px; min-width:0}
+.bar-side.foe{align-items:flex-end; text-align:right}
+.bar-side .fname{text-align:inherit; max-width:100%}
+.bar-side .fname.boss{color:#ffb4a8}
+.bar-side .hp{max-width:none}
+.bar-side.foe .hp i{margin-left:auto}
+.kit{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap}
+.kit .skicons{margin-top:0}
+.kit .geargrid{grid-template-columns:repeat(8, 20px); margin-top:0}
+.skic.empty{background:rgba(18,13,10,.45); box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.skic.empty::after{display:none}
+.kit .skicons:empty{display:none}
+@media (max-width:360px){ .kit{justify-content:center} .actor .sprite{width:80px; height:80px} .actor.foe .sprite{width:76px; height:76px} .actor.foe.boss .sprite{width:104px; height:104px} }
+@media (prefers-reduced-motion: reduce){ .actor .sprite, .actor .enter{animation:none !important} .actor.foe.dead .sprite{opacity:0} }
+.duel-box{position:relative; border-radius:12px; padding:8px 10px 10px; background:radial-gradient(120% 90% at 50% 120%, rgba(255,141,79,.18), transparent 60%), #140f0c; border:1px solid var(--rivet)}
+.stage.duel{height:118px}
+.actor .sprite.flip{transform:scaleX(-1)}
+.actor.foe.pvp .sprite{width:90px; height:90px; animation:none; transform:scaleX(-1)}
+.actor.foe.pvp.ghost .sprite{opacity:.75; filter:hue-rotate(180deg) saturate(.6)}
+.actor.hero.fighting .sprite{animation:heroAtk .6s ease-out infinite}
+.actor.foe.pvp.fighting .sprite{animation:pvpAtk .6s ease-out .3s infinite}
+.actor.foe.pvp.dead .sprite{animation:none; transform:scaleX(-1) rotate(14deg) translateY(4px); filter:grayscale(1) brightness(.6)}
+@keyframes pvpAtk{0%{transform:scaleX(-1)} 35%{transform:scaleX(-1) translateX(26px) rotate(9deg)} 100%{transform:scaleX(-1)}}
+.hero-head{display:flex; gap:14px; align-items:center}
+.actor.doll{bottom:0; flex:none; width:92px; height:96px; border-radius:12px; align-items:center; background:radial-gradient(70% 60% at 50% 80%, rgba(255,141,79,.18), transparent 70%), #140f0c; border:1px solid var(--rivet)}
+.actor.doll::before{bottom:6px}
+.actor.doll .sprite{width:84px; height:84px}

@@ -4,6 +4,7 @@ import { DUEL_FRAME_MS } from '../../engine/duel';
 import type { Game } from '../../engine/game';
 import { getLink, ServerError, type ArenaFight, type ArenaState } from '../../save/server';
 import { fmt } from '../format';
+import { HeroSprite } from '../Arena';
 
 /** Odtworzenie walki jest 3× szybsze niż sama walka. */
 const REPLAY_SPEED = 3;
@@ -23,19 +24,23 @@ function Replay({ f, onDone }: { f: ArenaFight; onDone: () => void }) {
   return (
     <>
       <div class="eyebrow">Pojedynek</div>
-      <div class="fighters duel">
-        <div class="fighter hero">
-          <div class="token">{(f.me.name[0] || 'K').toUpperCase()}</div>
-          <div class="fname">{f.me.name}</div>
-          <div class="hp"><i style={{ width: a + '%' }} /></div>
-          <div class="hpnum">Moc {fmt(f.me.power)}</div>
+      <div class="duel-box">
+        <div class="stage duel">
+          <div class="st-tag">{done ? (f.win ? 'Wygrana' : 'Porażka') : `${Math.round((i * DUEL_FRAME_MS) / 1000)} s`}</div>
+          <div class={`actor hero${!done ? ' fighting' : ''}${done && !f.win ? ' dead' : ''}`}><HeroSprite eq={f.me.look ?? {}} /></div>
+          <div class={`actor foe pvp${!done ? ' fighting' : ''}${done && f.win ? ' dead' : ''}${f.foe.ghost ? ' ghost' : ''}`}><HeroSprite eq={f.foe.look ?? {}} flip /></div>
         </div>
-        <div class="vs">{done ? (f.win ? 'Wygrana' : 'Porażka') : `${Math.round((i * DUEL_FRAME_MS) / 1000)} s`}</div>
-        <div class="fighter foe">
-          <div class="token t-Demony">{(f.foe.name[0] || '?').toUpperCase()}</div>
-          <div class="fname">{f.foe.name}</div>
-          <div class="hp foe"><i style={{ width: b + '%' }} /></div>
-          <div class="hpnum">Moc {fmt(f.foe.power)}</div>
+        <div class="bars">
+          <div class="bar-side">
+            <div class="fname">{f.me.name}</div>
+            <div class="hp"><i style={{ width: a + '%' }} /></div>
+            <div class="hpnum">Moc {fmt(f.me.power)}</div>
+          </div>
+          <div class="bar-side foe">
+            <div class="fname">{f.foe.name}</div>
+            <div class="hp foe"><i style={{ width: b + '%' }} /></div>
+            <div class="hpnum">Moc {fmt(f.foe.power)}</div>
+          </div>
         </div>
       </div>
       {done ? (

@@ -18,7 +18,19 @@ const OPPONENTS = 3;
 /** Kod powiadomienia: ktoś zaatakował twojego bohatera. */
 export const NOTE_DEFENSE = 101;
 
-interface Hero { f: Fighter; power: number; land: string; t: number }
+/** Wygląd bohatera na arenie: rodzaj i ruda widocznego ekwipunku. */
+type Look = Record<string, { kind: string; ore: number }>;
+interface Hero { f: Fighter; power: number; land: string; t: number; look?: Look }
+
+const LOOK_SLOTS = ['bron', 'helm', 'zbroja', 'rekawice', 'buty', 'pas', 'amulet'];
+function lookOf(eq: GameState['eq']): Look {
+  const o: Look = {};
+  for (const k of LOOK_SLOTS) {
+    const it = (eq as Record<string, { kind?: unknown; ore?: unknown } | null | undefined>)[k];
+    if (it && typeof it.kind === 'string') o[k] = { kind: it.kind.slice(0, 24), ore: Math.max(0, Math.min(6, Math.floor(Number(it.ore)) || 0)) };
+  }
+  return o;
+}
 interface Opp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean; k?: number }
 interface ArenaMe { day: string; left: number; wins: number; losses: number; opp: Opp[] }
 
@@ -31,7 +43,7 @@ export function updateArenaHero(
   if (!arenaOpen(s)) return;
   const st = computeStats(eq, allMods(s), extraOf(s));
   const name = cleanName(s.name);
-  const hero: Hero = { f: { name, st: fighterStats(st), skills: extraOf(s).skills ?? [] }, power, land: LANDS[s.maxLand].n, t: Date.now() };
+  const hero: Hero = { f: { name, st: fighterStats(st), skills: extraOf(s).skills ?? [] }, power, land: LANDS[s.maxLand].n, t: Date.now(), look: lookOf(eq) };
   try {
     nk.storageWrite([{ ...HERO, userId, value: hero as unknown as { [k: string]: unknown }, permissionRead: 0, permissionWrite: 0 }]);
     const rec = ownRecord(nk, 'arena', userId);
@@ -137,11 +149,13 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   if (!opp || (typeof req.id === 'string' && req.id !== opp.id)) throw err('Nie ma takiego przeciwnika — odśwież listę.', INVALID);
 
   let foe: Fighter;
+  let foeLook: Look | undefined = hero.look;
   if (opp.ghost) foe = scaleFighter(hero.f, opp.k ?? 1, opp.name);
   else {
     const h = readHero(nk, opp.id);
     if (!h) throw err('Przeciwnik zniknął z areny — odśwież listę.', NOT_FOUND);
     foe = h.f;
+    foeLook = h.look;
   }
   const rng = serverRng(nk);
   const res = duel(hero.f, foe, Math.floor(rng.next() * 0xffffffff));
@@ -178,7 +192,7 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   saveMe(nk, userId, me, version);
   return JSON.stringify({
     win: res.win, ms: res.ms, frames: res.frames, crits: res.crits, skills: res.skills,
-    me: { name: hero.f.name, power: hero.power }, foe: { name: opp.name, power: opp.power, ghost: opp.ghost },
+    me: { name: hero.f.name, power: hero.power, look: hero.look ?? {} }, foe: { name: opp.name, power: opp.power, ghost: opp.ghost, look: foeLook ?? {} },
     d, gold, ...view(nk, userId, me, hero),
   });
 }

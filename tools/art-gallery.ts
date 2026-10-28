@@ -5,6 +5,8 @@ import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICON
 import { ITEM_KINDS, METALS, itemPalette, itemSprite, tierOf } from '../src/art/items';
 import { rgba, sprite, type Palette, type Sprite } from '../src/art/pixel';
 import { halo } from '../src/art/rarity';
+import { FOE_H, FOE_W, HERO_H, HERO_W, foePixels, heroPixels, type HeroGear } from '../src/art/actors';
+import { FOE_LOOK } from '../src/art/actors-data';
 import { DUNGEON_SCENES, LAND_SCENES, SCENE_H, SCENE_W, renderScene } from '../src/art/scenes';
 import { png } from './png';
 
@@ -34,6 +36,21 @@ const bosses = CLAN_BOSSES.map((b, i) => tile(ic(BOSS_ICONS[b.pal]), b.n, `boss 
 const techs = TECH_BRANCHES.map(b => `<div class="branch"><h3>${esc(b.n)}</h3><div class="tiles">${
   (Object.keys(TECH) as (keyof typeof TECH)[]).filter(k => TECH[k].branch === b.id).map(k => tile(ic(TECH_ICONS[k]), TECH[k].n, '', 20)).join('')}</div></div>`).join('');
 
+const pxTile = (w: number, h: number, px: Uint8ClampedArray, name: string, sub = '') =>
+  `<figure class="tile"><img src="data:image/png;base64,${png(w, h, px).toString('base64')}" width="${w}" height="${h}" style="--s:${w}" alt="${esc(name)}"><figcaption>${esc(name)}${sub ? `<small>${esc(sub)}</small>` : ''}</figcaption></figure>`;
+const OUTFITS: [string, string, HeroGear][] = [
+  ['Bez ekwipunku', 'początek gry', {}],
+  ['Miedź i żelazo', 'hełm, napierśnik, miecz', { bron: { kind: 'Miecz', ore: 1 }, helm: { kind: 'Hełm', ore: 1 }, zbroja: { kind: 'Napierśnik', ore: 0 }, buty: { kind: 'Buty', ore: 0 }, pas: { kind: 'Pas', ore: 0 } }],
+  ['Srebro', 'kaptur, kolczuga, topór', { bron: { kind: 'Topór', ore: 2 }, helm: { kind: 'Kaptur', ore: 2 }, zbroja: { kind: 'Kolczuga', ore: 2 }, rekawice: { kind: 'Rękawice', ore: 2 }, buty: { kind: 'Nagolenniki', ore: 2 }, pas: { kind: 'Sakwa', ore: 2 } }],
+  ['Mithril', 'diadem, szata, kostur', { bron: { kind: 'Kostur', ore: 3 }, helm: { kind: 'Diadem', ore: 3 }, zbroja: { kind: 'Szata', ore: 3 }, rekawice: { kind: 'Karwasze', ore: 3 }, pas: { kind: 'Rzemień', ore: 3 }, amulet: { kind: 'Amulet', ore: 3 } }],
+  ['Adamantyt', 'łuk i kaptur', { bron: { kind: 'Łuk', ore: 4 }, helm: { kind: 'Kaptur', ore: 4 }, zbroja: { kind: 'Kolczuga', ore: 4 }, rekawice: { kind: 'Rękawice', ore: 4 }, buty: { kind: 'Buty', ore: 4 }, pas: { kind: 'Pas', ore: 4 } }],
+  ['Smocza Stal', 'hełm z pióropuszem, młot', { bron: { kind: 'Młot', ore: 5 }, helm: { kind: 'Hełm', ore: 5 }, zbroja: { kind: 'Napierśnik', ore: 5 }, rekawice: { kind: 'Szpony', ore: 5 }, buty: { kind: 'Trzewiki', ore: 5 }, pas: { kind: 'Pas', ore: 5 }, amulet: { kind: 'Amulet', ore: 5 } }],
+  ['Gwiezdny Kruszec', 'halabarda', { bron: { kind: 'Halabarda', ore: 6 }, helm: { kind: 'Hełm', ore: 6 }, zbroja: { kind: 'Napierśnik', ore: 6 }, rekawice: { kind: 'Karwasze', ore: 6 }, buty: { kind: 'Nagolenniki', ore: 6 }, pas: { kind: 'Pas', ore: 6 }, amulet: { kind: 'Amulet', ore: 6 } }],
+];
+const heroes = OUTFITS.map(([n, sub, g]) => pxTile(HERO_W, HERO_H, heroPixels(g), n, sub)).join('');
+const TPL_N: Record<string, string> = { wilk: 'wilk', dzik: 'dzik', pajak: 'pająk', ropucha: 'ropucha', waz: 'wąż', rycerz: 'rycerz', bandyta: 'bandyta', mag: 'mag', wiedzma: 'wiedźma', szkielet: 'szkielet', upior: 'upiór', golem: 'golem', troll: 'troll', minotaur: 'minotaur', chochlik: 'chochlik', goblin: 'goblin', ptak: 'ptak', gryf: 'gryf', smok: 'smok' };
+const foes = Object.entries(FOE_LOOK).map(([n, [tp]]) => pxTile(FOE_W, FOE_H, foePixels(n), n, TPL_N[tp] ?? tp)).join('');
+
 const head = `<tr><th scope="col"></th>${METALS.map((m, i) => `<th scope="col">${esc(m.n)}<small>${TIER_N[tierOf(i)]}</small></th>`).join('')}</tr>`;
 const body = Object.values(SLOTS).map(sl => `<tr class="grp"><th colspan="8" scope="rowgroup">${esc(sl.n)} · ${sl.kinds.length}</th></tr>` + sl.kinds.map(([k]) => `<tr><th scope="row">${esc(k)}</th>${METALS.map((_, i) =>
   `<td><img src="${uri(itemSprite(k, tierOf(i)), itemPalette(i))}" width="16" height="16" style="--s:16" alt="${esc(k)} — ${esc(METALS[i].n)}"></td>`).join('')}</tr>`).join('')).join('');
@@ -55,7 +72,7 @@ const html = `<title>Grafiki Kuźni Legend</title>
 /* Układ: katalog warsztatu — jedna kolumna sekcji, sprite'y na płytach jak w grze, przełącznik powiększenia u góry. Jeden ciemny motyw, jak w grze. */
 :root{
   color-scheme: dark;
-  --iron:#13171c; --plate:#1b2128; --plate-2:#232b34; --rivet:#33404c; --ash:#8f9aa7; --frost:#e9edf1; --straw:#e7be62;
+  --iron:#16120f; --plate:#221b16; --plate-2:#2d241d; --rivet:#4a3c2f; --ash:#ab9a86; --frost:#f3eadc; --straw:#e7be62;
   --f-display:"Grenze Gotisch", "Times New Roman", Georgia, serif;
   --f-ui:"Barlow", "Segoe UI", system-ui, sans-serif;
   --zoom:3;
@@ -94,8 +111,8 @@ tbody th{text-align:left; font-weight:600; font-size:14px; white-space:nowrap; p
 tbody tr + tr td, tbody tr + tr th{border-top:1px solid var(--plate-2)}
 tr.grp th{text-align:left; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--straw); background:var(--plate-2); padding:6px 14px}
 .rar-tile .glow{position:relative; isolation:isolate; overflow:hidden; border-radius:10px; padding:8px; display:grid; place-items:center;
-  background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #11161b), #11161b 74%)}
-.rar-tile.r0 .glow{background:#11161b}
+  background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #140f0c), #140f0c 74%)}
+.rar-tile.r0 .glow{background:#140f0c}
 .rar-tile figcaption{color:color-mix(in srgb, var(--rc) 80%, #fff)}
 .rar-tile.r3 .glow, .rar-tile.r4 .glow, .rar-tile.r5 .glow, .rar-tile.r6 .glow{box-shadow:inset 0 0 0 1px var(--rc), 0 0 14px -2px var(--rc)}
 .rar-tile.r5 .glow::before, .rar-tile.r6 .glow::before{content:""; position:absolute; inset:-60%; z-index:-1;
@@ -136,6 +153,8 @@ tr.grp th{text-align:left; font-size:12px; letter-spacing:.1em; text-transform:u
   <section><h2>Umiejętności</h2><p>Ikony 24×24 z tłem w barwie żywiołu.</p><div class="tiles">${skills}</div></section>
   <section><h2>Tła krain</h2><p>Sceny 160×96 rysowane w kodzie (niebo z ditheringiem, warstwy sylwetek, efekty). W grze: pole walki, karty krain i okno z dropami.</p><div class="scenes">${landBgs}</div></section>
   <section><h2>Tła lochów i areny</h2><div class="scenes">${dungBgs}</div></section>
+  <section><h2>Bohater</h2><p>Postać 36×36 składana z założonego ekwipunku: hełm, zbroja, rękawice, buty, pas i amulet mają własne warstwy w kolorze rudy, a broń to ikona przedmiotu w dłoni. Tak wygląda na polu walki, w zakładce Bohater i na arenie.</p><div class="tiles">${heroes}</div></section>
+  <section><h2>Przeciwnicy</h2><p>Wrogowie 32×32 z kilkunastu szablonów (wilk, pająk, szkielet, smok…) w paletach dla każdej krainy i lochu. Patrzą w lewo, na bohatera.</p><div class="tiles">${foes}</div></section>
   <section><h2>Bossowie klanowi</h2><p>Kolosy 32×32 — jeden szablon w pięciu paletach; po każdym pokonaniu przychodzi następny, silniejszy.</p><div class="tiles">${bosses}</div></section>
   <section><h2>Badania</h2><p>Odznaki 20×20; kolor ramki to gałąź Akademii Kowalskiej.</p>${techs}</section>
 </div>

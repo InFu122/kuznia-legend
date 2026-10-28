@@ -1,10 +1,12 @@
 // Okno decyzji o nowym przedmiocie (wytop, zatrzymany auto-wytop, skrzynia bossa, Zbrojownia):
 // animacja dropu, nowy przedmiot obok założonego, różnice statystyk i przyciski Załóż / Sprzedaj.
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { ELEM, ORES, RAR, SETS, SLOTS, SUBS } from '../data';
-import { itemUrl } from '../art/render';
+import { itemUrl, resUrl } from '../art/render';
+import { sparks } from './fx';
+import { play } from './sound';
 import { sellFor } from '../engine/forge';
-import { dist, itemName, mainVal } from '../engine/formulas';
+import { dist, itemName, mainVal, maxJump } from '../engine/formulas';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
 import type { Item, SubId } from '../engine/types';
@@ -70,6 +72,65 @@ function Compare({ cur, it }: { cur: Item | undefined; it: Item }) {
   );
 }
 
+/** Przedmioty, których animację wykuwania już pokazano (żeby nie powtarzać jej po ponownym otwarciu okna). */
+const animated = new Set<number>();
+const STEP_MS = 420;
+
+/**
+ * Animacja wykuwania: młot uderza w rozżarzoną sztabę, a poświata wspina się przez kolejne rzadkości
+ * (od minimum rudy aż do wyniku). Im wyższy przeskok, tym dłuższa wspinaczka. Dotknięcie pomija animację.
+ */
+function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
+  const floor = ORES[it.ore].floor;
+  const mj = maxJump(it.ore);
+  const steps: (number | 'hot')[] = ['hot', 'hot', ...Array.from({ length: it.r - floor + 1 }, (_, i) => floor + i)];
+  const [i, setI] = useState(0);
+  const box = useRef<HTMLDivElement>(null);
+  const done = useRef(false);
+  const finish = () => { if (!done.current) { done.current = true; onDone(); } };
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+    let k = 0;
+    play('smelt');
+    sparks(box.current, 0);
+    const tick = () => {
+      k++;
+      if (k >= steps.length) {
+        if (it.r >= 3) play('rare', it.r);
+        timer = setTimeout(finish, 260);
+        return;
+      }
+      setI(k);
+      const st = steps[k];
+      play('strike', st === 'hot' ? 0 : st > floor ? st : 0);
+      sparks(box.current, st === 'hot' ? 0 : st);
+      timer = setTimeout(tick, STEP_MS);
+    };
+    let timer = setTimeout(tick, STEP_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  const st = steps[i];
+  const climbed = st !== 'hot' && st > floor;
+  return (
+    <div class={`fanim ${st === 'hot' ? 'hot' : 'r' + st}${climbed ? ' climb' : ''}`} ref={box} onClick={finish} role="button" aria-label="Pomiń animację wykuwania">
+      <span class="fa-glow" />
+      <span class="fa-ingot" key={'i' + i} />
+      <span class="fa-anvil"><Px src={resUrl('kowadlo')} size={80} /></span>
+      <span class="fa-hammer" key={'h' + i}><Px src={itemUrl('Młot', 1)} size={56} /></span>
+      <div class="fa-label" key={'l' + i}>
+        {st === 'hot' ? 'Kucie…' : <b class={`rt${st}`}>{RAR[st].n}</b>}
+      </div>
+      {climbed && <div class="fa-up" key={'u' + i}>Przeskok +{(st as number) - floor}!</div>}
+      <div class="fa-ladder" aria-hidden="true">
+        {RAR.map((_, r) => (
+          <i key={r} class={`rb-${r}${r < floor || r > floor + mj ? ' out' : ''}${st !== 'hot' && r >= floor && r <= st ? ' lit' : ''}`} />
+        ))}
+      </div>
+      <small class="fa-skip">dotknij, żeby pominąć</small>
+    </div>
+  );
+}
+
 /**
  * `src`: 'pending' — przedmiot z kowadła (wytop ręczny albo zatrzymany auto-wytop), 'found' — znaleziska
  * ze skrzyni bossa i Zbrojowni (kolejno, po jednym).
@@ -78,8 +139,18 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
   const s = game.s;
   const [more, setMore] = useState(false);
   const it = src === 'pending' ? s.pending : s.found[0];
+  const [anim, setAnim] = useState(() => !!it && src === 'pending' && !it.obieg && !animated.has(it.id));
   useEffect(() => { if (!it) close(); }, [it]);
   if (!it) return <></>;
+  if (anim) {
+    animated.add(it.id);
+    return (
+      <div class="dec forging">
+        <div class="eyebrow">{ORES[it.ore].n} · {SLOTS[it.slot].n}</div>
+        <ForgeAnim it={it} onDone={() => setAnim(false)} />
+      </div>
+    );
+  }
   const cur = s.eq[it.slot];
   const d = src === 'pending' ? game.pendingDelta() : game.foundDelta(0);
   const better = d >= 0;
