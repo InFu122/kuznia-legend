@@ -8,9 +8,10 @@ import type { Battle, DungId, Fx, GameState } from './types';
  * 4 — umiejętności, chowańce, wierzchowce, Kamienie, Pieczęcie Legendy, kolejne lochy,
  * 5 — misje, kalendarz logowania, samouczek, ustawienia dźwięku,
  * 6 — ziarna wytopu z serwera, prawdziwy Wielki Obieg,
- * 7 — życie klanu: poziom klanu, Monety i sklep klanowy, pomoc w ulepszeniach.
+ * 7 — życie klanu: poziom klanu, Monety i sklep klanowy, pomoc w ulepszeniach,
+ * 8 — auto-wytop do wybranej rzadkości, nowe tempo gry (dłuższe ulepszenia kuźni, mniej złota, rozkłady rud krain).
  */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];

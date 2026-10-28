@@ -2,9 +2,10 @@
 // Uruchom: npm run balance                  (domyślnie 48 h gry, 3 przebiegi z różnymi ziarnami)
 //          npm run balance -- 72 5          (72 h, 5 przebiegów)
 //          npm run balance -- 120 3 plain   (bot bez technologii, lochów i zestawów — punkt odniesienia)
+//          npm run balance -- 1440 2 casual (60 dni: gracz gra 3 × 1 h dziennie, resztę czasu offline)
 import ExcelJS from 'exceljs';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { B, DUNG_ORDER, LANDS, ORES, RAR, SET_FORGE_LVL, SET_IDS, TECH_IDS } from '../src/data';
+import { B, DUNG_ORDER, FORGE_AT_BOSS, LANDS, ORES, RAR, SET_FORGE_LVL, SET_IDS, TECH_IDS } from '../src/data';
 import { bossWaiting } from '../src/engine/combat';
 import { lezaBosses } from '../src/engine/dungeon';
 import { canSmelt } from '../src/engine/forge';
@@ -21,6 +22,16 @@ import type { LabDoorKind, MountId, PetId, SkillId, TechId } from '../src/engine
 const HOURS = Number(process.argv[2] ?? 48);
 const RUNS = Number(process.argv[3] ?? 3);
 const PLAIN = process.argv[4] === 'plain';
+/** Gracz „zwyczajny”: 3 sesje po godzinie dziennie (8:00, 13:00, 20:00), pomiędzy — nagrody offline. */
+const CASUAL = process.argv[4] === 'casual';
+const SESSIONS = [8, 13, 20];
+const activeAt = (ms: number) => !CASUAL || SESSIONS.includes(Math.floor(ms / 3600000) % 24);
+/** Początek najbliższej sesji po chwili `ms`. */
+function nextSession(ms: number): number {
+  const day = Math.floor(ms / 86400000) * 86400000;
+  for (let d = 0; d < 2; d++) for (const h of SESSIONS) { const at = day + d * 86400000 + h * 3600000; if (at > ms) return at; }
+  return ms + 3600000;
+}
 const STEP = 250;          // ms czasu gry na krok
 const BOSS_RETRY = 120000; // bot próbuje bossa co 2 min, gdy ma ≥ 90% zalecanej Mocy
 const TOWER_RETRY = 30 * 60000;
@@ -98,7 +109,18 @@ function runOnce(run: number, seed: number) {
   let cleared = 0;
   g.on(e => { if (e.t === 'modal') g.uiBusy = false; });
   const total = HOURS * 3600000;
+  const powerAtForge: number[] = [];
   for (let ms = 0; ms <= total; ms += STEP) {
+    if (!activeAt(ms)) {
+      // poza sesją: nagrody offline (kuźnia, badania i jaja biegną cały czas)
+      const next = Math.min(nextSession(ms), total + STEP);
+      const gap = next - ms;
+      t += gap;
+      g.offline(gap);
+      g.uiBusy = false;
+      ms = next - STEP;
+      continue;
+    }
     t += STEP;
     // strategia: najlepsza dostępna ruda, auto-wytop od 5. poziomu, ręczne decyzje wcześniej
     for (let o = ORES.length - 1; o >= 0; o--) if (canSmelt(g.ctx, o)) { g.s.oreSel = o; break; }
@@ -150,6 +172,8 @@ function runOnce(run: number, seed: number) {
       cleared = nowCleared;
     }
     if (ms % SAMPLE === 0) samples.push(g.stats.power);
+    if (powerAtForge[g.s.forge.lvl] === undefined) powerAtForge[g.s.forge.lvl] = g.stats.power;
+    powerAtForge[g.s.forge.lvl] = Math.max(powerAtForge[g.s.forge.lvl], g.stats.power);
     if (ms % 3600000 === 0) {
       const bestR = Math.max(-1, ...Object.values(g.s.eq).map(it => it?.r ?? -1));
       hours.push({
@@ -162,22 +186,27 @@ function runOnce(run: number, seed: number) {
       });
     }
   }
-  return { hours, bosses, samples };
+  return { hours, bosses, samples, powerAtForge };
 }
 
 async function main() {
   const hours: HourRow[] = [];
   const bosses: BossRow[] = [];
   const samples: number[][] = [];
+  const calib: number[][] = [];
   for (let r = 1; r <= RUNS; r++) {
     const res = runOnce(r, 1000 + r);
+    // Kalibracja: najwyższa Moc bota na poziomie kuźni oczekiwanym przy bossie krainy, względem zalecanej Mocy krainy.
+    calib.push(LANDS.map((_, i) => (res.powerAtForge[FORGE_AT_BOSS[i]] ?? NaN) / recPower(i)));
     hours.push(...res.hours);
     bosses.push(...res.bosses);
     samples.push(res.samples);
     const last = res.hours[res.hours.length - 1];
     console.log(`Przebieg ${r}${PLAIN ? ' (plain)' : ''}: po ${HOURS} h — ${last.land}, etap ${last.stage}, kuźnia ${last.forge}, Moc ${last.power}, Księgi ${last.books}, badania ${last.tech}, zestawy [${last.sets}], wieża ${last.tower}, umiejętności [${last.skills}], chowaniec ${last.pet}, wierzchowiec ${last.mount}, bossowie: ${res.bosses.length}`);
-    console.log('  bossowie (h): ' + res.bosses.map(b => b.h.toFixed(1)).join(' '));
+    console.log('  bossowie (' + (CASUAL ? 'dni' : 'h') + '): ' + res.bosses.map(b => (CASUAL ? b.h / 24 : b.h).toFixed(1)).join(' '));
   }
+  console.log('Moc przy oczekiwanym poziomie kuźni / zalecana Moc krainy (średnio):');
+  console.log('  ' + LANDS.map((_, i) => { const v = calib.map(c => c[i]).filter(x => Number.isFinite(x)); return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : '—'; }).join(' '));
   mkdirSync('balans', { recursive: true });
   writeFileSync(`balans/sim-${PLAIN ? 'plain' : 'full'}.json`, JSON.stringify({ bosses, samples, step: SAMPLE }));
 
@@ -213,10 +242,10 @@ async function main() {
 
   const ws3 = sheet('Krainy', [
     { header: '#', key: 'i', width: 5 }, { header: 'Akt', key: 'act', width: 6 }, { header: 'Kraina', key: 'n', width: 24 },
-    { header: 'Główna ruda', key: 'main', width: 16 }, { header: 'Rzadka ruda', key: 'rare', width: 18 }, { header: 'Szansa rzadkiej / fala', key: 'rc', width: 20, fmt: '0.00%' },
+    { header: 'Główna ruda', key: 'main', width: 16 }, { header: 'Rzadka ruda', key: 'rare', width: 18 }, { header: 'Rozkład rud (% dropów)', key: 'drops', width: 44 },
     { header: 'Złoto / fala (etap 5)', key: 'gold', width: 20, fmt: '#,##0' }, { header: 'Zalecana Moc', key: 'rec', width: 14, fmt: '#,##0' }, { header: 'Boss', key: 'boss', width: 22 },
   ]);
-  LANDS.forEach((L, i) => ws3.addRow({ i: i + 1, act: L.act, n: L.n, main: ORES[L.main].n, rare: ORES[L.rare].n, rc: L.rc, gold: goldWave(i * 10 + 4), rec: recPower(i), boss: L.boss }));
+  LANDS.forEach((L, i) => ws3.addRow({ i: i + 1, act: L.act, n: L.n, main: ORES[L.main].n, rare: ORES[L.rare].n, drops: L.drops.map(([o, p]) => `${ORES[o].n} ${p}%`).join(', '), gold: goldWave(i * 10 + 4), rec: recPower(i), boss: L.boss }));
 
   const ws4 = sheet('Kuźnia', [
     { header: 'Poziom', key: 'l', width: 8 }, { header: 'Koszt ulepszenia (złoto)', key: 'cost', width: 24, fmt: '#,##0' },

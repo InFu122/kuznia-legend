@@ -205,7 +205,7 @@ export interface Mods {
 }
 
 export interface OfflineReport {
-  ms: number; capped: boolean; land: number; gold: number; main: number; rare: number; el: number; books: number;
+  ms: number; capped: boolean; land: number; gold: number; ores: number[]; el: number; books: number;
   fame: number; forgeUp: number; tech: TechId | null; hatched: PetId | null; chest: { item: Item; equipped: boolean; stop?: boolean }[]; chestCount: number;
 }
 

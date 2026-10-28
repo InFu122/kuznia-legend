@@ -1,4 +1,4 @@
-import { B, LANDS } from '../data';
+import { B, LANDS, oreShares } from '../data';
 import type { Ctx } from './context';
 import { autoHandle, canSmelt, smelt, tickForge } from './forge';
 import { curG, goldWave } from './formulas';
@@ -22,14 +22,17 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   if (!waves) return null;
   const L = LANDS[s.cur.land];
   const gold = Math.round(waves * goldWave(curG(s)) * (1 + mods.goldPct / 100));
-  const main = Math.round(waves * B.ORE_DROP * (2 + mods.extraOre / 100));
-  const rare = Math.floor(waves * L.rc * (1 + mods.rarePct / 100) + ctx.rng.next());
+  // Rudy według rozkładu krainy: główna średnio 2 sztuki na drop, rzadsze po 1 (ułamki zaokrąglane losowo).
+  const ores = s.ores.map(() => 0);
+  for (const [o, p] of oreShares(L, mods.rarePct)) {
+    const per = (o === L.main ? 2 : 1) + mods.extraOre / 100;
+    ores[o] = Math.floor(waves * B.ORE_DROP * (p / 100) * per + ctx.rng.next());
+  }
   const el = L.el ? Math.floor(waves * B.ELEM_DROP) : 0;
   const books = Math.floor(waves * B.BOOK_DROP + ctx.rng.next());
   s.gold += gold;
   s.books += books;
-  s.ores[L.main] += main;
-  s.ores[L.rare] += rare;
+  ores.forEach((n, o) => { s.ores[o] += n; });
   if (L.el && el) s.els[L.el] = (s.els[L.el] ?? 0) + el;
   const fame = Math.floor(waves * 4.5);
   for (const it of Object.values(s.eq)) {
@@ -60,7 +63,7 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   invalidate(ctx);
   ctx.dirty = true;
   return {
-    ms: t, capped: ms > t, land: s.cur.land, gold, main, rare, el, books, fame,
+    ms: t, capped: ms > t, land: s.cur.land, gold, ores, el, books, fame,
     forgeUp: s.forge.lvl > before ? s.forge.lvl : 0, tech: researched, hatched, chest: chest.slice(0, 3), chestCount,
   };
 }

@@ -34,7 +34,7 @@ export const FORGE_UNLOCKS: Record<number, string> = {
  * a nie od postępu w kampanii — dzięki temu krainy stawiają ściany, które pokonuje się kuźnią i farmieniem.
  * FORGE_AT_BOSS[L] = poziom kuźni, jakiego gra oczekuje przy bossie krainy L.
  * RARITY_AT_BOSS[L] = oczekiwany średni mnożnik rzadkości ekwipunku przy bossie krainy L.
- * Łączny czas ulepszeń kuźni: poz. 10 ≈ 40 min, 20 ≈ 9 h, 25 ≈ 31 h, 30 ≈ 108 h gry.
+ * Czas ulepszeń kuźni: UPGRADE_MIN (pierwsze poziomy minuty, potem godziny i dni; łącznie do 30. poziomu ok. 55 dni).
  */
 export const FORGE_AT_BOSS = [2, 4, 7, 10, 13, 15, 18, 20, 21, 22, 24, 25, 26, 27, 29, 30];
 export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0, 3.2, 3.4, 3.8, 4.2, 4.6, 5.0, 5.6, 6.2];
@@ -42,19 +42,40 @@ export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0, 3.2, 3.4
  * Dodatkowy mnożnik siły wrogów przy bossie krainy L (zdrowie i obrażenia). Skalibrowany symulatorem:
  * gracz zbiera substaty, legendy i rzadkie rudy szybciej niż zakłada sama krzywa rzadkości.
  */
-export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.6, 1.75, 2.0, 2.65, 2.9, 3.25, 3.45, 3.45, 3.55, 3.55, 3.55, 3.7, 2.9];
+export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.9, 2.5, 3.1, 4.2, 4.6, 4.6, 4.45, 4.2, 3.85, 3.6, 3.55, 3.8, 2.9];
 /** Siła przedmiotu rośnie o 8% na poziom przedmiotu; poziom przedmiotu = 2 × poziom kuźni (+0–2). */
 export const ITEM_LVL_GROWTH = 1.08;
 
 /** Tempa testowe (przyspieszenie walki, kuźni i timerów). Z serwerem — tylko gdy serwer ma włączony tryb testowy. */
 export const TEST_SPEEDS = [1, 10, 50, 100] as const;
 
+/**
+ * Czas ulepszenia kuźni DO poziomu n (w minutach; indeks = poziom). Pierwsze poziomy szybkie (samouczek: 30 s),
+ * potem coraz dłużej: poz. 10 ≈ 2 h łącznie, 15 ≈ 18 h, 20 ≈ 5 dni, 25 ≈ 20 dni, 30 ≈ 55 dni.
+ */
+export const UPGRADE_MIN = [
+  0, 0,
+  0.5, 1, 2, 4, 7, 12, 20, 30, 45,          // 2–10
+  60, 90, 150, 240, 420,                    // 11–15: 1 h … 7 h
+  720, 960, 1200, 1560, 1920,               // 16–20: 12 h … 32 h
+  2880, 3600, 4320, 5040, 5760,             // 21–25: 2 … 4 dni
+  7200, 8640, 10080, 11520, 12960,          // 26–30: 5 … 9 dni
+];
+
+/**
+ * Złoto: ile fal walki „kosztuje” następne ulepszenie kuźni przy kuźni na poziomie f — więcej z dwóch:
+ * GOLD_WAVES × GOLD_WAVES_GROWTH^(f−1) (na starcie 50 fal) albo GOLD_TIME_K fal na minutę czasu następnego ulepszenia.
+ * Gracz grający ok. 3 h dziennie (plus nagrody offline) zbiera na ulepszenie przez ok. 60% jego czasu, reszta złota idzie na badania.
+ */
+export const GOLD_WAVES = 50;
+export const GOLD_WAVES_GROWTH = 1.2;
+export const GOLD_TIME_K = 4.5;
+
 export const B = {
   PITY_MAX: 30,                 // po tylu wytopach bez przeskoku następny przeskakuje na pewno
   FORGE_MAX: 30,
   UPGRADE_COST_BASE: 100,       // koszt(n) = 100 × 1,5^(n−1)
   UPGRADE_COST_MULT: 1.5,
-  UPGRADE_TIME_MULT: 1.285,     // czas(n) = 1,285^(n−1) min
   AUTO_FORGE_LVL: 5,
   ELEM_FORGE_LVL: 10,
   AUTO_INTERVAL_MS: 900,

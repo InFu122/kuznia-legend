@@ -1,7 +1,7 @@
 // Akademia Kowalska: badania za Księgi Wiedzy i złoto. Jeden slot badań naraz; czas biegnie też offline.
 import { B, TECH, TECH_UNLOCK_FORGE } from '../data';
 import { toast, type Ctx } from './context';
-import { upCost } from './formulas';
+import { upCost, upTime } from './formulas';
 import { techLvl } from './mods';
 import { invalidate } from './stats';
 import { track } from './missions';
@@ -14,8 +14,9 @@ export function techCost(id: TechId, l: number) {
   const T = TECH[id];
   return {
     books: T.b0 * (l + 1),
-    gold: Math.round(upCost(Math.min(B.FORGE_MAX, T.req + Math.floor(l * 1.2))) * 0.5),
-    ms: (5 + 4 * l) * 60000,
+    gold: Math.round(upCost(Math.min(B.FORGE_MAX, T.req + Math.floor(l * 1.2)))),
+    // Czas rośnie jak ulepszenia kuźni: 40% czasu ulepszenia na poziom (wymagany + 1,2 × poziom badania), co najmniej 10 min.
+    ms: Math.max(10 * 60000, Math.round(0.4 * upTime(Math.min(B.FORGE_MAX, T.req + 1 + Math.floor(l * 1.2))))),
   };
 }
 

@@ -29,7 +29,7 @@ export function LandsPanel({ game }: { game: Game }) {
                 </div>
                 {locked ? <span class="sub">Zablokowana</span> : cur ? <span class="sub">Tu walczysz</span> : <button class="btn small" onClick={() => game.goLand(i)}>Walcz tutaj</button>}
                 <div class="lm">
-                  Ruda: {ORES[L.main].n} · rzadka: {ORES[L.rare].n} {pctS(L.rc * 100)} na falę{L.el ? ' · domieszka: ' + ELEM[L.el].n : ''}
+                  Rudy: {L.drops.map(([o, p]) => `${ORES[o].n} ${pctS(p)}`).join(' · ')}{L.el ? ' · domieszka: ' + ELEM[L.el].n : ''}
                   <br />Boss: {L.boss} · zalecana Moc: <span class={cls}>{fmt(rec)}</span>
                 </div>
               </div>

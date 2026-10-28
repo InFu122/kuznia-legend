@@ -63,14 +63,16 @@ UI ──► akcje Game: smeltManual, equipPending, upgrade, research, goLand, s
 
 Siła przedmiotu = baza slotu × 1,08^poziom × mnożnik rzadkości × bonus legendy, a poziom przedmiotu = 2 × poziom kuźni. Postęp w kampanii nie podnosi siły przedmiotów, więc krainy stawiają ściany, które pokonuje się:
 
-- ulepszaniem kuźni (czas: poz. 10 ≈ 40 min, 20 ≈ 9 h, 25 ≈ 31 h, 30 ≈ 108 h gry; Wielkie miechy skracają go do 30%),
-- lepszymi rudami i przeskokami,
+- ulepszaniem kuźni (tabela `UPGRADE_MIN`: pierwsze poziomy minuty, poz. 10 ≈ 2 h łącznie, 15 ≈ 18 h, 20 ≈ 5 dni, 25 ≈ 20 dni, 30 ≈ 55 dni; Wielkie miechy skracają czas o 30%, pomoc klanu o kolejne do 30%),
+- lepszymi rudami i przeskokami (każda kraina ma rozkład rud `drops`: rudy rzadsze niż główna pojawiają się z małą szansą i rosną kraina po krainie),
 - legendami przedmiotów,
 - technologiami (Księgi Wiedzy z bossów, rzadko z fal, z Wieży Wyzwań),
 - zestawami z rud unikalnych (bossowie i Leża Bossów, wytop od 15. poziomu kuźni),
 - umiejętnościami, chowańcem i wierzchowcem (Moc liczy ich szacunkowy wkład: `skillFactor` w `stats.ts`).
 
-Wrogowie skalują się z oczekiwanej siły gracza (`forgeExp`, `rarityExp`, `extrasExp`) i kalibracji `ENEMY_SCALE_AT_BOSS`. Kalibracja zakłada gracza, który korzysta z technologii, lochów i zestawów. Symulator ma tryb `plain` (bot bez tych systemów) jako punkt odniesienia: `npm run balance -- 150 3 plain`.
+Wrogowie skalują się z oczekiwanej siły gracza (`forgeExp`, `rarityExp`, `extrasExp`) i kalibracji `ENEMY_SCALE_AT_BOSS`. Kalibracja zakłada gracza, który korzysta z technologii, lochów i zestawów. Symulator ma tryb `plain` (bot bez tych systemów) jako punkt odniesienia: `npm run balance -- 150 3 plain`, oraz tryb `casual` — gracz grający 3 × 1 h dziennie, a resztę czasu offline: `npm run balance -- 1440 2 casual` (60 dni). Tryb `casual` wypisuje też Moc bota przy oczekiwanym poziomie kuźni względem zalecanej Mocy każdej krainy (do kalibracji `ENEMY_SCALE_AT_BOSS`; cel ok. 1,3–1,5 — bot gra lepiej niż przeciętny gracz).
+
+Złoto: fala daje koszt następnego ulepszenia kuźni podzielony przez `goldWaves(f)` — więcej z: 50 × 1,2^(f−1) fal albo 4,5 fali na minutę czasu następnego ulepszenia. Gracz grający ok. 3 h dziennie zbiera na ulepszenie przez ok. 60% jego czasu; resztę wydaje na badania. Sprzedaż przedmiotu daje ok. pół fali złota (więcej za rzadsze). Czasy badań rosną jak czasy kuźni (40% czasu ulepszenia na odpowiednim poziomie, min. 10 min), koszt w złocie to koszt ulepszenia kuźni na poziomie badania.
 
 ## Zapis
 

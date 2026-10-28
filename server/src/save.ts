@@ -137,6 +137,8 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   const target = s.forge.up || s.forge.lvl;
   let meta: SaveMeta = cur && cur.value.meta ? cur.value.meta : { t0: now, f0: target, pity: [] };
   if (target < meta.f0) meta = { t0: now, f0: target, pity: meta.pity, clMax: meta.clMax }; // nowa gra od zera
+  // Zapis sprzed wersji 8 (dawne, krótsze czasy ulepszeń): tempo kuźni liczy się od teraz.
+  if (cur && (Number(cur.value.state.v) || 0) < 8) meta = { t0: now, f0: target, pity: meta.pity, clMax: meta.clMax };
   meta.clMax = Math.max(meta.clMax || 0, s.clanLvl);
   // W trybie testowym serwer nie pilnuje tempa kuźni, tylko przesuwa punkt odniesienia — po wyłączeniu
   // trybu testowego tempo liczy się od ostatniego zapisu, a nie od początku testów.

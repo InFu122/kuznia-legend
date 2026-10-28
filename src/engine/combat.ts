@@ -1,4 +1,4 @@
-import { B, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, setOfLand, skillValue } from '../data';
+import { B, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, oreShares, setOfLand, skillValue } from '../data';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
 import { allMods } from './mods';
@@ -190,17 +190,15 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   const gold = Math.round(goldWave(curG(s)) * (1 + mods.goldPct / 100));
   s.gold += gold;
   let loot = `+${fmtN(gold)} zł.`;
+  // Ruda: z części fal, według rozkładu krainy (główna 1–3 sztuki, rzadsze po 1).
   if (ctx.rng.next() < B.ORE_DROP) {
-    const nOre = ri(ctx.rng, 1, 3) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
-    s.ores[L.main] += nOre;
-    loot += ` · +${nOre} ${ORES[L.main].n}`;
-    ctx.emit({ t: 'drop', ore: L.main, n: nOre, rare: false });
-  }
-  if (ctx.rng.next() < L.rc * (1 + mods.rarePct / 100)) {
-    s.ores[L.rare]++;
-    loot += ` · ${ORES[L.rare].n}!`;
-    ctx.emit({ t: 'drop', ore: L.rare, n: 1, rare: true });
-    toast(ctx, 'Rzadka ruda: ' + ORES[L.rare].n, 'good');
+    const ore = pickOre(L, ctx.rng.next(), mods.rarePct);
+    const nOre = (ore === L.main ? ri(ctx.rng, 1, 3) : 1) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
+    const rare = ore > L.main;
+    s.ores[ore] += nOre;
+    loot += rare ? ` · ${ORES[ore].n}!` : ` · +${nOre} ${ORES[ore].n}`;
+    ctx.emit({ t: 'drop', ore, n: nOre, rare });
+    if (rare) toast(ctx, 'Rzadka ruda: ' + ORES[ore].n, 'good');
   }
   if (L.el && ctx.rng.next() < B.ELEM_DROP) {
     s.els[L.el] = (s.els[L.el] ?? 0) + 1;
@@ -280,6 +278,14 @@ function bossWon(ctx: Ctx, e: Enemy): void {
       (uniq && set ? ` · ${SETS[set].ore}!` : '') + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
     if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });
   }
+}
+
+/** Która ruda wypadła (u ∈ [0, 1)) według rozkładu krainy. */
+export function pickOre(L: (typeof LANDS)[number], u: number, rarePct = 0): number {
+  const sh = oreShares(L, rarePct);
+  let acc = 0;
+  for (const [o, p] of sh) { acc += p / 100; if (u < acc) return o; }
+  return sh[sh.length - 1][0];
 }
 
 /** Rzadkość jaja z bossa krainy (od 4. krainy). */

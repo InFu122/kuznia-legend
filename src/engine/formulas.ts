@@ -1,4 +1,4 @@
-import { B, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, ITEM_LVL_GROWTH, JUMP_TABLE, LANDS, LEGEND, ORES, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES } from '../data';
+import { B, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, JUMP_TABLE, LANDS, LEGEND, ORES, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN } from '../data';
 import type { GameState, Item } from './types';
 
 /** Globalny indeks trudności: kraina × 10 + etap (0–159). */
@@ -41,11 +41,21 @@ export const Hstar = (g: number) => (100 + 150 * lvlFactor(2 * forgeExp(g) + 1) 
 export const early = (g: number) => (g < 10 ? 0.4 + 0.06 * g : 1);
 
 export const upCost = (n: number) => Math.round(B.UPGRADE_COST_BASE * Math.pow(B.UPGRADE_COST_MULT, n - 1));
-/** Czas ulepszenia kuźni do poziomu n. Pierwsze ulepszenie trwa 30 s (samouczek). */
-export const upTime = (n: number) => (n === 2 ? 30000 : Math.pow(B.UPGRADE_TIME_MULT, n - 1) * 60000);
-/** Złoto rośnie w tempie kosztów kuźni, więc to czas ulepszeń jest główną bramką, nie złoto. */
-export const goldWave = (g: number) => Math.max(1, Math.round(upCost(Math.min(B.FORGE_MAX, Math.ceil(forgeExp(g)) + 1)) / 45));
-export const sellPrice = (it: Item) => Math.max(1, Math.round((upCost(Math.min(B.FORGE_MAX, Math.floor(it.lvl / 2) + 1)) / 70) * (1 + it.r * 0.6)));
+/** Czas ulepszenia kuźni do poziomu n (tabela UPGRADE_MIN). Pierwsze ulepszenie trwa 30 s (samouczek). */
+export const upTime = (n: number) => (UPGRADE_MIN[Math.max(2, Math.min(B.FORGE_MAX, n))] ?? 0) * 60000;
+/** Ile fal walki „kosztuje” następne ulepszenie przy kuźni na poziomie f. */
+export const goldWaves = (f: number) =>
+  Math.max(GOLD_WAVES * Math.pow(GOLD_WAVES_GROWTH, Math.max(0, f - 1)), GOLD_TIME_K * (UPGRADE_MIN[Math.min(B.FORGE_MAX, f + 1)] ?? 0));
+/** Złoto z fali na etapie g: koszt następnego ulepszenia oczekiwanej kuźni podzielony przez liczbę fal (rośnie z poziomem). */
+export const goldWave = (g: number) => {
+  const f = Math.min(B.FORGE_MAX, Math.ceil(forgeExp(g)));
+  return Math.max(1, Math.round(upCost(Math.min(B.FORGE_MAX, f + 1)) / goldWaves(f)));
+};
+/** Cena sprzedaży: mniej więcej pół fali złota za przedmiot Zwykły, więcej za rzadsze. */
+export const sellPrice = (it: Item) => {
+  const f = Math.min(B.FORGE_MAX, Math.floor(it.lvl / 2));
+  return Math.max(1, Math.round((upCost(Math.min(B.FORGE_MAX, f + 1)) / (2 * goldWaves(Math.max(1, f)))) * (1 + it.r * 0.5)));
+};
 export const recPower = (land: number) => {
   const g = land * 10 + 5;
   return Math.round((Dstar(g) * 4 * 1.08 + Hstar(g) * 0.4) * early(g));

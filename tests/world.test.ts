@@ -68,8 +68,17 @@ describe('walka i postęp', () => {
     expect(LANDS.length).toBe(16);
     for (const L of LANDS) {
       expect(L.rare).toBe(L.main + 1);
-      expect(L.rc).toBeGreaterThan(0);
+      const sum = L.drops.reduce((a, [, p]) => a + p, 0);
+      expect(sum).toBeCloseTo(100);
+      // główna ruda to najczęstsza; rzadsze pojawiają się stopniowo, bez skoku do 100%
+      expect(Math.max(...L.drops.map(([, p]) => p))).toBe(L.drops.find(([o]) => o === L.main)![1]);
+      expect(L.drops.every(([, p]) => p < 100)).toBe(true);
       expect(L.foes.length).toBeGreaterThan(0);
+    }
+    // Ruda, której nie było w poprzedniej krainie, pojawia się z małą szansą (najwyżej kilka procent).
+    for (let i = 1; i < LANDS.length; i++) {
+      const prev = new Set(LANDS[i - 1].drops.map(([o]) => o));
+      for (const [o, p] of LANDS[i].drops) if (!prev.has(o)) expect(p, `${LANDS[i].n}: ${o}`).toBeLessThanOrEqual(6);
     }
   });
 });
@@ -83,7 +92,7 @@ describe('nagrody offline', () => {
     expect(r.capped).toBe(true);
     expect(r.ms).toBe(B.OFFLINE_CAP_MS);
     expect(r.gold).toBeGreaterThan(0);
-    expect(r.main).toBeGreaterThan(0);
+    expect(r.ores.reduce((a, n) => a + n, 0)).toBeGreaterThan(0);
   });
 
   it('kończą ulepszenie kuźni i otwierają Skrzynię nocnej zmiany', () => {

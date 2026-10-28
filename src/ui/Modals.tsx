@@ -14,7 +14,7 @@ import { DecisionView } from './Decision';
 import { Px } from './Px';
 import { elemUrl, setOreUrl } from '../art/render';
 import { hasProof } from '../engine/verify';
-import { fmt, pct, tfmt } from './format';
+import { fmt, pct, pctS, tfmt } from './format';
 import { Dist } from './panels/Forge';
 import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
@@ -68,7 +68,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
             <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej część zestawu <b>{SETS[set].n}</b>. Więcej dają Leża Bossów.</p>
           )}
           {next
-            ? <p>Odblokowana kraina: <b>{next.n}</b> (Akt {ROMAN[next.act]}). Główna ruda: {ORES[next.main].n}, rzadka: {ORES[next.rare].n}.</p>
+            ? <p>Odblokowana kraina: <b>{next.n}</b> (Akt {ROMAN[next.act]}). Rudy: {next.drops.map(([o, p]) => `${ORES[o].n} ${pctS(p)}`).join(' · ')}.</p>
             : <p>Pokonałeś ostatniego bossa. Gwiezdny Krater możesz farmić dalej.</p>}
           <Close onClose={close} label="Dalej" />
         </>
@@ -128,7 +128,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
           <p class="sub">Bohater walczył w krainie {L.n} z wydajnością 50%.</p>
           <ul class="list">
             <li>{fmt(r.gold)} złota</li>
-            <li>{fmt(r.main)} × {ORES[L.main].n}{r.rare ? `, ${r.rare} × ${ORES[L.rare].n}` : ''}{r.el && L.el ? `, ${r.el} × ${ELEM[L.el].n}` : ''}</li>
+            <li>{(r.ores ?? []).map((n, o) => (n ? `${fmt(n)} × ${ORES[o].n}` : '')).filter(Boolean).join(', ') || 'bez rudy'}{r.el && L.el ? `, ${r.el} × ${ELEM[L.el].n}` : ''}</li>
             {r.books > 0 && <li>{books(r.books)}</li>}
             <li>+{fmt(r.fame)} Sławy Czynów dla każdego założonego przedmiotu</li>
             {r.forgeUp > 0 && <li>Kuźnia osiągnęła poziom {r.forgeUp}.</li>}

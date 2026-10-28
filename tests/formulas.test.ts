@@ -33,9 +33,16 @@ describe('kuźnia', () => {
     expect(upCost(2)).toBe(150);
     expect(upCost(10)).toBe(3844);
   });
-  it('najdłuższe ulepszenie trwa około doby', () => {
-    expect(upTime(30) / 3600000).toBeGreaterThan(23.5);
-    expect(upTime(30) / 3600000).toBeLessThan(24.5);
+  it('pierwsze ulepszenia trwają minuty, ostatnie dni; łącznie ok. 2 miesięcy', () => {
+    expect(upTime(2)).toBe(30000);
+    let sum = 0;
+    for (let n = 2; n <= 10; n++) sum += upTime(n);
+    expect(sum / 3600000).toBeLessThan(2.5);
+    for (let n = 3; n <= 30; n++) expect(upTime(n)).toBeGreaterThan(upTime(n - 1));
+    expect(upTime(30) / 86400000).toBeGreaterThan(7);
+    for (let n = 11; n <= 30; n++) sum += upTime(n);
+    expect(sum / 86400000).toBeGreaterThan(50);
+    expect(sum / 86400000).toBeLessThan(65);
   });
 });
 
