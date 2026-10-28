@@ -1,10 +1,11 @@
 // Galeria pixel artu (strona HTML do przeglądu): npx vite-node tools/art-gallery.ts plik.html
 import { writeFileSync } from 'node:fs';
-import { CLAN_BOSSES, ELEM, ORES, RAR, SETS, SKILLS, SLOTS, TECH, TECH_BRANCHES } from '../src/data';
+import { CLAN_BOSSES, DUNGEONS, ELEM, LANDS, ORES, RAR, SETS, SKILLS, SLOTS, TECH, TECH_BRANCHES } from '../src/data';
 import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
 import { ITEM_KINDS, METALS, itemPalette, itemSprite, tierOf } from '../src/art/items';
 import { rgba, sprite, type Palette, type Sprite } from '../src/art/pixel';
 import { halo } from '../src/art/rarity';
+import { DUNGEON_SCENES, LAND_SCENES, SCENE_H, SCENE_W, renderScene } from '../src/art/scenes';
 import { png } from './png';
 
 const out = process.argv[2] || 'galeria.html';
@@ -25,6 +26,10 @@ const elems = (Object.keys(ELEM) as (keyof typeof ELEM)[]).map(k => tile(ic(ELEM
 const sets = (Object.keys(SETS) as (keyof typeof SETS)[]).map(k => tile(ic(SET_ORE_ICONS[k]), SETS[k].ore, SETS[k].n)).join('');
 const res = Object.keys(RES_ICONS).map(k => tile(ic(RES_ICONS[k]), RES_N[k] ?? k)).join('');
 const skills = (Object.keys(SKILLS) as (keyof typeof SKILLS)[]).map(k => tile(ic(SKILL_ICONS[k]), SKILLS[k].n, RAR[SKILLS[k].r].n, 24)).join('');
+const sceneImg = (px: Uint8ClampedArray, name: string, sub: string) =>
+  `<figure class="scene"><img src="data:image/png;base64,${png(SCENE_W, SCENE_H, px).toString('base64')}" width="${SCENE_W}" height="${SCENE_H}" alt="${esc(name)}"><figcaption>${esc(name)}<small>${esc(sub)}</small></figcaption></figure>`;
+const landBgs = LAND_SCENES.map((sc, i) => sceneImg(renderScene(sc), LANDS[i].n, `akt ${LANDS[i].act}`)).join('');
+const dungBgs = Object.entries(DUNGEON_SCENES).map(([k, sc]) => sceneImg(renderScene(sc), k === 'arena' ? 'Arena' : DUNGEONS[k as keyof typeof DUNGEONS].n, k === 'arena' ? 'gracze' : 'loch')).join('');
 const bosses = CLAN_BOSSES.map((b, i) => tile(ic(BOSS_ICONS[b.pal]), b.n, `boss klanowy ${i + 1}.`, 32)).join('');
 const techs = TECH_BRANCHES.map(b => `<div class="branch"><h3>${esc(b.n)}</h3><div class="tiles">${
   (Object.keys(TECH) as (keyof typeof TECH)[]).filter(k => TECH[k].branch === b.id).map(k => tile(ic(TECH_ICONS[k]), TECH[k].n, '', 20)).join('')}</div></div>`).join('');
@@ -69,6 +74,11 @@ section{display:flex; flex-direction:column; gap:12px}
 h2{font-family:var(--f-display); font-weight:500; font-size:30px; margin:0; line-height:1.1}
 h2 + p{margin:0; color:var(--ash); max-width:65ch}
 h3{font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ash); margin:0 0 8px; font-weight:600}
+.scenes{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px}
+.scene{margin:0; background:var(--plate); border:1px solid var(--rivet); border-radius:12px; overflow:hidden}
+.scene img{display:block; width:100%; height:auto; image-rendering:pixelated}
+.scene figcaption{padding:8px 10px; font-size:13px; font-weight:600}
+.scene small{display:block; color:var(--ash); font-weight:400}
 .tiles{display:grid; grid-template-columns:repeat(auto-fill, minmax(max(108px, calc(16px * var(--zoom) + 40px)), 1fr)); gap:8px}
 .tile{margin:0; background:var(--plate); border:1px solid var(--rivet); border-radius:10px; padding:12px 8px 10px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; min-width:0}
 .tile figcaption{font-size:13px; font-weight:600; line-height:1.2; hyphens:auto; overflow-wrap:break-word}
@@ -124,6 +134,8 @@ tr.grp th{text-align:left; font-size:12px; letter-spacing:.1em; text-transform:u
     <div class="rar" aria-label="Kolory rzadkości (ramki w grze)">${RAR.map((r, i) => `<span style="--c:${['#a6afb9', '#63c470', '#55a2f2', '#b281f2', '#f39d40', '#ef5d56', '#f5da74'][i]}">${esc(r.n)}</span>`).join('')}</div>
   </section>
   <section><h2>Umiejętności</h2><p>Ikony 24×24 z tłem w barwie żywiołu.</p><div class="tiles">${skills}</div></section>
+  <section><h2>Tła krain</h2><p>Sceny 160×96 rysowane w kodzie (niebo z ditheringiem, warstwy sylwetek, efekty). W grze: pole walki, karty krain i okno z dropami.</p><div class="scenes">${landBgs}</div></section>
+  <section><h2>Tła lochów i areny</h2><div class="scenes">${dungBgs}</div></section>
   <section><h2>Bossowie klanowi</h2><p>Kolosy 32×32 — jeden szablon w pięciu paletach; po każdym pokonaniu przychodzi następny, silniejszy.</p><div class="tiles">${bosses}</div></section>
   <section><h2>Badania</h2><p>Odznaki 20×20; kolor ramki to gałąź Akademii Kowalskiej.</p>${techs}</section>
 </div>
