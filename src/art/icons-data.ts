@@ -573,6 +573,24 @@ export const RES_ICONS: Record<string, IconData> = {
     '....kBBBBBDk....',
     '.....kkkkkk.....',
   ], pal: {"k": "#120d16", "A": "#ffe48f", "B": "#e0ad3c", "C": "#b07a1c", "D": "#7a4f10", "E": "#c8902a", "F": "#a8741c", "M": "#7fb8ff", "N": "#3f7fe0", "O": "#2a58b0", "P": "#1a3a7a", "Y": "#f4f0e6", "w": "#ffffff"} },
+  'czas': { rows: [
+    '...kkkkkkkkkk...',
+    '..kaaaaaaaaaak..',
+    '..kbbbbbbbbbbk..',
+    '...kgkkkkkkgk...',
+    '...kgyyyyyygk...',
+    '....kgyyyygk....',
+    '.....kgyygk.....',
+    '......kyyk......',
+    '......kggk......',
+    '.....kgkygk.....',
+    '....kgkkykgk....',
+    '...kgkkyyykgk...',
+    '...kgyyyyyygk...',
+    '..kaaaaaaaaaak..',
+    '..kbbbbbbbbbbk..',
+    '...kkkkkkkkkk...',
+  ], pal: {"k": "#120d16", "a": "#a06c42", "b": "#6e4528", "g": "#bfe6f2", "y": "#e8b84a"} },
 };
 
 /** Umiejętności 24×24. */

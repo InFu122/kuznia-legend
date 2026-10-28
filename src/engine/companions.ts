@@ -8,7 +8,7 @@ import { baseName } from './formulas';
 import { checkLegend } from './legend';
 import { track } from './missions';
 import { pick } from './rng';
-import { invalidate } from './stats';
+import { fullStats, invalidate } from './stats';
 import type { GameState, MountId, PetId, SkillId, SlotId } from './types';
 
 export const skillsUnlocked = (s: GameState) => s.bestG >= SKILLS_UNLOCK_G;
@@ -169,4 +169,67 @@ export function useSeal(ctx: Ctx, slot: SlotId): boolean {
   toast(ctx, `${baseName(it)}: +${SEAL_FAME} Sławy Czynów`, 'good');
   ctx.dirty = true;
   return true;
+}
+
+/* ---------- „Załóż najlepsze” ---------- */
+
+/** Moc bohatera po chwilowej zmianie stanu (zmiana jest cofana). */
+function powerWith(ctx: Ctx, apply: () => void, undo: () => void): number {
+  apply();
+  const p = fullStats(ctx).power;
+  undo();
+  return p;
+}
+
+/** Zakłada umiejętności, które razem dają najwięcej Mocy. Zwraca true, gdy coś się zmieniło. */
+export function equipBestSkills(ctx: Ctx): boolean {
+  const s = ctx.s;
+  const owned = (Object.keys(s.skills.lv) as SkillId[]).filter(id => (s.skills.lv[id] ?? 0) > 0);
+  const n = Math.min(s.skills.eq.length, owned.length);
+  if (!n) return false;
+  const before = s.skills.eq.slice();
+  let best: SkillId[] = [], bp = -1;
+  const pickN = (start: number, cur: SkillId[]) => {
+    if (cur.length === n) {
+      const p = powerWith(ctx, () => { s.skills.eq = [...cur, ...Array(before.length - n).fill(null)]; }, () => { s.skills.eq = before.slice(); });
+      if (p > bp) { bp = p; best = cur.slice(); }
+      return;
+    }
+    for (let i = start; i < owned.length; i++) pickN(i + 1, [...cur, owned[i]]);
+  };
+  pickN(0, []);
+  // Zostaw kolejność slotów, w których już są wybrane umiejętności.
+  const eq: (SkillId | null)[] = before.map(id => (id && best.includes(id) ? id : null));
+  for (const id of best) if (!eq.includes(id)) eq[eq.indexOf(null)] = id;
+  const changed = eq.join() !== before.join();
+  s.skills.eq = eq;
+  invalidate(ctx);
+  if (changed) ctx.dirty = true;
+  return changed;
+}
+
+/** Wybiera chowańca, który daje najwięcej Mocy. */
+export function selectBestPet(ctx: Ctx): boolean {
+  const s = ctx.s;
+  const was = s.petSel;
+  let best = was, bp = -1;
+  for (const id of Object.keys(s.pets) as PetId[]) {
+    const p = powerWith(ctx, () => { s.petSel = id; }, () => { s.petSel = was; });
+    if (p > bp) { bp = p; best = id; }
+  }
+  if (!best || best === was) return false;
+  return selectPet(ctx, best);
+}
+
+/** Wybiera wierzchowca, który daje najwięcej Mocy. */
+export function selectBestMount(ctx: Ctx): boolean {
+  const s = ctx.s;
+  const was = s.mountSel;
+  let best = was, bp = -1;
+  for (const id of Object.keys(s.mounts) as MountId[]) {
+    const p = powerWith(ctx, () => { s.mountSel = id; }, () => { s.mountSel = was; });
+    if (p > bp) { bp = p; best = id; }
+  }
+  if (!best || best === was) return false;
+  return selectMount(ctx, best);
 }

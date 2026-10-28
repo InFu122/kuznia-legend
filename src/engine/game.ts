@@ -3,7 +3,7 @@ import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
 import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labChoose, startDungeon } from './dungeon';
-import { equipSkill, levelUp, openSaddle, openScroll, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
+import { equipBestSkills, equipSkill, levelUp, openSaddle, openScroll, selectBestMount, selectBestPet, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
 import { autoHandle, autoTarget, autoTargets, canSmelt, equip, sell, sellFor, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime } from './forge';
@@ -191,6 +191,13 @@ export class Game {
   selectMount(id: MountId | null) { const ok = selectMount(this.ctx, id); this.changed(); return ok; }
   levelUp(kind: 'pet' | 'mount', id: PetId | MountId) { const ok = levelUp(this.ctx, kind, id); this.changed(); return ok; }
   useSeal(slot: SlotId) { const ok = useSeal(this.ctx, slot); this.changed(); return ok; }
+  /** „Załóż najlepsze”: umiejętności, chowaniec albo wierzchowiec dające najwięcej Mocy. */
+  equipBest(what: 'skills' | 'pet' | 'mount'): boolean {
+    const ok = what === 'skills' ? equipBestSkills(this.ctx) : what === 'pet' ? selectBestPet(this.ctx) : selectBestMount(this.ctx);
+    toast(this.ctx, ok ? 'Założono najlepsze — Moc: ' + Math.round(this.stats.power).toLocaleString('pl-PL') : 'Masz już założone najlepsze.', ok ? 'good' : undefined);
+    this.changed();
+    return ok;
+  }
 
   /* ---------- misje, kalendarz, ustawienia ---------- */
 

@@ -73,3 +73,29 @@ describe('auto-wytop do wybranej rzadkości', () => {
     expect(s.gold).toBeGreaterThan(gold);
   });
 });
+
+import { equipBestSkills, selectBestMount, selectBestPet } from '../src/engine/companions';
+import { fullStats } from '../src/engine/stats';
+
+describe('Załóż najlepsze', () => {
+  it('umiejętności, chowaniec i wierzchowiec z największą Mocą', () => {
+    const { ctx, s } = makeGame(3);
+    s.skills.lv = { deszcz: 5, tarcza: 1, okrzyk: 8, eliksir: 1, kula: 6 };
+    s.skills.eq = ['tarcza', null, null];
+    s.pets = { wilczek: { lvl: 1, stars: 0 }, feniks: { lvl: 10, stars: 2 } };
+    s.petSel = 'wilczek';
+    s.mounts = { kon: { lvl: 1, stars: 0 }, smok: { lvl: 5, stars: 1 } };
+    s.mountSel = 'kon';
+    const p0 = fullStats(ctx).power;
+    expect(equipBestSkills(ctx)).toBe(true);
+    expect(s.skills.eq.filter(Boolean)).toHaveLength(3);
+    expect(selectBestPet(ctx)).toBe(true);
+    expect(s.petSel).toBe('feniks');
+    expect(selectBestMount(ctx)).toBe(true);
+    expect(s.mountSel).toBe('smok');
+    expect(fullStats(ctx).power).toBeGreaterThan(p0);
+    // drugi raz nic się nie zmienia
+    expect(equipBestSkills(ctx)).toBe(false);
+    expect(selectBestPet(ctx)).toBe(false);
+  });
+});

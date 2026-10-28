@@ -1,6 +1,6 @@
 import { TECH, TECH_BRANCHES, TECH_IDS, TECH_UNLOCK_FORGE } from '../../data';
-import { techUrl } from '../../art/render';
-import { Px } from '../Px';
+import { resUrl, techUrl } from '../../art/render';
+import { Costs, Px } from '../Px';
 import type { Game } from '../../engine/game';
 import { techBlock, techCost, techLvl, techText, techValue, type TechBlock } from '../../engine/tech';
 import type { TechId } from '../../engine/types';
@@ -36,7 +36,10 @@ function TechRow({ game, id }: { game: Game; id: TechId }) {
         </div>
         {block !== 'max' && (
           <div class="tech-cost">
-            {block === 'forge' ? `Od ${Math.max(T.req, TECH_UNLOCK_FORGE)}. poziomu kuźni` : `${booksShort(c.books)} · ${fmt(c.gold)} zł. · ${tfmt(c.ms)}`}
+            {block === 'forge' ? `Od ${Math.max(T.req, TECH_UNLOCK_FORGE)}. poziomu kuźni` : (
+              <Costs items={[[resUrl('ksiega'), booksShort(c.books)], [resUrl('zloto'), `${fmt(c.gold)} zł.`], [resUrl('czas'), tfmt(c.ms)]]}
+                cls={block === 'books' ? 'lack-0' : block === 'gold' ? 'lack-1' : ''} />
+            )}
           </div>
         )}
       </div>
@@ -70,11 +73,14 @@ export function ResearchPanel({ game }: { game: Game }) {
             <div class="eyebrow">Nauka</div>
             <div class="h">Akademia Kowalska</div>
           </div>
-          <span class="keys">{books(s.books)}</span>
+          <span class="keys bookbal"><Px src={resUrl('ksiega')} size={24} />{fmt(s.books)}<small>{booksShort(s.books).replace(/^[\d\s ]+/, '')}</small></span>
         </div>
         {cur ? (
           <>
-            <p class="sub">Badanie: <b>{TECH[cur.id].n}</b>, poziom {techLvl(s, cur.id) + 1} · zostało {tfmt(cur.left)}</p>
+            <div class="row tech-now">
+              <Px src={techUrl(cur.id)} size={40} />
+              <div class="cmain"><b>{TECH[cur.id].n}</b> · poziom {techLvl(s, cur.id) + 1}<div class="tech-cost"><Costs items={[[resUrl('czas'), `zostało ${tfmt(cur.left)}`]]} /></div></div>
+            </div>
             <div class="bar" style={{ marginTop: '6px' }}><i style={{ width: Math.max(0, (1 - cur.left / cur.total) * 100) + '%' }} /></div>
           </>
         ) : <p class="sub">Jedno badanie naraz. Czas biegnie także, gdy nie grasz.</p>}

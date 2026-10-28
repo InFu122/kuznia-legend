@@ -106,3 +106,27 @@ def clan_coin():
     pal = {**K, **ramp('p', ['#ffe48f', '#e0ad3c', '#b07a1c', '#7a4f10']), **ramp('q', ['#c8902a', '#a8741c', '#7e5412', '#5a3a0c']),
            **ramp('s', ['#7fb8ff', '#3f7fe0', '#2a58b0', '#1a3a7a']), 'Y': '#f4f0e6', 'w': '#ffffff'}
     return rows, pal
+
+def hourglass():
+    # Klepsydra 16×16: drewniane ramy, szkło i złoty piasek.
+    rows = [
+        "................",
+        "...aaaaaaaaaa...",
+        "...bbbbbbbbbb...",
+        "....g......g....",
+        "....gyyyyyyg....",
+        ".....gyyyyg.....",
+        "......gyyg......",
+        ".......yy.......",
+        ".......gg.......",
+        "......g.yg......",
+        ".....g..y.g.....",
+        "....g..yyy.g....",
+        "....gyyyyyyg....",
+        "...aaaaaaaaaa...",
+        "...bbbbbbbbbb...",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#a06c42', 'b': '#6e4528', 'g': '#bfe6f2', 'y': '#e8b84a'}
+    return rows, pal

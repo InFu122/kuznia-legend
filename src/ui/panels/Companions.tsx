@@ -16,6 +16,9 @@ const skillText = (id: SkillId, lvl: number) => SKILLS[id].d.replace('{v}', f1(s
 
 /* ---------- umiejętności ---------- */
 
+/** „Załóż najlepsze” — wybiera to, co daje najwięcej Mocy. */
+const BestBtn = ({ onClick }: { onClick: () => void }) => <button class="btn small primary best-btn" onClick={onClick}>Załóż najlepsze</button>;
+
 export function SkillsView({ game }: { game: Game }) {
   const s = game.s;
   if (!skillsUnlocked(s)) {
@@ -42,7 +45,7 @@ export function SkillsView({ game }: { game: Game }) {
       </section>
       {owned.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Twoje umiejętności</div>
+          <div class="row"><div class="eyebrow">Twoje umiejętności</div><BestBtn onClick={() => game.equipBest('skills')} /></div>
           <ul class="clist">
             {owned.map(id => {
               const S = SKILLS[id];
@@ -103,7 +106,7 @@ export function PetsView({ game }: { game: Game }) {
       </section>
       {owned.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Twoje chowańce</div>
+          <div class="row"><div class="eyebrow">Twoje chowańce</div><BestBtn onClick={() => game.equipBest('pet')} /></div>
           <ul class="clist">
             {owned.map(id => <PetRow key={id} game={game} id={id} />)}
           </ul>
@@ -157,7 +160,7 @@ export function MountsView({ game }: { game: Game }) {
       </section>
       {owned.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Stajnia</div>
+          <div class="row"><div class="eyebrow">Stajnia</div><BestBtn onClick={() => game.equipBest('mount')} /></div>
           <ul class="clist">{owned.map(id => <MountRow key={id} game={game} id={id} />)}</ul>
         </section>
       )}

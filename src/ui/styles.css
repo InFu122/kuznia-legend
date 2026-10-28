@@ -588,3 +588,13 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .lvltable td small{font-size:11px}
 .lvltable td small.unl{display:block; color:var(--straw); font-weight:500; max-width:110px}
 .dec .result-actions{position:sticky; bottom:-18px; margin:0 -18px; padding:10px 18px 12px; background:linear-gradient(transparent, var(--plate) 14px); z-index:2}
+
+/* koszty z ikonami */
+.costs{display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px 12px}
+.costs .cost{display:inline-flex; align-items:center; gap:4px; font-variant-numeric:tabular-nums}
+.costs .px{display:inline-block}
+.costs.lack-0 .cost:nth-child(1), .costs.lack-1 .cost:nth-child(2){color:var(--blood)}
+.bookbal{display:inline-flex; align-items:center; gap:6px; font-size:20px; font-weight:700; color:#c9b7ff}
+.bookbal small{font-size:12px; font-weight:500; color:var(--ash)}
+.tech-now{justify-content:flex-start; gap:10px; margin-top:8px}
+.tech-now .cmain{flex:1}

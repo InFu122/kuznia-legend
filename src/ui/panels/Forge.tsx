@@ -6,7 +6,7 @@ import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
 import { Brag } from '../Decision';
 import { ClanHelpLine } from './ClanLife';
-import { Px } from '../Px';
+import { Costs, Px } from '../Px';
 import { elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
 import { fmt, pct, tfmt } from '../format';
 
@@ -171,7 +171,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
               <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
               <div class="h">Ulepsz do poziomu {n}</div>
               <p class="sub">Szansa na przeskok {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
-              <p class="sub upcost"><Px src={resUrl('zloto')} size={16} />{fmt(cost)} złota · <span aria-hidden="true">⏱</span> {tfmt(game.upgradeTime())}</p>
+              <p class="sub upcost"><Costs items={[[resUrl('zloto'), `${fmt(cost)} złota`], [resUrl('czas'), tfmt(game.upgradeTime())]]} cls={s.gold < cost ? 'lack-0' : ''} /></p>
             </div>
             <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
           </div>
