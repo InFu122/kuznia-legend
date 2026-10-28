@@ -14,7 +14,7 @@ describe('walka i postęp', () => {
     // Auto-wytop staje na przeskoku; gracz zakłada przedmiot i włącza auto ponownie.
     for (let i = 0; i < 600; i++) {
       simulate(g, 1000);
-      if (s.pending) { g.equipPending(); g.toggleAuto(); }
+      if (s.pending) g.equipPending();
     }
     expect(s.cur.stage + s.cur.land * 10).toBeGreaterThan(3);
     expect(Number.isFinite(g.b.heroHp)).toBe(true);
@@ -107,7 +107,7 @@ describe('nagrody offline', () => {
     // Skrzynia kończy się na przedmiocie o wybranej rzadkości (czeka na decyzję) albo na limicie wytopów.
     if (s.pending) {
       expect(s.pending.r).toBeGreaterThanOrEqual(3);
-      expect(s.auto).toBe(false);
+      expect(s.auto).toBe(true);
       expect(r.chest[0].stop).toBe(true);
     } else expect(r.chestCount).toBe(B.OFFLINE_CHEST_MAX);
   });

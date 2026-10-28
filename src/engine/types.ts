@@ -112,7 +112,7 @@ export interface GameState {
   autoStop: number;                                    // auto-wytop zatrzymuje się na tej rzadkości (albo wyższej)
   oreSel: number;
   elSel: ElemKey | null;
-  smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string }[] };
+  smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string; k?: 'sent'; n?: number }[] };
   dungeons: Record<DungId, { day: string; keys: number; best: number }>;
   books: number;                              // Księgi Wiedzy
   uniq: Partial<Record<SetId, number>>;       // rudy unikalne

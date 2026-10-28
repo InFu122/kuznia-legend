@@ -29,16 +29,17 @@ describe('auto-wytop do wybranej rzadkości', () => {
     for (let i = 0; i < 400 && !s.pending; i++) simulate(g, 1000);
     expect(s.pending).not.toBeNull();
     expect(s.pending!.r).toBeGreaterThanOrEqual(3);
-    expect(s.auto).toBe(false);
+    expect(s.auto).toBe(true);        // auto zostaje włączony, tylko czeka na decyzję
+    expect(g.autoPaused).toBe(true);
     expect(events.some(e => e.t === 'sfx' && e.k === 'alert')).toBe(true);
     expect(events.some(e => e.t === 'modal' && e.m.kind === 'decide')).toBe(true);
     expect(Object.keys(s.eq).length).toBeGreaterThan(0);   // puste miejsca dostały przedmioty
     expect(s.gold).toBeGreaterThan(gold0);                  // reszta sprzedana
-    // z przedmiotem czekającym na decyzję auto się nie włączy
-    g.toggleAuto();
-    expect(s.auto).toBe(false);
+    // po decyzji auto-wytop jedzie dalej sam
+    const n = s.stats.smelted;
     g.equipPending();
-    g.toggleAuto();
+    simulate(g, 5000);
+    expect(s.stats.smelted).toBeGreaterThan(n);
     expect(s.auto).toBe(true);
   });
 

@@ -78,7 +78,9 @@ export class Game {
   }
 
   /** Auto-wytop jest włączony, ale brakuje wybranej rudy. */
-  get autoWaiting(): boolean { return this.s.auto && this.s.forge.lvl >= B.AUTO_FORGE_LVL && !canSmelt(this.ctx, this.s.oreSel); }
+  get autoWaiting(): boolean { return this.s.auto && this.s.forge.lvl >= B.AUTO_FORGE_LVL && !this.s.pending && !canSmelt(this.ctx, this.s.oreSel); }
+  /** Auto-wytop wstrzymany: przedmiot o wybranej rzadkości czeka na decyzję. */
+  get autoPaused(): boolean { return this.s.auto && !!this.s.pending; }
 
   /** Odstęp auto-wytopu z premią Wprawnych rąk. */
   autoInterval(): number { return B.AUTO_INTERVAL_MS / (1 + allMods(this.s).autoSpeed / 100); }
@@ -86,7 +88,7 @@ export class Game {
   private autoStep(): void {
     const ctx = this.ctx;
     const s = ctx.s;
-    if (s.pending) { s.auto = false; return; } // przedmiot czeka na decyzję gracza
+    if (s.pending) return; // przedmiot czeka na decyzję gracza — po niej auto-wytop jedzie dalej
     // Brak rudy nie wyłącza auto-wytopu: kuźnia czeka, aż wypadnie następna.
     if (!canSmelt(ctx, s.oreSel)) return;
     const it = smelt(ctx, s.oreSel, s.elSel);
@@ -97,7 +99,7 @@ export class Game {
     if (res === 'stop') {
       // Cel osiągnięty: auto staje, sygnał dźwiękowy i okno z decyzją.
       this.dispatch({ t: 'sfx', k: 'alert', r: it.r });
-      toast(ctx, `Auto-wytop zatrzymany: ${itemName(it)} (${RAR[it.r].n})!`, 'good');
+      toast(ctx, `Wybrana rzadkość! ${itemName(it)} (${RAR[it.r].n})`, 'good');
       this.dispatch({ t: 'modal', m: { kind: 'decide' } });
     } else if (it.r >= 3) this.dispatch({ t: 'sfx', k: 'rare', r: it.r });
     this.changed();
@@ -160,8 +162,9 @@ export class Game {
     this.changed();
   }
   toggleAuto(): void {
-    if (!this.s.auto && this.s.pending) { toast(this.ctx, 'Najpierw zdecyduj o wykutym przedmiocie.', 'bad'); this.dispatch({ t: 'modal', m: { kind: 'decide' } }); return; }
     this.s.auto = !this.s.auto;
+    // Włączenie przy przedmiocie czekającym na decyzję: najpierw okno decyzji, potem auto rusza samo.
+    if (this.s.auto && this.s.pending) this.dispatch({ t: 'modal', m: { kind: 'decide' } });
     this.b.autoT = 300;
     this.ctx.dirty = true;
     this.changed();

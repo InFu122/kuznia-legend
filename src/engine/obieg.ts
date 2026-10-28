@@ -15,6 +15,20 @@ export function logSmith(ctx: Ctx, msg: string): void {
   ctx.s.smith.log = ctx.s.smith.log.slice(0, 30);
 }
 
+/** Wpis „trafił do Obiegu”: kolejne takie wpisy łączą się w jeden z licznikiem (żeby nie zasypywały wieści). */
+function logSent(ctx: Ctx, name: string): void {
+  const log = ctx.s.smith.log;
+  const top = log[0];
+  if (top && top.k === 'sent') {
+    top.n = (top.n ?? 1) + 1;
+    top.t = clockStr(ctx.now());
+    top.m = name;
+    return;
+  }
+  log.unshift({ t: clockStr(ctx.now()), m: name, k: 'sent', n: 1 });
+  ctx.s.smith.log = log.slice(0, 30);
+}
+
 export function maybeObieg(ctx: Ctx, it: Item, quiet: boolean): void {
   if (it.r < 2 || it.smith !== ctx.s.name || it.obieg || ctx.rng.next() >= B.OBIEG_CHANCE) return;
   if (ctx.net) {
@@ -26,7 +40,7 @@ export function maybeObieg(ctx: Ctx, it: Item, quiet: boolean): void {
     ctx.s.smith.sent.push({ n: itemName(it), r: it.r });
     if (ctx.s.smith.sent.length > 40) ctx.s.smith.sent.shift();
   }
-  logSmith(ctx, itemName(it) + ' trafił do Wielkiego Obiegu.');
+  logSent(ctx, itemName(it));
   if (!quiet) toast(ctx, itemName(it) + ' trafił do Wielkiego Obiegu — może go znaleźć inny gracz');
 }
 

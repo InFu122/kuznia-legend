@@ -147,12 +147,12 @@ export function autoTarget(s: GameState): number {
 }
 
 /**
- * Auto-wytop: przedmiot o rzadkości docelowej (albo wyższej) i część zestawu zatrzymują auto i czekają na decyzję gracza.
- * Słabsze przedmioty są sprzedawane — chyba że miejsce jest puste (wtedy przedmiot zostaje założony).
+ * Auto-wytop: przedmiot o rzadkości docelowej (albo wyższej) i część zestawu wstrzymują auto i czekają na decyzję gracza
+ * (po decyzji auto-wytop jedzie dalej). Słabsze przedmioty są sprzedawane — chyba że miejsce jest puste (wtedy zakłada).
  */
 export function autoHandle(ctx: Ctx, it: Item, quiet: boolean): 'stop' | 'equip' | 'sell' {
   const s = ctx.s;
-  if (it.r >= autoTarget(s) || it.set) { s.pending = it; s.auto = false; ctx.dirty = true; return 'stop'; }
+  if (it.r >= autoTarget(s) || it.set) { s.pending = it; ctx.dirty = true; return 'stop'; }
   if (!s.eq[it.slot]) { equip(ctx, it, quiet); return 'equip'; }
   sell(ctx, it, quiet);
   return 'sell';

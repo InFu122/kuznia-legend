@@ -660,3 +660,10 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .card.dung.tile .info{width:26px; height:26px; flex:none}
 .arena-tile{min-height:180px; gap:8px}
 @media (max-width:340px){ .dt-name{font-size:17px} }
+
+/* wieści z Obiegu — zwięźle */
+.log.compact{gap:0; margin-top:6px}
+.log.compact li{display:grid; grid-template-columns:42px 1fr; gap:6px; background:none; border-radius:0; padding:6px 0; border-top:1px solid var(--plate-2); font-size:13px}
+.log.compact li:first-child{border-top:0}
+.log.compact li.found span{color:var(--straw)}
+.log.compact time{margin:0; padding-top:1px}

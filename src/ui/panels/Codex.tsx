@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { LANDS } from '../../data';
 import { nextSmithTitle, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
+import type { GameState } from '../../engine/types';
 import { ServerError, getLink } from '../../save/server';
 import { fmt } from '../format';
 import type { SaveInfo } from '../App';
@@ -147,12 +148,7 @@ export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; sav
         </section>
       )}
       {game.net && <AccountCard game={game} save={save} />}
-      <section class="card">
-        <div class="eyebrow">Wieści z Obiegu</div>
-        {sm.log.length ? (
-          <ul class="log" style={{ marginTop: '8px' }}>{sm.log.map((l, i) => <li key={i}><time>{l.t}</time>{l.m}</li>)}</ul>
-        ) : <p class="sub">Jeszcze nic. Sprzedaj kilka Rzadkich przedmiotów.</p>}
-      </section>
+      <ObiegNews log={sm.log} />
       <section class="card">
         <div class="eyebrow">Statystyki</div>
         <div class="stats" style={{ marginTop: '8px' }}>
@@ -202,5 +198,24 @@ export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; sav
         </div>
       </section>
     </>
+  );
+}
+
+/** Wieści z Obiegu: kilka ostatnich, zwięźle; wpisy „trafił do Obiegu” połączone w jeden z licznikiem. */
+function ObiegNews({ log }: { log: GameState['smith']['log'] }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? log : log.slice(0, 4);
+  const text = (l: GameState['smith']['log'][number]) =>
+    l.k === 'sent' ? ((l.n ?? 1) > 1 ? `Do Obiegu trafiło ${l.n} twoich przedmiotów (ostatni: ${l.m}).` : `${l.m} trafił do Wielkiego Obiegu.`) : l.m;
+  return (
+    <section class="card">
+      <div class="row">
+        <div class="eyebrow">Wieści z Obiegu</div>
+        {log.length > 4 && <button class="linkbtn" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Mniej' : `Wszystkie (${log.length})`}</button>}
+      </div>
+      {log.length ? (
+        <ul class="log compact">{shown.map((l, i) => <li key={i} class={l.k === 'sent' ? 'sent' : 'found'}><time>{l.t}</time><span>{text(l)}</span></li>)}</ul>
+      ) : <p class="sub">Jeszcze nic. Sprzedaj kilka Rzadkich przedmiotów.</p>}
+    </section>
   );
 }

@@ -39,6 +39,19 @@ export function newState(now: number): GameState {
   };
 }
 
+/** Dawne wieści „X trafił do Wielkiego Obiegu.” (po jednej na przedmiot) łączą się w jeden wpis z licznikiem. */
+function mergeSentLog(log: GameState['smith']['log']): GameState['smith']['log'] {
+  const out: GameState['smith']['log'] = [];
+  for (const l of log) {
+    const m = !l.k && typeof l.m === 'string' ? /^(.*) trafił do Wielkiego Obiegu\.$/.exec(l.m) : null;
+    const e = m ? { t: l.t, m: m[1], k: 'sent' as const, n: 1 } : l;
+    const prev = out[out.length - 1];
+    if (e.k === 'sent' && prev?.k === 'sent') prev.n = (prev.n ?? 1) + (e.n ?? 1);
+    else out.push(e);
+  }
+  return out;
+}
+
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 
 /** Uzupełnia brakujące pola starszego zapisu, żeby nowe wersje gry go wczytały. */
@@ -50,6 +63,8 @@ export function migrate(raw: unknown, now: number): GameState {
   out.forge = Object.assign(fresh.forge, isObj(raw.forge) ? raw.forge : {});
   out.cur = Object.assign(fresh.cur, isObj(raw.cur) ? raw.cur : {});
   out.smith = Object.assign(fresh.smith, isObj(raw.smith) ? raw.smith : {});
+  if (!Array.isArray(out.smith.log)) out.smith.log = [];
+  out.smith.log = mergeSentLog(out.smith.log);
   out.stats = Object.assign(fresh.stats, isObj(raw.stats) ? raw.stats : {});
   out.tech = Object.assign(fresh.tech, isObj(raw.tech) ? raw.tech : {});
   if (!isObj(out.tech.lv)) out.tech.lv = {};

@@ -126,7 +126,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
         {f.lvl >= B.AUTO_FORGE_LVL ? (
           <div class="auto2">
             <div class="row">
-              <div><b>Auto-wytop</b>{game.autoWaiting && <div class="tech-cost warn">czeka na rudę: {ORES[o].n}</div>}</div>
+              <div><b>Auto-wytop</b>{game.autoWaiting && <div class="tech-cost warn">czeka na rudę: {ORES[o].n}</div>}{game.autoPaused && <div class="tech-cost warn">czeka na twoją decyzję</div>}</div>
               <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />{s.auto ? 'Włączony' : 'Wyłączony'}</button>
             </div>
             <div class="autostop" role="radiogroup" aria-label="Zatrzymaj auto-wytop na rzadkości">
@@ -137,7 +137,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
                 </button>
               ))}
             </div>
-            <p class="sub">Słabsze przedmioty sprzedaje (do pustego miejsca zakłada). Gdy wykuje wybraną rzadkość albo część zestawu — zatrzymuje się, gra i pokazuje przedmiot do decyzji.</p>
+            <p class="sub">Słabsze przedmioty sprzedaje (do pustego miejsca zakłada). Gdy wykuje wybraną rzadkość albo część zestawu — gra i pokazuje przedmiot; po twojej decyzji kuje dalej.</p>
           </div>
         ) : (
           <div class="auto"><span>Auto-wytop odblokujesz na {B.AUTO_FORGE_LVL}. poziomie kuźni.</span></div>
