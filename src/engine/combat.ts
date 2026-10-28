@@ -165,7 +165,7 @@ function petHit(ctx: Ctx, st: Stats, e: Enemy): void {
 }
 
 function enemyHit(ctx: Ctx, st: Stats, e: Enemy): void {
-  if (ctx.rng.next() < st.dodge / 100) { ctx.emit({ t: 'float', side: 'hero', text: 'unik', cls: 'miss' }); return; }
+  if (ctx.rng.next() < st.dodge / 100) { ctx.emit({ t: 'float', side: 'hero', text: 'unik', cls: 'miss' }); ctx.emit({ t: 'sfx', k: 'dodge' }); return; }
   let d = (e.atk * rnd(ctx.rng, 0.9, 1.1)) / arena(ctx).tough;
   const fx = ctx.b.fx;
   if (fx.shield > 0) {
@@ -177,7 +177,7 @@ function enemyHit(ctx: Ctx, st: Stats, e: Enemy): void {
   ctx.emit({ t: 'bump', who: 'foe', cls: 'lunge' });
   ctx.emit({ t: 'bump', who: 'hero', cls: 'hit' });
   ctx.emit({ t: 'float', side: 'hero', text: d > 0 ? '−' + fmtN(d) : 'tarcza', cls: d > 0 ? 'hurt' : 'miss', force: e.boss });
-  if (d > 0) ctx.emit({ t: 'sfx', k: 'hurt' });
+  ctx.emit({ t: 'sfx', k: d > 0 ? 'hurt' : 'block' });
 }
 
 function onEnemyDown(ctx: Ctx, e: Enemy): void {

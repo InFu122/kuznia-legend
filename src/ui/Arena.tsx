@@ -10,6 +10,7 @@ import { fmt } from './format';
 import type { Tab } from './icons';
 import { runHint, runLabel, runMeta, runTitle } from './texts';
 import { flyOre } from './drops';
+import { play } from './sound';
 
 interface Float { id: number; text: string; cls: string; x: number; y: number }
 
@@ -80,7 +81,10 @@ export function Arena({ game, onTab, onInfo }: { game: Game; onTab: (t: Tab) => 
 
   const bg = dung ? dungeonBgUrl(dung.id) : landBgUrl(s.cur.land);
   // Po śmierci wroga przez chwilę nie ma nowego — wtedy ostatni pada i znika.
-  if (e && lastFoe.current?.e !== e) lastFoe.current = { e, id: (lastFoe.current?.id ?? 0) + 1 };
+  if (e && lastFoe.current?.e !== e) {
+    lastFoe.current = { e, id: (lastFoe.current?.id ?? 0) + 1 };
+    if (e.boss) play('bossIn'); // róg i zgiełk bitwy, gdy wychodzi boss
+  }
   const shown = e ?? lastFoe.current?.e ?? null;
   const dead = !e || e.hp <= 0;
   const best = bestRarity(s.eq);

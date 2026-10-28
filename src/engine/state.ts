@@ -31,7 +31,7 @@ export function newState(now: number): GameState {
     eggs: [0, 0, 0, 0, 0], hatch: null, pets: {}, petSel: null,
     saddles: 0, mounts: {}, mountSel: null, stones: 0, seals: 0, found: [],
     missions: { day: '', daily: [], chest: false, week: '', weekly: [] }, login: { last: '', idx: 0 }, tut: 0,
-    opts: { sound: true, vol: 0.6 },
+    opts: { sound: true, vol: 0.6, music: true, mvol: 0.5 },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0 },
     sx: 0, seeds: [], obIn: [], obOut: [],
     clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],

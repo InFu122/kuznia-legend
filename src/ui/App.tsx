@@ -20,6 +20,7 @@ import { ResearchPanel } from './panels/Research';
 import { TUTORIAL } from '../data';
 import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
+import { initMusic, moodOf, setMood, setMusic } from './music';
 
 const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['klan', 'Klan'], ['kodeks', 'Kodeks']];
 
@@ -58,7 +59,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     onReady?.();
     // Kalendarz logowania wita gracza, który już grał (nowy gracz ma najpierw wstęp i samouczek).
     if (game.s.stats.smelted > 0 && game.canClaimLogin()) { queue.current.push({ kind: 'missions', tab: 'login' }); force(x => x + 1); }
-    const unlock = () => unlockAudio();
+    const unlock = () => { unlockAudio(); initMusic(); };
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
     return () => { off(); clearInterval(id); window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
@@ -72,6 +73,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     if (step && tab === step.tab && (!top || top === 'decide')) document.querySelector(step.target)?.classList.add('tut-hl');
   });
   setSound(game.s.opts.sound, game.s.opts.vol);
+  setMusic(game.s.opts.music, game.s.opts.mvol);
+  setMood(moodOf(game.b.mode, !!game.b.enemy?.boss));
 
   // Wstęp jest dla nowego gracza — znika, gdy z serwera przyszedł zapis z postępem.
   if (queue.current[0]?.kind === 'intro' && game.s.stats.smelted > 0) queue.current.shift();

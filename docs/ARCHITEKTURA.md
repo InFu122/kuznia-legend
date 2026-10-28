@@ -80,7 +80,9 @@ Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każ
 
 ## Dźwięk
 
-`src/ui/sound.ts` syntezuje dźwięki w Web Audio (młot, przeskok, trafienia, drop rudy, boss, nagrody), więc gra nie potrzebuje plików audio. Silnik wysyła zdarzenia `sfx`, interfejs je odtwarza z ograniczeniem częstotliwości. Kontekst audio rusza przy pierwszym geście gracza (wymóg przeglądarek i WebView).
+`src/ui/sound.ts` syntezuje w Web Audio dźwięki kucia i nagród (młot, przeskok, drop rudy, boss, nagrody), a walka używa krótkich próbek z `public/audio/s-*.mp3` (zamach, cięcie, blok, róg bitewny przy wejściu bossa) z lekko losową wysokością; dopóki próbka się nie wczyta, gra syntezuje zastępczy dźwięk. Silnik wysyła zdarzenia `sfx` (także `dodge` i `block`), interfejs je odtwarza z ograniczeniem częstotliwości. Kontekst audio rusza przy pierwszym geście gracza (wymóg przeglądarek i WebView).
+
+`src/ui/music.ts` gra muzykę w tle z `public/audio/m-*.mp3`: osobne playlisty dla krain, lochów i walki z bossem (`moodOf`), płynne przejścia między utworami i krótkie ściszenie przy ważnych dźwiękach (rzadki przedmiot, boss, nagroda). Utwory grają przez dwa elementy `<audio>` (strumieniowo), a głośność ustawia węzeł Web Audio — na iPhonie element `<audio>` nie zmienia głośności. W tle karty przeglądarki muzyka staje. Ustawienia: `opts.music` i `opts.mvol` (Kodeks). Pliki są znormalizowane (muzyka −18 LUFS, 96 kb/s; efekty mono); autorzy: eBunny, Sonican, Floraphonic, Voicebosch, Magiaz (Pixabay).
 
 ## Co dalej technicznie
 

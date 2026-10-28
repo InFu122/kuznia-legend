@@ -20,7 +20,7 @@ export type LabDoorKind = 'walka' | 'elita' | 'skarb' | 'zrodlo' | 'oltarz';
 export type KryptaRuleId = 'zywioly' | 'szybkosc' | 'krew' | 'giganci';
 export type MissionKind = 'smelt' | 'wave' | 'boss' | 'jump' | 'sell' | 'equip' | 'dung' | 'research' | 'scroll';
 export interface Mission { kind: MissionKind; goal: number; n: number; claimed: boolean }
-export type SfxKind = 'smelt' | 'jump' | 'hit' | 'crit' | 'hurt' | 'skill' | 'boss' | 'win' | 'lose' | 'levelup' | 'claim' | 'rare' | 'alert';
+export type SfxKind = 'smelt' | 'jump' | 'hit' | 'crit' | 'hurt' | 'dodge' | 'block' | 'skill' | 'boss' | 'win' | 'lose' | 'levelup' | 'claim' | 'rare' | 'alert';
 
 /** Nagroda do przyznania i pokazania w podsumowaniu. */
 export interface Reward {
@@ -133,7 +133,7 @@ export interface GameState {
   missions: { day: string; daily: Mission[]; chest: boolean; week: string; weekly: Mission[] };
   login: { last: string; idx: number };                // kalendarz logowania: ostatni odbiór, następny dzień 0–6
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
-  opts: { sound: boolean; vol: number };
+  opts: { sound: boolean; vol: number; music: boolean; mvol: number };
   stats: { smelted: number; jumps: number; kills: number; bosses: number };
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …

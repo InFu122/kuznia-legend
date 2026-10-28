@@ -177,11 +177,23 @@ export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; sav
         </div>
         {s.opts.sound && (
           <label class="field" for="vol">
-            Głośność: {Math.round(s.opts.vol * 100)}%
+            Głośność dźwięków: {Math.round(s.opts.vol * 100)}%
             <input id="vol" type="range" min={0} max={100} step={5} value={Math.round(s.opts.vol * 100)}
               onInput={e => game.setSound(true, Number(e.currentTarget.value) / 100)} />
           </label>
         )}
+        <div class="row">
+          <span class="sub">Muzyka w tle: krainy, lochy, bossowie.</span>
+          <button class={`toggle${s.opts.music ? ' on' : ''}`} aria-pressed={s.opts.music} onClick={() => game.setMusic(!s.opts.music)}><span class="knob" />Muzyka</button>
+        </div>
+        {s.opts.music && (
+          <label class="field" for="mvol">
+            Głośność muzyki: {Math.round(s.opts.mvol * 100)}%
+            <input id="mvol" type="range" min={0} max={100} step={5} value={Math.round(s.opts.mvol * 100)}
+              onInput={e => game.setMusic(true, Number(e.currentTarget.value) / 100)} />
+          </label>
+        )}
+        <p class="sub credits">Muzyka: eBunny, Sonican · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
         {game.speeds.length > 1 && (
           <div class="speed-set">
             <span class="sub">Tempo testowe przyspiesza walkę, kuźnię, badania i inne timery, żeby szybciej sprawdzić progresję.{game.net ? ' Działa, bo serwer ma włączony tryb testowy.' : ''}</span>

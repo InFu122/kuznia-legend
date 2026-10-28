@@ -1,8 +1,9 @@
-// Dźwięki syntezowane w Web Audio — bez plików, więc gra zostaje jednym lekkim plikiem.
+// Dźwięki w Web Audio: kucie i nagrody są syntezowane, a walka używa krótkich próbek (public/audio/s-*.mp3).
+// Gdy próbka jeszcze się nie wczytała (albo nie ma pliku), gra syntezuje zastępczy dźwięk.
 // Przeglądarki pozwalają włączyć dźwięk dopiero po geście gracza, więc kontekst powstaje przy pierwszym dotknięciu.
 import type { SfxKind } from '../engine/types';
 
-type Kind = SfxKind | 'drop' | 'dropRare' | 'strike';
+type Kind = SfxKind | 'drop' | 'dropRare' | 'strike' | 'bossIn';
 
 let ac: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -10,7 +11,47 @@ let enabled = true;
 let volume = 0.6;
 const last: Partial<Record<Kind, number>> = {};
 /** Minimalny odstęp między powtórzeniami tego samego dźwięku (ms) — przy Tempie ×10 trafień jest bardzo dużo. */
-const GAP: Partial<Record<Kind, number>> = { hit: 110, crit: 90, hurt: 140, skill: 120, drop: 80, smelt: 60 };
+const GAP: Partial<Record<Kind, number>> = { hit: 110, crit: 90, hurt: 140, skill: 120, drop: 80, smelt: 60, dodge: 160, block: 160, bossIn: 3000 };
+
+/** Próbki dźwięków walki (pliki obok gry, w katalogu audio/). */
+const SAMPLES = { slice: 's-slice.mp3', block: 's-block.mp3', whoosh: 's-whoosh.mp3', war: 's-war.mp3' } as const;
+type SampleId = keyof typeof SAMPLES;
+const buffers: Partial<Record<SampleId, AudioBuffer>> = {};
+
+/** Adres pliku dźwiękowego — względem strony, więc działa i na serwerze, i w artefakcie. */
+export const audioUrl = (file: string) => new URL('audio/' + file, document.baseURI).href;
+
+function loadSamples(): void {
+  for (const [id, file] of Object.entries(SAMPLES) as [SampleId, string][]) {
+    fetch(audioUrl(file))
+      .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+      .then(b => ac!.decodeAudioData(b))
+      .then(buf => { buffers[id] = buf; })
+      .catch(() => { /* zostaje dźwięk syntezowany */ });
+  }
+}
+
+/** Odtwarza próbkę; `false`, gdy jej jeszcze nie ma. Lekko losowa wysokość, żeby seria trafień nie brzmiała jak jedno. */
+function sample(id: SampleId, t: number, gain: number, rate = 1, spread = 0.08): boolean {
+  const b = buffers[id];
+  if (!b || !ac || !master) return false;
+  const s = ac.createBufferSource();
+  s.buffer = b;
+  s.playbackRate.value = rate * (1 + (Math.random() * 2 - 1) * spread);
+  const g = ac.createGain();
+  g.gain.value = gain;
+  s.connect(g).connect(master);
+  s.start(t);
+  return true;
+}
+
+/** Muzyka ścisza się na chwilę przy ważnych dźwiękach (ustawia ją music.ts). */
+let duckHook: ((ms: number) => void) | null = null;
+export const setDuckHook = (fn: (ms: number) => void) => { duckHook = fn; };
+const DUCK: Partial<Record<Kind, number>> = { rare: 1800, alert: 2200, jump: 900, boss: 2200, win: 1500, lose: 1500, levelup: 1600, bossIn: 3200 };
+
+/** Kontekst audio gry (muzyka gra przez ten sam). */
+export const audioCtx = () => ac;
 
 export function setSound(on: boolean, vol: number): void {
   enabled = on;
@@ -28,6 +69,7 @@ export function unlockAudio(): void {
   master = ac.createGain();
   master.gain.value = volume * 0.5;
   master.connect(ac.destination);
+  loadSamples();
 }
 
 function tone(freq: number, t0: number, dur: number, type: OscillatorType, peak: number, endFreq?: number): void {
@@ -75,6 +117,7 @@ export function play(k: Kind, r = 0): void {
   if (GAP[k] && now - (last[k] ?? 0) < GAP[k]!) return;
   last[k] = now;
   const t = ac.currentTime + 0.005;
+  if (DUCK[k]) duckHook?.(DUCK[k]!);
   switch (k) {
     case 'smelt': clang(t); break;
     case 'strike': // uderzenie w animacji wykuwania: przy każdej wyższej rzadkości wyższy ton
@@ -88,10 +131,23 @@ export function play(k: Kind, r = 0): void {
     case 'rare':
       for (let i = 0; i <= Math.min(6, r + 1); i++) tone(PENTA[i] * 1.5, t + i * 0.06, 0.4, 'triangle', 0.09);
       break;
-    case 'hit': tone(150, t, 0.08, 'sine', 0.12, 60); noise(t, 0.03, 900, 0.08); break;
-    case 'crit': tone(220, t, 0.1, 'triangle', 0.14, 80); noise(t, 0.05, 2400, 0.16, 1.5); break;
-    case 'hurt': tone(110, t, 0.12, 'sine', 0.1, 50); break;
-    case 'skill': noise(t, 0.22, 1400, 0.14, 0.6); tone(440, t, 0.22, 'sine', 0.06, 880); break;
+    case 'hit': // zamach i cięcie
+      sample('whoosh', t, 0.32, 1.05);
+      if (!sample('slice', t + 0.05, 0.42, 1.04, 0.1)) { tone(150, t, 0.08, 'sine', 0.12, 60); noise(t, 0.03, 900, 0.08); }
+      break;
+    case 'crit': // mocniejsze, niższe cięcie z uderzeniem
+      sample('whoosh', t, 0.4, 0.9);
+      if (!sample('slice', t + 0.04, 0.7, 0.8, 0.05)) noise(t, 0.05, 2400, 0.16, 1.5);
+      tone(220, t + 0.04, 0.12, 'triangle', 0.12, 70);
+      break;
+    case 'hurt': // wróg trafia bohatera: zamach z jego strony i głuche uderzenie
+      sample('whoosh', t, 0.18, 0.75);
+      tone(110, t + 0.06, 0.14, 'sine', 0.12, 50); noise(t + 0.06, 0.05, 500, 0.08, 0.7);
+      break;
+    case 'dodge': if (!sample('whoosh', t, 0.3, 1.35)) noise(t, 0.12, 2600, 0.06, 0.6); break;
+    case 'block': if (!sample('block', t, 0.42, 1)) clang(t, 1.3, 0.12); break;
+    case 'bossIn': sample('war', t, 0.55, 1, 0); break;
+    case 'skill': noise(t, 0.22, 1400, 0.14, 0.6); tone(440, t, 0.22, 'sine', 0.06, 880); sample('whoosh', t, 0.25, 0.7); break;
     case 'drop': tone(1760, t, 0.18, 'sine', 0.08); tone(2637, t + 0.03, 0.2, 'sine', 0.05); break;
     case 'dropRare': tone(1568, t, 0.25, 'sine', 0.1); tone(2093, t + 0.08, 0.3, 'sine', 0.09); tone(3136, t + 0.16, 0.35, 'sine', 0.06); break;
     case 'boss': [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, t + i * 0.12, i === 3 ? 0.8 : 0.25, 'triangle', 0.16)); break;

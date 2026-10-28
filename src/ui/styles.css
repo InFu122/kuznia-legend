@@ -773,3 +773,4 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .actor.doll{bottom:0; flex:none; width:92px; height:96px; border-radius:12px; align-items:center; background:radial-gradient(70% 60% at 50% 80%, rgba(255,141,79,.18), transparent 70%), #140f0c; border:1px solid var(--rivet)}
 .actor.doll::before{bottom:6px}
 .actor.doll .sprite{width:84px; height:84px}
+.credits{font-size:11px; opacity:.75}
