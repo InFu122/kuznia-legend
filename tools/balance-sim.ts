@@ -102,6 +102,9 @@ function runOnce(run: number, seed: number) {
     t += STEP;
     // strategia: najlepsza dostępna ruda, auto-wytop od 5. poziomu, ręczne decyzje wcześniej
     for (let o = ORES.length - 1; o >= 0; o--) if (canSmelt(g.ctx, o)) { g.s.oreSel = o; break; }
+    // auto-wytop staje na przeskoku (cel domyślny) — bot zakłada lepszy przedmiot i jedzie dalej; znaleziska tak samo
+    if (g.s.pending) { if (g.pendingDelta() > 0) g.equipPending(); else g.sellPending(); }
+    while (g.s.found.length) g.takeFound(0, g.foundDelta(0) > 0);
     if (g.s.forge.lvl >= B.AUTO_FORGE_LVL) g.s.auto = true;
     else if (!g.s.pending && canSmelt(g.ctx, g.s.oreSel)) {
       g.smeltManual();

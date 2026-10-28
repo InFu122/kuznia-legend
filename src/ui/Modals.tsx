@@ -1,14 +1,18 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
-  B, DUNGEONS, ELEM, FORGE_UNLOCKS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
+  B, DUNGEONS, ELEM, ELEM_KEYS, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
   SKILLS, TECH, TECH_UNLOCK_FORGE, setOfLand,
 } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
 import { baseName, dist, itemName, jumpChances } from '../engine/formulas';
+import { upgradeCost, upgradeTime } from '../engine/forge';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
 import type { ModalData } from '../engine/types';
 import { ItemCard } from './ItemCard';
+import { DecisionView } from './Decision';
+import { Px } from './Px';
+import { elemUrl, setOreUrl } from '../art/render';
 import { hasProof } from '../engine/verify';
 import { fmt, pct, tfmt } from './format';
 import { Dist } from './panels/Forge';
@@ -134,7 +138,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
           {r.chestCount > 0 && (
             <>
               <div class="eyebrow">Skrzynia nocnej zmiany · {r.chestCount} wytopów</div>
-              <ul class="list">{r.chest.map(x => <li key={x.item.id} class={`rt${x.item.r}`}>{itemName(x.item)} · {RAR[x.item.r].n} — {x.equipped ? 'założony' : 'sprzedany'}</li>)}</ul>
+              <ul class="list">{r.chest.map(x => <li key={x.item.id} class={`rt${x.item.r}`}>{itemName(x.item)} · {RAR[x.item.r].n} — {x.stop ? 'wybrana rzadkość! czeka na twoją decyzję' : x.equipped ? 'założony' : 'sprzedany'}</li>)}</ul>
             </>
           )}
           <Close onClose={close} label="Do kuźni" />
@@ -170,7 +174,11 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         </>
       );
     case 'found':
-      return <FoundView game={game} close={close} />;
+      return <DecisionView game={game} src="found" close={close} />;
+    case 'decide':
+      return <DecisionView game={game} src="pending" close={close} />;
+    case 'mix':
+      return <MixView game={game} what={m.what} close={close} />;
     case 'missions':
       return <MissionsView game={game} initial={m.tab} close={close} />;
     case 'ranking':
@@ -238,59 +246,84 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
   }
 }
 
-function FoundView({ game, close }: { game: Game; close: () => void }) {
-  const found = game.s.found;
-  if (!found.length) return <><div class="h">Wszystko rozdzielone</div><Close onClose={close} label="Zamknij" /></>;
+/** Wybór domieszki żywiołu albo rudy unikalnej do wytopu — osobno od wyboru rudy, żeby nie zaznaczyć jej przypadkiem. */
+function MixView({ game, what, close }: { game: Game; what: 'el' | 'set'; close: () => void }) {
+  const s = game.s;
+  const pick = (fn: () => void) => { fn(); close(); };
+  if (what === 'el') {
+    const keys = ELEM_KEYS.filter(k => (s.els[k] ?? 0) > 0);
+    return (
+      <>
+        <div class="eyebrow">Domieszka żywiołu</div>
+        <div class="h">Co dodać do wytopu?</div>
+        <p class="sub">Domieszka nadaje przedmiotowi żywioł i dodatkowy efekt. Każdy wytop zużywa jedną sztukę. Nie zmienia szans na rzadkość.</p>
+        <div class="mixlist">
+          <button class={`mixopt${!s.elSel ? ' on' : ''}`} onClick={() => pick(() => game.setElem(null))}><span class="mx-n">Bez domieszki</span></button>
+          {keys.map(k => (
+            <button key={k} class={`mixopt${s.elSel === k ? ' on' : ''}`} onClick={() => pick(() => game.setElem(k))}>
+              <Px src={elemUrl(k)} size={32} />
+              <span class="mx-n">{ELEM[k].n} <small>· masz {fmt(s.els[k] ?? 0)}</small></span>
+              <small class="mx-d">{ELEM[k].el}: {ELEM[k].d}</small>
+            </button>
+          ))}
+        </div>
+        {keys.length === 0 && <p class="sub">Nie masz jeszcze domieszek. Wypadają w krainach z żywiołem (część fal).</p>}
+        <button class="btn" onClick={close}>Anuluj</button>
+      </>
+    );
+  }
+  const keys = SET_IDS.filter(k => (s.uniq[k] ?? 0) > 0);
   return (
     <>
-      <div class="eyebrow">Zapomniana Zbrojownia</div>
-      <div class="h">Znaleziska: {found.length}</div>
-      <p class="sub">Każdy przedmiot ma historię dawnego właściciela. Załóż go albo sprzedaj; niezdecydowane czekają w Kuźni.</p>
-      {found.map((it, i) => {
-        const d = game.foundDelta(i);
-        return (
-          <div key={it.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <ItemCard it={it} delta={d} history />
-            <div class="result-actions">
-              <button class={`btn${d >= 0 ? ' primary' : ''}`} onClick={() => game.takeFound(i, true)}>Załóż</button>
-              <button class={`btn${d < 0 ? ' primary' : ''}`} onClick={() => game.takeFound(i, false)}>Sprzedaj</button>
-            </div>
-          </div>
-        );
-      })}
-      <button class="btn" onClick={close}>Zdecyduję później</button>
+      <div class="eyebrow">Ruda unikalna</div>
+      <div class="h">Część zestawu?</div>
+      <p class="sub">Ruda unikalna robi z wytopu część zestawu w miejscu, w którym jeszcze go nie nosisz, z pewnym przeskokiem o co najmniej 1 rzadkość. Każdy wytop zużywa jedną sztukę.</p>
+      <div class="mixlist">
+        <button class={`mixopt${!s.uniqSel ? ' on' : ''}`} onClick={() => pick(() => game.setUniq(null))}><span class="mx-n">Bez zestawu</span></button>
+        {keys.map(k => (
+          <button key={k} class={`mixopt${s.uniqSel === k ? ' on' : ''}`} onClick={() => pick(() => game.setUniq(k))}>
+            <Px src={setOreUrl(k)} size={32} />
+            <span class="mx-n" style={{ color: SETS[k].col }}>{SETS[k].ore} <small>· masz {fmt(s.uniq[k] ?? 0)}</small></span>
+            <small class="mx-d">{SETS[k].n}: 2 części — {SETS[k].d2}; 4 części — {SETS[k].d4}</small>
+          </button>
+        ))}
+      </div>
+      {keys.length === 0 && <p class="sub">Rudy unikalne dają bossowie krain z zestawem i Leża Bossów.</p>}
+      <button class="btn" onClick={close}>Anuluj</button>
     </>
   );
 }
 
 function LevelInfo({ game, close }: { game: Game; close: () => void }) {
-  const lvl = game.s.forge.lvl;
-  const pts = [1, 5, 10, 15, 20, 25, 30];
-  if (!pts.includes(lvl)) pts.push(lvl);
-  pts.sort((a, b) => a - b);
+  const s = game.s;
+  const lvl = s.forge.lvl;
+  const rel = techMods(s).jumpRel;
+  const rows = Array.from({ length: B.FORGE_MAX }, (_, i) => i + 1);
   return (
     <>
-      <div class="eyebrow">Kuźnia</div>
-      <div class="h">Poziom kuźni</div>
-      <p class="sub">Każdy poziom podnosi szansę, że wytop przeskoczy ponad minimum rudy, i co kilka poziomów otwiera wytop szlachetniejszej rudy. Ulepszenie kosztuje złoto i trwa określony czas; kuźnia przez cały ten czas działa normalnie.</p>
-      <div class="otable-wrap">
+      <div class="eyebrow">Kuźnia · poziom {lvl}</div>
+      <div class="h">Co daje poziom kuźni</div>
+      <p class="sub">Każdy poziom podnosi szansę, że wytop przeskoczy ponad minimalną rzadkość rudy, i co kilka poziomów otwiera wytop szlachetniejszej rudy. Wyższa kuźnia to też wyższy poziom przedmiotów (2 poziomy przedmiotu na poziom kuźni, każdy +8% statystyki głównej). Kuźnia działa normalnie w trakcie ulepszania.</p>
+      <div class="otable-wrap lvltable">
         <table class="otable">
-          <thead><tr><th>Poziom</th><th>Przeskok o 1</th><th>o 2</th><th>Odblokowuje</th></tr></thead>
+          <thead><tr><th>Poz.</th><th>Przeskok</th><th>Zmiana</th><th>Ulepszenie</th></tr></thead>
           <tbody>
-            {pts.map(l => {
-              const [p1, p2] = jumpChances(l);
+            {rows.map(l => {
+              const [p1, p2] = jumpChances(l, rel);
+              const [q1, q2] = l > 1 ? jumpChances(l - 1, rel) : [p1, p2];
               return (
-                <tr key={l} class={l === lvl ? 'sel' : ''}>
-                  <td class="oname">{l}{l === lvl ? ' · teraz' : ''}</td>
-                  <td>{pct(p1)}</td><td>{pct(p2)}</td>
-                  <td>{l === 1 ? 'Miedź, Żelazo' : FORGE_UNLOCKS[l] ?? '—'}</td>
+                <tr key={l} class={l === lvl ? 'sel' : l < lvl ? 'done' : ''}>
+                  <td class="oname">{l}{l === lvl ? ' ◀' : ''}{(l === 1 || FORGE_UNLOCKS[l]) && <small class="unl">{l === 1 ? 'Miedź, Żelazo' : FORGE_UNLOCKS[l]}</small>}</td>
+                  <td>{pct(p1 + p2)}<small class="muted"> ({pct(p2)} o 2)</small></td>
+                  <td class="up">{l > 1 ? '+' + pct(p1 + p2 - q1 - q2) : '—'}</td>
+                  <td>{l === 1 ? '—' : <>{tfmt(upgradeTime(s, l))}<br /><small class="muted">{fmt(upgradeCost(s, l))} zł</small></>}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      <p class="sub">Szanse między wypisanymi poziomami rosną płynnie. Koszt rośnie o połowę z każdym poziomem, czas o mniej więcej 28%.</p>
+      <p class="sub">„Przeskok” to łączna szansa na rzadkość wyższą niż minimum rudy (w nawiasie: o dwie). {rel ? `Wliczona premia Hartowania: +${pct(rel)} względnie.` : ''}</p>
       <Close onClose={close} label="Rozumiem" />
     </>
   );

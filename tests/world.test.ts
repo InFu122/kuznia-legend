@@ -11,7 +11,11 @@ describe('walka i postęp', () => {
     s.forge.lvl = 5;
     s.ores[0] = 40; s.ores[1] = 40;
     s.auto = true;
-    simulate(g, 10 * 60 * 1000);
+    // Auto-wytop staje na przeskoku; gracz zakłada przedmiot i włącza auto ponownie.
+    for (let i = 0; i < 600; i++) {
+      simulate(g, 1000);
+      if (s.pending) { g.equipPending(); g.toggleAuto(); }
+    }
     expect(s.cur.stage + s.cur.land * 10).toBeGreaterThan(3);
     expect(Number.isFinite(g.b.heroHp)).toBe(true);
     expect(Number.isFinite(s.gold)).toBe(true);
@@ -86,10 +90,17 @@ describe('nagrody offline', () => {
     const { ctx, s } = makeGame();
     s.forge.lvl = 5; s.forge.up = 6; s.forge.left = 60000;
     s.auto = true; s.ores[1] = 1000;
+    s.autoStop = 3; // Epicki z Żelaza: tylko przeskok o 2
     const r = applyOffline(ctx, 2 * 3600 * 1000)!;
     expect(s.forge.lvl).toBe(6);
     expect(r.forgeUp).toBe(6);
-    expect(r.chestCount).toBe(B.OFFLINE_CHEST_MAX);
+    expect(r.chestCount).toBeGreaterThan(0);
+    // Skrzynia kończy się na przedmiocie o wybranej rzadkości (czeka na decyzję) albo na limicie wytopów.
+    if (s.pending) {
+      expect(s.pending.r).toBeGreaterThanOrEqual(3);
+      expect(s.auto).toBe(false);
+      expect(r.chest[0].stop).toBe(true);
+    } else expect(r.chestCount).toBe(B.OFFLINE_CHEST_MAX);
   });
 });
 

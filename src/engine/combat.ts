@@ -5,7 +5,7 @@ import { allMods } from './mods';
 import { Dstar, Hstar, curG, early, gOf, goldWave } from './formulas';
 import { addFame } from './legend';
 import { takeObieg } from './obieg';
-import { sell } from './forge';
+import { addFound } from './forge';
 import { pick, ri, rnd } from './rng';
 import { invalidate, stats } from './stats';
 import { grant } from './reward';
@@ -257,7 +257,8 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   const extra = bossExtras(ctx, land, first);
   grant(ctx, extra);
   const found = ctx.rng.next() < B.OBIEG_FIND_FROM_BOSS ? takeObieg(ctx) : null;
-  if (found) { if (!s.pending) s.pending = found; else sell(ctx, found, true); }
+  // Przedmiot ze skrzyni bossa czeka na decyzję gracza (auto-wytop nigdy go nie zakłada ani nie sprzedaje).
+  if (found) addFound(ctx, [found]);
   b.enemy = null;
   b.heroHp = b.heroMax;
   b.pause = 600;
@@ -271,11 +272,13 @@ function bossWon(ctx: Ctx, e: Enemy): void {
       s.bestG = Math.max(s.bestG, gOf(land + 1, 1));
     } else s.cur = { land, stage: 1, wave: 1 };
     ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, found: !!found, books, uniq, extra } });
+    if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });
   } else {
     s.cur.stage = 1;
     s.cur.wave = 1;
     toast(ctx, `Pokonano: ${L.boss} · +${fmtN(gold)} złota, ${n} × ${ORES[L.rare].n}` + (books ? ', Księga Wiedzy' : '') +
       (uniq && set ? ` · ${SETS[set].ore}!` : '') + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
+    if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });
   }
 }
 

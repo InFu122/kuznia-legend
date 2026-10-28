@@ -1,6 +1,6 @@
 import { B, LANDS } from '../data';
 import type { Ctx } from './context';
-import { canSmelt, decideAuto, smelt, tickForge } from './forge';
+import { autoHandle, canSmelt, smelt, tickForge } from './forge';
 import { curG, goldWave } from './formulas';
 import { checkLegend } from './legend';
 import { allMods } from './mods';
@@ -45,15 +45,17 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   const hatched = tickHatch(ctx, ms, true); // jaja wykluwają się przez cały czas nieobecności, bez limitu
   const chest: OfflineReport['chest'] = [];
   let chestCount = 0;
-  if (s.auto && s.forge.lvl >= B.AUTO_FORGE_LVL) {
+  // Auto-wytop pracuje dalej, aż wykuje przedmiot o wybranej rzadkości (ten czeka na decyzję gracza).
+  if (s.auto && !s.pending && s.forge.lvl >= B.AUTO_FORGE_LVL) {
     while (chestCount < B.OFFLINE_CHEST_MAX && canSmelt(ctx, s.oreSel)) {
       const item = smelt(ctx, s.oreSel, null);
       if (!item) break;
-      const equipped = decideAuto(ctx, item, true);
-      chest.push({ item, equipped });
+      const res = autoHandle(ctx, item, true);
+      chest.push({ item, equipped: res === 'equip', stop: res === 'stop' });
       chestCount++;
+      if (res === 'stop') break;
     }
-    chest.sort((a, b) => b.item.r - a.item.r);
+    chest.sort((a, b) => Number(!!b.stop) - Number(!!a.stop) || b.item.r - a.item.r);
   }
   invalidate(ctx);
   ctx.dirty = true;

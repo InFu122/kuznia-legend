@@ -6,7 +6,7 @@ import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labC
 import { equipSkill, levelUp, openSaddle, openScroll, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
-import { canSmelt, decideAuto, equip, sell, sellFor, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime } from './forge';
+import { autoHandle, autoTarget, autoTargets, canSmelt, equip, sell, sellFor, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime } from './forge';
 import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
@@ -31,7 +31,8 @@ export class Game {
   maxSpeed: number;
   /** Tempo wybrane przez gracza, przywracane, gdy serwer pozwoli (np. po ponownym uruchomieniu gry). */
   private wantSpeed = 1;
-  lastAuto: { item: Item; equipped: boolean } | null = null;
+  /** Ostatni przedmiot z auto-wytopu i co się z nim stało. */
+  lastAuto: { item: Item; res: 'equip' | 'sell' | 'stop' } | null = null;
 
   constructor(state: GameState, opts: { rng?: Rng; now?: () => number; net?: boolean } = {}) {
     const now = opts.now ?? (() => Date.now());
@@ -85,20 +86,30 @@ export class Game {
   private autoStep(): void {
     const ctx = this.ctx;
     const s = ctx.s;
-    if (s.pending) {
-      const it = s.pending;
-      s.pending = null;
-      this.lastAuto = { item: it, equipped: decideAuto(ctx, it, true) };
-    }
+    if (s.pending) { s.auto = false; return; } // przedmiot czeka na decyzję gracza
     // Brak rudy nie wyłącza auto-wytopu: kuźnia czeka, aż wypadnie następna.
     if (!canSmelt(ctx, s.oreSel)) return;
     const it = smelt(ctx, s.oreSel, s.elSel);
     if (!it) return;
-    const equipped = decideAuto(ctx, it, false);
-    this.lastAuto = { item: it, equipped };
+    const res = autoHandle(ctx, it, true);
+    this.lastAuto = { item: it, res };
     this.dispatch({ t: 'forged', item: it });
-    if (it.r >= 4) toast(ctx, `${equipped ? 'Założono' : 'Sprzedano'}: ${itemName(it)} (${RAR[it.r].n})`, 'good');
-    if (it.r >= 3) this.dispatch({ t: 'sfx', k: 'rare', r: it.r });
+    if (res === 'stop') {
+      // Cel osiągnięty: auto staje, sygnał dźwiękowy i okno z decyzją.
+      this.dispatch({ t: 'sfx', k: 'alert', r: it.r });
+      toast(ctx, `Auto-wytop zatrzymany: ${itemName(it)} (${RAR[it.r].n})!`, 'good');
+      this.dispatch({ t: 'modal', m: { kind: 'decide' } });
+    } else if (it.r >= 3) this.dispatch({ t: 'sfx', k: 'rare', r: it.r });
+    this.changed();
+  }
+
+  /** Rzadkości do wyboru dla auto-wytopu z wybranej rudy i aktualny cel. */
+  autoTargets(): number[] { return autoTargets(this.s.oreSel); }
+  autoTarget(): number { return autoTarget(this.s); }
+  setAutoStop(r: number): void {
+    if (!autoTargets(this.s.oreSel).includes(r)) return;
+    this.s.autoStop = r;
+    this.ctx.dirty = true;
     this.changed();
   }
 
@@ -113,7 +124,7 @@ export class Game {
     this.lastAuto = null;
     this.dispatch({ t: 'forged', item: it });
     this.dispatch({ t: 'sfx', k: it.jump ? 'jump' : 'smelt', r: it.r });
-    if (it.r >= 4) toast(ctx, `Wykuto: ${itemName(it)} (${RAR[it.r].n})!`, 'good');
+    this.dispatch({ t: 'modal', m: { kind: 'decide' } });
     this.changed();
     return it;
   }
@@ -148,7 +159,13 @@ export class Game {
     this.ctx.dirty = true;
     this.changed();
   }
-  toggleAuto(): void { this.s.auto = !this.s.auto; this.b.autoT = 300; this.ctx.dirty = true; this.changed(); }
+  toggleAuto(): void {
+    if (!this.s.auto && this.s.pending) { toast(this.ctx, 'Najpierw zdecyduj o wykutym przedmiocie.', 'bad'); this.dispatch({ t: 'modal', m: { kind: 'decide' } }); return; }
+    this.s.auto = !this.s.auto;
+    this.b.autoT = 300;
+    this.ctx.dirty = true;
+    this.changed();
+  }
   upgrade(): void {
     if (startUpgrade(this.ctx)) toast(this.ctx, `Ulepszanie kuźni do poziomu ${this.s.forge.up}`);
     this.changed();
@@ -339,7 +356,11 @@ export class Game {
   /** Wywołaj po powrocie do gry: nalicza nagrody offline i pokazuje podsumowanie. */
   offline(ms: number): void {
     const report = applyOffline(this.ctx, ms);
-    if (report) this.dispatch({ t: 'modal', m: { kind: 'offline', report } });
+    if (report) {
+      this.dispatch({ t: 'modal', m: { kind: 'offline', report } });
+      // Skrzynia nocnej zmiany zatrzymała się na wybranej rzadkości — przedmiot czeka na decyzję.
+      if (report.chest.some(x => x.stop) && this.s.pending) this.dispatch({ t: 'modal', m: { kind: 'decide' } });
+    }
     this.changed();
   }
   /** Podmiana stanu (np. nowszy zapis z chmury). */

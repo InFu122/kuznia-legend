@@ -20,7 +20,7 @@ export type LabDoorKind = 'walka' | 'elita' | 'skarb' | 'zrodlo' | 'oltarz';
 export type KryptaRuleId = 'zywioly' | 'szybkosc' | 'krew' | 'giganci';
 export type MissionKind = 'smelt' | 'wave' | 'boss' | 'jump' | 'sell' | 'equip' | 'dung' | 'research' | 'scroll';
 export interface Mission { kind: MissionKind; goal: number; n: number; claimed: boolean }
-export type SfxKind = 'smelt' | 'jump' | 'hit' | 'crit' | 'hurt' | 'skill' | 'boss' | 'win' | 'lose' | 'levelup' | 'claim' | 'rare';
+export type SfxKind = 'smelt' | 'jump' | 'hit' | 'crit' | 'hurt' | 'skill' | 'boss' | 'win' | 'lose' | 'levelup' | 'claim' | 'rare' | 'alert';
 
 /** Nagroda do przyznania i pokazania w podsumowaniu. */
 export interface Reward {
@@ -109,6 +109,7 @@ export interface GameState {
   cleared: boolean[];
   bestG: number;
   auto: boolean;
+  autoStop: number;                                    // auto-wytop zatrzymuje się na tej rzadkości (albo wyższej)
   oreSel: number;
   elSel: ElemKey | null;
   smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string }[] };
@@ -205,7 +206,7 @@ export interface Mods {
 
 export interface OfflineReport {
   ms: number; capped: boolean; land: number; gold: number; main: number; rare: number; el: number; books: number;
-  fame: number; forgeUp: number; tech: TechId | null; hatched: PetId | null; chest: { item: Item; equipped: boolean }[]; chestCount: number;
+  fame: number; forgeUp: number; tech: TechId | null; hatched: PetId | null; chest: { item: Item; equipped: boolean; stop?: boolean }[]; chestCount: number;
 }
 
 export type ModalData =
@@ -216,6 +217,8 @@ export type ModalData =
   | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward; items: number }
   | { kind: 'labChoice'; room: number; doors: LabDoorOpt[]; loot: Reward }
   | { kind: 'found' }
+  | { kind: 'decide' }
+  | { kind: 'mix'; what: 'el' | 'set' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
   | { kind: 'ranking' }
   | { kind: 'arena' }

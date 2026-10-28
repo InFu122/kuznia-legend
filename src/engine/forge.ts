@@ -132,6 +132,32 @@ export function advancesSet(s: GameState, it: Item): boolean {
  * Auto-wytop: zakłada przedmiot, jeśli podnosi Moc; w przeciwnym razie sprzedaje.
  * Część zestawu, która przybliża premię za 2 lub 4 części, zostaje założona, jeśli traci najwyżej 5% Mocy.
  */
+/**
+ * Rzadkości, na których może zatrzymać się auto-wytop z rudy `ore`: wyższe niż minimalna rzadkość rudy
+ * (ruda bez przeskoku — tylko jej rzadkość).
+ */
+export function autoTargets(ore: number): number[] {
+  const f = ORES[ore].floor, top = Math.min(6, f + maxJump(ore));
+  return top === f ? [f] : Array.from({ length: top - f }, (_, i) => f + 1 + i);
+}
+/** Rzadkość, na której auto-wytop się zatrzyma (wybór gracza dopasowany do wybranej rudy). */
+export function autoTarget(s: GameState): number {
+  const t = autoTargets(s.oreSel);
+  return t.includes(s.autoStop) ? s.autoStop : t[0];
+}
+
+/**
+ * Auto-wytop: przedmiot o rzadkości docelowej (albo wyższej) i część zestawu zatrzymują auto i czekają na decyzję gracza.
+ * Słabsze przedmioty są sprzedawane — chyba że miejsce jest puste (wtedy przedmiot zostaje założony).
+ */
+export function autoHandle(ctx: Ctx, it: Item, quiet: boolean): 'stop' | 'equip' | 'sell' {
+  const s = ctx.s;
+  if (it.r >= autoTarget(s) || it.set) { s.pending = it; s.auto = false; ctx.dirty = true; return 'stop'; }
+  if (!s.eq[it.slot]) { equip(ctx, it, quiet); return 'equip'; }
+  sell(ctx, it, quiet);
+  return 'sell';
+}
+
 export function decideAuto(ctx: Ctx, it: Item, quiet: boolean): boolean {
   const d = powerDelta(ctx, it);
   const better = d > 0 || (advancesSet(ctx.s, it) && d > -0.05 * stats(ctx).power);
@@ -167,3 +193,13 @@ export function tickForge(ctx: Ctx, ms: number, quiet = false): boolean {
 export const elemName = (k: ElemKey) => ELEM[k].n;
 export const setName = (id: SetId) => SETS[id].n;
 export { itemName };
+
+/** Najwięcej znalezisk czekających na decyzję; nadmiar (najstarsze) idzie na sprzedaż. */
+const FOUND_MAX = 20;
+/** Znaleziska (skrzynia bossa, Zbrojownia) do decyzji gracza. */
+export function addFound(ctx: Ctx, items: Item[]): void {
+  const s = ctx.s;
+  s.found.push(...items);
+  while (s.found.length > FOUND_MAX) sell(ctx, s.found.shift()!, true);
+  ctx.dirty = true;
+}

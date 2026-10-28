@@ -68,7 +68,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   const step = tutStep(game.s);
   useEffect(() => {
     document.querySelectorAll('.tut-hl').forEach(el => el.classList.remove('tut-hl'));
-    if (step && tab === step.tab && !queue.current.length) document.querySelector(step.target)?.classList.add('tut-hl');
+    const top = queue.current[0]?.kind;
+    if (step && tab === step.tab && (!top || top === 'decide')) document.querySelector(step.target)?.classList.add('tut-hl');
   });
   setSound(game.s.opts.sound, game.s.opts.vol);
 
@@ -133,7 +134,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           </section>
         )}
         <main class="panel" ref={panelRef}>
-          {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} onFound={() => open({ kind: 'found' })} />}
+          {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} onFound={() => open({ kind: 'found' })} onMix={what => open({ kind: 'mix', what })} onDecide={() => open({ kind: 'decide' })} />}
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} />}
@@ -153,7 +154,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </div>
       </nav>
       {modal && (
-        <ModalShell locked={modal.kind === 'dungChoice' || modal.kind === 'labChoice'} onClose={close}>
+        <ModalShell locked={modal.kind === 'dungChoice' || modal.kind === 'labChoice' || modal.kind === 'decide'} onClose={close}>
           <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} />
         </ModalShell>
       )}

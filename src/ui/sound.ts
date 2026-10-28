@@ -95,5 +95,10 @@ export function play(k: Kind, r = 0): void {
     case 'lose': tone(392, t, 0.3, 'triangle', 0.12, 330); tone(311, t + 0.25, 0.5, 'triangle', 0.12, 247); break;
     case 'levelup': tone(330, t, 0.4, 'sawtooth', 0.05, 990); clang(t + 0.35, 1.25, 0.18); break;
     case 'claim': tone(987.77, t, 0.12, 'square', 0.05); tone(1318.5, t + 0.08, 0.3, 'square', 0.05); break;
+    case 'alert': // dzwon: auto-wytop zatrzymany na wybranej rzadkości
+      clang(t, 1.5, 0.2);
+      [783.99, 1046.5, 1318.5, 1567.98].forEach((f, i) => { tone(f, t + 0.1 + i * 0.11, 0.6, 'sine', 0.14); tone(f * 2.01, t + 0.1 + i * 0.11, 0.3, 'sine', 0.04); });
+      for (let i = 0; i <= Math.min(6, r); i++) tone(PENTA[i] * 2, t + 0.6 + i * 0.05, 0.3, 'triangle', 0.06);
+      break;
   }
 }

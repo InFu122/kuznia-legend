@@ -7,7 +7,7 @@ import {
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import type { Ctx } from './context';
 import { Dstar, Hstar, early, goldWave, legStage, todayStr } from './formulas';
-import { rollSubs } from './forge';
+import { addFound, rollSubs } from './forge';
 import { addFame } from './legend';
 import { allMods } from './mods';
 import { obiegItem, takeObieg } from './obieg';
@@ -375,7 +375,7 @@ function halve(r: Reward): Reward {
 
 /** Koniec lochu. Porażka w Sztolni i na Ołtarzach zabiera połowę łupu. */
 export function dungEnd(ctx: Ctx, lost: boolean): void {
-  const { s, b } = ctx;
+  const { b } = ctx;
   const d = b.dung;
   if (!d) return;
   const reward = lost && (d.id === 'sztolnia' || d.id === 'oltarze') ? halve(d.loot) : d.loot;
@@ -389,7 +389,7 @@ export function dungEnd(ctx: Ctx, lost: boolean): void {
   if (d.id === 'krypta') invalidate(ctx);
   b.heroHp = b.heroMax;
   b.pause = 400;
-  if (d.items.length) s.found.push(...d.items);
+  if (d.items.length) addFound(ctx, d.items);
   track(ctx, 'dung');
   ctx.emit({ t: 'sfx', k: lost ? 'lose' : 'win' });
   ctx.dirty = true;

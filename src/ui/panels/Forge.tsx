@@ -1,15 +1,13 @@
-import { useRef, useState } from 'preact/hooks';
-import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS, SLOTS } from '../../data';
+import { useRef } from 'preact/hooks';
+import { B, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS } from '../../data';
 import { canSmelt, sellFor, uniqActive } from '../../engine/forge';
-import { dist, itemName, mainVal, maxJump } from '../../engine/formulas';
+import { dist, itemName, jumpChances, maxJump } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
-import type { ElemKey, Item, SetId } from '../../engine/types';
-import { ServerError, getLink } from '../../save/server';
-import { ItemCard } from '../ItemCard';
+import { Brag } from '../Decision';
 import { ClanHelpLine } from './ClanLife';
 import { Px } from '../Px';
-import { elemUrl, oreUrl, setOreUrl } from '../../art/render';
+import { elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
 import { fmt, pct, tfmt } from '../format';
 
 export const Dist = ({ d }: { d: [number, number][] }) => (
@@ -37,7 +35,22 @@ function sparks(box: HTMLElement | null, r = 0) {
   }
 }
 
-export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 'forge' | 'level') => void; onFound: () => void }) {
+/** Pasek szans wytopu: segmenty w kolorach rzadkości, z procentami pod spodem. */
+function OddsBar({ d, note }: { d: [number, number][]; note?: string }) {
+  return (
+    <div class="oddsbar" aria-label="Szanse wytopu">
+      <div class="ob-bar">{d.map(([r, p]) => <i key={r} class={`rb-${r}`} style={{ flexGrow: Math.max(p, 0.6) }} />)}</div>
+      <div class="ob-lab">
+        {d.map(([r, p]) => <span key={r} class={`rt${r}`}><b>{pct(p)}</b> {RAR[r].n}</span>)}
+        {note && <span class="ob-note">{note}</span>}
+      </div>
+    </div>
+  );
+}
+
+export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
+  game: Game; onInfo: (k: 'forge' | 'level') => void; onFound: () => void; onMix: (what: 'el' | 'set') => void; onDecide: () => void;
+}) {
   const s = game.s;
   const f = s.forge;
   const o = s.oreSel;
@@ -45,36 +58,60 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
   const sparkRef = useRef<HTMLDivElement>(null);
   const ok = canSmelt(game.ctx, o) && !s.pending;
   const set = uniqActive(s);
-  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}` : `Przetop · ${ORES[o].n}${set ? ' + ' + SETS[set].ore : ''}`;
-  const elKeys = ELEM_KEYS.filter(k => (s.els[k] ?? 0) > 0);
-  const uniqKeys = SET_IDS.filter(k => (s.uniq[k] ?? 0) > 0);
+  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}` : `Przetop · ${ORES[o].n}`;
   const rel = techMods(s).jumpRel;
   const n = f.lvl + 1;
   const cost = game.upgradeCost();
+  const elOn = f.lvl >= B.ELEM_FORGE_LVL;
+  const setOn = f.lvl >= SET_FORGE_LVL;
+  const targets = game.autoTargets();
+  const target = game.autoTarget();
+  const [j1, j2] = jumpChances(f.lvl, rel);
+  const [k1, k2] = jumpChances(n, rel);
 
   return (
     <>
-      <section class="card" aria-label="Kowadło">
+      <section class="card forge" aria-label="Kowadło">
         <div class="row">
-          <div class="eyebrow">Wybierz rudę do wytopu</div>
+          <div class="eyebrow">Ruda do wytopu</div>
           <InfoBtn onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
         </div>
-        <div class="ores">
+        <div class="ores2" role="radiogroup" aria-label="Ruda">
           {ORES.map((x, i) => {
             const locked = f.lvl < x.lvl;
             return (
-              <button key={x.n} class={`ore${i === o ? ' on' : ''}${locked ? ' locked' : ''}`} aria-pressed={i === o} onClick={() => game.setOre(i)}>
-                <Px src={oreUrl(i)} size={32} cls="ore-ic" />
-                <span class="on-n">{x.n}</span>
-                <span class="cnt">{fmt(s.ores[i])}</span>
-                <small>{locked ? `wytop od poz. ${x.lvl}` : <>min. <span class={`rt${x.floor}`}>{RAR[x.floor].n}</span></>}</small>
+              <button key={x.n} role="radio" aria-checked={i === o} class={`ore2 rb${x.floor}${i === o ? ' on' : ''}${locked ? ' locked' : ''}`}
+                aria-label={`${x.n}: ${s.ores[i]} sztuk, minimum ${RAR[x.floor].n}${locked ? `, wytop od ${x.lvl}. poziomu kuźni` : ''}`} onClick={() => game.setOre(i)}>
+                <Px src={oreUrl(i)} size={32} />
+                <b class="cnt">{fmt(s.ores[i])}</b>
+                <span class="o2-n">{locked ? `poz. ${x.lvl}` : x.n}</span>
               </button>
             );
           })}
         </div>
-        <div class="odds">
-          Szanse wytopu: <Dist d={dist(o, f.lvl, rel)} />{mj === 0 ? ' · ta ruda nie przeskakuje' : ''} · <button class="linkbtn" onClick={() => onInfo('forge')}>wszystkie szanse</button>
+        <div class="o2-sel">
+          <b>{ORES[o].n}</b> · minimum <span class={`rt${ORES[o].floor}`}>{RAR[ORES[o].floor].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}
         </div>
+        {(elOn || setOn || SET_IDS.some(k => (s.uniq[k] ?? 0) > 0)) && (
+          <div class="mixrow">
+            {elOn && (
+              <button class={`mixbtn${s.elSel ? ' on' : ''}`} onClick={() => onMix('el')} aria-haspopup="dialog">
+                <small>Domieszka</small>
+                <span>{s.elSel ? <><Px src={elemUrl(s.elSel)} size={16} />{ELEM[s.elSel].n} · {s.els[s.elSel] ?? 0}</> : 'brak'}</span>
+                <i class="caret" aria-hidden="true">▾</i>
+              </button>
+            )}
+            {setOn ? (
+              <button class={`mixbtn${s.uniqSel ? ' on' : ''}`} onClick={() => onMix('set')} aria-haspopup="dialog">
+                <small>Ruda unikalna</small>
+                <span>{s.uniqSel ? <><Px src={setOreUrl(s.uniqSel)} size={16} /><b style={{ color: SETS[s.uniqSel].col }}>{SETS[s.uniqSel].ore}</b> · {s.uniq[s.uniqSel] ?? 0}</> : 'brak'}</span>
+                <i class="caret" aria-hidden="true">▾</i>
+              </button>
+            ) : SET_IDS.some(k => (s.uniq[k] ?? 0) > 0) && <span class="sub">Rudy unikalne wytopisz od {SET_FORGE_LVL}. poziomu kuźni.</span>}
+          </div>
+        )}
+        {set && <p class="sub">Następny wytop: część zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b>{mj >= 1 ? ' z pewnym przeskokiem o co najmniej 1 rzadkość' : ''}.</p>}
+        {f.lvl >= ORES[o].lvl && <OddsBar d={dist(o, f.lvl, rel)} note={set && mj >= 1 ? 'z zestawem bez najniższej' : undefined} />}
         {mj >= 1 && (
           <div class="pity">
             <span>Gwarancja przeskoku</span>
@@ -82,57 +119,37 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
             <span class="num">{s.pity}/{B.PITY_MAX}</span>
           </div>
         )}
-        {f.lvl >= B.ELEM_FORGE_LVL && (
-          <div class="mix">
-            <span class="eyebrow" style={{ alignSelf: 'center' }}>Domieszka</span>
-            <button class={`chip${!s.elSel ? ' on' : ''}`} onClick={() => game.setElem(null)}>Bez domieszki</button>
-            {elKeys.map((k: ElemKey) => (
-              <button key={k} class={`chip${s.elSel === k ? ' on' : ''}`} onClick={() => game.setElem(k)}><Px src={elemUrl(k)} size={16} />{ELEM[k].n} · {s.els[k]}</button>
-            ))}
-            {elKeys.length === 0 && <span class="sub" style={{ alignSelf: 'center' }}>Domieszki wypadają w krainach z żywiołem (4% na falę).</span>}
-          </div>
-        )}
-        {(f.lvl >= SET_FORGE_LVL || uniqKeys.length > 0) && (
-          <div class="mix">
-            <span class="eyebrow" style={{ alignSelf: 'center' }}>Ruda unikalna</span>
-            {f.lvl >= SET_FORGE_LVL ? (
-              <>
-                <button class={`chip${!s.uniqSel ? ' on' : ''}`} onClick={() => game.setUniq(null)}>Bez zestawu</button>
-                {uniqKeys.map((k: SetId) => (
-                  <button key={k} class={`chip${s.uniqSel === k ? ' on' : ''}`} onClick={() => game.setUniq(k)}>
-                    <Px src={setOreUrl(k)} size={16} /><span style={{ color: SETS[k].col }}>{SETS[k].ore}</span> · {s.uniq[k]}
-                  </button>
-                ))}
-                {uniqKeys.length === 0 && <span class="sub" style={{ alignSelf: 'center' }}>Rudy unikalne dają bossowie i Leża Bossów.</span>}
-              </>
-            ) : (
-              <span class="sub" style={{ alignSelf: 'center' }}>
-                Masz {uniqKeys.map(k => `${s.uniq[k]} × ${SETS[k].ore}`).join(', ')}. Części zestawów wytopisz od {SET_FORGE_LVL}. poziomu kuźni.
-              </span>
-            )}
-          </div>
-        )}
-        {set && <p class="sub">Następny wytop będzie częścią zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b> w miejscu, w którym jeszcze go nie nosisz{mj >= 1 ? ', z gwarantowanym przeskokiem o co najmniej 1 rzadkość' : ''}.</p>}
         <div class="anvil">
           <button class="btn primary btn-forge" disabled={!ok} onClick={() => { const it = game.smeltManual(); if (it) sparks(sparkRef.current, it.r); }}>{btnLabel}</button>
           <div class="sparks" ref={sparkRef} />
         </div>
         {f.lvl >= B.AUTO_FORGE_LVL ? (
-          <div class="auto">
-            <span>{game.autoWaiting ? `Auto-wytop czeka na rudę: ${ORES[o].n}. Ruda wypada z części fal.` : 'Auto-wytop zakłada lepsze przedmioty, resztę sprzedaje.'}</span>
-            <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />Auto-wytop</button>
+          <div class="auto2">
+            <div class="row">
+              <div><b>Auto-wytop</b>{game.autoWaiting && <div class="tech-cost warn">czeka na rudę: {ORES[o].n}</div>}</div>
+              <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />{s.auto ? 'Włączony' : 'Wyłączony'}</button>
+            </div>
+            <div class="autostop" role="radiogroup" aria-label="Zatrzymaj auto-wytop na rzadkości">
+              <span>Zatrzymaj na:</span>
+              {targets.map(r => (
+                <button key={r} role="radio" aria-checked={r === target} class={`chip rchip r${r}${r === target ? ' on' : ''}`} onClick={() => game.setAutoStop(r)}>
+                  {RAR[r].n}{targets.length > 1 && r < targets[targets.length - 1] ? '+' : ''}
+                </button>
+              ))}
+            </div>
+            <p class="sub">Słabsze przedmioty sprzedaje (do pustego miejsca zakłada). Gdy wykuje wybraną rzadkość albo część zestawu — zatrzymuje się, gra i pokazuje przedmiot do decyzji.</p>
           </div>
         ) : (
           <div class="auto"><span>Auto-wytop odblokujesz na {B.AUTO_FORGE_LVL}. poziomie kuźni.</span></div>
         )}
       </section>
 
-      <section><Result game={game} /></section>
+      <LastForge game={game} onDecide={onDecide} />
 
       {s.found.length > 0 && (
         <section class="card">
           <div class="row">
-            <div><div class="eyebrow">Zapomniana Zbrojownia</div><div class="h">Znaleziska: {s.found.length}</div></div>
+            <div><div class="eyebrow">Znaleziska czekają na decyzję</div><div class="h">Przedmioty: {s.found.length}</div></div>
             <button class="btn primary small" onClick={onFound}>Przejrzyj</button>
           </div>
         </section>
@@ -145,7 +162,7 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
           <>
             <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
             <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
-            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: {FORGE_UNLOCKS[f.up] ?? 'większa szansa na przeskok'}.</p>
+            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
             {game.net && <ClanHelpLine game={game} />}
           </>
         ) : (
@@ -153,7 +170,8 @@ export function ForgePanel({ game, onInfo, onFound }: { game: Game; onInfo: (k: 
             <div>
               <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
               <div class="h">Ulepsz do poziomu {n}</div>
-              <p class="sub">{FORGE_UNLOCKS[n] ? 'Odblokowuje: ' + FORGE_UNLOCKS[n] : 'Większa szansa na przeskok'} · {fmt(cost)} złota · {tfmt(game.upgradeTime())}</p>
+              <p class="sub">Szansa na przeskok {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
+              <p class="sub upcost"><Px src={resUrl('zloto')} size={16} />{fmt(cost)} złota · <span aria-hidden="true">⏱</span> {tfmt(game.upgradeTime())}</p>
             </div>
             <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
           </div>
@@ -170,60 +188,33 @@ const LevelEyebrow = ({ text, onInfo }: { text: string; onInfo: (k: 'level') => 
   </div>
 );
 
-/** „Pochwal się dropem”: karta przedmiotu Mitycznego lub Boskiego na czacie globalnym. */
-function Brag({ game, it }: { game: Game; it: Item }) {
-  const [msg, setMsg] = useState('');
-  if (!game.net || it.r < 5 || typeof it.sx !== 'number') return null;
-  const send = () => {
-    const link = getLink();
-    if (!link?.online) { setMsg('Brak połączenia z serwerem.'); return; }
-    link.chatDrop(it, true).then(() => setMsg('Wysłano na czat globalny!')).catch(e => setMsg(e instanceof ServerError ? e.message : 'Nie udało się wysłać.'));
-  };
-  return (
-    <div class="brag">
-      {msg ? <span class="sub" role="status">{msg}</span> : <button class="btn small" onClick={send}>Pochwal się na czacie globalnym</button>}
-    </div>
-  );
-}
-
-function Result({ game }: { game: Game }) {
+/** Pod kowadłem: przedmiot czekający na decyzję albo ostatni wynik auto-wytopu. */
+function LastForge({ game, onDecide }: { game: Game; onDecide: () => void }) {
   const s = game.s;
   const it = s.pending;
   if (it) {
-    const cur = s.eq[it.slot];
-    const d = game.pendingDelta();
     return (
-      <div class="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {it.jump > 0 && <div class="jump" key={'j' + it.id}>Przeskok +{it.jump}!</div>}
-        {!it.obieg && it.flvl > 0 && (
-          <p class="sub">
-            Szanse tego wytopu ({ORES[it.ore].n}, kuźnia poz. {it.flvl}): <Dist d={dist(it.ore, it.flvl, techMods(s).jumpRel)} />
-            {it.forced === 'pity' ? ' · przeskok z gwarancji' : it.forced === 'tut' ? ' · pierwszy przeskok gwarantowany' : it.forced === 'set' ? ' · przeskok gwarantowany przez rudę unikalną' : ''}
-          </p>
-        )}
-        {it.obieg && <p class="sub">Znalezisko z Wielkiego Obiegu: przedmiot wykuty przez gracza {it.smith}.</p>}
-        <div key={it.id}><ItemCard it={it} delta={d} reveal history={it.obieg} /></div>
-        <Brag key={'b' + it.id} game={game} it={it} />
-        <p class="sub">
-          {cur
-            ? `Teraz założony: ${itemName(cur)} (${RAR[cur.r].n}, ${SLOTS[cur.slot].stat === 'dmg' ? 'obrażenia' : 'zdrowie'} ${fmt(mainVal(cur))})` +
-              (cur.fame > 0 ? ' · po zmianie połowa jego Sławy Czynów przejdzie na nowy przedmiot.' : '')
-            : `Slot ${SLOTS[it.slot].n} jest pusty.`}
-        </p>
-        <div class="result-actions">
-          <button class={`btn${d >= 0 ? ' primary' : ''}`} onClick={() => game.equipPending()}>Załóż</button>
-          <button class={`btn${d < 0 ? ' primary' : ''}`} onClick={() => game.sellPending()}>Sprzedaj · {fmt(sellFor(s, it))} zł.</button>
+      <section class="card last r-card">
+        <div class="lastrow">
+          <Px src={itemUrl(it.kind, it.ore, it.r)} size={36} />
+          <div class="cmain"><div class={`cname rt${it.r}`}>{itemName(it)}</div><div class="tech-cost">{RAR[it.r].n} · poz. {it.lvl} · czeka na decyzję</div></div>
+          <button class="btn primary small" onClick={onDecide}>Zdecyduj</button>
         </div>
-      </div>
+      </section>
     );
   }
-  if (game.lastAuto) {
-    const { item, equipped } = game.lastAuto;
-    return <div class="card"><div class="eyebrow">Ostatni wytop · {equipped ? 'założony' : 'sprzedany'}</div><ItemCard it={item} /><Brag key={'b' + item.id} game={game} it={item} /></div>;
-  }
+  if (!game.lastAuto) return null;
+  const { item, res } = game.lastAuto;
   return (
-    <div class="card">
-      <p class="sub">Każda ruda gwarantuje minimalną rzadkość. Kuźnia daje szansę, że przedmiot przeskoczy wyżej. Przetop pierwszą rudę, a nowy przedmiot porównasz z założonym.</p>
-    </div>
+    <section class="card last">
+      <div class="lastrow">
+        <Px src={itemUrl(item.kind, item.ore, item.r)} size={36} />
+        <div class="cmain">
+          <div class={`cname rt${item.r}`}>{itemName(item)}</div>
+          <div class="tech-cost">Ostatni auto-wytop · {RAR[item.r].n} · {res === 'equip' ? 'założony (puste miejsce)' : res === 'stop' ? 'zatrzymał auto-wytop' : `sprzedany za ${fmt(sellFor(s, item))} zł.`}</div>
+        </div>
+      </div>
+      <Brag key={'b' + item.id} game={game} it={item} />
+    </section>
   );
 }
