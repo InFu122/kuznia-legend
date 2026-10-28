@@ -84,7 +84,7 @@ Każdy gracz ma na serwerze unikalny nick — „Adam”, „adam” i „Ádam�
 
 Wynik każdego wytopu losuje się z ziarna, które wydaje serwer (gra trzyma zapas na kilkaset wytopów, więc kuje bez czekania i także bez połączenia). Ten sam wytop zawsze daje ten sam przedmiot — wczytanie starszego zapisu nie pozwala wylosować go jeszcze raz. Serwer odtwarza wytop z ziarna i sprawdza każdy założony przedmiot.
 
-Do rankingu Mocy i na arenę liczą się tylko przedmioty, których pochodzenie serwer potwierdził: wykute z ziarnem albo znalezione w Obiegu. Przedmioty wykute przed tą aktualizacją działają w grze normalnie, ale do rankingu się nie liczą, dopóki ich nie wymienisz — przy auto-wytopie dzieje się to szybko. Kodeks pokazuje w karcie **Serwer gry**, ile założonych przedmiotów się nie liczy.
+Do rankingu Mocy i na arenę liczą się tylko przedmioty, których pochodzenie serwer potwierdził: wykute z ziarnem albo znalezione w Obiegu. Przedmioty wykute przed tą aktualizacją działają w grze normalnie, ale do rankingu się nie liczą, dopóki ich nie wymienisz — wykuj nowe, a liczą się od razu. Kodeks pokazuje w karcie **Serwer gry**, ile założonych przedmiotów się nie liczy.
 
 Z serwerem nie ma tempa testowego ×10.
 

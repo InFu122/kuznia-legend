@@ -15,13 +15,14 @@ npm test               # testy silnika
 npm run balance        # symulator balansu → balans/balans.xlsx (domyślnie 48 h gry, 3 przebiegi)
 npm run balance -- 160 5   # 160 h gry, 5 przebiegów
 npm run balance -- 150 3 plain   # bot bez technologii, lochów i zestawów (punkt odniesienia)
+npm run balance -- 1440 2 casual # 60 dni gracza grającego 3 × 1 h dziennie (reszta offline)
 npm run build          # wersja produkcyjna w dist/
 npm run build:single   # cała gra w jednym pliku: dist-single/index.html
 npm run build:artifact # fragment do publikacji jako artefakt claude.ai
 npm run build:server   # moduł serwera Nakama → server/build/index.js
 ```
 
-W trakcie testów w zakładce Kodeks jest przełącznik **Tempo ×10**, który przyspiesza walkę i timery.
+W trakcie testów w zakładce Kodeks jest wybór **tempa ×1 / ×10 / ×50 / ×100**, który przyspiesza walkę i timery (na serwerze — dopóki `TEST_SPEED` w `.env` na to pozwala).
 
 ## Serwer gry (Docker)
 
@@ -53,7 +54,7 @@ Szczegóły w [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
 
 Wszystkie liczby siedzą w `src/data/balance.ts`. Po każdej zmianie uruchom `npm run balance` i porównaj w arkuszu **Bossowie**, przy jakim poziomie kuźni bot pokonuje bossów, z krzywą `FORGE_AT_BOSS`.
 
-Obecna kalibracja (bot grający bez przerwy i korzystający ze wszystkich systemów: technologii, lochów, zestawów, umiejętności, chowańców i wierzchowców): akt I ≈ 0,6 h, akt II ≈ 7 h, akt III ≈ 24 h, akt IV ≈ 100–120 h. Złoto wypada z każdej fali, ruda z 35% fal (`B.ORE_DROP`).
+Tempo gry: ulepszenia kuźni z tabeli `UPGRADE_MIN` — pierwsze poziomy minuty, 20. poziom ok. 5 dni, 30. ok. 55 dni łącznie. Kalibracja (tryb `casual`: gracz 3 × 1 h dziennie, korzystający ze wszystkich systemów): akt I w pierwszym dniu, akt II ≈ 8 dni, akt III ≈ 3 tygodnie, ostatni boss ≈ 45 dni. Złoto wypada z każdej fali (ile — zależy od czasu następnego ulepszenia kuźni), ruda z 35% fal (`B.ORE_DROP`) według rozkładu rud krainy (`LANDS[].drops`).
 
 ## Plan
 
