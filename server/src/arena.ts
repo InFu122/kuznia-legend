@@ -10,6 +10,7 @@ import type { GameState } from '../../src/engine/types';
 import { INVALID, NOT_FOUND, PRECONDITION, err, parse, readSave, serverDay, serverRng, userOf } from './common';
 import { leagueBrief, leagueOnFight } from './league';
 import { boardMeta, ownRecord } from './ranking';
+import { frameOr, skinOr } from '../../src/engine/cosmetics';
 import { cleanName } from './validate';
 
 const HERO = { collection: 'arena', key: 'hero' };
@@ -21,7 +22,7 @@ export const NOTE_DEFENSE = 101;
 
 /** Wygląd bohatera na arenie: rodzaj i ruda widocznego ekwipunku. */
 export type Look = Record<string, { kind: string; ore: number }>;
-export interface Hero { f: Fighter; power: number; land: string; t: number; look?: Look }
+export interface Hero { f: Fighter; power: number; land: string; t: number; look?: Look; sk?: string; fr?: string }
 
 const LOOK_SLOTS = ['bron', 'helm', 'zbroja', 'rekawice', 'buty', 'pas', 'amulet'];
 function lookOf(eq: GameState['eq']): Look {
@@ -32,7 +33,7 @@ function lookOf(eq: GameState['eq']): Look {
   }
   return o;
 }
-interface Opp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean; k?: number }
+interface Opp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean; k?: number; sk?: string; fr?: string }
 interface ArenaMe { day: string; left: number; wins: number; losses: number; opp: Opp[]; extra?: number }
 
 const arenaOpen = (s: GameState) => s.maxLand >= B.ARENA_UNLOCK_LAND;
@@ -44,7 +45,7 @@ export function updateArenaHero(
   if (!arenaOpen(s)) return;
   const st = computeStats(eq, allMods(s), extraOf(s));
   const name = cleanName(s.name);
-  const hero: Hero = { f: { name, st: fighterStats(st), skills: extraOf(s).skills ?? [] }, power, land: LANDS[s.maxLand].n, t: Date.now(), look: lookOf(eq) };
+  const hero: Hero = { f: { name, st: fighterStats(st), skills: extraOf(s).skills ?? [] }, power, land: LANDS[s.maxLand].n, t: Date.now(), look: lookOf(eq), sk: skinOr(s.look?.skin), fr: frameOr(s.look?.frame) };
   try {
     nk.storageWrite([{ ...HERO, userId, value: hero as unknown as { [k: string]: unknown }, permissionRead: 0, permissionWrite: 0 }]);
     const rec = ownRecord(nk, 'arena', userId);
@@ -82,6 +83,8 @@ function pickOpponents(nk: nkruntime.Nakama, userId: string, mine: number, me: H
     id: r.ownerId, name: (r.metadata && r.metadata.name) || r.username, rating: r.score,
     power: (r.metadata && r.metadata.power) || 0, land: (r.metadata && r.metadata.land) || '', ghost: false,
   }));
+  const heroes = readHeroes(nk, opp.map(o => o.id));
+  for (const o of opp) { o.sk = skinOr(heroes[o.id]?.sk); o.fr = frameOr(heroes[o.id]?.fr); }
   const ks = [0.85, 1, 1.15];
   const names = shuffle(rng, FAKE_PLAYERS);
   for (let i = 0; opp.length < OPPONENTS; i++) {
@@ -170,12 +173,14 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
 
   let foe: Fighter;
   let foeLook: Look | undefined = hero.look;
+  let foeSk = 'zwykly', foeFr = 'prosta';
   if (opp.ghost) foe = scaleFighter(hero.f, opp.k ?? 1, opp.name);
   else {
     const h = readHero(nk, opp.id);
     if (!h) throw err('Przeciwnik zniknął z areny — odśwież listę.', NOT_FOUND);
     foe = h.f;
     foeLook = h.look;
+    foeSk = skinOr(h.sk); foeFr = frameOr(h.fr);
   }
   const rng = serverRng(nk);
   const res = duel(hero.f, foe, Math.floor(rng.next() * 0xffffffff));
@@ -220,7 +225,8 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   return JSON.stringify({
     lp: lg ? lg.lp : 0, tk: lg ? lg.tk : 0, league: lg ? lg.league : null,
     win: res.win, ms: res.ms, frames: res.frames, crits: res.crits, skills: res.skills,
-    me: { name: hero.f.name, power: hero.power, look: hero.look ?? {} }, foe: { name: opp.name, power: opp.power, ghost: opp.ghost, look: foeLook ?? {} },
+    me: { name: hero.f.name, power: hero.power, look: hero.look ?? {}, sk: skinOr(hero.sk), fr: frameOr(hero.fr) },
+    foe: { name: opp.name, power: opp.power, ghost: opp.ghost, look: foeLook ?? {}, sk: foeSk, fr: foeFr },
     d, gold, ...view(nk, userId, me, hero),
   });
 }

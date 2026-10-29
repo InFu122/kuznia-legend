@@ -92,7 +92,7 @@ export function clanSeasonSettle(nk: nkruntime.Nakama, ctx: nkruntime.Context, u
   const sNow = seasonOfWeek(warClock(nk, ctx, now).week).n;
   const due = Object.keys((o[0].value as unknown as SeasonMe).s).map(Number).filter(n => n < sNow && !(o[0].value as unknown as SeasonMe).got.includes(n));
   if (!due.length) return;
-  let pay: { why: string; gems: number; coins: number }[] = [];
+  let pay: { why: string; gems: number; coins: number; rank: number }[] = [];
   updateObject<SeasonMe>(nk, 'clan_season', 'me', userId, cur => {
     pay = [];
     if (!cur) return null;
@@ -102,14 +102,14 @@ export function clanSeasonSettle(nk: nkruntime.Nakama, ctx: nkruntime.Context, u
       if (n >= sNow || me.got.includes(n)) continue;
       const rec = ownClanRecord(nk, seasonBoard(n), me.s[k].g);
       const rw = rec ? clanSeasonReward(rec.rank) : null;
-      if (rec && rw) pay.push({ why: `Sezon wojen ${n}: klan ${me.s[k].n} na ${rec.rank}. miejscu (+${rw.gems} Klejnotów)`, ...rw });
+      if (rec && rw) pay.push({ why: `Sezon wojen ${n}: klan ${me.s[k].n} na ${rec.rank}. miejscu (+${rw.gems} Klejnotów)`, ...rw, rank: rec.rank });
       me.got.push(n);
       delete me.s[k];
     }
     me.got = me.got.filter(n => n >= sNow - 3);
     return me;
   }, perm);
-  for (const p of pay) giveReward(nk, userId, p.why, { gems: p.gems, coins: p.coins });
+  for (const p of pay) giveReward(nk, userId, p.why, { gems: p.gems, coins: p.coins, frames: p.rank <= 3 ? ['puchar'] : undefined });
 }
 
 /** Skrót sezonu wojen klanu (do war_state). */

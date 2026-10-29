@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
-import { LANDS } from '../../data';
+import { FRAME_IDS, LANDS, SKIN_IDS } from '../../data';
+import { Avatar } from '../Avatar';
 import { nextSmithTitle, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { GameState } from '../../engine/types';
@@ -159,8 +160,14 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
   return (
     <>
       <section class="card">
-        <div class="eyebrow">Piętno Kowala</div>
-        <div class="h">{t.n} {s.name}</div>
+        <div class="smith-head">
+          <button class="avbtn" onClick={() => game.openModal({ kind: 'look' })} aria-label="Wygląd: stroje i ramki"><Avatar skin={s.look.skin} frame={s.look.frame} size={52} /></button>
+          <div>
+            <div class="eyebrow">Piętno Kowala</div>
+            <div class="h">{t.n} {s.name}</div>
+            <button class="linkbtn" onClick={() => game.openModal({ kind: 'look' })}>Wygląd · stroje {s.look.skins.length}/{SKIN_IDS.length}, ramki {s.look.frames.length}/{FRAME_IDS.length}</button>
+          </div>
+        </div>
         <p class="sub">Sława kowala: <b class="num">{fmt(sm.fame)}</b>{next ? ` · do tytułu ${next.n}: ${fmt(next.at - sm.fame)}` : ''}</p>
         {next && <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.min(100, ((sm.fame - t.at) / (next.at - t.at)) * 100) + '%' }} /></div>}
         <p class="sub" style={{ marginTop: '10px' }}>

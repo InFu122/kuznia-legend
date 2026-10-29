@@ -1,5 +1,6 @@
 // Wydarzenia co 2 tygodnie z lochem sezonowym. Kolejność się powtarza: Festiwal Kuźni, Wielkie Łowy, Noc Upiorów.
 import type { FoeType } from '../engine/types';
+import type { FrameId, SkinId } from './cosmetics';
 import { PASS, type PassItem } from './shop';
 
 export type EventKind = 'kuznia' | 'lowy' | 'upiory';
@@ -13,6 +14,8 @@ export interface EventDef {
   foes: string[];       // wrogowie lochu
   boss: string;         // boss ostatniego piętra
   type: FoeType;
+  skin: SkinId;         // strój za ostatni próg
+  frame: FrameId;       // ramka za ostatni próg
   /** Punkty za: wytop, wroga, bossa krainy, klucz w lochu, piętro Wieży. */
   w: { sm: number; k: number; b: number; keys: number; tw: number };
 }
@@ -20,17 +23,17 @@ export interface EventDef {
 export const EVENTS: Record<EventKind, EventDef> = {
   kuznia: {
     n: 'Festiwal Kuźni', cur1: 'Iskra', cur: 'Iskry', curGen: 'Iskier', d: 'Każdy wytop to Iskra (także auto-wytop i seryjny). Bossowie krain i klucze w lochach też sypią Iskrami.',
-    dung: 'Ognista Otchłań', foes: ['Ognisty chochlik', 'Lawowy golem', 'Salamandra', 'Żarzący się szkielet'], boss: 'Władca Płomieni', type: 'Demony',
+    dung: 'Ognista Otchłań', foes: ['Ognisty chochlik', 'Lawowy golem', 'Salamandra', 'Żarzący się szkielet'], boss: 'Władca Płomieni', type: 'Demony', skin: 'ognisty', frame: 'iskra',
     w: { sm: 1, k: 0.02, b: 10, keys: 10, tw: 1 },
   },
   lowy: {
     n: 'Wielkie Łowy', cur1: 'Trofeum', cur: 'Trofea', curGen: 'Trofeów', d: 'Co 10 pokonanych wrogów to Trofeum, boss krainy — 30. Liczą się też nagrody za nieobecność.',
-    dung: 'Lodowa Grota', foes: ['Lodowy wilk', 'Śnieżny troll', 'Mroźny niedźwiedź', 'Szronowy gryf'], boss: 'Pradawny Mamut', type: 'Bestie',
+    dung: 'Lodowa Grota', foes: ['Lodowy wilk', 'Śnieżny troll', 'Mroźny niedźwiedź', 'Szronowy gryf'], boss: 'Pradawny Mamut', type: 'Bestie', skin: 'lowca', frame: 'szron',
     w: { sm: 0.2, k: 0.1, b: 30, keys: 10, tw: 1 },
   },
   upiory: {
     n: 'Noc Upiorów', cur1: 'Świeca', cur: 'Świece', curGen: 'Świec', d: 'Każdy klucz zużyty w lochu to 40 Świec, piętro Wieży Wyzwań — 5.',
-    dung: 'Nawiedzone Katakumby', foes: ['Błędny ognik', 'Upiór', 'Kościany rycerz', 'Banshee'], boss: 'Królowa Upiorów', type: 'Nieumarli',
+    dung: 'Nawiedzone Katakumby', foes: ['Błędny ognik', 'Upiór', 'Kościany rycerz', 'Banshee'], boss: 'Królowa Upiorów', type: 'Nieumarli', skin: 'upiorny', frame: 'widmo',
     w: { sm: 0.2, k: 0.02, b: 10, keys: 40, tw: 5 },
   },
 };
@@ -49,7 +52,7 @@ export const EVENT = {
 /** Najwięcej punktów za jedno przejście lochu sezonowego. */
 export const EVENT_RUN_MAX = Array.from({ length: EVENT.FLOORS }, (_, i) => EVENT.FLOOR_PTS + EVENT.FLOOR_STEP * (i + 1)).reduce((a, b) => a + b, 0);
 
-/** Progi nagród wydarzenia (rosnąco). Ostatni daje też ramkę wydarzenia (Kodeks → Wygląd). */
+/** Progi nagród wydarzenia (rosnąco). Ostatni daje też strój i ramkę wydarzenia (Kodeks → Wygląd). */
 export const EVENT_MILESTONES: { pts: number; r: PassItem[] }[] = [
   { pts: 100, r: [{ k: 'gold', n: 100 }] },
   { pts: 250, r: [{ k: 'ore', n: 60 }] },

@@ -40,6 +40,7 @@ export function legacyReset(s: GameState, slot: SlotId | null, now: number): Gam
     gems: s.gems, shop: s.shop, buffs: s.buffs, pass: s.pass, event: s.event,
     missions: s.missions, login: s.login, tut: s.tut, opts: s.opts, stats: s.stats, smith: s.smith,
     speed: s.speed, auto: s.auto, autoStop: s.autoStop, nid: s.nid,
+    look: { ...s.look, skins: s.look.skins.includes('zloty') ? s.look.skins : [...s.look.skins, 'zloty'] },
     legacy: { gen: (s.legacy?.gen || 0) + 1, stars: (s.legacy?.stars || 0) + legacyStars(s), item: heir },
   };
   return Object.assign(n, keep);

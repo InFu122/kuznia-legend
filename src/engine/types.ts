@@ -3,6 +3,7 @@
 import type { ClanShopId } from '../data/clan';
 import type { BuffId, GemItemId } from '../data/shop';
 import type { AchId } from '../data/achievements';
+import type { FrameId, SkinId } from '../data/cosmetics';
 
 export type SlotId = 'bron' | 'helm' | 'zbroja' | 'rekawice' | 'buty' | 'pas' | 'pierscien' | 'amulet';
 export type ElemKey = 'zar' | 'szron' | 'burz' | 'jad' | 'cien' | 'jasn';
@@ -39,6 +40,8 @@ export interface Reward {
   seals?: number;
   coins?: number;                           // Monety klanowe
   gems?: number;                            // Klejnoty (z serwerem — tylko przez portfel serwera)
+  skins?: SkinId[];                         // stroje bohatera do odblokowania
+  frames?: FrameId[];                       // ramki awatara do odblokowania
 }
 
 export interface LabDoorOpt { kind: LabDoorKind; bless?: number }
@@ -163,6 +166,7 @@ export interface GameState {
   buffs: Partial<Record<BuffId, number>>;              // wzmocnienia z reklam: do kiedy działają (ms)
   pass: PassTrack | null;                              // Przepustka Kowala (z serwerem: kopia stanu serwera)
   event: EventTrack | null;                            // wydarzenie co 2 tygodnie (liczy gra)
+  look: { skin: SkinId; frame: FrameId; skins: SkinId[]; frames: FrameId[] }; // wygląd: wybrany strój i ramka, zdobyte
   boost: { lvl: number; ms: number };                  // przyspieszenie Klejnotami już wliczone do ulepszenia kuźni na poziom `lvl`
   runes: Partial<Record<SlotId, number>>;              // poziomy run slotów (0–30)
   codex: string[];                                     // Kolekcja Kowala: odkryte modele „rodzaj|ruda”
@@ -249,6 +253,7 @@ export type ModalData =
   | { kind: 'feedback' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' | 'ach' }
   | { kind: 'event' }
+  | { kind: 'look' }
   | { kind: 'ranking'; board?: 'moc' | 'wieza' | 'postep' | 'arena' | 'klany' }
   | { kind: 'arena' }
   | { kind: 'chat'; ch?: 'global' | 'clan' }

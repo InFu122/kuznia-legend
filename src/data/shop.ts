@@ -71,8 +71,9 @@ export const PASS = {
 export const SEASON_NAMES = ['Żar Kuźni', 'Szron Gór', 'Burza Przełęczy', 'Cień Krypt', 'Smocze Ognie', 'Gwiezdny Pył'];
 
 /** Nagroda przepustki: rodzaj i ilość (złoto liczone w falach z najdalszego etapu, ruda — najlepsza wytapiana). */
-export type PassKind = 'gold' | 'ore' | 'books' | 'stones' | 'scrolls' | 'gems' | 'egg' | 'saddles' | 'seals';
-export interface PassItem { k: PassKind; n: number }
+export type PassKind = 'gold' | 'ore' | 'books' | 'stones' | 'scrolls' | 'gems' | 'egg' | 'saddles' | 'seals' | 'skin' | 'frame';
+/** `id` — strój albo ramka (dla rodzaju `skin` / `frame`). */
+export interface PassItem { k: PassKind; n: number; id?: string }
 export interface PassLevel { free: PassItem[]; prem: PassItem[] }
 
 function passLevels(): PassLevel[] {
@@ -83,11 +84,12 @@ function passLevels(): PassLevel[] {
       : [[{ k: 'gold', n: 80 + 10 * L }], [{ k: 'ore', n: 30 + 3 * L }], [{ k: 'books', n: 1 + Math.floor(L / 10) }], [{ k: 'stones', n: 10 + Math.floor(L / 2) }]][c] as PassItem[];
     const prem: PassItem[] = [[{ k: 'gold', n: 200 + 20 * L }], [{ k: 'ore', n: 80 + 6 * L }], [{ k: 'books', n: 3 + Math.floor(L / 6) }], [{ k: 'scrolls', n: 1 }]][c] as PassItem[];
     if (L % 5 === 0) prem.push({ k: 'gems', n: L === PASS.LEVELS ? 100 : 30 });
-    if (L === 10) prem.push({ k: 'egg', n: 2 });
+    if (L === 10) prem.push({ k: 'egg', n: 2 }, { k: 'frame', n: 1, id: 'przepustka' });
     if (L === 15) prem.push({ k: 'saddles', n: 1 });
     if (L === 20) prem.push({ k: 'egg', n: 3 });
     if (L === 25) prem.push({ k: 'seals', n: 2 });
-    if (L === 30) prem.push({ k: 'egg', n: 4 });
+    if (L === 30) prem.push({ k: 'egg', n: 4 }, { k: 'skin', n: 1, id: 'szkarlat' });
+    if (L === 20) free.push({ k: 'skin', n: 1, id: 'nocny' });
     out.push({ free, prem });
   }
   return out;

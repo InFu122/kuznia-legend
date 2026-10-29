@@ -4,6 +4,7 @@ import { WAR_TROPHIES } from '../../data';
 import { getLink, type BoardId, type ClanRanking, type Ranking } from '../../save/server';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
+import { Avatar } from '../Avatar';
 
 type Tab = BoardId | 'klany';
 const BOARDS: [Tab, string, string][] = [
@@ -60,7 +61,7 @@ function PlayerBoard({ board }: { board: BoardId }) {
               {data.records.map(r => (
                 <tr key={r.rank} class={r.me ? 'sel' : ''}>
                   <td class="num">{r.rank}</td>
-                  <td class="oname">{r.name}<small>{r.land}</small></td>
+                  <td class="oname"><span class="rk-who"><Avatar skin={r.sk} frame={r.fr} size={28} /><span>{r.name}<small>{r.land}</small></span></span></td>
                   <td class="num">{val(r.score)}</td>
                 </tr>
               ))}

@@ -1,4 +1,4 @@
-import { AD, AD_BUFFS, B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type AchId, type BuffId, type GemItemId } from '../data';
+import { AD, AD_BUFFS, B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type AchId, type BuffId, type GemItemId , type FrameId, type SkinId } from '../data';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
@@ -24,6 +24,7 @@ import {
   type PassTrack, type ShopState,
 } from './shop';
 import { claimEvent, eventUnclaimed, tickEvent } from './events';
+import { setFrame, setSkin } from './cosmetics';
 import type { DungId, ElemKey, EventTrack, FoundEvent, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
 
 /** Stan sklepu od serwera (odpowiedzi RPC sklepu i zapisu). */
@@ -355,6 +356,8 @@ export class Game {
   claimLogin() { const r = claimLogin(this.ctx); this.changed(); return r; }
   claimable(): number { return claimable(this.ctx) + achCount(this.s); }
   claimAch(id: AchId): Reward | null { return this.done(claimAch(this.ctx, id)); }
+  setSkin(id: SkinId): boolean { return this.done(setSkin(this.ctx, id)); }
+  setFrame(id: FrameId): boolean { return this.done(setFrame(this.ctx, id)); }
   /** Wydarzenie: aktualny stan (liczy punkty z gry). */
   event(): EventTrack { return tickEvent(this.ctx); }
   claimEvent(): Reward | null { return this.done(claimEvent(this.ctx)); }

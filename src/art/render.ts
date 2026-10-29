@@ -1,6 +1,7 @@
 // Rysowanie pixel artu w przeglądarce: sprite + paleta → obrazek (data URL), z pamięcią podręczną.
+import type { SkinId } from '../data/cosmetics';
 import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from './icons-data';
-import { FOE_H, FOE_W, HERO_H, HERO_W, foeKey, foePixels, heroKey, heroPixels, type HeroGear } from './actors';
+import { FOE_H, FOE_W, HERO_H, HERO_W, foeKey, foePixels, heroKey, heroPixels, avatarPixels, AVATAR, type HeroGear } from './actors';
 import { itemPalette, itemSprite, tierOf } from './items';
 import { rgba, sprite, type Palette, type Sprite } from './pixel';
 import { halo } from './rarity';
@@ -54,6 +55,8 @@ export const landBgUrl = (land: number) => cached(`bg:l${land}`, () => pxUrl(ren
 /** Tło lochu albo areny (klucz jak w DUNGEON_SCENES). */
 export const dungeonBgUrl = (id: string) => cached(`bg:d${id}`, () => pxUrl(renderScene(DUNGEON_SCENES[id] ?? DUNGEON_SCENES.arena), SCENE_W, SCENE_H));
 /** Bohater w założonym ekwipunku (36×36, patrzy w prawo). */
-export const heroUrl = (g: HeroGear) => cached(`h:${heroKey(g)}`, () => pxUrl(heroPixels(g), HERO_W, HERO_H));
+export const heroUrl = (g: HeroGear, skin: SkinId = 'zwykly') => cached(`h:${heroKey(g, skin)}`, () => pxUrl(heroPixels(g, skin), HERO_W, HERO_H));
+/** Awatar (głowa bohatera w stroju, 18×18). */
+export const avatarUrl = (skin: SkinId = 'zwykly') => cached(`av:${skin}`, () => pxUrl(avatarPixels(skin), AVATAR, AVATAR));
 /** Wróg z pola walki (32×32, patrzy w lewo). */
 export const foeUrl = (name: string, type?: string) => cached(`f:${foeKey(name, type)}`, () => pxUrl(foePixels(name, type), FOE_W, FOE_H));

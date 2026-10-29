@@ -2,6 +2,8 @@
 import { LANDS } from '../../src/data';
 import type { GameState } from '../../src/engine/types';
 import { parse, userOf } from './common';
+import { frameOr, skinOr } from '../../src/engine/cosmetics';
+import { readHeroes } from './arena';
 import { cleanName } from './validate';
 
 export const BOARDS = {
@@ -57,11 +59,14 @@ export function rpcRanking(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
   const id = (typeof req.board === 'string' && req.board in BOARDS ? req.board : 'moc') as BoardId;
   const limit = Math.max(1, Math.min(50, Number(req.limit) || 20));
   const top = nk.leaderboardRecordsList(id, [], limit);
+  const own = ownRecord(nk, id, userId);
+  // Strój i ramka z bohatera areny (zapisywany przy każdym zapisie gry) — metadanych rankingu Nakama nie zmienia bez zmiany wyniku.
+  const heroes = readHeroes(nk, [...new Set([...(top.records || []).map(r => r.ownerId), userId])]);
   const row = (r: nkruntime.LeaderboardRecord) => ({
     rank: r.rank, name: (r.metadata && r.metadata.name) || r.username, score: r.score, sub: r.subscore,
     land: r.metadata ? r.metadata.land : '', me: r.ownerId === userId,
+    sk: skinOr(heroes[r.ownerId]?.sk), fr: frameOr(heroes[r.ownerId]?.fr),
   });
-  const own = ownRecord(nk, id, userId);
   return JSON.stringify({
     board: id, title: BOARDS[id].title,
     records: (top.records || []).map(row),

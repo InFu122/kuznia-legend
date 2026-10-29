@@ -12,3 +12,4 @@ export * from './shop';
 export * from './achievements';
 export * from './arena';
 export * from './events';
+export * from './cosmetics';

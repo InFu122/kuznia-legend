@@ -1,6 +1,6 @@
 // Życie klanu po stronie gry: nagrody od serwera (każda raz), pomoc klanu w ulepszeniu kuźni i sklep klanowy.
 // Wspólną Kuźnię, bossa klanowego, prośby o pomoc i rudę prowadzi serwer (server/src/clanlife.ts).
-import { CLAN, CLAN_SEASON_REWARDS, CLAN_SHOP, ELEM_KEYS, RAID_PHASES, SHOP_GOLD_WAVES, WAR_TROPHIES, type ClanShopId } from '../data';
+import { CLAN, CLAN_SEASON_REWARDS, CLAN_SHOP, ELEM_KEYS, FRAMES, SKINS, RAID_PHASES, SHOP_GOLD_WAVES, WAR_TROPHIES, type ClanShopId } from '../data';
 import { toast, type Ctx } from './context';
 import { upgradeTime } from './forge';
 import { goldWave } from './formulas';
@@ -26,6 +26,8 @@ export function cleanReward(r: Reward): Reward {
     gold: num(r.gold), books: num(r.books), scrolls: num(r.scrolls), saddles: num(r.saddles), stones: num(r.stones), seals: num(r.seals), coins: num(r.coins),
     ores: cleanMap(r.ores), eggs: cleanMap(r.eggs),
     els: Object.fromEntries(Object.entries(cleanMap(r.els)).filter(([k]) => (ELEM_KEYS as string[]).includes(k))),
+    skins: Array.isArray(r.skins) ? r.skins.filter(x => typeof x === 'string' && x in SKINS).slice(0, 8) : undefined,
+    frames: Array.isArray(r.frames) ? r.frames.filter(x => typeof x === 'string' && x in FRAMES).slice(0, 8) : undefined,
   };
 }
 

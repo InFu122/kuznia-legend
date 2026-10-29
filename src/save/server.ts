@@ -22,7 +22,7 @@ export class ServerError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 
-export interface RankRow { rank: number; name: string; score: number; sub: number; land: string; me: boolean }
+export interface RankRow { rank: number; name: string; score: number; sub: number; land: string; me: boolean; sk?: string; fr?: string }
 export interface Ranking { board: string; title: string; records: RankRow[]; mine: RankRow | null }
 export type BoardId = 'moc' | 'wieza' | 'postep' | 'arena';
 /** Ranking klanów: Moc klanów albo Puchary w sezonie wojen. */
@@ -33,7 +33,7 @@ export interface ClanRanking {
   season: WarSeason & { rewards: { top: number; gems: number; coins: number }[] }; serverTime: number;
 }
 
-export interface ArenaOpp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean }
+export interface ArenaOpp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean; sk?: string; fr?: string }
 export interface ArenaState {
   rating: number; rank: number; left: number; max: number; wins: number; losses: number; power: number;
   opp: ArenaOpp[]; log: { who: string; won: boolean; d: number; t: number }[];
@@ -42,8 +42,8 @@ export interface ArenaState {
 /** Pojedynek rozegrany przez serwer (arena, bitwa wojny klanów) — do odtworzenia w grze. */
 export interface DuelShow {
   win: boolean; ms: number; frames: [number, number][]; crits: [number, number]; skills: [number, number];
-  me: { name: string; power: number; look?: Record<string, { kind: string; ore: number }> };
-  foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }> };
+  me: { name: string; power: number; look?: Record<string, { kind: string; ore: number }>; sk?: string; fr?: string };
+  foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }>; sk?: string; fr?: string };
 }
 export interface ArenaFight extends ArenaState, DuelShow { d: number; gold: number; lp: number; tk: number }
 /** Skrót ligi w odpowiedziach areny. */

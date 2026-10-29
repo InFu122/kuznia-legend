@@ -26,6 +26,7 @@ import { Reforge } from './panels/Runes';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
 import { EventView } from './panels/Event';
+import { LookView } from './panels/Look';
 import { DungInfoView } from './panels/Dungeon';
 import { FeedbackView } from './panels/Feedback';
 import { ChatView } from './panels/Chat';
@@ -203,6 +204,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <RankingView initial={m.board} close={close} />;
     case 'arena':
       return <ArenaView game={game} close={close} />;
+    case 'look':
+      return <LookView game={game} close={close} />;
     case 'event':
       return <EventView game={game} close={close} onDung={() => { close(); goTab?.('lochy'); }} />;
     case 'shop':

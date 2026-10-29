@@ -8,6 +8,7 @@ import { getLink, ServerError, type ArenaFight, type ArenaState, type DuelShow, 
 import { fmt } from '../format';
 import { HeroSprite } from '../Arena';
 import { tokensText } from '../texts';
+import { Avatar } from '../Avatar';
 import { ArenaShopTab, LeagueBadge, LeagueTab, TokenIco } from './League';
 
 /** Odtworzenie walki jest 3× szybsze niż sama walka. */
@@ -32,8 +33,8 @@ export function DuelReplay({ f, summary, title = 'Pojedynek', onDone }: { f: Due
       <div class="duel-box">
         <div class="stage duel">
           <div class="st-tag">{done ? (f.win ? 'Wygrana' : 'Porażka') : `${Math.round((i * DUEL_FRAME_MS) / 1000)} s`}</div>
-          <div class={`actor hero${!done ? ' fighting' : ''}${done && !f.win ? ' dead' : ''}`}><HeroSprite eq={f.me.look ?? {}} /></div>
-          <div class={`actor foe pvp${!done ? ' fighting' : ''}${done && f.win ? ' dead' : ''}${f.foe.ghost ? ' ghost' : ''}`}><HeroSprite eq={f.foe.look ?? {}} flip /></div>
+          <div class={`actor hero${!done ? ' fighting' : ''}${done && !f.win ? ' dead' : ''}`}><HeroSprite eq={f.me.look ?? {}} skin={f.me.sk} /></div>
+          <div class={`actor foe pvp${!done ? ' fighting' : ''}${done && f.win ? ' dead' : ''}${f.foe.ghost ? ' ghost' : ''}`}><HeroSprite eq={f.foe.look ?? {}} skin={f.foe.sk} flip /></div>
         </div>
         <div class="bars">
           <div class="bar-side">
@@ -149,6 +150,7 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
           <ul class="clist">
             {st.opp.map((o, i) => (
               <li key={o.id}>
+                <Avatar skin={o.ghost ? game.s.look.skin : o.sk} frame={o.ghost ? 'prosta' : o.fr} size={36} />
                 <div class="cmain">
                   <div class="cname">{o.name}{o.ghost && <span class="tag">Duch areny</span>}</div>
                   <div class="tech-cost">Moc {fmt(o.power)} · ocena {fmt(o.rating)}{o.land ? ` · ${o.land}` : ''}</div>

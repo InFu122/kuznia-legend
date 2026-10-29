@@ -1,4 +1,4 @@
-import { BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, LANDS, SKILL_SLOTS, TUTORIAL } from '../data';
+import { BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type FrameId, type SkinId } from '../data';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
@@ -39,7 +39,7 @@ export function newState(now: number): GameState {
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0, bestR: -1 },
     sx: 0, seeds: [], obIn: [], obOut: [],
     clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
-    gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, event: null, boost: { lvl: 0, ms: 0 },
+    gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, event: null, look: { skin: 'zwykly', frame: 'prosta', skins: ['zwykly'], frames: ['prosta'] }, boost: { lvl: 0, ms: 0 },
     runes: {}, codex: [], ach: {}, legacy: { gen: 0, stars: 0, item: null },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
@@ -118,6 +118,18 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!Array.isArray(out.shop.once)) out.shop.once = [];
   if (!isObj(out.buffs)) out.buffs = {};
   if (!isObj(out.pass) || !isObj(out.pass.base) || typeof out.pass.season !== 'number') out.pass = null;
+  {
+    const l = (isObj(raw.look) ? raw.look : {}) as Partial<GameState['look']>;
+    const skins = (Array.isArray(l.skins) ? l.skins : []).filter((x): x is SkinId => typeof x === 'string' && x in SKINS);
+    const frames = (Array.isArray(l.frames) ? l.frames : []).filter((x): x is FrameId => typeof x === 'string' && x in FRAMES);
+    if (!skins.includes('zwykly')) skins.unshift('zwykly');
+    if (!frames.includes('prosta')) frames.unshift('prosta');
+    out.look = {
+      skins: [...new Set(skins)], frames: [...new Set(frames)],
+      skin: typeof l.skin === 'string' && skins.includes(l.skin as SkinId) ? l.skin as SkinId : 'zwykly',
+      frame: typeof l.frame === 'string' && frames.includes(l.frame as FrameId) ? l.frame as FrameId : 'prosta',
+    };
+  }
   if (!isObj(out.event) || !isObj(out.event.base) || typeof out.event.ev !== 'number' || typeof out.event.pts !== 'number') out.event = null;
   if (!isObj(out.boost) || typeof out.boost.lvl !== 'number' || typeof out.boost.ms !== 'number') out.boost = fresh.boost;
   if (!isObj(out.runes)) out.runes = {};

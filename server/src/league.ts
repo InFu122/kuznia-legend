@@ -9,12 +9,12 @@
 //
 // Magazyn gracza (tylko serwer): league/me — liga, grupa tygodnia, wynik sezonu; league/shop — dzienne limity sklepu areny.
 // Żetony Areny żyją w portfelu Nakamy (klucz `tokens`).
-import { ARENA_SHOP, LEAGUE, LEAGUE_SEASON_GEMS, leagueWeekTokens, type ArenaShopId } from '../../src/data';
+import { ARENA_SHOP, LEAGUE, LEAGUES, LEAGUE_FRAMES, LEAGUE_SEASON_GEMS, MASTER_SKIN_TIER, leagueWeekTokens, type ArenaShopId } from '../../src/data';
 import {
   TOP_TIER, arenaShopBlock, arenaShopReward, fightTokens, leagueMove, leaguePts, seasonOfWeek, standings, weekFrac, weekStart, type Member,
 } from '../../src/engine/league';
 import { addArenaFight } from './arena';
-import { readPending } from './clanlife';
+import { pushRewards, readPending } from './clanlife';
 import { INVALID, PRECONDITION, SYSTEM_USER, err, parse, readSave, serverDay, updateObject, userOf } from './common';
 import { giveReward, walletAdd, walletGems, walletGet, walletSpend } from './shop';
 import { warClock, type WarClock } from './war';
@@ -45,9 +45,9 @@ function readGroup(nk: nkruntime.Nakama, key: string): Group | null {
 function settle(nk: nkruntime.Nakama, ctx: nkruntime.Context, userId: string, now: number): { me: LeagueMe; clock: WarClock } {
   const clock = warClock(nk, ctx, now);
   const sNow = seasonOfWeek(clock.week).n;
-  let pay = { tokens: 0, gems: 0 };
+  let pay = { tokens: 0, gems: 0, up: -1 };
   const me = updateObject<LeagueMe>(nk, 'league', 'me', userId, cur => {
-    pay = { tokens: 0, gems: 0 };
+    pay = { tokens: 0, gems: 0, up: -1 };
     if (cur && cur.week === clock.week && cur.season === sNow) return null;
     const m: LeagueMe = cur ? { ...cur } : { tier: 0, week: clock.week, g: null, season: sNow, best: -1 };
     if (m.week !== clock.week) {
@@ -60,6 +60,7 @@ function settle(nk: nkruntime.Nakama, ctx: nkruntime.Context, userId: string, no
         m.tier = Math.max(0, Math.min(TOP_TIER, grp.tier + move));
         m.last = { week: m.week, tier: grp.tier, rank, move, tokens };
         pay.tokens += tokens;
+        if (move > 0) pay.up = m.tier;
         if (seasonOfWeek(m.week).n === m.season) m.best = Math.max(m.best, m.tier);
       }
       m.week = clock.week;
@@ -79,6 +80,13 @@ function settle(nk: nkruntime.Nakama, ctx: nkruntime.Context, userId: string, no
   }, perm)!;
   if (pay.tokens) walletAdd(nk, userId, TOKENS, pay.tokens, `liga: tydzień ${me.last?.week ?? ''}`);
   if (pay.gems) walletAdd(nk, userId, 'gems', pay.gems, `liga: sezon ${me.lastSeason?.n ?? ''}`);
+  if (pay.up > 0) {
+    // Awans: ramki lig do nowej włącznie, od Diamentu III strój Mistrza Areny.
+    const frames = [...new Set(LEAGUE_FRAMES.slice(0, pay.up + 1))];
+    try {
+      pushRewards(nk, userId, [{ why: `Awans do ligi ${LEAGUES[pay.up].n}`, r: { frames, skins: pay.up >= MASTER_SKIN_TIER ? ['mistrz'] : undefined } }]);
+    } catch { /* ozdoby nie są konieczne */ }
+  }
   return { me, clock };
 }
 

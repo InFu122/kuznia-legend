@@ -1,4 +1,5 @@
 import { dungScene } from '../engine/events';
+import { skinOr } from '../engine/cosmetics';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { AD_BUFFS, BUFF_IDS, LANDS, ROMAN, SKILLS, SLOT_ORDER, type BuffId } from '../data';
 import { dungeonBgUrl, foeUrl, heroUrl, itemUrl, landBgUrl, skillUrl } from '../art/render';
@@ -20,8 +21,8 @@ interface Float { id: number; text: string; cls: string; x: number; y: number }
 export const bestRarity = (eq: Record<string, Item | null>) => Object.values(eq).reduce((m, it) => (it ? Math.max(m, it.r) : m), -1);
 
 /** Bohater w pixel arcie, ubrany w to, co ma założone. */
-export function HeroSprite({ eq, flip = false }: { eq: Record<string, Item | null | { kind: string; ore: number }>; flip?: boolean }) {
-  return <img class={`sprite${flip ? ' flip' : ''}`} src={heroUrl(eq as Record<string, Item | null>)} alt="" draggable={false} />;
+export function HeroSprite({ eq, flip = false, skin }: { eq: Record<string, Item | null | { kind: string; ore: number }>; flip?: boolean; skin?: string }) {
+  return <img class={`sprite${flip ? ' flip' : ''}`} src={heroUrl(eq as Record<string, Item | null>, skinOr(skin))} alt="" draggable={false} />;
 }
 
 /** Wróg (albo kilku — wtedy dalsi stoją z tyłu). */
@@ -131,7 +132,7 @@ export function Arena({ game, onTab, onInfo, onAd }: { game: Game; onTab: (t: Ta
       <div class={`stage${e?.boss ? ' boss' : ''}`}>
         <div class={`st-tag${e?.boss ? ' boss' : ''}`}>{label}</div>
         <div class={`actor hero${best >= 2 ? ' r' + best : ''}${hp <= 0 ? ' dead' : ''}`} ref={heroRef}>
-          <HeroSprite eq={s.eq} />
+          <HeroSprite eq={s.eq} skin={s.look.skin} />
         </div>
         {shown && (
           <div key={lastFoe.current?.id} class={`actor foe tp-${foeTemplate(shown.name, shown.type)}${shown.boss ? ' boss' : ''}${dead ? ' dead' : ''}`} ref={foeRef}>

@@ -1045,3 +1045,22 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .ev-list li.ready{outline:1px solid var(--straw); outline-offset:-1px}
 .ev-list li.ready small{color:var(--straw)}
 .ev-list li.got{opacity:.55}
+
+/* ---------- wygląd: awatary, stroje i ramki ---------- */
+.avatar{--sz:36px; position:relative; flex:none; display:inline-grid; place-items:center; width:var(--sz); height:var(--sz); border-radius:28%; padding:3px; background:linear-gradient(145deg, var(--f1), var(--f2)); box-sizing:border-box}
+.avatar.glow{box-shadow:0 0 calc(var(--sz) / 6) var(--fg)}
+.avatar img{width:100%; height:100%; border-radius:22%; background:radial-gradient(circle at 50% 35%, #3a3028, #1a140f); image-rendering:pixelated}
+.smith-head{display:flex; align-items:center; gap:12px}
+.smith-head .linkbtn{padding:0; margin-top:2px; font-size:12px}
+.avbtn{background:none; border:0; padding:0; cursor:pointer; border-radius:28%}
+.lookgrid{list-style:none; margin:6px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:8px}
+.lookgrid li button{width:100%; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 6px; border-radius:12px; background:var(--plate-2); border:1px solid var(--rivet); color:inherit; font:inherit; text-align:center; min-height:100%}
+.lookgrid li button:disabled{cursor:default}
+.lookgrid li.on button{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw) inset}
+.lookgrid li.lock .lk-hero, .lookgrid li.lock .avatar{filter:grayscale(1) brightness(.5)}
+.lookgrid li b{font-size:12px; line-height:1.2}
+.lookgrid li small{font-size:10.5px; color:var(--ash); line-height:1.25}
+.lookgrid li.on small{color:var(--straw)}
+.lk-hero{width:72px; height:72px; image-rendering:pixelated}
+.rk-who{display:inline-flex; align-items:center; gap:8px; min-width:0}
+.rk-who > span{min-width:0}

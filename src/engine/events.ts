@@ -50,11 +50,19 @@ export function eventUpdate(e: EventTrack | null | undefined, s: GameState, now:
   return { e: cur, old };
 }
 
+/** Nagroda progu `i` wydarzenia numer `ev` (ostatni próg daje też strój i ramkę wydarzenia). */
+export function milestoneReward(ev: number, i: number, s: GameState): Reward {
+  const r = passItemsReward(EVENT_MILESTONES[i].r, s);
+  if (i !== EVENT_MILESTONES.length - 1) return r;
+  const def = eventByIndex(ev).def;
+  return addReward(r, { skins: [def.skin], frames: [def.frame] });
+}
+
 /** Nieodebrane nagrody progów. */
 export function eventUnclaimed(e: EventTrack, s: GameState): { r: Reward; n: number } {
   const reached = eventReached(e);
   let r: Reward = {};
-  for (let i = e.got; i < reached; i++) r = addReward(r, passItemsReward(EVENT_MILESTONES[i].r, s));
+  for (let i = e.got; i < reached; i++) r = addReward(r, milestoneReward(e.ev, i, s));
   return { r, n: Math.max(0, reached - e.got) };
 }
 

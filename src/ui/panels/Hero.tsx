@@ -47,7 +47,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
     <>
       <section class="card">
         <div class="hero-head">
-          <div class={`actor hero doll${bestRarity(s.eq) >= 2 ? ' r' + bestRarity(s.eq) : ''}`} aria-hidden="true"><HeroSprite eq={s.eq} /></div>
+          <div class={`actor hero doll${bestRarity(s.eq) >= 2 ? ' r' + bestRarity(s.eq) : ''}`} aria-hidden="true"><HeroSprite eq={s.eq} skin={s.look.skin} /></div>
           <div>
             <div class="eyebrow">Bohater</div>
             <div class="h">{s.name}</div>

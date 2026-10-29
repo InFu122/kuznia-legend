@@ -2,9 +2,8 @@
 import { useState } from 'preact/hooks';
 import { EVENT, EVENT_MILESTONES } from '../../data';
 import { dungeonBgUrl, resUrl } from '../../art/render';
-import { eventByIndex, eventIcon, eventOf, eventPts, eventReached, evWord } from '../../engine/events';
+import { eventByIndex, eventIcon, eventOf, eventPts, eventReached, evWord, milestoneReward } from '../../engine/events';
 import type { Game } from '../../engine/game';
-import { passItemsReward } from '../../engine/shop';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 import { rewardText } from '../texts';
@@ -50,7 +49,7 @@ export function EventView({ game, close, onDung }: { game: Game; close: () => vo
           return (
             <li key={i} class={st}>
               <span class="num">{fmt(m.pts)}</span>
-              <span>{rewardText(passItemsReward(m.r, game.s))}</span>
+              <span>{rewardText(milestoneReward(e.ev, i, game.s))}</span>
               <small>{st === 'got' ? 'odebrane' : st === 'ready' ? 'do odebrania' : `brakuje ${fmt(m.pts - pts)}`}</small>
             </li>
           );

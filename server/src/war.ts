@@ -11,6 +11,7 @@
 //                   war_clan/{tydzień}:{klan} — skład, punkty, ataki i wynik klanu.
 // Magazyn gracza:   war/me — punkty dnia i liczniki z początku dnia.
 import { GHOST_CLANS, GHOST_NAMES, WAR, WAR_DAYS, type WarDayKind } from '../../src/data';
+import { frameOr, skinOr } from '../../src/engine/cosmetics';
 import { duel, scaleFighter } from '../../src/engine/duel';
 import { warChest, type WarResult } from '../../src/engine/clan';
 import { shuffle } from '../../src/engine/rng';
@@ -468,8 +469,8 @@ export function rpcWarAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
   return JSON.stringify(view(nk, clock, rec, userId, t.me, now, {
     fight: {
       win: res.win, ms: res.ms, frames: res.frames, crits: res.crits, skills: res.skills, pts,
-      me: { name: hero.f.name, power: hero.power, look: hero.look ?? {} },
-      foe: { name: d.n, power: d.power, ghost: d.ghost, look: (foeHero ? foeHero.look : hero.look) ?? {} },
+      me: { name: hero.f.name, power: hero.power, look: hero.look ?? {}, sk: skinOr(hero.sk), fr: frameOr(hero.fr) },
+      foe: { name: d.n, power: d.power, ghost: d.ghost, look: (foeHero ? foeHero.look : hero.look) ?? {}, sk: skinOr(foeHero?.sk), fr: frameOr(foeHero?.fr) },
     },
   }));
 }

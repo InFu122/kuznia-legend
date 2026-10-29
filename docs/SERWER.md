@@ -120,6 +120,10 @@ Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiam
 
 Co 2 tygodnie nowe wydarzenie (na zmianę: Festiwal Kuźni, Wielkie Łowy, Noc Upiorów) z własnymi punktami (Iskry, Trofea, Świece) i lochem sezonowym (Ognista Otchłań, Lodowa Grota, Nawiedzone Katakumby). Punkty za codzienną grę według wydarzenia (wytopy, wrogowie, klucze w lochach) — najwyżej 400 dziennie — i bez limitu za piętra lochu sezonowego (2 klucze dziennie, 10 pięter, na końcu boss i skrzynia). 12 progów nagród; nieodebrane trafiają do gracza same po końcu wydarzenia. Baner wydarzenia jest na górze zakładki **Lochy**. Punkty liczy gra; serwer w zapisie odrzuca więcej punktów, niż da się zdobyć w czasie wydarzenia.
 
+### Wygląd: stroje i ramki
+
+**Kodeks → Piętno Kowala → Wygląd**: 8 strojów bohatera (kolory i płaszcz) i 11 ramek awatara — wyłącznie ozdoby. Zdobywa się je w Przepustce Kowala (ramka na 10. poziomie złotej ścieżki, strój na 20. poziomie darmowej i na 30. złotej), za ostatni próg każdego wydarzenia (strój i ramka), za awanse w ligach areny (ramki lig, od Diamentu III strój Mistrza Areny), za miejsce klanu w pierwszej trójce sezonu wojen (ramka) i za Dziedzictwo (Złoty Kowal). Strój i ramkę widzą inni gracze w rankingach i na arenie.
+
 ### Klany
 
 Zakładka **Klan** (po pokonaniu pierwszego bossa): wyszukiwanie, dołączanie, zakładanie klanu. Klan ma do 30 członków. Przywódca ustawia opis, tryb wstępu (otwarty, na prośbę, zamknięty), minimalną Moc i język, awansuje i degraduje (do 2 Zastępców i 5 Starszych) oraz może przekazać przywództwo. Zastępcy piszą ogłoszenia i wyrzucają, Starsi przyjmują prośby. Gdy Przywódca odchodzi, władzę przejmuje Zastępca, Starszy albo najdawniejszy członek; ostatni członek rozwiązuje klan.

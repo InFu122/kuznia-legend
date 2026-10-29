@@ -2,6 +2,7 @@
 // Moduł czysty (bez DOM): zwraca piksele RGBA, a render.ts robi z nich obrazki.
 import { FOE_BY_TYPE, FOE_LOOK, FOE_TEMPLATES, HERO_BASE_PAL, HERO_H, HERO_LAYERS, HERO_W } from './actors-data';
 import { itemPalette, itemSprite, tierOf } from './items';
+import { SKINS, type SkinId } from '../data/cosmetics';
 import { rgba, sprite, type Palette } from './pixel';
 
 export { HERO_H, HERO_W };
@@ -54,14 +55,29 @@ function layer(px: Uint8ClampedArray, key: string, pal: Palette): boolean {
 }
 
 /** Klucz pamięci podręcznej dla wyglądu bohatera. */
-export function heroKey(g: HeroGear): string {
-  return (['bron', 'helm', 'zbroja', 'rekawice', 'buty', 'pas', 'amulet'] as const).map(k => { const it = g[k]; return it ? `${it.kind}:${it.ore}` : '-'; }).join('|');
+export function heroKey(g: HeroGear, skin: SkinId = 'zwykly'): string {
+  return skin + '#' + (['bron', 'helm', 'zbroja', 'rekawice', 'buty', 'pas', 'amulet'] as const).map(k => { const it = g[k]; return it ? `${it.kind}:${it.ore}` : '-'; }).join('|');
+}
+
+/** Płaszcz za plecami bohatera (strój z płaszczem); a — jasny, b — średni, c — ciemny. */
+const CAPE: [number, number, string[]] = [1, 17, [
+  '.....aa.', '....aabb', '...aabbb', '...abbbb', '..aabbbb', '..abbbbc', '.aabbbbc',
+  '.abbbbcc', '.abbbccc', 'aabbbccc', 'abbbccc.', 'abbccc..', '.bcc.c..',
+]];
+
+/** Ciało w kolorach stroju (z płaszczem, jeśli strój go ma). */
+function body(px: Uint8ClampedArray, skin: SkinId): Palette {
+  const S = SKINS[skin] ?? SKINS.zwykly;
+  const pal = { ...HERO_BASE_PAL, ...S.pal };
+  if (S.cape) paint(px, HERO_W, HERO_H, CAPE[0], CAPE[1], CAPE[2], { a: S.cape[0], b: S.cape[1], c: S.cape[2] });
+  layer(px, 'base', pal);
+  return pal;
 }
 
 /** Bohater 36×36: ciało, zbroja, pas, buty, rękawice, amulet, hełm, broń w dłoni. Patrzy w prawo. */
-export function heroPixels(g: HeroGear): Uint8ClampedArray {
+export function heroPixels(g: HeroGear, skin: SkinId = 'zwykly'): Uint8ClampedArray {
   const px = new Uint8ClampedArray(HERO_W * HERO_H * 4);
-  layer(px, 'base', HERO_BASE_PAL);
+  const pal = body(px, skin);
   const gear = (slot: 'helm' | 'zbroja' | 'buty' | 'pas', prefix: string = slot) => {
     const it = g[slot];
     if (!it) return;
@@ -81,9 +97,24 @@ export function heroPixels(g: HeroGear): Uint8ClampedArray {
     paint(px, HERO_W, HERO_H, HAND[0] - gx, HAND[1] - gy, s.rows, itemPalette(w.ore));
   }
   if (gl) layer(px, `rekawiceF:${glKind}:${tierOf(gl.ore)}`, itemPalette(gl.ore));
-  else layer(px, 'hand', HERO_BASE_PAL);
+  else layer(px, 'hand', pal);
   outline(px, HERO_W, HERO_H);
   return px;
+}
+
+export const AVATAR = 18;
+/** Awatar 18×18: głowa i ramiona bohatera w stroju (bez ekwipunku). */
+export function avatarPixels(skin: SkinId = 'zwykly'): Uint8ClampedArray {
+  const px = new Uint8ClampedArray(HERO_W * HERO_H * 4);
+  body(px, skin);
+  outline(px, HERO_W, HERO_H);
+  const out = new Uint8ClampedArray(AVATAR * AVATAR * 4);
+  const x0 = 3, y0 = 3;
+  for (let y = 0; y < AVATAR; y++) for (let x = 0; x < AVATAR; x++) {
+    const i = ((y0 + y) * HERO_W + x0 + x) * 4, o = (y * AVATAR + x) * 4;
+    out[o] = px[i]; out[o + 1] = px[i + 1]; out[o + 2] = px[i + 2]; out[o + 3] = px[i + 3];
+  }
+  return out;
 }
 
 /** Który wygląd ma wróg o tej nazwie (część nazw jest zmienna, np. „Strażnik 12. piętra”). */

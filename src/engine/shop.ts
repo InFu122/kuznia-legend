@@ -3,6 +3,7 @@
 // Bez serwera (artefakt, gra w przeglądarce) wszystko dzieje się tutaj.
 import {
   AD, AD_BUFFS, DAILY_GIFT, DUNGEONS, DUNG_ORDER, GEM_PACKS, GEM_SHOP, ORES, PASS, PASS_LEVELS, SEASON_NAMES, STARTER_EXTRA, speedupGems,
+  type FrameId, type SkinId,
   type BuffId, type GemItemId, type PassItem,
 } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
@@ -35,6 +36,8 @@ export function addReward(a: Reward, b: Reward): Reward {
     for (const [kk, v] of Object.entries(m)) t[kk] = (t[kk] ?? 0) + v;
     (out as Record<string, unknown>)[k] = t;
   }
+  if (b.skins?.length) out.skins = [...new Set([...(out.skins ?? []), ...b.skins])];
+  if (b.frames?.length) out.frames = [...new Set([...(out.frames ?? []), ...b.frames])];
   return out;
 }
 
@@ -46,6 +49,8 @@ export function passItemsReward(items: PassItem[], s: GameState): Reward {
       case 'gold': r = addReward(r, { gold: goldWave(s.bestG) * it.n }); break;
       case 'ore': r = addReward(r, { ores: { [bestOre(s)]: it.n } }); break;
       case 'egg': r = addReward(r, { eggs: { [it.n]: 1 } }); break;
+      case 'skin': if (it.id) r = addReward(r, { skins: [it.id as SkinId] }); break;
+      case 'frame': if (it.id) r = addReward(r, { frames: [it.id as FrameId] }); break;
       default: r = addReward(r, { [it.k]: it.n } as Reward);
     }
   }

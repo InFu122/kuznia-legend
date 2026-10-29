@@ -1,4 +1,4 @@
-import { ELEM, EVENT, KRYPTA_FLOORS, KRYPTA_RULES, LAB_ROOMS, LANDS, ORES, RAR, SETS, ZBROJOWNIA_CHESTS, KOPALNIA_WAVES, setOfLand } from '../data';
+import { ELEM, EVENT, FRAMES, KRYPTA_FLOORS, SKINS, KRYPTA_RULES, LAB_ROOMS, LANDS, ORES, RAR, SETS, ZBROJOWNIA_CHESTS, KOPALNIA_WAVES, setOfLand } from '../data';
 import { dungName, eventOf, evText } from '../engine/events';
 import type { DungRun, ElemKey, Reward, SetId } from '../engine/types';
 import { fmt } from './format';
@@ -54,6 +54,8 @@ export function rewardText(r: Reward): string {
   if (r.seals) out.push(`${fmt(r.seals)} × Pieczęć Legendy`);
   if (r.coins) out.push(coins(r.coins));
   if (r.gems) out.push(gemsText(r.gems));
+  for (const k of r.skins ?? []) out.push(`strój „${SKINS[k].n}”`);
+  for (const k of r.frames ?? []) out.push(`ramka „${FRAMES[k].n}”`);
   return out.length ? out.join(' · ') : 'nic';
 }
 
