@@ -39,10 +39,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Sprawdź ustawienia
+        id: cfg
         run: |
           if [ -z "$VITE_SERVER_KEY" ]; then
-            echo "::error::Brak zmiennej NAKAMA_SERVER_KEY — dodaj ją w Settings → Secrets and variables → Actions → Variables (wartość z pliku .env na serwerze)."
-            exit 1
+            echo "::warning::Brak zmiennej NAKAMA_SERVER_KEY — APK zbuduje się tylko na próbę (bez połączenia z serwerem) i nie trafi do Releases. Dodaj ją w Settings → Secrets and variables → Actions → Variables (wartość z pliku .env na serwerze)."
+            echo "VITE_SERVER_KEY=brak-klucza" >> "$GITHUB_ENV"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/setup-node@v4
@@ -79,6 +83,7 @@ jobs:
           retention-days: 14
 
       - name: Wydanie „android-test” (stały link)
+        if: steps.cfg.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
