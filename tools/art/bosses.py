@@ -265,3 +265,24 @@ def ad_icon():
     rows = outline(rows)
     pal = {**K, 'a': '#a07a4c', 'b': '#2a2f3a', 'c': '#f2c14e', 'd': '#6e4a2c'}
     return rows, pal
+
+def arena_token():
+    # Żeton Areny 16×16: fioletowa moneta ze skrzyżowanymi mieczami (ostrza w górę, rękojeści na dole).
+    S = 16
+    g = [['.'] * S for _ in range(S)]
+    for y in range(S):
+        for x in range(S):
+            d = ((x + .5 - 8) ** 2 + (y + .5 - 8) ** 2) ** .5
+            if d <= 7: g[y][x] = 'p'
+            if 5.9 <= d <= 6.6: g[y][x] = 'q'
+    rows = outline(shade([''.join(r) for r in g]))
+    rows = [list(r) for r in rows]
+    for i in range(6):
+        rows[3 + i][4 + i] = 'Y'; rows[3 + i][5 + i] = 'k'      # miecz 1: ostrze \\ z cieniem
+        rows[3 + i][11 - i] = 'Y'; rows[4 + i][11 - i] = 'k'    # miecz 2: ostrze /
+    for (x, y) in [(10, 9), (9, 10), (11, 8), (5, 9), (6, 10), (4, 8)]: rows[y][x] = 'h'   # jelce
+    for (x, y) in [(11, 10), (12, 11), (4, 10), (3, 11)]: rows[y][x] = 'r'                  # rękojeści
+    rows = [''.join(r) for r in rows]
+    pal = {**K, **ramp('p', ['#a993ec', '#7c60cc', '#5c42a8', '#3c2a7c']), **ramp('q', ['#d9c8ff', '#b9a2f4', '#9a80e0', '#7458c0']),
+           'Y': '#ffffff', 'k': '#2a1c58', 'h': '#f2c14e', 'r': '#8a5a22'}
+    return rows, pal

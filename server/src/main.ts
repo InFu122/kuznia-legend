@@ -4,6 +4,7 @@
 // zostawia funkcje z modułów jako deklaracje najwyższego poziomu, więc mogą mieszkać w osobnych plikach.
 import { SAVE_VERSION } from '../../src/engine/state';
 import { rpcArenaFight, rpcArenaList } from './arena';
+import { rpcArenaLeague, rpcArenaShopBuy } from './league';
 import { chatBlock, chatJoin, chatSend, rpcChatDrop, rpcChatReport } from './chat';
 import { blockGroupApi, rpcClanCreate, rpcClanInfo, rpcClanJoin, rpcClanLeave, rpcClanList, rpcClanManage, rpcClanSettings } from './clan';
 import { rpcClanBossAttack, rpcClanDonate, rpcClanHelp, rpcClanHelpAsk, rpcClanOreAsk, rpcClanOreGive, rpcClanSync } from './clanlife';
@@ -42,6 +43,8 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('obieg_sync', rpcObiegSync);
   initializer.registerRpc('arena_list', rpcArenaList);
   initializer.registerRpc('arena_fight', rpcArenaFight);
+  initializer.registerRpc('arena_league', rpcArenaLeague);
+  initializer.registerRpc('arena_shop_buy', rpcArenaShopBuy);
   initializer.registerRpc('name_set', rpcNameSet);
   initializer.registerRpc('clan_list', rpcClanList);
   initializer.registerRpc('clan_create', rpcClanCreate);

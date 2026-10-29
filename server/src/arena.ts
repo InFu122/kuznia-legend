@@ -8,6 +8,7 @@ import { shuffle } from '../../src/engine/rng';
 import { computeStats, extraOf } from '../../src/engine/stats';
 import type { GameState } from '../../src/engine/types';
 import { INVALID, NOT_FOUND, PRECONDITION, err, parse, readSave, serverDay, serverRng, userOf } from './common';
+import { leagueBrief, leagueOnFight } from './league';
 import { boardMeta, ownRecord } from './ranking';
 import { cleanName } from './validate';
 
@@ -32,7 +33,7 @@ function lookOf(eq: GameState['eq']): Look {
   return o;
 }
 interface Opp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean; k?: number }
-interface ArenaMe { day: string; left: number; wins: number; losses: number; opp: Opp[] }
+interface ArenaMe { day: string; left: number; wins: number; losses: number; opp: Opp[]; extra?: number }
 
 const arenaOpen = (s: GameState) => s.maxLand >= B.ARENA_UNLOCK_LAND;
 
@@ -94,8 +95,19 @@ function loadMe(nk: nkruntime.Nakama, userId: string, now: number): { me: ArenaM
   const o = nk.storageRead([{ ...ME, userId }]);
   const me: ArenaMe = o.length ? (o[0].value as ArenaMe) : { day: '', left: B.ARENA_FIGHTS, wins: 0, losses: 0, opp: [] };
   const day = serverDay(now);
-  if (me.day !== day) { me.day = day; me.left = B.ARENA_FIGHTS; }
+  if (me.day !== day) { me.day = day; me.left = B.ARENA_FIGHTS; me.extra = 0; }
   return { me, version: o.length ? o[0].version : '*' };
+}
+
+/** Dodatkowa walka na dziś (bilet ze sklepu areny, reklama). Zwraca liczbę walk do stoczenia. */
+export function addArenaFight(nk: nkruntime.Nakama, userId: string, now: number): number {
+  for (let i = 0; i < 5; i++) {
+    const { me, version } = loadMe(nk, userId, now);
+    me.left++;
+    me.extra = (me.extra ?? 0) + 1;
+    try { saveMe(nk, userId, me, version); return me.left; } catch { /* konflikt wersji — jeszcze raz */ }
+  }
+  throw err('Serwer jest zajęty, spróbuj za chwilę.', PRECONDITION);
 }
 
 function saveMe(nk: nkruntime.Nakama, userId: string, me: ArenaMe, version: string): void {
@@ -121,7 +133,7 @@ function defenseLog(nk: nkruntime.Nakama, userId: string) {
 function view(nk: nkruntime.Nakama, userId: string, me: ArenaMe, hero: Hero) {
   const rec = ownRecord(nk, 'arena', userId);
   return {
-    rating: rec ? rec.score : START_RATING, rank: rec ? rec.rank : 0, left: me.left, max: B.ARENA_FIGHTS,
+    rating: rec ? rec.score : START_RATING, rank: rec ? rec.rank : 0, left: me.left, max: B.ARENA_FIGHTS + (me.extra ?? 0),
     wins: me.wins, losses: me.losses, power: hero.power, opp: me.opp, log: defenseLog(nk, userId), serverTime: Date.now(),
   };
 }
@@ -141,7 +153,7 @@ export function rpcArenaList(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
   const { me, version } = loadMe(nk, userId, now);
   if (!me.opp.length || req.refresh === true) me.opp = pickOpponents(nk, userId, rating(nk, userId), hero);
   saveMe(nk, userId, me, version);
-  return JSON.stringify(view(nk, userId, me, hero));
+  return JSON.stringify({ ...view(nk, userId, me, hero), league: leagueBrief(nk, ctx, userId) });
 }
 
 /** Walka z przeciwnikiem numer `i` z listy. Wynik, zmiana oceny i nagroda liczy serwer. */
@@ -198,7 +210,15 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   me.left--;
   me.opp = pickOpponents(nk, userId, next, hero);
   saveMe(nk, userId, me, version);
+  // Liga: punkty i Żetony (walka już się odbyła — błąd ligi nie cofa walki).
+  let lg: ReturnType<typeof leagueOnFight> | null = null;
+  try {
+    lg = leagueOnFight(nk, ctx, userId, hero.f.name, res.win, hero.power, opp.power);
+  } catch (e) {
+    logger.warn('Arena: liga nie przyjęła walki %s: %s', userId, String(e));
+  }
   return JSON.stringify({
+    lp: lg ? lg.lp : 0, tk: lg ? lg.tk : 0, league: lg ? lg.league : null,
     win: res.win, ms: res.ms, frames: res.frames, crits: res.crits, skills: res.skills,
     me: { name: hero.f.name, power: hero.power, look: hero.look ?? {} }, foe: { name: opp.name, power: opp.power, ghost: opp.ghost, look: foeLook ?? {} },
     d, gold, ...view(nk, userId, me, hero),

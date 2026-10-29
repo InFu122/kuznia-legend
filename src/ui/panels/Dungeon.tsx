@@ -107,7 +107,7 @@ function ArenaBanner({ game, online, onArena }: { game: Game; online: boolean; o
       <div class="ab-main">
         <div class="eyebrow">Gracz kontra gracz</div>
         <div class="ab-name">Arena</div>
-        <div class="ab-sub">{open ? `${B.ARENA_FIGHTS} walk dziennie z kopiami bohaterów innych graczy · ocena i złoto` : `Odblokujesz po pokonaniu bossa krainy ${LANDS[B.ARENA_UNLOCK_LAND - 1]?.n ?? LANDS[0].n}`}</div>
+        <div class="ab-sub">{open ? `${B.ARENA_FIGHTS} walk dziennie z kopiami bohaterów innych graczy · ligi tygodniowe, Żetony Areny i sklep` : `Odblokujesz po pokonaniu bossa krainy ${LANDS[B.ARENA_UNLOCK_LAND - 1]?.n ?? LANDS[0].n}`}</div>
       </div>
       {open && <button class="btn primary" disabled={!online} onClick={onArena} title={online ? undefined : 'Potrzebne połączenie z serwerem'}>{online ? 'Walcz' : 'Offline'}</button>}
     </section>

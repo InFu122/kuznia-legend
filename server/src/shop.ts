@@ -24,25 +24,28 @@ interface Iap { once: string[] }
 
 /* ---------- portfel ---------- */
 
-export function walletGems(nk: nkruntime.Nakama, userId: string): number {
+/** Stan waluty w portfelu Nakamy (`gems` — Klejnoty, `tokens` — Żetony Areny). */
+export function walletGet(nk: nkruntime.Nakama, userId: string, key: string): number {
   const w = (nk.accountGetId(userId).wallet || {}) as Record<string, number>;
-  return Math.max(0, Math.floor(Number(w[GEMS]) || 0));
+  return Math.max(0, Math.floor(Number(w[key]) || 0));
+}
+export function walletAdd(nk: nkruntime.Nakama, userId: string, key: string, n: number, why: string): number {
+  if (!n) return walletGet(nk, userId, key);
+  const r = nk.walletUpdate(userId, { [key]: Math.round(n) }, { why }, true);
+  return Math.max(0, Math.floor(Number((r.updated || {})[key]) || 0));
+}
+/** Płatność z portfela. Portfel Nakamy nie zejdzie poniżej zera — wtedy zakup jest odrzucony. */
+export function walletSpend(nk: nkruntime.Nakama, userId: string, key: string, n: number, why: string, msg: string): number {
+  if (walletGet(nk, userId, key) < n) throw err(msg, PRECONDITION);
+  try { return walletAdd(nk, userId, key, -n, why); } catch { throw err(msg, PRECONDITION); }
 }
 
-function addGems(nk: nkruntime.Nakama, userId: string, n: number, why: string): number {
-  if (!n) return walletGems(nk, userId);
-  const r = nk.walletUpdate(userId, { [GEMS]: Math.round(n) }, { why }, true);
-  return Math.max(0, Math.floor(Number((r.updated || {})[GEMS]) || 0));
-}
-
-/** Płatność Klejnotami. Portfel Nakamy nie zejdzie poniżej zera — wtedy zakup jest odrzucony. */
-function spendGems(nk: nkruntime.Nakama, userId: string, n: number, why: string): number {
-  if (walletGems(nk, userId) < n) throw err('Za mało Klejnotów.', PRECONDITION);
-  try { return addGems(nk, userId, -n, why); } catch { throw err('Za mało Klejnotów.', PRECONDITION); }
-}
+export const walletGems = (nk: nkruntime.Nakama, userId: string) => walletGet(nk, userId, GEMS);
+const addGems = (nk: nkruntime.Nakama, userId: string, n: number, why: string) => walletAdd(nk, userId, GEMS, n, why);
+const spendGems = (nk: nkruntime.Nakama, userId: string, n: number, why: string) => walletSpend(nk, userId, GEMS, n, why, 'Za mało Klejnotów.');
 
 /** Nagroda: Klejnoty do portfela, reszta do kolejki nagród gry. */
-function giveReward(nk: nkruntime.Nakama, userId: string, why: string, r: Reward): void {
+export function giveReward(nk: nkruntime.Nakama, userId: string, why: string, r: Reward): void {
   const { gems, ...rest } = r;
   if (gems) addGems(nk, userId, gems, why);
   if (Object.keys(rest).some(k => { const v = (rest as Record<string, unknown>)[k]; return typeof v === 'number' ? v > 0 : !!v && Object.keys(v as object).length > 0; })) {

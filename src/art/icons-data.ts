@@ -699,6 +699,24 @@ export const RES_ICONS: Record<string, IconData> = {
     '....kk....kk....',
     '................',
   ], pal: {"k": "#120d16", "a": "#a07a4c", "b": "#2a2f3a", "c": "#f2c14e", "d": "#6e4a2c"} },
+  'zeton': { rows: [
+    '.....kkkkkk.....',
+    '....kABEFABk....',
+    '...kEFAAACEFk...',
+    '..kEYkBBBBAYEk..',
+    '.kEABYkBBBYkBEk.',
+    'kAFABBYkBYkBCFAk',
+    'kBABBBBYYkBBBADk',
+    'kEABBBBYYkBBBCEk',
+    'kFABhBYkBYkhBCFk',
+    'kACBBhkBBBhBBCBk',
+    'kBEArBhBBhBrCEBk',
+    '.kFrBBBBBBBBrFk.',
+    '..kEBCBBBBCDEk..',
+    '...kEFACCCEFk...',
+    '....kADEFBBk....',
+    '.....kkkkkk.....',
+  ], pal: {"k": "#2a1c58", "A": "#a993ec", "B": "#7c60cc", "C": "#5c42a8", "D": "#3c2a7c", "E": "#d9c8ff", "F": "#b9a2f4", "Y": "#ffffff", "h": "#f2c14e", "r": "#8a5a22"} },
 };
 
 /** Umiejętności 24×24. */

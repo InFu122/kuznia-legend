@@ -995,3 +995,28 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .codexgrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(32px, 1fr)); gap:4px; padding:8px 4px}
 .cx{display:grid; place-items:center; height:32px; border-radius:8px; background:var(--plate-2); filter:grayscale(1) brightness(.35)}
 .cx.have{filter:none; outline:1px solid var(--rivet)}
+
+/* ---------- ligi areny ---------- */
+.lgtop{display:inline-flex; align-items:center; gap:6px}
+.lgbadge{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:13px; color:var(--lg); white-space:nowrap}
+.lgbadge i{width:16px; height:18px; background:var(--lg); clip-path:polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%); box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)}
+.lgbadge.small{font-size:11px; gap:4px}
+.lgbadge.small i{width:11px; height:13px}
+.lgcard{display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; background:var(--plate-2); background:linear-gradient(90deg, color-mix(in srgb, var(--lg) 18%, transparent), transparent 75%), var(--plate-2); border:1px solid var(--rivet)}
+.lgcard .lgbadge{font-size:16px}
+.lgcard .lgbadge i{width:22px; height:25px}
+.lgnote{margin:8px 0 0; padding:8px 10px; border-radius:10px; background:var(--plate-2); font-size:13px; line-height:1.35}
+.lgnote.up{border-left:3px solid var(--good)}
+.lgnote.down{border-left:3px solid var(--blood)}
+.lgtable{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:2px; flex:none; max-height:min(320px, 45vh); overflow:auto; border-radius:10px}
+.lgtable li{display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:8px; padding:5px 10px; font-size:13px; background:var(--plate-2)}
+.lgtable li .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lgtable li .pos{color:var(--ash); text-align:right}
+.lgtable li.up{background:linear-gradient(90deg, rgba(111,207,127,.16), transparent 70%), var(--plate-2)}
+.lgtable li.down{background:linear-gradient(90deg, rgba(224,103,90,.16), transparent 70%), var(--plate-2)}
+.lgtable li.cut{border-bottom:1px dashed var(--rivet)}
+.lgtable li.me{outline:1px solid var(--straw); outline-offset:-1px; font-weight:700}
+.lgseason{list-style:none; margin:6px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:6px}
+.lgseason li{display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:6px 8px; border-radius:10px; background:var(--plate-2); border:1px solid transparent; font-size:12px}
+.lgseason li span{display:inline-flex; align-items:center; gap:3px; color:#ffb3cf}
+.lgseason li.on{border-color:var(--straw)}

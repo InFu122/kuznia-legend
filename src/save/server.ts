@@ -1,6 +1,6 @@
 // Połączenie z serwerem gry (Nakama) przez REST. Gra potrzebuje tylko logowania urządzeniem i wywołań RPC,
 // więc obywa się bez biblioteki klienta. Bez skonfigurowanego serwera (np. w artefakcie) gra działa lokalnie.
-import type { BuffId, GemItemId } from '../data';
+import type { ArenaShopId, BuffId, GemItemId } from '../data';
 import type { ServerReward } from '../engine/clan';
 import type { ShopSync } from '../engine/game';
 import type { ElemKey, FoundEvent, GameState, Item, SlotId } from '../engine/types';
@@ -30,6 +30,7 @@ export interface ArenaOpp { id: string; name: string; rating: number; power: num
 export interface ArenaState {
   rating: number; rank: number; left: number; max: number; wins: number; losses: number; power: number;
   opp: ArenaOpp[]; log: { who: string; won: boolean; d: number; t: number }[];
+  league?: LeagueBrief | null;
 }
 /** Pojedynek rozegrany przez serwer (arena, bitwa wojny klanów) — do odtworzenia w grze. */
 export interface DuelShow {
@@ -37,7 +38,19 @@ export interface DuelShow {
   me: { name: string; power: number; look?: Record<string, { kind: string; ore: number }> };
   foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }> };
 }
-export interface ArenaFight extends ArenaState, DuelShow { d: number; gold: number }
+export interface ArenaFight extends ArenaState, DuelShow { d: number; gold: number; lp: number; tk: number }
+/** Skrót ligi w odpowiedziach areny. */
+export interface LeagueBrief { tier: number; rank: number; pts: number; tokens: number }
+/** Liga areny: grupa tygodnia, sezon, wynik zeszłego tygodnia, Żetony i dzisiejsze zakupy w sklepie areny. */
+export interface LeagueState {
+  tier: number; week: string; ends: number; rank: number;
+  rows: { n: string; pts: number; ghost: boolean; me: boolean }[] | null;
+  season: { n: number; name: string; end: number; best: number; gems: number };
+  last: { week: string; tier: number; rank: number; move: number; tokens: number } | null;
+  lastSeason: { n: number; best: number; gems: number } | null;
+  tokens: number; gems: number; shop: Partial<Record<ArenaShopId, number>>; serverTime: number;
+  rewards?: ServerReward[]; left?: number;
+}
 
 /** Odpowiedź RPC sklepu: stan sklepu, nagrody do odebrania i wynik akcji. */
 export interface ShopResp extends ShopSync { rewards: ServerReward[]; serverTime: number; keys?: boolean; cost?: number; given?: number }
@@ -268,6 +281,8 @@ export class ServerLink {
 
   arenaList(refresh = false): Promise<ArenaState> { return this.rpc('arena_list', { refresh }); }
   arenaFight(i: number, id: string): Promise<ArenaFight> { return this.rpc('arena_fight', { i, id }); }
+  arenaLeague(): Promise<LeagueState> { return this.rpc('arena_league', {}); }
+  arenaShopBuy(id: ArenaShopId): Promise<LeagueState> { return this.rpc('arena_shop_buy', { id }); }
 
   /** Kod do przeniesienia tego konta na inne urządzenie (ważny 10 minut). */
   transferCode(): Promise<{ code: string; exp: number }> { return this.rpc('transfer_code', {}); }

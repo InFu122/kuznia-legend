@@ -112,6 +112,10 @@ Rzadkie i lepsze przedmioty, które sprzedajesz, z szansą 30% trafiają do wsp�
 
 Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiami bohaterów innych graczy z ich ostatniego zapisu; walkę liczy serwer, a gra ją odtwarza. 5 walk dziennie (nowe o północy czasu UTC), za wygraną ocena rośnie, za porażkę spada — także gdy ktoś zaatakuje ciebie. Gdy graczy jest mało, listę uzupełniają duchy areny (słabsza, równa i silniejsza kopia ciebie). Ranking areny jest w **Kodeks → Rankingi**.
 
+**Ligi areny.** Pierwsza walka tygodnia (poniedziałek–niedziela, UTC — ten sam tydzień co wojna klanów) dopisuje cię do grupy 30 osób z twojej ligi: Brąz, Srebro, Złoto, Platyna, Diament III, II i I. Wygrana daje 20 pkt ligi z równym rywalem (od 10 do 30 zależnie od jego Mocy), porażka 3. Wolne miejsca w grupie zajmują duchy areny, których wynik rośnie przez tydzień. Po tygodniu najlepsza piątka awansuje, ostatnia piątka spada; tydzień rozlicza się przy pierwszym wejściu na arenę w nowym tygodniu. Sezon ligi trwa 28 dni (jak Przepustka Kowala): na koniec Klejnoty za najwyższą ligę sezonu (Srebro 20 … Diament I 300), a nowy sezon zaczyna się o jedną ligę niżej.
+
+**Żetony Areny** (portfel serwera, klucz `tokens`): 5 za wygraną, 1 za porażkę i nagroda za miejsce w lidze na koniec tygodnia. **Sklep areny** (zakładka w oknie areny) sprzedaje za Żetony bilety na dodatkowe walki (3 dziennie), Księgi, Kamienie, Zwoje, Siodła, Rzadkie jaja i Pieczęcie Legendy, z dziennymi limitami.
+
 ### Klany
 
 Zakładka **Klan** (po pokonaniu pierwszego bossa): wyszukiwanie, dołączanie, zakładanie klanu. Klan ma do 30 członków. Przywódca ustawia opis, tryb wstępu (otwarty, na prośbę, zamknięty), minimalną Moc i język, awansuje i degraduje (do 2 Zastępców i 5 Starszych) oraz może przekazać przywództwo. Zastępcy piszą ogłoszenia i wyrzucają, Starsi przyjmują prośby. Gdy Przywódca odchodzi, władzę przejmuje Zastępca, Starszy albo najdawniejszy członek; ostatni członek rozwiązuje klan.

@@ -25,6 +25,13 @@ export function starsText(n: number): string {
 }
 
 /** 1 Klejnot, 2–4 Klejnoty, 5+ Klejnotów. */
+/** „Żetony Areny” w odpowiedniej formie. */
+export function tokensText(n: number): string {
+  const m10 = n % 10, m100 = n % 100;
+  const w = n === 1 ? 'Żeton' : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 'Żetony' : 'Żetonów';
+  return `${fmt(n)} ${w} Areny`;
+}
+
 export function gemsText(n: number): string {
   const m10 = n % 10, m100 = n % 100;
   const w = n === 1 ? 'Klejnot' : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 'Klejnoty' : 'Klejnotów';
