@@ -94,3 +94,30 @@ describe('zestawy', () => {
     expect(base).toBeLessThan(st.hp);
   });
 });
+
+describe('gałąź Towarzysze', () => {
+  it('Wylęgarnia skraca wykluwanie, Stajnia tanieje ulepszenia, Więź wzmacnia chowańca i wierzchowca', async () => {
+    const { makeGame } = await import('./helpers');
+    const { HATCH_MS, PETS_UNLOCK_LAND } = await import('../src/data');
+    const { startHatch, upgradeCost } = await import('../src/engine/companions');
+    const { allMods, mountBonus } = await import('../src/engine/mods');
+    const { extraOf } = await import('../src/engine/stats');
+    const { s, ctx } = makeGame(5);
+    s.maxLand = PETS_UNLOCK_LAND; s.eggs[1] = 2;
+    s.tech.lv.t_wylegarnia = 10;
+    expect(startHatch(ctx, 1)).toBe(true);
+    expect(s.hatch!.total).toBe(HATCH_MS[1] * 0.5);
+    const full = upgradeCost('pet', 'wilczek' as never, 10);
+    s.tech.lv.t_stajnia = 5;
+    expect(upgradeCost('pet', 'wilczek' as never, 10, s)).toBe(Math.round(full * 0.8));
+    s.pets = { wilczek: { lvl: 5, stars: 1 } } as never; s.petSel = 'wilczek' as never;
+    s.mounts = { kon: { lvl: 5, stars: 0 } } as never; s.mountSel = 'kon' as never;
+    const atk0 = extraOf(s).pet!.atk, m0 = mountBonus(s).dmg;
+    s.tech.lv.t_wiez = 10;
+    expect(extraOf(s).pet!.atk).toBeCloseTo(atk0 * 1.2);
+    expect(mountBonus(s).dmg).toBeGreaterThan(m0);
+    expect(allMods(s).eggPct).toBe(0);
+    s.tech.lv.t_hodowca = 10;
+    expect(allMods(s).eggPct).toBe(100);
+  });
+});

@@ -38,7 +38,7 @@ const BOSS_RETRY = 120000; // bot próbuje bossa co 2 min, gdy ma ≥ 90% zaleca
 const TOWER_RETRY = 30 * 60000;
 const SAMPLE = 6 * 60000;  // próbka Mocy co 6 min (do kalibracji)
 /** Kolejność badań bota: pierwsze niezablokowane z listy. */
-const TECH_PRIORITY: TechId[] = ['w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 'e_noc'];
+const TECH_PRIORITY: TechId[] = ['w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 'e_noc', 't_wiez', 't_hodowca', 't_wylegarnia', 't_stajnia'];
 
 interface HourRow {
   run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; smelted: number; jumps: number; best: string; ore: number; pass: number;
@@ -68,8 +68,8 @@ function manageCompanions(g: Game): void {
   // Kamienie: tańsze ulepszenie z dwóch (chowaniec, wierzchowiec)
   for (let guard = 0; guard < 50; guard++) {
     const opts: ['pet' | 'mount', PetId | MountId, number][] = [];
-    if (s.petSel) opts.push(['pet', s.petSel, upgradeCost('pet', s.petSel, s.pets[s.petSel]!.lvl)]);
-    if (s.mountSel) opts.push(['mount', s.mountSel, upgradeCost('mount', s.mountSel, s.mounts[s.mountSel]!.lvl)]);
+    if (s.petSel) opts.push(['pet', s.petSel, upgradeCost('pet', s.petSel, s.pets[s.petSel]!.lvl, s)]);
+    if (s.mountSel) opts.push(['mount', s.mountSel, upgradeCost('mount', s.mountSel, s.mounts[s.mountSel]!.lvl, s)]);
     opts.sort((a, b) => a[2] - b[2]);
     if (!opts.length || !g.levelUp(opts[0][0], opts[0][1])) break;
   }

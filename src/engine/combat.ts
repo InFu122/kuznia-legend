@@ -300,7 +300,7 @@ function bossExtras(ctx: Ctx, land: number, first: boolean): Reward {
   if (first) r.scrolls = B.SCROLLS_BOSS_FIRST + act;
   else if (ctx.rng.next() < B.SCROLL_BOSS_CHANCE) r.scrolls = 1;
   if (land >= PETS_UNLOCK_LAND - 1) {
-    if (first || ctx.rng.next() < B.EGG_BOSS_CHANCE) r.eggs = { [eggRarity(land)]: 1 };
+    if (first || ctx.rng.next() < B.EGG_BOSS_CHANCE * (1 + allMods(ctx.s).eggPct / 100)) r.eggs = { [eggRarity(land)]: 1 };
     if (first) r.stones = 10 + 2 * land;
   }
   if (land >= MOUNTS_UNLOCK_LAND - 1) {

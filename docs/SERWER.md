@@ -129,6 +129,10 @@ W klanie zakładka **Klan** ma siedem części:
 
 Dzienne limity i dni wojny liczą się od północy czasu UTC (w Polsce o 1:00 zimą, o 2:00 latem). Nagrody klanu (Monety, skrzynie, ruda od klanowiczów) czekają na serwerze, aż gra je odbierze i zapisze — żadna nie przepada ani nie przychodzi dwa razy.
 
+### Nauka: gałąź Towarzysze
+
+Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo z bossów i lochów), Wylęgarnia (do −50% czasu wykluwania), Więź (do +20% siły chowańców i wierzchowców) i Stajnia (do −20% Kamieni na ich ulepszenia).
+
 ### Osiągnięcia i Kolekcja Kowala
 
 - **Osiągnięcia** — czwarta zakładka w oknie Zadań: 13 długich celów po kilka progów (np. wykuj 100 / 1000 / 10 000 przedmiotów), za każdy próg Księgi, Kamienie i złoto, wyżej także Zwoje i jaja.

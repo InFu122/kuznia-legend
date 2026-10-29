@@ -1,10 +1,11 @@
 import type { TechId } from '../engine/types';
 
-export type TechBranch = 'kucie' | 'walka' | 'ekonomia';
+export type TechBranch = 'kucie' | 'walka' | 'ekonomia' | 'towarzysze';
 export type TechEffect =
   | 'jumpRel' | 'saveOre' | 'forgeTime' | 'forgeCost' | 'autoSpeed'
   | 'dmgPct' | 'hpPct' | 'crit' | 'bossPct'
-  | 'goldPct' | 'extraOre' | 'offlineMin' | 'rarePct';
+  | 'goldPct' | 'extraOre' | 'offlineMin' | 'rarePct'
+  | 'eggPct' | 'hatchTime' | 'compPct' | 'compCost';
 
 export interface TechDef {
   n: string;
@@ -21,6 +22,7 @@ export const TECH_BRANCHES: { id: TechBranch; n: string }[] = [
   { id: 'kucie', n: 'Kucie' },
   { id: 'walka', n: 'Walka' },
   { id: 'ekonomia', n: 'Ekonomia' },
+  { id: 'towarzysze', n: 'Towarzysze' },
 ];
 
 /** Drzewko technologii Akademii Kowalskiej. Odblokowuje się na 3. poziomie kuźni. */
@@ -38,6 +40,10 @@ export const TECH: Record<TechId, TechDef> = {
   e_gornik: { n: 'Górnik', branch: 'ekonomia', eff: 'extraOre', per: 2, max: 10, req: 4, b0: 1, d: '{v}% szansy na dodatkową rudę z fali' },
   e_noc: { n: 'Nocna zmiana', branch: 'ekonomia', eff: 'offlineMin', per: 30, max: 8, req: 7, b0: 2, d: '+{v} min limitu nagród offline' },
   e_poszuk: { n: 'Poszukiwacz', branch: 'ekonomia', eff: 'rarePct', per: 5, max: 10, req: 9, b0: 2, d: '+{v}% szansy na rzadką rudę (względnie)' },
+  t_hodowca: { n: 'Hodowca', branch: 'towarzysze', eff: 'eggPct', per: 10, max: 10, req: 8, b0: 2, d: '+{v}% szansy na jajo z bossów i lochów (względnie)' },
+  t_wylegarnia: { n: 'Wylęgarnia', branch: 'towarzysze', eff: 'hatchTime', per: 5, max: 10, req: 9, b0: 2, d: '−{v}% czasu wykluwania jaj' },
+  t_wiez: { n: 'Więź', branch: 'towarzysze', eff: 'compPct', per: 2, max: 10, req: 11, b0: 3, d: '+{v}% siły chowańców i wierzchowców' },
+  t_stajnia: { n: 'Stajnia', branch: 'towarzysze', eff: 'compCost', per: 4, max: 5, req: 13, b0: 3, d: '−{v}% Kamieni na ulepszenia chowańców i wierzchowców' },
 };
 export const TECH_IDS = Object.keys(TECH) as TechId[];
 export const TECH_UNLOCK_FORGE = 3;

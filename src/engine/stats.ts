@@ -1,7 +1,7 @@
 import { B, ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue } from '../data';
 import type { Ctx } from './context';
 import { mainVal } from './formulas';
-import { allMods } from './mods';
+import { allMods, techMods } from './mods';
 import type { FoeType, GameState, Item, Mods, SetId, SkillId, SlotId, Stats } from './types';
 
 /** Chowaniec i umiejętności — liczą się do Mocy, ale nie są częścią ekwipunku. */
@@ -10,7 +10,7 @@ export interface Extra { pet?: { atk: number; int: number } | null; skills?: { i
 export function extraOf(s: GameState): Extra {
   const p = s.petSel ? s.pets[s.petSel] : null;
   return {
-    pet: s.petSel && p ? { atk: petAtkPct(s.petSel, p.lvl, p.stars), int: PETS[s.petSel].int } : null,
+    pet: s.petSel && p ? { atk: petAtkPct(s.petSel, p.lvl, p.stars) * (1 + techMods(s).compPct / 100), int: PETS[s.petSel].int } : null,
     skills: s.skills.eq.filter((x): x is SkillId => !!x).map(id => ({ id, lvl: s.skills.lv[id] ?? 1 })),
     heir: s.legacy?.item ?? null,
     runes: s.runes ?? {},

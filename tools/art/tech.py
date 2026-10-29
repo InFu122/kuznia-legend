@@ -6,6 +6,7 @@ BR = {  # gałąź: wnętrze (2 tony), ramka (jasna, ciemna)
     'kucie': ['#3a2a1e', '#2c2017', '#e0a050', '#8a5a22'],
     'walka': ['#3a1e22', '#2c171a', '#e06a5a', '#8a2a26'],
     'ekonomia': ['#20321f', '#182618', '#8fd06a', '#3f7a2e'],
+    'towarzysze': ['#2a2238', '#1f192a', '#b98cf0', '#5a3a8a'],
 }
 METAL = ['#f0f4f8', '#b9c2cc', '#7c8794', '#4a525d']
 WOOD = ['#c58a55', '#94613a', '#6a4226', '#452a17']
@@ -276,6 +277,55 @@ def magnifier():
     for i in range(5): P(g, 10 + i, 10 + i, 'q'); P(g, 11 + i, 10 + i, 'q')
     return make('ekonomia', S(g), {'p': GOLD, 'q': WOOD, 'r': ['#e8f6ff', '#b8d8ea', '#8ab4cf', '#5a86a4'], 's': ['#ffd0f0', '#ff6bc8', '#c02a8a', '#701850']})
 
+
+EGG = ['#fff6e0', '#f0dcb0', '#c9a874', '#8a6a3e']
+
+def nest():
+    # Hodowca: jajo w gnieździe
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            if ((x - 7.5) / 4.2) ** 2 + ((y - 6.5) / 5.4) ** 2 <= 1: g[y][x] = 'p'
+    for y in range(10, 15):
+        for x in range(1, 15):
+            if ((x - 7.5) / 7.0) ** 2 + ((y - 10.5) / 4.0) ** 2 <= 1 and y >= 10: g[y][x] = 'q'
+    for (x, y) in [(3, 11), (6, 12), (9, 11), (12, 12), (5, 13), (10, 13)]: P(g, x, y, 'r')
+    for (x, y) in [(6, 4), (8, 6), (9, 3)]: P(g, x, y, 's')
+    return make('towarzysze', S(g), {'p': EGG, 'q': WOOD, 'r': ['#e8c890', '#c09a60', '#8a6a3e', '#5a4024'], 's': ['#a8e070', '#7cc04a', '#4f8a2a', '#2f5a18']})
+
+def hatch():
+    # Wylęgarnia: pęknięte jajo i klepsydra czasu
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            if ((x - 7.5) / 5.0) ** 2 + ((y - 8.5) / 6.2) ** 2 <= 1: g[y][x] = 'p'
+    for (x, y) in [(3, 7), (4, 8), (5, 7), (6, 8), (7, 7), (8, 8), (9, 7), (10, 8), (11, 7), (12, 8)]: P(g, x, y, 'k')
+    for (x, y) in [(6, 4), (7, 4), (8, 4), (7, 5)]: P(g, x, y, 'q')
+    return make('towarzysze', S(g), {'p': EGG, 'q': ['#ffe08a', '#f2c94c', '#c7902a', '#7d5216']})
+
+def bond():
+    # Więź: serce
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            u, v = (x - 7.5) / 6.5, (y - 7.0) / 6.5
+            if (u * u + v * v - 0.35) ** 3 - u * u * v * v * v * 1.1 <= 0: g[y][x] = 'p'
+    for (x, y) in [(4, 4), (5, 4), (4, 5)]: P(g, x, y, 'q')
+    return make('towarzysze', S(g), {'p': ['#ff9ab8', '#f0457a', '#b8204c', '#7a1232'], 'q': ['#ffffff', '#ffe0ea', '#ffc0d0', '#ff9ab8']})
+
+def stable():
+    # Stajnia: podkowa
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.0)
+            if 3.6 <= d <= 6.4 and y <= 12: g[y][x] = 'p'
+    for y in range(10, 15):
+        for x in (2, 3, 12, 13): P(g, x, y, 'p')
+    for (x, y) in [(3, 6), (12, 6), (5, 2), (10, 2), (2, 10), (13, 10)]: P(g, x, y, 'k')
+    return make('towarzysze', S(g), {'p': METAL})
+
 TECH_ICONS = {'k_hart': hart, 'k_miech': bellows, 'k_auto': gear, 'k_oszcz': save_ore, 'k_tanie': guild_coin,
               'w_ostrze': blade, 'w_pancerz': shield, 'w_precyzja': target, 'w_pogromca': skull,
-              'e_kupiec': coin_bag, 'e_gornik': pickaxe, 'e_noc': moon, 'e_poszuk': magnifier}
+              'e_kupiec': coin_bag, 'e_gornik': pickaxe, 'e_noc': moon, 'e_poszuk': magnifier,
+              't_hodowca': nest, 't_wylegarnia': hatch, 't_wiez': bond, 't_stajnia': stable}

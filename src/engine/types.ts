@@ -12,7 +12,8 @@ export type Gender = 'm' | 'f' | 'p';
 export type TechId =
   | 'k_hart' | 'k_miech' | 'k_auto' | 'k_oszcz' | 'k_tanie'
   | 'w_ostrze' | 'w_pancerz' | 'w_precyzja' | 'w_pogromca'
-  | 'e_kupiec' | 'e_gornik' | 'e_noc' | 'e_poszuk';
+  | 'e_kupiec' | 'e_gornik' | 'e_noc' | 'e_poszuk'
+  | 't_hodowca' | 't_wylegarnia' | 't_wiez' | 't_stajnia';
 export type DungId = 'skarbiec' | 'sztolnia' | 'wieza' | 'leza' | 'oltarze' | 'kopalnia' | 'labirynt' | 'zbrojownia' | 'krypta';
 export type SetId = 'lowca' | 'straz' | 'wicher' | 'nekro' | 'smok' | 'gwiazda';
 export type SkillId = 'deszcz' | 'tarcza' | 'okrzyk' | 'eliksir' | 'kula' | 'nova' | 'krwawe' | 'burza' | 'oddech';
@@ -221,6 +222,7 @@ export interface Mods {
   dmgPct: number; hpPct: number; crit: number; bossPct: number;
   goldPct: number; extraOre: number; offlineMin: number; rarePct: number;
   spd: number; ls: number; regen: number; eldmg: number;
+  eggPct: number; hatchTime: number; compPct: number; compCost: number;
 }
 
 export interface OfflineReport {

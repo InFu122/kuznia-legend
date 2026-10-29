@@ -8,6 +8,7 @@ import { baseName } from './formulas';
 import { checkLegend } from './legend';
 import { track } from './missions';
 import { pick } from './rng';
+import { techMods } from './mods';
 import { fullStats, invalidate } from './stats';
 import type { GameState, MountId, PetId, SkillId, SlotId } from './types';
 
@@ -91,7 +92,8 @@ export function startHatch(ctx: Ctx, r: number): boolean {
   const s = ctx.s;
   if (s.hatch || !petsUnlocked(s) || (s.eggs[r] ?? 0) < 1) return false;
   s.eggs[r]--;
-  s.hatch = { r, left: HATCH_MS[r], total: HATCH_MS[r] };
+  const t = Math.round(HATCH_MS[r] * (1 - techMods(s).hatchTime / 100)); // Wylęgarnia
+  s.hatch = { r, left: t, total: t };
   ctx.dirty = true;
   return true;
 }
@@ -145,16 +147,16 @@ export function selectMount(ctx: Ctx, id: MountId | null): boolean {
 
 /* ---------- ulepszanie Kamieniami ---------- */
 
-export function upgradeCost(kind: 'pet' | 'mount', id: PetId | MountId, lvl: number): number {
+export function upgradeCost(kind: 'pet' | 'mount', id: PetId | MountId, lvl: number, s?: GameState): number {
   const r = kind === 'pet' ? PETS[id as PetId].r : MOUNTS[id as MountId].r;
-  return levelCost(lvl, r);
+  return Math.max(1, Math.round(levelCost(lvl, r) * (1 - (s ? techMods(s).compCost : 0) / 100))); // Stajnia
 }
 
 export function levelUp(ctx: Ctx, kind: 'pet' | 'mount', id: PetId | MountId): boolean {
   const s = ctx.s;
   const c = kind === 'pet' ? s.pets[id as PetId] : s.mounts[id as MountId];
   if (!c || c.lvl >= COMPANION_MAX) return false;
-  const cost = upgradeCost(kind, id, c.lvl);
+  const cost = upgradeCost(kind, id, c.lvl, s);
   if (s.stones < cost) return false;
   s.stones -= cost;
   c.lvl++;

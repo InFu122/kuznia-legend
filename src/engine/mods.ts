@@ -6,6 +6,7 @@ export const techLvl = (s: GameState, id: keyof GameState['tech']['lv']) => s.te
 const emptyMods = (): Mods => ({
   jumpRel: 0, saveOre: 0, forgeTime: 0, forgeCost: 0, autoSpeed: 0, dmgPct: 0, hpPct: 0, crit: 0, bossPct: 0,
   goldPct: 0, extraOre: 0, offlineMin: 0, rarePct: 0, spd: 0, ls: 0, regen: 0, eldmg: 0,
+  eggPct: 0, hatchTime: 0, compPct: 0, compCost: 0,
 });
 
 /** Zsumowane efekty zbadanych technologii. */
@@ -20,7 +21,8 @@ export function petTrait(s: GameState): { trait: (typeof PETS)[keyof typeof PETS
   const id = s.petSel;
   const c = id ? s.pets[id] : null;
   if (!id || !c) return null;
-  return { trait: PETS[id].trait, v: petTraitValue(id, c.lvl, c.stars) };
+  const k = 1 + techMods(s).compPct / 100; // Więź
+  return { trait: PETS[id].trait, v: Math.round(petTraitValue(id, c.lvl, c.stars) * k * 10) / 10 };
 }
 
 /** Premie wierzchowca: +% obrażeń i zdrowia. */
@@ -28,7 +30,7 @@ export function mountBonus(s: GameState): { dmg: number; hp: number } {
   const id = s.mountSel;
   const c = id ? s.mounts[id] : null;
   if (!id || !c) return { dmg: 0, hp: 0 };
-  const k = companionMult(c.lvl, c.stars);
+  const k = companionMult(c.lvl, c.stars) * (1 + techMods(s).compPct / 100); // Więź
   return { dmg: Math.round(MOUNTS[id].dmg * k * 10) / 10, hp: Math.round(MOUNTS[id].hp * k * 10) / 10 };
 }
 

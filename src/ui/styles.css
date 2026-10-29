@@ -834,7 +834,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .di-stats .stat b{display:flex; align-items:center; min-height:22px}
 @media (max-width:360px){ .arena-banner{grid-template-columns:1fr auto} .ab-ic{display:none} .dung-head{flex-direction:column; align-items:flex-start} }
 /* ---------- Nauka: wszystkie drzewka naraz ---------- */
-.tt-cols{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; align-items:start}
+.tt-cols{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:4px; align-items:start}
 .tt-col{position:relative; display:flex; flex-direction:column; gap:8px; align-items:stretch}
 .tt-col::before{content:""; position:absolute; left:50%; top:28px; bottom:20px; width:2px; translate:-1px 0; background:var(--rivet); z-index:0}
 .tt-h{position:relative; z-index:1; text-align:center; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--straw); font-weight:700; padding:4px 0; background:var(--plate)}

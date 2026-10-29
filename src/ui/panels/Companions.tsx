@@ -121,7 +121,7 @@ function PetRow({ game, id }: { game: Game; id: PetId }) {
   const P = PETS[id];
   const c = s.pets[id]!;
   const on = s.petSel === id;
-  const cost = upgradeCost('pet', id, c.lvl);
+  const cost = upgradeCost('pet', id, c.lvl, game.s);
   const tv = petTraitValue(id, c.lvl, c.stars);
   return (
     <li>
@@ -173,7 +173,7 @@ function MountRow({ game, id }: { game: Game; id: MountId }) {
   const M = MOUNTS[id];
   const c = s.mounts[id]!;
   const k = companionMult(c.lvl, c.stars);
-  const cost = upgradeCost('mount', id, c.lvl);
+  const cost = upgradeCost('mount', id, c.lvl, game.s);
   return (
     <li>
       <div class="cmain">

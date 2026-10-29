@@ -198,7 +198,7 @@ export function dungFloor(ctx: Ctx): void {
       const set = setOfLand(d.bossLand);
       if (set) d.loot.uniq = { [set]: ri(ctx.rng, 2, 3) };
       add(d.loot, 'books', 1);
-      if (petsUnlocked(s) && ctx.rng.next() < 0.2) addEgg(d.loot, dungEggRarity(s.maxLand));
+      if (petsUnlocked(s) && ctx.rng.next() < 0.2 * (1 + allMods(s).eggPct / 100)) addEgg(d.loot, dungEggRarity(s.maxLand));
       if (mountsUnlocked(s) && ctx.rng.next() < 0.25) add(d.loot, 'saddles', 1);
       addFame(ctx, 0, LANDS[d.bossLand].type, true);
       s.dungeons.leza.best++; // liczba zwycięstw
@@ -238,7 +238,7 @@ export function dungFloor(ctx: Ctx): void {
         add(d.loot, 'books', 3);
         add(d.loot, 'scrolls', 1);
         addOre(d.loot, rare, 3);
-        if (petsUnlocked(s) && ctx.rng.next() < 0.4) addEgg(d.loot, dungEggRarity(s.maxLand));
+        if (petsUnlocked(s) && ctx.rng.next() < Math.min(1, 0.4 * (1 + allMods(s).eggPct / 100))) addEgg(d.loot, dungEggRarity(s.maxLand));
         addFame(ctx, 0, 'Bestie', true);
         s.dungeons.labirynt.best = LAB_ROOMS;
         dungEnd(ctx, false);
