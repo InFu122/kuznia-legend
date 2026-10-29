@@ -1,8 +1,9 @@
 import { dungScene } from '../engine/events';
 import { skinOr } from '../engine/cosmetics';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { AD_BUFFS, BUFF_IDS, LANDS, ROMAN, SKILLS, SLOT_ORDER, type BuffId } from '../data';
-import { dungeonBgUrl, foeUrl, heroUrl, itemUrl, landBgUrl, skillUrl } from '../art/render';
+import { AD_BUFFS, BUFF_IDS, LANDS, ROMAN, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId } from '../data';
+import { dungeonBgUrl, foeUrl, heroUrl, itemUrl, landBgUrl, resUrl, skillUrl } from '../art/render';
+import { passLevel, passUnclaimed } from '../engine/shop';
 import { foeTemplate } from '../art/actors';
 import { Px } from './Px';
 import { bossWaiting } from '../engine/combat';
@@ -37,23 +38,44 @@ export function FoeSprite({ e }: { e: Enemy }) {
   );
 }
 
-/** Trwające wzmocnienia z reklam (×2 ruda, ×2 złoto) z pozostałym czasem. */
-function Buffs({ game }: { game: Game }) {
+/**
+ * Ikonki po prawej stronie pola walki: ×2 ruda i ×2 złoto za reklamę (godzina; gdy trwa — zostały minuty)
+ * i Przepustka Kowala (poziom, czerwona kropka, gdy są nagrody do odebrania).
+ */
+function SideIcons({ game, onAd, onPass, ads }: { game: Game; onAd?: (what: BuffId) => void; onPass?: () => void; ads: boolean }) {
+  const s = game.s;
   const now = game.ctx.now();
-  const on = BUFF_IDS.filter(k => (game.s.buffs[k] ?? 0) > now);
-  if (!on.length) return null;
+  const sh = game.shopNow;
+  const p = s.pass;
+  const un = p ? passUnclaimed(p, s) : null;
   return (
-    <div class="buffs" aria-label="Wzmocnienia">
-      {on.map(k => (
-        <span key={k} class={`buff ${k}`} title={AD_BUFFS[k].d}>
-          <Px src={buffIcon(game, k)} size={14} />×{AD_BUFFS[k].mult}<small>{Math.ceil((game.s.buffs[k]! - now) / 60000)} min</small>
-        </span>
-      ))}
+    <div class="side-icons">
+      {ads && onAd && BUFF_IDS.map(k => {
+        const until = s.buffs[k] ?? 0;
+        const on = until > now;
+        const left = Math.max(0, AD_BUFFS[k].day - (sh.ads[k] ?? 0));
+        const offer = game.adOffer?.kind === k;
+        return (
+          <button key={k} class={`sideic buff-${k}${on ? ' on' : ''}${offer ? ' offer' : ''}${!on && !left ? ' spent' : ''}`} onClick={() => onAd(k)}
+            aria-label={`${AD_BUFFS[k].n}: ${on ? `trwa jeszcze ${Math.ceil((until - now) / 60000)} min` : left ? 'obejrzyj reklamę' : 'na dziś koniec'}`}>
+            <Px src={buffIcon(game, k)} size={22} />
+            <b>{on ? `${Math.ceil((until - now) / 60000)}m` : `×${AD_BUFFS[k].mult}`}</b>
+            {!on && left > 0 && <i class="ad-mark" aria-hidden="true"><Px src={resUrl('reklama')} size={10} /></i>}
+          </button>
+        );
+      })}
+      {p && onPass && (
+        <button class="sideic pass" onClick={onPass} aria-label={`Przepustka Kowala: poziom ${passLevel(p)}${un && un.free + un.prem ? ', nagrody do odebrania' : ''}`}>
+          <Px src={resUrl('przepustka')} size={22} />
+          <b>{passLevel(p)}</b>
+          {un && un.free + un.prem > 0 && <i class="dot" aria-hidden="true" />}
+        </button>
+      )}
     </div>
   );
 }
 
-export function Arena({ game, onTab, onInfo, onAd }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void; onAd?: (what: BuffId) => void }) {
+export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void; onAd?: (what: BuffId) => void; onPass?: () => void }) {
   const [, setFrame] = useState(0);
   const [floats, setFloats] = useState<Float[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -107,6 +129,7 @@ export function Arena({ game, onTab, onInfo, onAd }: { game: Game; onTab: (t: Ta
   const shown = e ?? lastFoe.current?.e ?? null;
   const dead = !e || e.hp <= 0;
   const best = bestRarity(s.eq);
+  const side = s.tut >= TUTORIAL.length && s.forge.lvl >= 3;
   return (
     <section class="arena" aria-label="Arena walki" style={{ '--bg': `url(${bg})` } as Record<string, string>}>
       <div class="arena-head">
@@ -129,7 +152,7 @@ export function Arena({ game, onTab, onInfo, onAd }: { game: Game; onTab: (t: Ta
           })}
         </div>
       )}
-      <div class={`stage${e?.boss ? ' boss' : ''}`}>
+      <div class={`stage${e?.boss ? ' boss' : ''}${side ? ' has-side' : ''}`}>
         <div class={`st-tag${e?.boss ? ' boss' : ''}`}>{label}</div>
         <div class={`actor hero${best >= 2 ? ' r' + best : ''}${hp <= 0 ? ' dead' : ''}`} ref={heroRef}>
           <HeroSprite eq={s.eq} skin={s.look.skin} />
@@ -139,12 +162,7 @@ export function Arena({ game, onTab, onInfo, onAd }: { game: Game; onTab: (t: Ta
             <div class="enter"><FoeSprite e={shown} /></div>
           </div>
         )}
-        <Buffs game={game} />
-        {game.adOffer && !dung && onAd && (
-          <button class="adoffer float" onClick={() => onAd(game.adOffer!.kind)} aria-label={`Nagroda za reklamę: ${AD_BUFFS[game.adOffer.kind].d}`}>
-            <Px src={buffIcon(game, game.adOffer.kind)} size={26} /><b>×{AD_BUFFS[game.adOffer.kind].mult}</b>
-          </button>
-        )}
+        {side && <SideIcons game={game} onAd={onAd} onPass={onPass} ads={!dung} />}
         <div class="floats">
           {floats.map(f => <span key={f.id} class={`fl ${f.cls}`} style={{ left: f.x + '%', top: f.y + '%' }}>{f.text}</span>)}
         </div>

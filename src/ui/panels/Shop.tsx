@@ -15,6 +15,7 @@ import { Px } from '../Px';
 import { gemsText, rewardText } from '../texts';
 import { buffIcon } from '../buffs';
 import { Note, errText, useAction } from './ClanLife';
+import { RewardIcons } from '../RewardIcons';
 
 export type ShopTab = 'sklep' | 'przepustka' | 'klejnoty';
 const TABS: [ShopTab, string][] = [['sklep', 'Sklep'], ['przepustka', 'Przepustka'], ['klejnoty', 'Klejnoty']];
@@ -262,7 +263,7 @@ function PassTabView({ game, goGems }: { game: Game; goGems: () => void }) {
   return (
     <>
       <section class="passhead">
-        <Px src={resUrl('przepustka')} size={40} />
+        <div class="pass-lvl" aria-hidden="true"><Px src={resUrl('przepustka')} size={34} /><b>{lvl}</b></div>
         <div class="cmain">
           <div class="eyebrow">Sezon {season.n} · {season.name}</div>
           <div class="h">Poziom {lvl} / {PASS.LEVELS}</div>
@@ -282,15 +283,21 @@ function PassTabView({ game, goGems }: { game: Game; goGems: () => void }) {
       </div>
       <Note msg={a.msg} />
       <ol class="passlist">
-        <li class="ph"><span>Poz.</span><span>Darmowa</span><span>Złota{!p.prem && ' 🔒'}</span></li>
+        <li class="ph"><span>Poz.</span><span>Darmowa</span><span>Złota{!p.prem && ' · zablokowana'}</span></li>
         {PASS_LEVELS.map((L, i) => {
           const n = i + 1;
-          const st = (claimed: number, open: boolean) => (!open ? 'lock' : n <= claimed ? 'got' : n <= lvl ? 'ready' : '');
+          const st = (claimed: number, open: boolean) => (n <= claimed && open ? 'got' : n <= lvl ? (open ? 'ready' : 'lock reached') : open ? '' : 'lock');
+          const cell = (items: typeof L.free, state: string, prem: boolean) => (
+            <span class={`pr${prem ? ' prem' : ''} ${state}`}>
+              <RewardIcons r={passItemsReward(items, s)} size={18} />
+              {state === 'got' ? <i class="pr-st ok" aria-label="odebrane">✓</i> : state.startsWith('lock') ? <i class="pr-st" aria-label="zablokowane">🔒</i> : null}
+            </span>
+          );
           return (
-            <li key={n} class={n === lvl + 1 ? 'next' : ''}>
+            <li key={n} class={`${n === lvl + 1 ? 'next' : ''}${n <= lvl ? ' done' : ''}`}>
               <span class="pl">{n}</span>
-              <span class={`pr ${st(p.cf, true)}`}>{rewardText(passItemsReward(L.free, s))}</span>
-              <span class={`pr prem ${st(p.cp, p.prem)}`}>{rewardText(passItemsReward(L.prem, s))}</span>
+              {cell(L.free, st(p.cf, true), false)}
+              {cell(L.prem, st(p.cp, p.prem), true)}
             </li>
           );
         })}
@@ -343,44 +350,3 @@ function GemsTabView({ game }: { game: Game }) {
 }
 
 export { errText };
-
-/* ---------- ×2 nagrody za nieobecność ---------- */
-
-/** Przycisk w oknie powrotu: reklama podwaja złoto, rudę, domieszki i Księgi z nieobecności. */
-export function OfflineDouble({ game }: { game: Game }) {
-  const [watch, setWatch] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [busy, setBusy] = useState(false);
-  if (watch) {
-    const done = async () => {
-      setWatch(false);
-      setBusy(true);
-      try {
-        if (game.net) {
-          const l = getLink();
-          if (!l?.online) { setMsg('Reklamy z nagrodą działają po połączeniu z serwerem.'); return; }
-          const r = await l.adReward('offline');
-          game.applyShop(r);
-          const rw = game.doubleOffline(true);
-          setMsg(rw ? `Podwojone: ${rewardText(rw)}.` : 'Nie udało się.');
-        } else {
-          const rw = game.doubleOffline();
-          setMsg(rw ? `Podwojone: ${rewardText(rw)}.` : 'Na dziś koniec tych reklam.');
-        }
-      } catch (e) {
-        setMsg(errText(e));
-      } finally {
-        setBusy(false);
-      }
-    };
-    return <TestAd onDone={() => void done()} onCancel={() => setWatch(false)} />;
-  }
-  if (msg) return <p class="sub" role="status">{msg}</p>;
-  if (!game.canDoubleOffline()) return null;
-  const left = Math.max(0, AD.OFFLINE_DAY - (game.shopNow.ads.offline ?? 0));
-  return (
-    <button class="btn adbtn" disabled={busy} onClick={() => setWatch(true)}>
-      <Px src={resUrl('reklama')} size={18} /> ×2 złoto, ruda i Księgi za reklamę <small>(dziś zostało {left})</small>
-    </button>
-  );
-}

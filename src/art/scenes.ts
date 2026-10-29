@@ -64,7 +64,10 @@ export type Layer =
   | { k: 'arch'; base: number; c: string; x: number; w: number; h: number; glow?: string }
   | { k: 'pillars'; base: number; c: string; n: number; h: number }
   | { k: 'fog'; y: number; h: number; c: string; a: number }
-  | { k: 'glow'; x: number; y: number; r: number; c: string; a?: number };
+  | { k: 'glow'; x: number; y: number; r: number; c: string; a?: number }
+  | { k: 'furnace'; x: number; base: number; w: number; h: number; c: string; fire: string }
+  | { k: 'anvil'; x: number; base: number; c: string; hot?: string }
+  | { k: 'tools'; x: number; y: number; c: string; n: number };
 
 export interface Scene {
   sky: string[];                                       // kolory nieba od góry do horyzontu
@@ -330,6 +333,52 @@ function drawLayer(b: Buf, L: Layer, rng: () => number): void {
     case 'glow':
       b.disc(L.x, L.y, L.r, hex(L.c), L.a ?? 0.3);
       break;
+    case 'furnace': {
+      // Piec kowalski z cegieł: komin, łukowe palenisko z ogniem i poświata.
+      const c = hex(L.c), mortar = lift(c, -0.35), lit = lift(c, 0.12), fire = hex(L.fire), core = lift(fire, 0.55);
+      const x0 = L.x - Math.floor(L.w / 2), top = L.base - L.h;
+      b.rect(x0 + Math.floor(L.w * 0.3), 0, Math.ceil(L.w * 0.4), top + 2, lift(c, -0.15)); // komin
+      for (let y = top; y < L.base; y++) for (let x = x0; x < x0 + L.w; x++) {
+        const row = Math.floor((y - top) / 3), off = row % 2 ? 3 : 0;
+        const m = (y - top) % 3 === 2 || (x - x0 + off) % 6 === 5;
+        b.set(x, y, m ? mortar : x < x0 + 3 ? lit : c);
+      }
+      b.rect(x0 - 2, top - 2, L.w + 4, 3, lift(c, 0.2)); // gzyms
+      const mw = Math.floor(L.w * 0.5), mh = Math.floor(L.h * 0.45), mx = L.x - Math.floor(mw / 2), my = L.base - mh;
+      for (let i = 0; i < mw; i++) {
+        const arc = Math.round(Math.sqrt(Math.max(0, (mw / 2) ** 2 - (i - mw / 2 + 0.5) ** 2)) * 0.6);
+        for (let y = my - arc + 4; y < L.base; y++) b.set(mx + i, y, (y - my) / mh > dith(mx + i, y) * 0.9 ? core : fire);
+      }
+      for (let k = 0; k < 6; k++) { const fx = mx + 2 + Math.floor(rng() * (mw - 4)); for (let j = 0; j < 3 + rng() * 5; j++) b.set(fx + Math.round(Math.sin(j) * 0.8), my + 3 - j, fire, 0.8); }
+      b.disc(L.x, L.base - Math.floor(mh / 2), Math.floor(L.w * 0.75), fire, 0.12);
+      b.disc(L.x, L.base - Math.floor(mh / 2), Math.floor(L.w * 0.45), fire, 0.14);
+      break;
+    }
+    case 'anvil': {
+      // Kowadło na pniu; na nim rozgrzany pręt.
+      const c = hex(L.c), lit = lift(c, 0.3), dark = lift(c, -0.3), wood = hex('#5a3a22'), woodL = hex('#7a5232');
+      b.rect(L.x - 7, L.base - 12, 14, 12, wood); b.rect(L.x - 7, L.base - 12, 3, 12, woodL); b.rect(L.x - 8, L.base - 13, 16, 2, woodL);
+      const y = L.base - 13;
+      b.rect(L.x - 6, y - 3, 12, 3, c);                   // stopa
+      b.rect(L.x - 3, y - 7, 6, 4, dark);                 // talia
+      b.rect(L.x - 11, y - 11, 22, 4, c);                 // blat
+      b.rect(L.x - 11, y - 11, 22, 1, lit);
+      for (let i = 0; i < 7; i++) b.rect(L.x - 11 - i, y - 11 + Math.floor(i / 2), 1, Math.max(1, 3 - Math.floor(i / 2)), c); // róg
+      b.rect(L.x + 11, y - 11, 3, 3, c);
+      if (L.hot) { const h = hex(L.hot); b.rect(L.x - 6, y - 13, 12, 2, h); b.rect(L.x - 5, y - 14, 10, 1, lift(h, 0.4)); }
+      break;
+    }
+    case 'tools': {
+      // Narzędzia na ścianie: młoty i szczypce na kołkach.
+      const c = hex(L.c), wood = hex('#6a4428');
+      for (let t = 0; t < L.n; t++) {
+        const x = L.x + t * 9, hammer = t % 2 === 0;
+        b.set(x + 2, L.y - 1, lift(c, 0.2));
+        b.rect(x + 2, L.y, 1, 14, hammer ? wood : c);
+        if (hammer) b.rect(x, L.y + 12, 5, 4, c); else { b.rect(x + 1, L.y + 12, 1, 4, c); b.rect(x + 3, L.y + 12, 1, 4, c); }
+      }
+      break;
+    }
   }
 }
 
@@ -550,6 +599,8 @@ export const DUNGEON_SCENES: Record<string, Scene> = {
   labirynt: { seed: 57, sky: ['#1a1410', '#3a2e22', '#5a4a36'], skyH: 60, layers: [{ k: 'castle', base: 64, c: '#2a2218', x: 10, w: 60 }, { k: 'castle', base: 64, c: '#2a2218', x: 90, w: 60 }, { k: 'arch', base: 82, c: '#1c160f', x: 62, w: 36, h: 40, glow: '#ff9a4a' }, { k: 'ground', y: 82, c: '#3a2e20', c2: '#1e170f' }] },
   zbrojownia: { seed: 58, sky: ['#000000'], layers: [{ k: 'cave', c: '#1e1e24', c2: '#121216', lamps: '#ffc070' }, { k: 'pillars', base: 84, c: '#2a2a32', n: 4, h: 40 }, { k: 'ground', y: 84, c: '#26262c', c2: '#141418' }], fx: [{ k: 'ash', c: '#8a8a9a', n: 20 }] },
   krypta: { seed: 59, sky: ['#000000'], layers: [{ k: 'cave', c: '#14181e', c2: '#0a0c10' }, { k: 'arch', base: 84, c: '#1c2028', x: 54, w: 52, h: 50, glow: '#e8d080' }, { k: 'graves', base: 84, c: '#22262e', n: 6 }, { k: 'ground', y: 86, c: '#1a1e24', c2: '#0c0e12' }], fx: [{ k: 'spores', c: '#f0e0a0', n: 12 }] },
+  // kuźnia (tło okna wytopu na zakładce Kuźnia)
+  kuznia: { seed: 64, sky: ['#000000'], layers: [{ k: 'cave', c: '#2a1c14', c2: '#170f0a' }, { k: 'tools', x: 14, y: 30, c: '#8a8a96', n: 4 }, { k: 'furnace', x: 118, base: 84, w: 40, h: 50, c: '#6a3a28', fire: '#ff7a1a' }, { k: 'ground', y: 84, c: '#3a2a1e', c2: '#20160f' }, { k: 'anvil', x: 62, base: 86, c: '#4a4e5a', hot: '#ffb04a' }], fx: [{ k: 'embers', c: '#ffb04a', n: 36 }] },
   // lochy sezonowe (wydarzenia)
   ev_kuznia: { seed: 61, sky: ['#000000'], layers: [{ k: 'cave', c: '#2a120a', c2: '#160806', lamps: '#ff8a2a' }, { k: 'glow', x: 80, y: 74, r: 22, c: '#ff5a1a', a: 0.18 }, { k: 'water', y: 84, c: '#ff6a1a', c2: '#c03a0a', shine: '#ffd04a' }], fx: [{ k: 'embers', c: '#ffb04a', n: 50 }] },
   ev_lowy: { seed: 62, sky: ['#000000'], layers: [{ k: 'cave', c: '#1a2a3a', c2: '#0e1824' }, { k: 'crystals', base: 82, c: '#a8d8f0', glow: '#e0f6ff', n: 9 }, { k: 'ground', y: 82, c: '#d8e8f4', c2: '#9ab0c8' }], fx: [{ k: 'snow', c: '#ffffff', n: 50 }] },

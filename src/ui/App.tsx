@@ -155,7 +155,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => location.reload()); }}>Odśwież</button>
           </section>
         )}
-        <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} />
+        <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} />
         {step && (
           <section class="tutbar" aria-label="Samouczek">
             <div class="cmain">

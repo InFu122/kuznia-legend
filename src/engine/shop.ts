@@ -3,14 +3,14 @@
 // Bez serwera (artefakt, gra w przeglądarce) wszystko dzieje się tutaj.
 import {
   AD, AD_BUFFS, DAILY_GIFT, DUNGEONS, DUNG_ORDER, GEM_PACKS, GEM_SHOP, ORES, PASS, PASS_LEVELS, SEASON_NAMES, STARTER_EXTRA, speedupGems,
-  LANDS, adMax, type AdKind, type FrameId, type SkinId,
+  adMax, type AdKind, type FrameId, type SkinId,
   type BuffId, type GemItemId, type PassItem,
 } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { toast, type Ctx } from './context';
 import { goldWave, todayStr } from './formulas';
 import { grant } from './reward';
-import type { GameState, OfflineReport, PassBase, PassTrack, Reward } from './types';
+import type { GameState, PassBase, PassTrack, Reward } from './types';
 
 export type { PassBase, PassTrack };
 
@@ -230,16 +230,6 @@ export function adCountLocal(ctx: Ctx, kind: AdKind): boolean {
   s.shop.ads[kind] = (s.shop.ads[kind] ?? 0) + 1;
   ctx.dirty = true;
   return true;
-}
-
-/** Druga taka sama nagroda za nieobecność (złoto, ruda, domieszki, Księgi) — za reklamę. */
-export function offlineDouble(r: OfflineReport): Reward {
-  const el = LANDS[r.land]?.el;
-  const ores: Record<number, number> = {};
-  (r.ores ?? []).forEach((n, o) => { if (n > 0) ores[o] = n; });
-  const out: Reward = { gold: r.gold, books: r.books, ores };
-  if (el && r.el > 0) out.els = { [el]: r.el };
-  return out;
 }
 
 export function adRewardLocal(ctx: Ctx, kind: BuffId | 'gems'): boolean {

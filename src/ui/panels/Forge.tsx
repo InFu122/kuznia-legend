@@ -9,7 +9,7 @@ import { Brag } from '../Decision';
 import { sparks } from '../fx';
 import { ClanHelpLine } from './ClanLife';
 import { Costs, Px } from '../Px';
-import { elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
+import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
 import { fmt, pct, tfmt } from '../format';
 
 export const Dist = ({ d }: { d: [number, number][] }) => (
@@ -62,8 +62,12 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
   return (
     <>
       <section class="card forge" aria-label="Kowadło">
-        <div class="row">
-          <div class="eyebrow">Ruda do wytopu</div>
+        <div class="forge-banner" style={{ '--bg': `url(${dungeonBgUrl('kuznia')})` } as Record<string, string>}>
+          <Px src={resUrl('kowadlo')} size={30} />
+          <div class="fb-txt">
+            <div class="eyebrow">Kuźnia · poziom {f.lvl}{f.up ? ' · trwa ulepszenie' : ''}</div>
+            <div class="h">Ruda do wytopu</div>
+          </div>
           <InfoBtn onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
         </div>
         <div class="ores2" role="radiogroup" aria-label="Ruda">

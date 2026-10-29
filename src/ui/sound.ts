@@ -13,7 +13,7 @@ let enabled = true;
 let volume = 0.6;
 const last: Partial<Record<Kind, number>> = {};
 /** Minimalny odstęp między powtórzeniami tego samego dźwięku (ms) — przy Tempie ×10 trafień jest bardzo dużo. */
-const GAP: Partial<Record<Kind, number>> = { hit: 110, crit: 90, hurt: 140, skill: 120, drop: 80, smelt: 60, dodge: 160, block: 160, bossIn: 3000, kill: 140 };
+const GAP: Partial<Record<Kind, number>> = { hit: 170, crit: 140, hurt: 140, skill: 120, drop: 80, smelt: 60, dodge: 160, block: 160, bossIn: 3000, kill: 140 };
 
 /** Próbki dźwięków walki (pliki obok gry, w katalogu audio/). */
 const SAMPLES = { slice: 's-slice.mp3', block: 's-block.mp3', whoosh: 's-whoosh.mp3', war: 's-war.mp3' } as const;
@@ -33,8 +33,11 @@ function loadSamples(): void {
   }
 }
 
-/** Odtwarza próbkę; `false`, gdy jej jeszcze nie ma. Lekko losowa wysokość, żeby seria trafień nie brzmiała jak jedno. */
-function sample(id: SampleId, t: number, gain: number, rate = 1, spread = 0.08, wet = 0): boolean {
+/**
+ * Odtwarza próbkę; `false`, gdy jej jeszcze nie ma. Lekko losowa wysokość, żeby seria trafień nie brzmiała jak jedno.
+ * `lp` — filtr dolnoprzepustowy (Hz): łagodzi ostre, wysokie tony.
+ */
+function sample(id: SampleId, t: number, gain: number, rate = 1, spread = 0.08, wet = 0, lp = 0): boolean {
   const b = buffers[id];
   if (!b || !ac || !master) return false;
   const s = ac.createBufferSource();
@@ -42,7 +45,12 @@ function sample(id: SampleId, t: number, gain: number, rate = 1, spread = 0.08, 
   s.playbackRate.value = rate * (1 + (Math.random() * 2 - 1) * spread);
   const g = ac.createGain();
   g.gain.value = gain;
-  s.connect(g).connect(master);
+  if (lp > 0) {
+    const f = ac.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = lp;
+    s.connect(f).connect(g).connect(master);
+  } else s.connect(g).connect(master);
   if (wet > 0 && verb) { const w = ac.createGain(); w.gain.value = gain * wet; g.connect(w).connect(verb); }
   s.start(t);
   return true;
@@ -194,16 +202,16 @@ export function play(k: Kind, r = 0): void {
     case 'rare':
       for (let i = 0; i <= Math.min(6, r + 1); i++) tone(PENTA[i] * 1.5, t + i * 0.06, 0.4, 'triangle', 0.09);
       break;
-    case 'hit': // zamach, cięcie stali i głuche uderzenie w ciało
-      sample('whoosh', t, 0.3, 1);
-      if (!sample('slice', t + 0.045, 0.45, 0.9, 0.1, 0.12)) noise(t, 0.03, 900, 0.08);
-      thump(t + 0.05, 170, 55, 0.13, 0.26);
+    case 'hit': // cichy zamach i miękkie, głuche uderzenie (bez ostrego zgrzytu stali — słychać go setki razy)
+      sample('whoosh', t, 0.14, 1.05, 0.1, 0, 2600);
+      if (!sample('slice', t + 0.045, 0.1, 0.78, 0.1, 0.05, 1500)) noise(t, 0.03, 700, 0.04);
+      thump(t + 0.05, 150, 55, 0.11, 0.15);
       break;
-    case 'crit': // niższe, mocniejsze cięcie, ciężki „boom”, jasny błysk i dłuższy pogłos
-      sample('whoosh', t, 0.42, 0.85);
-      if (!sample('slice', t + 0.04, 0.75, 0.72, 0.04, 0.3)) noise(t, 0.05, 2400, 0.16, 1.5);
-      thump(t + 0.045, 130, 36, 0.3, 0.42, 0.25);
-      tone(2637, t + 0.05, 0.22, 'triangle', 0.05); tone(3951, t + 0.06, 0.18, 'sine', 0.03);
+    case 'crit': // trochę mocniej niż zwykłe trafienie, nadal stłumione
+      sample('whoosh', t, 0.22, 0.9, 0.08, 0, 2400);
+      if (!sample('slice', t + 0.04, 0.22, 0.7, 0.04, 0.15, 2000)) noise(t, 0.05, 1600, 0.08, 1.2);
+      thump(t + 0.045, 130, 40, 0.24, 0.26, 0.15);
+      tone(1975.5, t + 0.05, 0.18, 'sine', 0.025);
       break;
     case 'hurt': // wróg trafia bohatera: jego zamach i ciężkie uderzenie
       sample('whoosh', t, 0.2, 0.7);

@@ -20,13 +20,12 @@ import { achCount, claimAch, discover } from './achievements';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
 import {
-  adCountLocal, adRewardLocal, adsLeft, applyBoost, offlineDouble, buyGemItemLocal, buyPackLocal, buyPassLocal, claimGiftLocal, claimPassLocal, refillKeys, shopToday, speedupLocal, tickPassLocal,
+  adRewardLocal, applyBoost, buyGemItemLocal, buyPackLocal, buyPassLocal, claimGiftLocal, claimPassLocal, refillKeys, shopToday, speedupLocal, tickPassLocal,
   type PassTrack, type ShopState,
 } from './shop';
 import { claimEvent, eventUnclaimed, tickEvent } from './events';
-import { grant } from './reward';
 import { setFrame, setSkin } from './cosmetics';
-import type { DungId, ElemKey, EventTrack, FoundEvent, OfflineReport, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
+import type { DungId, ElemKey, EventTrack, FoundEvent, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
 
 /** Stan sklepu od serwera (odpowiedzi RPC sklepu i zapisu). */
 export interface ShopSync { gems?: number; shop?: ShopState; pass?: PassTrack | null; buffs?: Partial<Record<BuffId, number>>; boost?: { lvl: number; ms: number } | null; techDone?: boolean }
@@ -52,8 +51,6 @@ export class Game {
   private lastOffer: BuffId = 'zloto';
   private passT = 0;
   private eventT = 0;
-  /** Ostatnie nagrody za nieobecność — można je podwoić reklamą (raz). */
-  private lastOffline: OfflineReport | null = null;
 
   constructor(state: GameState, opts: { rng?: Rng; now?: () => number; net?: boolean } = {}) {
     const now = opts.now ?? (() => Date.now());
@@ -180,18 +177,6 @@ export class Game {
   claimGift(): Reward | null { return this.done(claimGiftLocal(this.ctx)); }
   adReward(kind: BuffId | 'gems'): boolean { if (kind !== 'gems') this.adOffer = null; return this.done(adRewardLocal(this.ctx, kind)); }
   buyPack(id: string): boolean { return this.done(buyPackLocal(this.ctx, id)); }
-  /** Czy ostatnie nagrody za nieobecność można podwoić reklamą. */
-  canDoubleOffline(): boolean { return !!this.lastOffline && adsLeft(this.shopNow, 'offline') > 0; }
-  /** ×2 nagrody za nieobecność. `counted` — reklamę policzył już serwer (bez serwera liczy gra). */
-  doubleOffline(counted = false): Reward | null {
-    const r = this.lastOffline;
-    if (!r || (!counted && !adCountLocal(this.ctx, 'offline'))) return null;
-    this.lastOffline = null;
-    const rw = offlineDouble(r);
-    grant(this.ctx, rw);
-    this.changed();
-    return rw;
-  }
   buyPass(): boolean { return this.done(buyPassLocal(this.ctx)); }
   claimPass(): Reward | null { return this.done(claimPassLocal(this.ctx)); }
   speedup(what: 'forge' | 'tech'): boolean {
@@ -546,7 +531,6 @@ export class Game {
     if (!this.ctx.net) tickPassLocal(this.ctx);
     tickEvent(this.ctx);
     const report = applyOffline(this.ctx, ms);
-    this.lastOffline = report && report.ms >= AD.OFFLINE_MIN_MS ? report : null;
     if (report) {
       this.dispatch({ t: 'modal', m: { kind: 'offline', report } });
       // Skrzynia nocnej zmiany zatrzymała się na wybranej rzadkości — przedmiot czeka na decyzję.

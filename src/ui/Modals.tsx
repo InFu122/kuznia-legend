@@ -9,18 +9,20 @@ import { allMods } from '../engine/mods';
 import { upgradeCost, upgradeTime } from '../engine/forge';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
-import type { ModalData } from '../engine/types';
+import type { ModalData, Reward } from '../engine/types';
 import { dungName, eventOf, evText } from '../engine/events';
 import { ItemCard } from './ItemCard';
 import { DecisionView } from './Decision';
 import { Px } from './Px';
-import { elemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl, techUrl } from '../art/render';
+import { elemUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl, techUrl } from '../art/render';
+import { HeroSprite } from './Arena';
+import { RewardTiles } from './RewardIcons';
 import { hasProof } from '../engine/verify';
 import { f1, fmt, pct, pctS, tfmt } from './format';
 import { OddsBar } from './panels/Forge';
 import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
-import { AdOfferView, OfflineDouble, ShopView } from './panels/Shop';
+import { AdOfferView, ShopView } from './panels/Shop';
 import { LegacyView } from './panels/Legacy';
 import { Reforge } from './panels/Runes';
 import { RankingView } from './panels/Ranking';
@@ -132,27 +134,41 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
     case 'offline': {
       const r = m.report;
       const L = LANDS[r.land];
+      const ores: Record<number, number> = {};
+      (r.ores ?? []).forEach((n, o) => { if (n > 0) ores[o] = n; });
+      const got: Reward = { gold: r.gold, ores, books: r.books, els: r.el && L.el ? { [L.el]: r.el } : undefined };
       return (
         <>
-          <div class="eyebrow">Byłeś poza grą {tfmt(r.ms)}{r.capped ? ` (limit ${tfmt(B.OFFLINE_CAP_MS + techMods(s).offlineMin * 60000)})` : ''}</div>
-          <div class="h">Witaj z powrotem</div>
-          <p class="sub">Bohater walczył w krainie {L.n} z wydajnością {Math.round(B.OFFLINE_EFFICIENCY * 100)}% (ruda: {Math.round(B.OFFLINE_EFFICIENCY * B.OFFLINE_ORE * 100)}% zwykłego dropu).</p>
-          <ul class="list">
-            <li>{fmt(r.gold)} złota</li>
-            <li>{(r.ores ?? []).map((n, o) => (n ? `${fmt(n)} × ${ORES[o].n}` : '')).filter(Boolean).join(', ') || 'bez rudy'}{r.el && L.el ? `, ${r.el} × ${ELEM[L.el].n}` : ''}</li>
-            {r.books > 0 && <li>{books(r.books)}</li>}
-            <li>+{fmt(r.fame)} Sławy Czynów dla każdego założonego przedmiotu</li>
-            {r.forgeUp > 0 && <li>Kuźnia osiągnęła poziom {r.forgeUp}.</li>}
-            {r.tech && <li>Zbadano: {TECH[r.tech].n} (poziom {s.tech.lv[r.tech] ?? 1}).</li>}
-            {r.hatched && <li>Z jaja wykluł się chowaniec: {PETS[r.hatched].n}.</li>}
+          <div class="wb-head" style={{ '--bg': `url(${landBgUrl(r.land)})` } as Record<string, string>}>
+            <div class="wb-hero" aria-hidden="true"><HeroSprite eq={s.eq} skin={s.look.skin} /></div>
+            <div class="wb-txt">
+              <div class="eyebrow"><Px src={resUrl('czas')} size={14} /> Poza grą {tfmt(r.ms)}{r.capped ? ` · limit ${tfmt(B.OFFLINE_CAP_MS + techMods(s).offlineMin * 60000)}` : ''}</div>
+              <div class="h">Witaj z powrotem!</div>
+              <p class="sub">Bohater walczył w krainie <b>{L.n}</b> (wydajność {Math.round(B.OFFLINE_EFFICIENCY * 100)}%, ruda {Math.round(B.OFFLINE_EFFICIENCY * B.OFFLINE_ORE * 100)}% zwykłego dropu).</p>
+            </div>
+          </div>
+          <div class="eyebrow">Łup z nocnej zmiany</div>
+          <RewardTiles r={got} />
+          <ul class="wb-extra">
+            <li><Px src={resUrl('moc')} size={22} /><span><b>+{fmt(r.fame)}</b> Sławy Czynów dla każdego założonego przedmiotu</span></li>
+            {r.forgeUp > 0 && <li class="hl"><Px src={resUrl('kowadlo')} size={22} /><span>Kuźnia osiągnęła <b>poziom {r.forgeUp}</b>!</span></li>}
+            {r.tech && <li class="hl"><Px src={techUrl(r.tech)} size={22} /><span>Zbadano: <b>{TECH[r.tech].n}</b> (poziom {s.tech.lv[r.tech] ?? 1})</span></li>}
+            {r.hatched && <li class="hl"><Px src={resUrl('jajo2')} size={22} /><span>Z jaja wykluł się chowaniec: <b>{PETS[r.hatched].n}</b></span></li>}
           </ul>
           {r.chestCount > 0 && (
             <>
               <div class="eyebrow">Skrzynia nocnej zmiany · {r.chestCount} wytopów</div>
-              <ul class="list">{r.chest.map(x => <li key={x.item.id} class={`rt${x.item.r}`}>{itemName(x.item)} · {RAR[x.item.r].n} — {x.stop ? 'wybrana rzadkość! czeka na twoją decyzję' : x.equipped ? 'założony' : 'sprzedany'}</li>)}</ul>
+              <ul class="wb-chest">
+                {r.chest.map(x => (
+                  <li key={x.item.id} class={`rt${x.item.r}`}>
+                    <span class={`gi r${x.item.r}`}><Px src={itemUrl(x.item.kind, x.item.ore, x.item.r)} size={22} /></span>
+                    <span>{itemName(x.item)} · {RAR[x.item.r].n}</span>
+                    <small>{x.stop ? 'czeka na decyzję' : x.equipped ? 'założony' : 'sprzedany'}</small>
+                  </li>
+                ))}
+              </ul>
             </>
           )}
-          <OfflineDouble game={game} />
           <Close onClose={close} label="Do kuźni" />
         </>
       );

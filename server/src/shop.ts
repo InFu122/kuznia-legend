@@ -173,16 +173,15 @@ export function rpcShopGift(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
 export function rpcAdReward(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
   const kind = String(parse(payload).kind || '') as AdKind;
-  if (kind !== 'gems' && kind !== 'arena' && kind !== 'offline' && !AD_BUFFS[kind]) throw err('Nieznana nagroda.', INVALID);
+  if (kind !== 'gems' && kind !== 'arena' && !AD_BUFFS[kind]) throw err('Nieznana nagroda.', INVALID);
   const now = Date.now();
   if (kind === 'arena' && !readHero(nk, userId)) throw err('Arena otwiera się po pokonaniu pierwszego bossa i zapisie gry.', PRECONDITION);
   const max = adMax(kind);
   bumpShop(nk, userId, now, sh => ((sh.ads[kind] ?? 0) < max ? (sh.ads[kind] = (sh.ads[kind] ?? 0) + 1, true) : false), 'Na dziś koniec tych reklam — wróć jutro.');
-  // `offline` (×2 nagrody za nieobecność) przyznaje gra — serwer tylko liczy reklamę w dziennym limicie.
   let left: number | undefined;
   if (kind === 'gems') addGems(nk, userId, AD.GEMS, 'reklama');
   else if (kind === 'arena') left = addArenaFight(nk, userId, now);
-  else if (kind !== 'offline') updateObject<Buffs>(nk, 'shop', 'buffs', userId, cur => ({ ...(cur || {}), [kind]: buffUntil((cur || {})[kind], now, kind) }), perm);
+  else updateObject<Buffs>(nk, 'shop', 'buffs', userId, cur => ({ ...(cur || {}), [kind]: buffUntil((cur || {})[kind], now, kind) }), perm);
   return JSON.stringify(view(nk, userId, now, { left }));
 }
 
