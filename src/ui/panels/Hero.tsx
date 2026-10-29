@@ -10,6 +10,7 @@ import { Px } from '../Px';
 import { MountsView, PetsView, SkillsView } from './Companions';
 import { HeroSprite, bestRarity } from '../Arena';
 import { LegacyCard } from './Legacy';
+import { RunesCard } from './Runes';
 
 type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
 const SUBS: [Sub, string][] = [['eq', 'Ekwipunek'], ['skills', 'Umiejętności'], ['pets', 'Chowaniec'], ['mounts', 'Wierzchowiec']];
@@ -88,6 +89,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
           })}
         </div>
       </section>
+      <RunesCard game={game} />
       <LegacyCard game={game} onItem={onItem} onOpen={() => game.openModal({ kind: 'legacy' })} />
     </>
   );

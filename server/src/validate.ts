@@ -52,6 +52,7 @@ export function validateSave(s: GameState): string[] {
   if (typeof s.name !== 'string' || s.name.length > 16) bad('imię');
   if (!nonNeg(s.clanCoins)) bad('Monety klanowe');
   if (!Array.isArray(s.clanGot) || s.clanGot.length > 200 || !s.clanGot.every(x => typeof x === 'string' && x.length <= 40)) bad('nagrody klanu');
+  for (const [sl, l] of Object.entries(s.runes || {})) if (!SLOTS[sl as keyof typeof SLOTS] || !fin(l) || l < 0 || l > B.RUNE_MAX || Math.floor(l) !== l) bad(`runa ${sl}`);
   if (!s.clanHelp || !fin(s.clanHelp.n) || s.clanHelp.n < 0 || s.clanHelp.n > CLAN.HELP_MAX) bad('pomoc klanu');
   return out;
 }

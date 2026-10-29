@@ -21,6 +21,7 @@ import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
 import { AdOfferView, ShopView } from './panels/Shop';
 import { LegacyView } from './panels/Legacy';
+import { Reforge } from './panels/Runes';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
 import { DungInfoView } from './panels/Dungeon';
@@ -151,10 +152,12 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       );
     }
     case 'item': {
-      const worn = s.eq[m.item.slot] === m.item;
+      const curIt = s.eq[m.item.slot];
+      const worn = !!curIt && (curIt === m.item || (curIt.id > 0 && curIt.id === m.item.id));
       return (
         <>
-          <ItemCard it={m.item} history proof={game.net && worn ? hasProof(m.item) : undefined} />
+          <ItemCard it={worn ? s.eq[m.item.slot]! : m.item} history proof={game.net && worn ? hasProof(s.eq[m.item.slot]!) : undefined} />
+          {worn && <Reforge game={game} it={m.item} />}
           {worn && s.seals > 0 && (
             <button class="btn" onClick={() => game.useSeal(m.item.slot)}>Użyj Pieczęci Legendy (+{SEAL_FAME} Sławy) · masz {s.seals}</button>
           )}

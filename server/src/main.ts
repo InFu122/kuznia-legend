@@ -11,6 +11,7 @@ import { SYSTEM_USER, signSecret, testSpeed } from './common';
 import { rpcFeedback, rpcFeedbackList } from './feedback';
 import { rpcNameSet } from './names';
 import { rpcLegacy } from './legacy';
+import { rpcReforge } from './runes';
 import { rpcObiegSync } from './obieg';
 import { rpcRaidAttack, rpcRaidState } from './raid';
 import { createBoards, rpcRanking } from './ranking';
@@ -62,6 +63,7 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('raid_state', rpcRaidState);
   initializer.registerRpc('raid_attack', rpcRaidAttack);
   initializer.registerRpc('legacy', rpcLegacy);
+  initializer.registerRpc('reforge', rpcReforge);
   initializer.registerRpc('shop_state', rpcShopState);
   initializer.registerRpc('shop_buy', rpcShopBuy);
   initializer.registerRpc('shop_gift', rpcShopGift);

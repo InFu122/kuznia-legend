@@ -231,6 +231,8 @@ export class ServerLink {
     this.version = r.version;
     return r.state;
   }
+  /** Przekuwanie: serwer losuje nową statystykę i podpisuje przedmiot. */
+  reforge(item: Item, i: number): Promise<{ item: Item }> { return this.rpc('reforge', { item, i }); }
   shopState(): Promise<ShopResp> { return this.rpc('shop_state', {}); }
   shopBuy(id: GemItemId): Promise<ShopResp> { return this.rpc('shop_buy', { id }); }
   shopGift(): Promise<ShopResp> { return this.rpc('shop_gift', {}); }

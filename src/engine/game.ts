@@ -15,6 +15,7 @@ import { applyOffline } from './offline';
 import { mulberry32, rnd, type Rng } from './rng';
 import { migrate, newBattle, newState } from './state';
 import { legacyBlock, legacyReset } from './legacy';
+import { acceptReforge, payReforge, refundReforge, rerollSub, upgradeRune } from './runes';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
 import {
@@ -117,6 +118,21 @@ export class Game {
     this.adOffer = { kind, until: now + AD.OFFER_SHOW_MS };
     this.changed();
   }
+  /* ---------- runy i przekuwanie ---------- */
+
+  upgradeRune(slot: SlotId): boolean { return this.done(upgradeRune(this.ctx, slot)); }
+  /** Przekuwanie bez serwera: płaci i zwraca nową wersję przedmiotu (do wyboru). */
+  reforge(slot: SlotId, i: number): Item | null {
+    const it = this.s.eq[slot];
+    if (!it || !payReforge(this.ctx, it)) return null;
+    this.changed();
+    return rerollSub(this.ctx.rng, it, i);
+  }
+  /** Z serwerem: zapłata przed przekuciem (zwrot przy błędzie serwera). */
+  payReforge(slot: SlotId): boolean { const it = this.s.eq[slot]; return this.done(!!it && payReforge(this.ctx, it)); }
+  refundReforge(slot: SlotId): void { const it = this.s.eq[slot]; if (it) { refundReforge(this.ctx, it); this.changed(); } }
+  acceptReforge(cand: Item): boolean { return this.done(acceptReforge(this.ctx, cand)); }
+
   /* ---------- Dziedzictwo ---------- */
 
   /** Nowe pokolenie bez serwera. `slot` — przedmiot na Pamiątkę Rodu (null = zostaje dotychczasowa). */

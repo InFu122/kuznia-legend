@@ -2,10 +2,10 @@ import { B, ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue } 
 import type { Ctx } from './context';
 import { mainVal } from './formulas';
 import { allMods } from './mods';
-import type { FoeType, GameState, Item, Mods, SetId, SkillId, Stats } from './types';
+import type { FoeType, GameState, Item, Mods, SetId, SkillId, SlotId, Stats } from './types';
 
 /** Chowaniec i umiejętności — liczą się do Mocy, ale nie są częścią ekwipunku. */
-export interface Extra { pet?: { atk: number; int: number } | null; skills?: { id: SkillId; lvl: number }[]; heir?: Item | null }
+export interface Extra { pet?: { atk: number; int: number } | null; skills?: { id: SkillId; lvl: number }[]; heir?: Item | null; runes?: Partial<Record<SlotId, number>> }
 
 export function extraOf(s: GameState): Extra {
   const p = s.petSel ? s.pets[s.petSel] : null;
@@ -13,6 +13,7 @@ export function extraOf(s: GameState): Extra {
     pet: s.petSel && p ? { atk: petAtkPct(s.petSel, p.lvl, p.stars), int: PETS[s.petSel].int } : null,
     skills: s.skills.eq.filter((x): x is SkillId => !!x).map(id => ({ id, lvl: s.skills.lv[id] ?? 1 })),
     heir: s.legacy?.item ?? null,
+    runes: s.runes ?? {},
   };
 }
 
@@ -62,7 +63,8 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
   };
   for (const it of Object.values(eq)) {
     if (!it) continue;
-    const m = mainVal(it);
+    const rune = Math.max(0, Math.min(B.RUNE_MAX, extra.runes?.[it.slot] ?? 0));
+    const m = mainVal(it) * (1 + (rune * B.RUNE_PCT) / 100);
     if (SLOTS[it.slot].stat === 'dmg') dmg += m; else hp += m;
     for (const s of it.subs) addSub(s.id, s.v);
     if (it.el) {

@@ -960,3 +960,20 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .heirpick li{cursor:pointer; border-radius:10px; padding-inline:8px}
 .heirpick li.on{outline:2px solid var(--straw); outline-offset:-2px; background:rgba(242,193,78,.08)}
 .btn.danger{background:var(--blood); color:#fff; border-color:#7a1e1a}
+
+/* Runy i przekuwanie */
+.runelist{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:6px}
+.runelist li{display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:10px; background:var(--plate-2)}
+.runelist .rslot{display:grid; place-items:center; width:30px; height:30px; flex:none; color:var(--ash)}
+.runelist .rslot svg{width:20px; height:20px}
+.runelist b{font-size:13px}
+.rlvl{font-size:12px; color:var(--straw); font-weight:600}
+.rcost{display:inline-flex; align-items:center; gap:3px; font-size:12px; color:var(--ash); font-variant-numeric:tabular-nums}
+.rcost.lack{color:var(--blood)}
+.reforge{margin-top:10px; padding-top:10px; border-top:1px solid var(--rivet)}
+.rf-list{list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:6px}
+.rf-list li{display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px}
+.rf-pair{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px}
+.rf-pair .btn{display:flex; flex-direction:column; gap:2px; padding:10px 8px; height:auto; line-height:1.25}
+.rf-pair small{font-size:11px; opacity:.8}
+.rf-pair b{font-size:13px}

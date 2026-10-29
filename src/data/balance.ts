@@ -23,8 +23,8 @@ export const JUMP_TABLE: [number, number, number][] = [
 export const FORGE_UNLOCKS: Record<number, string> = {
   5: 'wytop Srebra, auto-wytop, rafinacja rud',
   12: 'wytop seryjny ×2',
-  10: 'wytop Mithrilu, domieszki żywiołów',
-  15: 'wytop Adamantytu',
+  10: 'wytop Mithrilu, domieszki żywiołów, runy slotów',
+  15: 'wytop Adamantytu, przekuwanie przedmiotów',
   20: 'wytop Smoczej Stali, wytop seryjny ×3',
   25: 'wytop Gwiezdnego Kruszcu',
   30: 'pełna szansa na przeskok, Dziedzictwo (nowe pokolenie)',
@@ -79,6 +79,10 @@ export const B = {
   UPGRADE_COST_MULT: 1.5,
   AUTO_FORGE_LVL: 5,
   REFINE_FORGE_LVL: 5,
+  RUNE_FORGE_LVL: 10,           // runy slotów
+  RUNE_MAX: 30,
+  RUNE_PCT: 1,                  // +1% głównej statystyki przedmiotu w slocie za poziom runy
+  REFORGE_FORGE_LVL: 15,        // przekuwanie statystyk dodatkowych
   LEGACY_FORGE: 30,             // Dziedzictwo (nowe pokolenie) od tego poziomu kuźni
   LEGACY_STAR_PCT: 5,           // Gwiazda Mistrza: +5% obrażeń i złota
   LEGACY_LANDS_PER_STAR: 4,     // gwiazdy za pokolenie: 1 za kuźnię 30 i 1 za każde 4 pokonane krainy

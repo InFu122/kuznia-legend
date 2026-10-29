@@ -158,6 +158,7 @@ export interface GameState {
   buffs: Partial<Record<BuffId, number>>;              // wzmocnienia z reklam: do kiedy działają (ms)
   pass: PassTrack | null;                              // Przepustka Kowala (z serwerem: kopia stanu serwera)
   boost: { lvl: number; ms: number };                  // przyspieszenie Klejnotami już wliczone do ulepszenia kuźni na poziom `lvl`
+  runes: Partial<Record<SlotId, number>>;              // poziomy run slotów (0–30)
   legacy: { gen: number; stars: number; item: Item | null }; // Dziedzictwo: pokolenie, Gwiazdy Mistrza, Pamiątka Rodu (z serwerem — kopia serwera)
   speed: number;
   savedAt: number;

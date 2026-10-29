@@ -31,6 +31,8 @@ export function legacyReset(s: GameState, slot: SlotId | null, now: number): Gam
     pets: s.pets, petSel: s.petSel, saddles: s.saddles, mounts: s.mounts, mountSel: s.mountSel, stones: s.stones, seals: s.seals,
     // lochy: rekordy zostają, klucze na dziś też
     dungeons: s.dungeons,
+    // runy slotów zostają (to wzmocnienie kuźni, nie przedmiotów)
+    runes: s.runes,
     // klan, sklep, przepustka, konto
     clanLvl: s.clanLvl, clanCoins: s.clanCoins, clanShop: s.clanShop, clanGot: s.clanGot,
     gems: s.gems, shop: s.shop, buffs: s.buffs, pass: s.pass,
