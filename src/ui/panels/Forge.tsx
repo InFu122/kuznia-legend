@@ -1,6 +1,6 @@
 import { useRef } from 'preact/hooks';
 import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS } from '../../data';
-import { canSmelt, refineRatio, sellFor, uniqActive } from '../../engine/forge';
+import { batchOf, canSmelt, refineRatio, sellFor, uniqActive } from '../../engine/forge';
 import { dist, itemName, jumpChances, maxJump } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
@@ -112,12 +112,15 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
           <div class="batch" role="radiogroup" aria-label="Wytop seryjny">
             <span>Wytop seryjny</span>
             {BATCH_OPTIONS.map(([k, lvl]) => (
-              <button key={k} role="radio" aria-checked={s.batch === k} disabled={f.lvl < lvl} class={`chip${s.batch === k ? ' on' : ''}`}
+              <button key={k} role="radio" aria-checked={batchOf(s) === k} disabled={f.lvl < lvl} class={`chip${batchOf(s) === k ? ' on' : ''}`}
                 title={f.lvl < lvl ? `Od ${lvl}. poziomu kuźni` : undefined} onClick={() => game.setBatch(k)}>
                 ×{k}{f.lvl < lvl ? <small> · {lvl}</small> : ''}
               </button>
             ))}
           </div>
+        )}
+        {f.lvl >= 8 && f.lvl < BATCH_OPTIONS[1][1] && (
+          <p class="sub">Wytop seryjny: ×{BATCH_OPTIONS[1][0]} od {BATCH_OPTIONS[1][1]}. poziomu kuźni, ×{BATCH_OPTIONS[2][0]} od {BATCH_OPTIONS[2][1]}.</p>
         )}
         {s.batch > 1 && batch === 1 && (s.elSel || set) && <p class="sub">Wytop seryjny działa bez domieszki i rudy unikalnej — teraz kujesz pojedynczo.</p>}
         <div class="anvil">

@@ -1,4 +1,4 @@
-import { DUNGEONS, DUNG_ORDER, LANDS, SKILL_SLOTS, TUTORIAL } from '../data';
+import { BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, LANDS, SKILL_SLOTS, TUTORIAL } from '../data';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
@@ -99,7 +99,9 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!Array.isArray(out.obIn)) out.obIn = [];
   if (!Array.isArray(out.obOut)) out.obOut = [];
   if (typeof out.autoStop !== 'number') out.autoStop = 0;
+  // Wytop seryjny: tylko dostępne mnożniki (dawne ×5 i ×10 → ×3).
   if (typeof out.batch !== 'number' || !(out.batch >= 1)) out.batch = 1;
+  out.batch = Math.max(...BATCH_OPTIONS.map(([n]) => n).filter(n => n <= out.batch));
   if (typeof out.clanLvl !== 'number' || !(out.clanLvl >= 0)) out.clanLvl = 0;
   if (typeof out.clanCoins !== 'number' || !(out.clanCoins >= 0)) out.clanCoins = 0;
   if (!isObj(out.clanShop) || !isObj(out.clanShop.n)) out.clanShop = fresh.clanShop;

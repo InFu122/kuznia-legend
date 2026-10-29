@@ -194,7 +194,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   // Ruda: z części fal, według rozkładu krainy (główna 1–3 sztuki, rzadsze po 1).
   if (ctx.rng.next() < B.ORE_DROP) {
     const ore = pickOre(L, ctx.rng.next(), mods.rarePct);
-    const nOre = (ore === L.main ? ri(ctx.rng, 1, 3) : 1) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
+    const nOre = (ore === L.main ? ri(ctx.rng, 1, B.ORE_MAIN_MAX) : 1) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0);
     const rare = ore > L.main;
     s.ores[ore] += nOre;
     loot += rare ? ` · ${ORES[ore].n}!` : ` · +${nOre} ${ORES[ore].n}`;

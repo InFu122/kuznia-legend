@@ -21,10 +21,11 @@ export const JUMP_TABLE: [number, number, number][] = [
 ];
 
 export const FORGE_UNLOCKS: Record<number, string> = {
-  5: 'wytop Srebra, auto-wytop',
+  5: 'wytop Srebra, auto-wytop, rafinacja rud',
+  12: 'wytop seryjny ×2',
   10: 'wytop Mithrilu, domieszki żywiołów',
   15: 'wytop Adamantytu',
-  20: 'wytop Smoczej Stali',
+  20: 'wytop Smoczej Stali, wytop seryjny ×3',
   25: 'wytop Gwiezdnego Kruszcu',
   30: 'pełna szansa na przeskok',
 };
@@ -83,7 +84,8 @@ export const B = {
   WAVES_PER_STAGE: 5,
   STAGES_PER_LAND: 10,
   WAVE_HEAL: 0.3,
-  ORE_DROP: 0.35,               // szansa, że fala zostawi główną rudę (złoto wypada zawsze)
+  ORE_DROP: 0.35,               // szansa, że fala zostawi rudę (złoto wypada zawsze)
+  ORE_MAIN_MAX: 2,              // główna ruda krainy: 1–2 sztuki na drop (rzadsze po 1)
   ELEM_DROP: 0.04,
   OBIEG_CHANCE: 0.3,
   OBIEG_FIND_FROM_BOSS: 0.2,
@@ -104,6 +106,7 @@ export const B = {
   FAME_DUNGEON: 30,
   OFFLINE_CAP_MS: 8 * 3600 * 1000,
   OFFLINE_EFFICIENCY: 0.5,
+  OFFLINE_ORE: 0.35,            // ruda za nieobecność: 35% tego, co dałyby fale offline (złoto bez zmian)
   OFFLINE_WAVE_MS: 3500,
   OFFLINE_CHEST_MAX: 300,
   DUNGEON_KEYS: 2,

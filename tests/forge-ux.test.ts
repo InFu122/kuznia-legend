@@ -151,25 +151,32 @@ describe('wynik Zwoju', () => {
 });
 
 describe('wytop seryjny i rafinacja', () => {
-  it('×10: dziesięć wytopów, najlepszy czeka na decyzję, reszta założona albo sprzedana', async () => {
-    const { smeltBatch, batchSizes } = await import('../src/engine/forge');
+  it('×3 od 20. poziomu kuźni: trzy wytopy, najlepszy czeka na decyzję, reszta założona albo sprzedana', async () => {
+    const { smeltBatch, batchSizes, batchOf } = await import('../src/engine/forge');
+    const { migrate } = await import('../src/engine/state');
     const { makeGame: mk } = await import('./helpers');
     const { ctx, s } = mk(9);
-    s.forge.lvl = 12; s.stats.smelted = 10; s.ores[2] = 25;
-    expect(batchSizes(s)).toEqual([1, 2, 3, 5, 10]);
+    s.forge.lvl = 11; s.stats.smelted = 10; s.ores[2] = 25;
+    expect(batchSizes(s)).toEqual([1]);
+    s.forge.lvl = 12;
+    expect(batchSizes(s)).toEqual([1, 2]);
+    s.batch = 3;
+    expect(batchOf(s)).toBe(2);                  // wybrane ×3 działa jak ×2, dopóki kuźnia nie ma 20. poziomu
+    s.forge.lvl = 20;
+    expect(batchSizes(s)).toEqual([1, 2, 3]);
+    expect(batchOf(s)).toBe(3);
     const gold = s.gold;
-    const r = smeltBatch(ctx, 2, 10)!;
-    expect(r.count).toBe(10);
-    expect(s.ores[2]).toBeLessThanOrEqual(15 + 0); // bez Oszczędnego wytopu zużywa 10
-    expect(r.sold + r.equipped).toBe(9);
+    const r = smeltBatch(ctx, 2, 3)!;
+    expect(r.count).toBe(3);
+    expect(s.ores[2]).toBe(22);                  // bez Oszczędnego wytopu zużywa 3
+    expect(r.sold + r.equipped).toBe(2);
     expect(Math.max(...r.all.map(x => x.r))).toBe(r.best.r);
     expect(s.gold - gold).toBe(r.gold);
     // gdy rudy brakuje — tyle, ile jest
-    s.ores[2] = 3;
-    expect(smeltBatch(ctx, 2, 10)!.count).toBe(3);
-    // niski poziom kuźni: tylko pojedynczy wytop
-    s.forge.lvl = 2;
-    expect(batchSizes(s)).toEqual([1]);
+    s.ores[2] = 2;
+    expect(smeltBatch(ctx, 2, 3)!.count).toBe(2);
+    // dawny zapis z ×10 → ×3
+    expect(migrate({ ...JSON.parse(JSON.stringify(s)), batch: 10 }, Date.now()).batch).toBe(3);
   });
 
   it('rafinacja zamienia nadmiar słabszej rudy na następną, tylko na rudy, które kuźnia wytapia', async () => {

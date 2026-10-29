@@ -6,7 +6,7 @@ import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labC
 import { equipBestSkills, equipSkill, levelUp, openSaddle, openScroll, selectBestMount, selectBestPet, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
-import { autoHandle, autoTarget, autoTargets, batchSizes, canSmelt, equip, refine, sell, sellFor, smelt, smeltBatch, startUpgrade, tickForge, uniqActive, upgradeCost, upgradeTime, type BatchResult } from './forge';
+import { autoHandle, autoTarget, autoTargets, batchOf, batchSizes, canSmelt, equip, refine, sell, sellFor, smelt, smeltBatch, startUpgrade, tickForge, uniqActive, upgradeCost, upgradeTime, type BatchResult } from './forge';
 import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
@@ -122,7 +122,7 @@ export class Game {
   /** Czy następny wytop będzie seryjny (bez domieszki i rudy unikalnej). */
   batchActive(): number {
     const s = this.s;
-    return s.batch > 1 && batchSizes(s).includes(s.batch) && !s.elSel && !uniqActive(s) ? s.batch : 1;
+    return !s.elSel && !uniqActive(s) ? batchOf(s) : 1;
   }
   setBatch(n: number) { if (batchSizes(this.s).includes(n)) { this.s.batch = n; this.ctx.dirty = true; this.changed(); } }
   smeltManual(): Item | null {

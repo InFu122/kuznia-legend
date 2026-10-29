@@ -128,7 +128,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         <>
           <div class="eyebrow">Byłeś poza grą {tfmt(r.ms)}{r.capped ? ` (limit ${tfmt(B.OFFLINE_CAP_MS + techMods(s).offlineMin * 60000)})` : ''}</div>
           <div class="h">Witaj z powrotem</div>
-          <p class="sub">Bohater walczył w krainie {L.n} z wydajnością 50%.</p>
+          <p class="sub">Bohater walczył w krainie {L.n} z wydajnością {Math.round(B.OFFLINE_EFFICIENCY * 100)}% (ruda: {Math.round(B.OFFLINE_EFFICIENCY * B.OFFLINE_ORE * 100)}% zwykłego dropu).</p>
           <ul class="list">
             <li>{fmt(r.gold)} złota</li>
             <li>{(r.ores ?? []).map((n, o) => (n ? `${fmt(n)} × ${ORES[o].n}` : '')).filter(Boolean).join(', ') || 'bez rudy'}{r.el && L.el ? `, ${r.el} × ${ELEM[L.el].n}` : ''}</li>
@@ -329,7 +329,7 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
       <div class="eyebrow">Z każdej fali</div>
       <ul class="droplist">
         <li><Px src={resUrl('zloto')} size={24} /><span>Złoto</span><b>ok. {fmt(wave)} na falę</b></li>
-        <li class="dl-sub"><span>Ruda — z {pct(B.ORE_DROP * 100)} fal (główna 1–3 sztuki, rzadsze po 1):</span></li>
+        <li class="dl-sub"><span>Ruda — z {pct(B.ORE_DROP * 100)} fal (główna 1–{B.ORE_MAIN_MAX} sztuki, rzadsze po 1):</span></li>
         {shares.map(([o, p]) => (
           <li key={o} class={o > L.main ? 'rare' : ''}>
             <Px src={oreUrl(o)} size={24} /><span>{ORES[o].n}{o === L.main ? ' · główna' : o > L.main ? ' · rzadka' : ''}</span><b>{pctS(p)} dropów</b>

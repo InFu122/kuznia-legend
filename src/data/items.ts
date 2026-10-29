@@ -72,7 +72,8 @@ export const ELEM: Record<ElemKey, { n: string; el: string; eff: 'dmg' | 'slow' 
 export const ELEM_KEYS = Object.keys(ELEM) as ElemKey[];
 
 /** Wytop seryjny: ile wytopów jednym przyciskiem i od którego poziomu kuźni. */
-export const BATCH_OPTIONS: [number, number][] = [[1, 1], [2, 3], [3, 5], [5, 8], [10, 12]];
+/** Wytop seryjny: [ile przedmiotów naraz, od którego poziomu kuźni]. */
+export const BATCH_OPTIONS: [number, number][] = [[1, 1], [2, 12], [3, 20]];
 /**
  * Rafinacja: ile sztuk rudy (indeks) daje 1 sztukę następnej. Im szlachetniejsza ruda, tym drożej —
  * rafinacja zużywa nadmiar, ale wytapianie rudy wprost zawsze opłaca się bardziej niż jej uszlachetnianie.

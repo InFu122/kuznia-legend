@@ -40,7 +40,7 @@ const SAMPLE = 6 * 60000;  // próbka Mocy co 6 min (do kalibracji)
 const TECH_PRIORITY: TechId[] = ['w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 'e_noc'];
 
 interface HourRow {
-  run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; smelted: number; jumps: number; best: string;
+  run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; smelted: number; jumps: number; best: string; ore: number;
   books: number; tech: number; sets: string; tower: number; skills: string; pet: string; mount: string;
 }
 interface BossRow { run: number; land: string; boss: string; h: number; forge: number; power: number }
@@ -178,7 +178,7 @@ function runOnce(run: number, seed: number) {
       const bestR = Math.max(-1, ...Object.values(g.s.eq).map(it => it?.r ?? -1));
       hours.push({
         run, h: ms / 3600000, land: LANDS[g.s.cur.land].n, stage: g.s.cur.stage, forge: g.s.forge.lvl, power: g.stats.power,
-        rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, best: bestR >= 0 ? RAR[bestR].n : '—',
+        rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, ore: g.s.ores.reduce((x, y) => x + y, 0), best: bestR >= 0 ? RAR[bestR].n : '—',
         books: g.s.books, tech: TECH_IDS.reduce((a, id) => a + (g.s.tech.lv[id] ?? 0), 0),
         sets: g.stats.sets.map(x => `${x.id}:${x.count}`).join(' '), tower: g.s.dungeons.wieza.best,
         skills: g.s.skills.eq.filter(Boolean).map(id => `${id}${g.s.skills.lv[id!]}`).join(' '),
@@ -226,6 +226,7 @@ async function main() {
     { header: 'Moc bohatera', key: 'power', width: 14, fmt: '#,##0' }, { header: 'Zalecana Moc krainy', key: 'rec', width: 18, fmt: '#,##0' },
     { header: 'Moc / zalecana', key: 'ratio', width: 14, fmt: '0%' }, { header: 'Złoto', key: 'gold', width: 14, fmt: '#,##0' },
     { header: 'Wytopy', key: 'smelted', width: 10, fmt: '#,##0' }, { header: 'Przeskoki', key: 'jumps', width: 10, fmt: '#,##0' },
+    { header: 'Ruda w zapasie', key: 'ore', width: 14, fmt: '#,##0' },
     { header: 'Najlepsza rzadkość', key: 'best', width: 18 },
     { header: 'Księgi', key: 'books', width: 9 }, { header: 'Poziomy badań', key: 'tech', width: 14 },
     { header: 'Zestawy', key: 'sets', width: 18 }, { header: 'Wieża', key: 'tower', width: 8 },

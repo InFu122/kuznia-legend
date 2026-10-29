@@ -22,11 +22,12 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   if (!waves) return null;
   const L = LANDS[s.cur.land];
   const gold = Math.round(waves * goldWave(curG(s)) * (1 + mods.goldPct / 100));
-  // Rudy według rozkładu krainy: główna średnio 2 sztuki na drop, rzadsze po 1 (ułamki zaokrąglane losowo).
+  // Rudy według rozkładu krainy (główna średnio 1,5 sztuki na drop, rzadsze po 1), z tego tylko część za nieobecność
+  // — inaczej po nocy zapas rudy rósłby o tysiące sztuk. Ułamki zaokrąglane losowo.
   const ores = s.ores.map(() => 0);
   for (const [o, p] of oreShares(L, mods.rarePct)) {
-    const per = (o === L.main ? 2 : 1) + mods.extraOre / 100;
-    ores[o] = Math.floor(waves * B.ORE_DROP * (p / 100) * per + ctx.rng.next());
+    const per = (o === L.main ? (1 + B.ORE_MAIN_MAX) / 2 : 1) + mods.extraOre / 100;
+    ores[o] = Math.floor(waves * B.ORE_DROP * B.OFFLINE_ORE * (p / 100) * per + ctx.rng.next());
   }
   const el = L.el ? Math.floor(waves * B.ELEM_DROP) : 0;
   const books = Math.floor(waves * B.BOOK_DROP + ctx.rng.next());

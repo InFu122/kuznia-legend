@@ -160,6 +160,8 @@ export function autoHandle(ctx: Ctx, it: Item, quiet: boolean): 'stop' | 'equip'
 
 /** Wytopy seryjne dostępne na tym poziomie kuźni (np. [1, 2, 3]). */
 export const batchSizes = (s: GameState) => BATCH_OPTIONS.filter(([, lvl]) => s.forge.lvl >= lvl).map(([n]) => n);
+/** Wybrany wytop seryjny w granicach poziomu kuźni (np. wybrane ×3 przy kuźni 15 działa jak ×2). */
+export const batchOf = (s: GameState) => Math.max(1, ...batchSizes(s).filter(n => n <= s.batch));
 
 export interface BatchResult { best: Item; all: Item[]; count: number; sold: number; gold: number; equipped: number }
 
