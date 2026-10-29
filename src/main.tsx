@@ -84,6 +84,7 @@ function boot(hotData?: { s?: string }) {
       }
       takeName(r);
       if (typeof r.clanLvl === 'number') game.setClanLvl(r.clanLvl);
+      if (r.shop && typeof r.shop.gems === 'number') game.applyShop(r.shop);
       game.setMaxSpeed(l.testSpeed);
       save.mode = 'server';
       save.error = undefined;

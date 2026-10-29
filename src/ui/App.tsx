@@ -17,6 +17,7 @@ import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
 import { ResearchPanel } from './panels/Research';
+import { shopTodo } from './panels/Shop';
 import { TUTORIAL } from '../data';
 import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
@@ -124,6 +125,9 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
               <div class={`save-badge ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
             </div>
             <div class="top-btns">
+              <button class="quests shopbtn" onClick={() => open({ kind: 'shop' })} aria-label={`Sklep: ${fmt(s.gems)} Klejnotów`}>
+                <Px src={resUrl('klejnot')} size={18} /><b class="gemn">{fmt(s.gems)}</b>{shopTodo(game) && <i class="badge dotb" aria-hidden="true" />}
+              </button>
               {game.net && (
                 <button class="quests" data-chat onClick={() => open({ kind: 'chat' })} aria-label={`Czat${unread ? `: ${unread} nowych` : ''}`}>
                   <TabIcon tab="czat" /><span class="qlabel">Czat</span>{unread > 0 && <i class="badge">{unread > 99 ? '99+' : unread}</i>}
@@ -151,7 +155,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => location.reload()); }}>Odśwież</button>
           </section>
         )}
-        <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} />
+        <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} />
         {step && (
           <section class="tutbar" aria-label="Samouczek">
             <div class="cmain">

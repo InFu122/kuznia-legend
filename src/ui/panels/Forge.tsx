@@ -1,6 +1,7 @@
 import { useRef } from 'preact/hooks';
 import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS } from '../../data';
 import { batchOf, canSmelt, refineRatio, sellFor, uniqActive } from '../../engine/forge';
+import { SpeedupButton } from './Shop';
 import { dist, itemName, jumpChances, maxJump } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
@@ -170,6 +171,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
             <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
             <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
             {game.net && <ClanHelpLine game={game} />}
+            <SpeedupButton game={game} what="forge" />
           </>
         ) : (
           <div class="row">

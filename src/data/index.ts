@@ -8,3 +8,4 @@ export * from './companions';
 export * from './missions';
 export * from './clan';
 export * from './war';
+export * from './shop';

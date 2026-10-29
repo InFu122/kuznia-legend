@@ -9,9 +9,10 @@ import type { Battle, DungId, Fx, GameState } from './types';
  * 5 — misje, kalendarz logowania, samouczek, ustawienia dźwięku,
  * 6 — ziarna wytopu z serwera, prawdziwy Wielki Obieg,
  * 7 — życie klanu: poziom klanu, Monety i sklep klanowy, pomoc w ulepszeniach,
- * 8 — auto-wytop do wybranej rzadkości, nowe tempo gry (dłuższe ulepszenia kuźni, mniej złota, rozkłady rud krain).
+ * 8 — auto-wytop do wybranej rzadkości, nowe tempo gry (dłuższe ulepszenia kuźni, mniej złota, rozkłady rud krain),
+ * 9 — Klejnoty, sklep, Przepustka Kowala, wzmocnienia z reklam, przyspieszenia kuźni.
  */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];
@@ -35,6 +36,7 @@ export function newState(now: number): GameState {
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0 },
     sx: 0, seeds: [], obIn: [], obOut: [],
     clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
+    gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, boost: { lvl: 0, ms: 0 },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
 }
@@ -107,6 +109,12 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!isObj(out.clanShop) || !isObj(out.clanShop.n)) out.clanShop = fresh.clanShop;
   if (!isObj(out.clanHelp) || typeof out.clanHelp.lvl !== 'number' || typeof out.clanHelp.n !== 'number') out.clanHelp = fresh.clanHelp;
   if (!Array.isArray(out.clanGot)) out.clanGot = [];
+  if (typeof out.gems !== 'number' || !(out.gems >= 0)) out.gems = 0;
+  if (!isObj(out.shop) || !isObj(out.shop.n) || !isObj(out.shop.ads)) out.shop = fresh.shop;
+  if (!Array.isArray(out.shop.once)) out.shop.once = [];
+  if (!isObj(out.buffs)) out.buffs = {};
+  if (!isObj(out.pass) || !isObj(out.pass.base) || typeof out.pass.season !== 'number') out.pass = null;
+  if (!isObj(out.boost) || typeof out.boost.lvl !== 'number' || typeof out.boost.ms !== 'number') out.boost = fresh.boost;
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
   for (const it of [...Object.values(out.eq), out.pending, ...out.found, ...out.obIn, ...out.obOut]) {
     if (!it) continue;

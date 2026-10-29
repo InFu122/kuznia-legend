@@ -1,4 +1,4 @@
-import { B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS } from '../data';
+import { AD, AD_BUFFS, B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type BuffId, type GemItemId } from '../data';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
@@ -16,7 +16,14 @@ import { mulberry32, rnd, type Rng } from './rng';
 import { newBattle, newState } from './state';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
-import type { DungId, ElemKey, FoundEvent, GameEvent, GameState, Item, MountId, PetId, SetId, SkillId, SlotId, TechId } from './types';
+import {
+  adRewardLocal, applyBoost, buyGemItemLocal, buyPackLocal, buyPassLocal, claimGiftLocal, claimPassLocal, refillKeys, shopToday, speedupLocal, tickPassLocal,
+  type PassTrack, type ShopState,
+} from './shop';
+import type { DungId, ElemKey, FoundEvent, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
+
+/** Stan sklepu od serwera (odpowiedzi RPC sklepu i zapisu). */
+export interface ShopSync { gems?: number; shop?: ShopState; pass?: PassTrack | null; buffs?: Partial<Record<BuffId, number>>; boost?: { lvl: number; ms: number } | null; techDone?: boolean }
 
 /**
  * Fasada silnika dla interfejsu: trzyma stan, prowadzi czas gry i wystawia akcje gracza.
@@ -33,6 +40,11 @@ export class Game {
   private wantSpeed = 1;
   /** Ostatni przedmiot z auto-wytopu i co się z nim stało. */
   lastAuto: { item: Item; res: 'equip' | 'sell' | 'stop' } | null = null;
+  /** Ikonka reklamy na polu walki: po obejrzeniu ×2 ruda albo ×2 złoto przez godzinę. */
+  adOffer: { kind: BuffId; until: number } | null = null;
+  private offerT = 60000;
+  private lastOffer: BuffId = 'zloto';
+  private passT = 0;
 
   constructor(state: GameState, opts: { rng?: Rng; now?: () => number; net?: boolean } = {}) {
     const now = opts.now ?? (() => Date.now());
@@ -75,7 +87,71 @@ export class Game {
     }
     if (ctx.b.mode === 'dung') dungTick(ctx, ms);
     stepCombat(ctx, ms);
+    this.shopTick(realMs);
   }
+
+  /** Przepustka bez serwera (co 5 s) i ikonka reklamy na polu walki (co kilka minut prawdziwego czasu gry). */
+  private shopTick(realMs: number): void {
+    const ctx = this.ctx;
+    const s = ctx.s;
+    const now = ctx.now();
+    if (!ctx.net) {
+      this.passT -= realMs;
+      if (this.passT <= 0) {
+        this.passT = 5000;
+        const r = tickPassLocal(ctx);
+        if (r) toast(ctx, 'Nowy sezon Przepustki Kowala — nieodebrane nagrody trafiły do ciebie.', 'good');
+      }
+    }
+    if (this.adOffer && this.adOffer.until <= now) { this.adOffer = null; this.changed(); }
+    if (s.tut < TUTORIAL.length || s.forge.lvl < 3 || ctx.b.mode !== 'camp' || this.adOffer) return;
+    this.offerT -= realMs;
+    if (this.offerT > 0) return;
+    this.offerT = AD.OFFER_EVERY_MS;
+    const sh = shopToday(s.shop, now);
+    const order: BuffId[] = this.lastOffer === 'ruda' ? ['zloto', 'ruda'] : ['ruda', 'zloto'];
+    const kind = order.find(k => (s.buffs?.[k] ?? 0) <= now && (sh.ads[k] ?? 0) < AD_BUFFS[k].day);
+    if (!kind) return;
+    this.lastOffer = kind;
+    this.adOffer = { kind, until: now + AD.OFFER_SHOW_MS };
+    this.changed();
+  }
+  /** Komplet kluczy ze sklepu (z serwerem — po potwierdzeniu zakupu). */
+  refillKeys(): void { refillKeys(this.s, this.ctx.now()); this.ctx.dirty = true; this.changed(); }
+  /** Otwiera okno gry (np. sklep z przycisku przyspieszenia). */
+  openModal(m: ModalData): void { this.dispatch({ t: 'modal', m }); }
+  dismissAdOffer(): void { if (this.adOffer) { this.adOffer = null; this.changed(); } }
+
+  /* ---------- sklep i przepustka ---------- */
+
+  /** Dzisiejsze limity sklepu. */
+  get shopNow(): ShopState { return shopToday(this.s.shop, this.ctx.now()); }
+  private done<T>(v: T): T { if (v) this.changed(); return v; }
+  buyGemItem(id: GemItemId): boolean { return this.done(buyGemItemLocal(this.ctx, id)); }
+  claimGift(): Reward | null { return this.done(claimGiftLocal(this.ctx)); }
+  adReward(kind: BuffId | 'gems'): boolean { if (kind !== 'gems') this.adOffer = null; return this.done(adRewardLocal(this.ctx, kind)); }
+  buyPack(id: string): boolean { return this.done(buyPackLocal(this.ctx, id)); }
+  buyPass(): boolean { return this.done(buyPassLocal(this.ctx)); }
+  claimPass(): Reward | null { return this.done(claimPassLocal(this.ctx)); }
+  speedup(what: 'forge' | 'tech'): boolean {
+    const ok = speedupLocal(this.ctx, what);
+    if (ok) { this.tick(0); this.changed(); }
+    return ok;
+  }
+  /** Stan sklepu od serwera: Klejnoty, limity, przepustka, wzmocnienia i przyspieszenia. */
+  applyShop(r: ShopSync): void {
+    const s = this.s;
+    if (typeof r.gems === 'number' && r.gems >= 0) s.gems = r.gems;
+    if (r.shop) s.shop = r.shop;
+    if (r.pass !== undefined) s.pass = r.pass;
+    if (r.buffs) for (const k of Object.keys(AD_BUFFS) as BuffId[]) { const v = r.buffs[k]; if (typeof v === 'number' && v > (s.buffs[k] ?? 0)) s.buffs = { ...s.buffs, [k]: v }; }
+    if (r.boost) applyBoost(this.ctx, r.boost.lvl, r.boost.ms);
+    if (r.techDone && s.tech.cur) s.tech.cur = { ...s.tech.cur, left: 0 };
+    // Dane od serwera nie wymagają ponownego zapisu — chyba że przyspieszenie zmieniło kuźnię albo badanie.
+    if (r.boost || r.techDone) { this.ctx.dirty = true; this.tick(0); }
+    this.changed();
+  }
+
 
   /** Auto-wytop jest włączony, ale brakuje wybranej rudy. */
   get autoWaiting(): boolean { return this.s.auto && this.s.forge.lvl >= B.AUTO_FORGE_LVL && !this.s.pending && !canSmelt(this.ctx, this.s.oreSel); }
@@ -381,7 +457,11 @@ export class Game {
     this.ctx.s = newState(this.ctx.now());
     // Imię, ziarna wytopu i kolejki Obiegu zostają: numer wytopu nigdy się nie cofa.
     // Poziom klanu i lista odebranych nagród klanu też zostają — należą do konta, nie do rozgrywki.
-    Object.assign(this.ctx.s, { name: old.name, sx: old.sx, seeds: old.seeds, obIn: old.obIn, obOut: old.obOut, clanLvl: old.clanLvl, clanGot: old.clanGot, speed: old.speed });
+    // Klejnoty, przepustka, limity sklepu i wzmocnienia też należą do konta.
+    Object.assign(this.ctx.s, {
+      name: old.name, sx: old.sx, seeds: old.seeds, obIn: old.obIn, obOut: old.obOut, clanLvl: old.clanLvl, clanGot: old.clanGot, speed: old.speed,
+      gems: old.gems, shop: old.shop, buffs: old.buffs, pass: old.pass,
+    });
     this.ctx.b = newBattle();
     this.ctx.cache = null;
     this.lastAuto = null;
@@ -392,6 +472,8 @@ export class Game {
   }
   /** Wywołaj po powrocie do gry: nalicza nagrody offline i pokazuje podsumowanie. */
   offline(ms: number): void {
+    // Przepustka bez serwera: przełom dnia przed nagrodami za nieobecność, żeby wrogowie z nocy liczyli się do nowego dnia.
+    if (!this.ctx.net) tickPassLocal(this.ctx);
     const report = applyOffline(this.ctx, ms);
     if (report) {
       this.dispatch({ t: 'modal', m: { kind: 'offline', report } });

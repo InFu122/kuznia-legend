@@ -95,6 +95,18 @@ describe('serwer: pochodzenie przedmiotów', () => {
     expect(paceProblem(s, { ...m28, clMax: 10 }, now)).toBeNull();   // gracz był w klanie z premią do czasu ulepszeń
   });
 
+  it('tempo kuźni uwzględnia przyspieszenia Klejnotami', () => {
+    const { s } = geared();
+    const now = 1000 * 3600000;
+    s.forge.lvl = 20; s.forge.up = 0; s.clanLvl = 0;
+    const need = upgradeTime(s, 20);
+    const meta = { t0: now - need * 0.2, f0: 19, pity: [] };
+    expect(paceProblem(s, meta, now)).toBeTruthy();                           // bez przyspieszenia za szybko
+    expect(paceProblem(s, meta, now, {}, { 20: need * 0.8 })).toBeNull();     // przyspieszone o 80% czasu
+    expect(paceProblem(s, meta, now, {}, { 20: need * 0.5 })).toBeTruthy();   // za mało przyspieszenia
+    expect(paceProblem(s, meta, now, {}, { 21: need })).toBeTruthy();         // przyspieszenie innego poziomu się nie liczy
+  });
+
   it('kod przeniesienia: wielkie litery, bez myślników i spacji', () => {
     expect(normCode(' ab3d-ef9h ')).toBe('AB3DEF9H');
     expect(normCode(5)).toBe('');

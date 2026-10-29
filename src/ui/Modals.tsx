@@ -19,6 +19,7 @@ import { f1, fmt, pct, pctS, tfmt } from './format';
 import { OddsBar } from './panels/Forge';
 import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
+import { AdOfferView, ShopView } from './panels/Shop';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
 import { DungInfoView } from './panels/Dungeon';
@@ -194,6 +195,10 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <RankingView close={close} />;
     case 'arena':
       return <ArenaView game={game} close={close} />;
+    case 'shop':
+      return <ShopView game={game} initial={m.tab} close={close} />;
+    case 'adOffer':
+      return <AdOfferView game={game} what={m.what} close={close} />;
     case 'chat':
       return <ChatView game={game} initial={m.ch} close={close} goClan={() => { close(); goTab?.('klan'); }} />;
     case 'draw':

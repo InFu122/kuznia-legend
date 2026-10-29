@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANDS, ROMAN, SKILLS, SLOT_ORDER } from '../data';
+import { AD_BUFFS, BUFF_IDS, LANDS, ROMAN, SKILLS, SLOT_ORDER, type BuffId } from '../data';
 import { dungeonBgUrl, foeUrl, heroUrl, itemUrl, landBgUrl, skillUrl } from '../art/render';
 import { foeTemplate } from '../art/actors';
 import { Px } from './Px';
 import { bossWaiting } from '../engine/combat';
 import type { Game } from '../engine/game';
 import type { Enemy, Item } from '../engine/types';
+import { buffIcon } from './buffs';
 import { fmt } from './format';
 import type { Tab } from './icons';
 import { runHint, runLabel, runMeta, runTitle } from './texts';
@@ -34,7 +35,23 @@ export function FoeSprite({ e }: { e: Enemy }) {
   );
 }
 
-export function Arena({ game, onTab, onInfo }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void }) {
+/** Trwające wzmocnienia z reklam (×2 ruda, ×2 złoto) z pozostałym czasem. */
+function Buffs({ game }: { game: Game }) {
+  const now = game.ctx.now();
+  const on = BUFF_IDS.filter(k => (game.s.buffs[k] ?? 0) > now);
+  if (!on.length) return null;
+  return (
+    <div class="buffs" aria-label="Wzmocnienia">
+      {on.map(k => (
+        <span key={k} class={`buff ${k}`} title={AD_BUFFS[k].d}>
+          <Px src={buffIcon(game, k)} size={14} />×{AD_BUFFS[k].mult}<small>{Math.ceil((game.s.buffs[k]! - now) / 60000)} min</small>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function Arena({ game, onTab, onInfo, onAd }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void; onAd?: (what: BuffId) => void }) {
   const [, setFrame] = useState(0);
   const [floats, setFloats] = useState<Float[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -119,6 +136,12 @@ export function Arena({ game, onTab, onInfo }: { game: Game; onTab: (t: Tab) => 
           <div key={lastFoe.current?.id} class={`actor foe tp-${foeTemplate(shown.name, shown.type)}${shown.boss ? ' boss' : ''}${dead ? ' dead' : ''}`} ref={foeRef}>
             <div class="enter"><FoeSprite e={shown} /></div>
           </div>
+        )}
+        <Buffs game={game} />
+        {game.adOffer && !dung && onAd && (
+          <button class="adoffer float" onClick={() => onAd(game.adOffer!.kind)} aria-label={`Nagroda za reklamę: ${AD_BUFFS[game.adOffer.kind].d}`}>
+            <Px src={buffIcon(game, game.adOffer.kind)} size={26} /><b>×{AD_BUFFS[game.adOffer.kind].mult}</b>
+          </button>
         )}
         <div class="floats">
           {floats.map(f => <span key={f.id} class={`fl ${f.cls}`} style={{ left: f.x + '%', top: f.y + '%' }}>{f.text}</span>)}

@@ -4,6 +4,7 @@ import { autoHandle, canSmelt, smelt, tickForge } from './forge';
 import { curG, goldWave } from './formulas';
 import { checkLegend } from './legend';
 import { allMods } from './mods';
+import { buffMultSpan } from './shop';
 import { invalidate } from './stats';
 import { tickResearch } from './tech';
 import { tickHatch } from './companions';
@@ -21,13 +22,16 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   const waves = Math.floor((t / B.OFFLINE_WAVE_MS) * B.OFFLINE_EFFICIENCY);
   if (!waves) return null;
   const L = LANDS[s.cur.land];
-  const gold = Math.round(waves * goldWave(curG(s)) * (1 + mods.goldPct / 100));
+  // Wzmocnienia z reklam działają w tej części nieobecności, w której jeszcze trwały.
+  const now = ctx.now();
+  const gold = Math.round(waves * goldWave(curG(s)) * (1 + mods.goldPct / 100) * buffMultSpan(s, 'zloto', now - t, now));
+  const oreBuff = buffMultSpan(s, 'ruda', now - t, now);
   // Rudy według rozkładu krainy (główna średnio 1,5 sztuki na drop, rzadsze po 1), z tego tylko część za nieobecność
   // — inaczej po nocy zapas rudy rósłby o tysiące sztuk. Ułamki zaokrąglane losowo.
   const ores = s.ores.map(() => 0);
   for (const [o, p] of oreShares(L, mods.rarePct)) {
     const per = (o === L.main ? (1 + B.ORE_MAIN_MAX) / 2 : 1) + mods.extraOre / 100;
-    ores[o] = Math.floor(waves * B.ORE_DROP * B.OFFLINE_ORE * (p / 100) * per + ctx.rng.next());
+    ores[o] = Math.floor(waves * B.ORE_DROP * B.OFFLINE_ORE * (p / 100) * per * oreBuff + ctx.rng.next());
   }
   const el = L.el ? Math.floor(waves * B.ELEM_DROP) : 0;
   const books = Math.floor(waves * B.BOOK_DROP + ctx.rng.next());

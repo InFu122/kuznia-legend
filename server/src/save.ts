@@ -16,6 +16,7 @@ import { ackRewards, clanLevelFor, readHelped } from './clanlife';
 import { ensureName } from './names';
 import { submitBoards } from './ranking';
 import { cleanName, validateSave } from './validate';
+import { passOnSave, readBoost, shopIntoSave } from './shop';
 import { warOnSave } from './war';
 
 const MAX_SAVE_BYTES = 300_000;
@@ -78,13 +79,14 @@ export const powerOf = (s: GameState, eq: GameState['eq']) => computeStats(eq, a
  * Kuźnia nie może rosnąć szybciej, niż pozwalają czasy ulepszeń (liczone od pierwszego zapisu na serwerze).
  * Czasy uwzględniają najwyższy poziom klanu gracza (premia do czasu ulepszeń) i pomoc klanu przy każdym poziomie.
  */
-export function paceProblem(s: GameState, meta: SaveMeta, now: number, helped: Record<string, number> = {}): string | null {
+export function paceProblem(s: GameState, meta: SaveMeta, now: number, helped: Record<string, number> = {}, boost: Record<string, number> = {}): string | null {
   const target = s.forge.up || s.forge.lvl;
   const sp: GameState = { ...s, clanLvl: Math.max(s.clanLvl || 0, meta.clMax || 0) };
   let need = 0;
   for (let n = meta.f0 + 1; n <= target; n++) {
     const help = Math.min(CLAN.HELP_MAX, Math.max(0, helped[String(n)] || 0));
-    need += upgradeTime(sp, n) * (1 - (help * CLAN.HELP_PCT) / 100);
+    const t = upgradeTime(sp, n) * (1 - (help * CLAN.HELP_PCT) / 100);
+    need += Math.max(0, t - Math.max(0, boost[String(n)] || 0)); // przyspieszenie Klejnotami
   }
   if (s.forge.up) need -= Math.max(0, s.forge.left);
   if (need > (now - meta.t0) * 1.02 + PACE_SLACK_MS) {
@@ -154,7 +156,7 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   // W trybie testowym serwer nie pilnuje tempa kuźni, tylko przesuwa punkt odniesienia — po wyłączeniu
   // trybu testowego tempo liczy się od ostatniego zapisu, a nie od początku testów.
   if (maxSpeed > 1) { meta.t0 = now; meta.f0 = target; }
-  const pace = maxSpeed > 1 ? null : paceProblem(s, meta, now, readHelped(nk, userId));
+  const pace = maxSpeed > 1 ? null : paceProblem(s, meta, now, readHelped(nk, userId), readBoost(nk, userId));
   if (pace) {
     logger.warn('Odrzucony zapis gracza %s: %s', userId, pace);
     throw err('Zapis odrzucony: ' + pace, INVALID);
@@ -163,6 +165,10 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   // Nick nadaje i zmienia serwer (unikalny); zapis zawsze dostaje nick z rejestru.
   const nick = ensureName(nk, userId, s.name);
   s.name = nick.name;
+
+  // Klejnoty, limity sklepu, wzmocnienia i przepustkę ustala serwer (punkty przepustki z różnicy liczników od poprzedniego zapisu).
+  const pass = passOnSave(nk, logger, userId, cur ? cur.value.state : null, s, now);
+  shopIntoSave(nk, userId, s, now, pass);
 
   const proof = proofFor(nk, userId, s, meta);
   const ver = verifiedEq(proof, s, meta.pity || []);
@@ -188,7 +194,10 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   try { ackRewards(nk, userId, s.clanGot); } catch (e) { logger.warn('Kolejka nagród klanu gracza %s: %s', userId, String(e)); }
   // Wojna klanów: punkty za aktywność dnia (kucie, walka, lochy) z różnicy liczników.
   warOnSave(nk, logger, ctx, userId, clan, cur ? cur.value.state : null, s);
-  return JSON.stringify({ version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, testSpeed: maxSpeed, serverTime: now });
+  return JSON.stringify({
+    version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, testSpeed: maxSpeed, serverTime: now,
+    gems: s.gems, shop: s.shop, pass: s.pass, buffs: s.buffs,
+  });
 }
 
 /**

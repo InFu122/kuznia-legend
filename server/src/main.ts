@@ -14,6 +14,7 @@ import { rpcObiegSync } from './obieg';
 import { rpcRaidAttack, rpcRaidState } from './raid';
 import { createBoards, rpcRanking } from './ranking';
 import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
+import { rpcAdReward, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
 import { rpcWarAttack, rpcWarState, rpcWarTestClock } from './war';
 
@@ -59,6 +60,15 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('war_test_clock', rpcWarTestClock);
   initializer.registerRpc('raid_state', rpcRaidState);
   initializer.registerRpc('raid_attack', rpcRaidAttack);
+  initializer.registerRpc('shop_state', rpcShopState);
+  initializer.registerRpc('shop_buy', rpcShopBuy);
+  initializer.registerRpc('shop_gift', rpcShopGift);
+  initializer.registerRpc('ad_reward', rpcAdReward);
+  initializer.registerRpc('pass_buy', rpcPassBuy);
+  initializer.registerRpc('pass_claim', rpcPassClaim);
+  initializer.registerRpc('speedup', rpcSpeedup);
+  initializer.registerRpc('iap_test', rpcIapTest);
+  initializer.registerRpc('iap_google', rpcIapGoogle);
   initializer.registerRpc('chat_drop', rpcChatDrop);
   initializer.registerRpc('chat_report', rpcChatReport);
   initializer.registerRpc('feedback', rpcFeedback);

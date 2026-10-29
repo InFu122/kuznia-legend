@@ -129,6 +129,18 @@ W klanie zakładka **Klan** ma siedem części:
 
 Dzienne limity i dni wojny liczą się od północy czasu UTC (w Polsce o 1:00 zimą, o 2:00 latem). Nagrody klanu (Monety, skrzynie, ruda od klanowiczów) czekają na serwerze, aż gra je odbierze i zapisze — żadna nie przepada ani nie przychodzi dwa razy.
 
+### Sklep i Przepustka Kowala
+
+Przycisk z Klejnotem na górze ekranu (obok czatu i zadań) otwiera **Sklep** z trzema zakładkami:
+
+- **Sklep** — darmowy prezent dnia, nagrody za reklamy (×2 ruda albo ×2 złoto na godzinę, 5 Klejnotów raz dziennie), towary za Klejnoty z dziennym limitem (złoto, ruda, Księgi, Kamienie, Zwój, Siodło, jajo, komplet kluczy) i przyspieszenia (dokończenie ulepszenia kuźni albo badania: 1 Klejnot za 4 minuty).
+- **Przepustka** — sezon 28 dni, 30 poziomów. Punkty za wytopy, wrogów, bossów, klucze w lochach i piętra Wieży (najwyżej 1500 dziennie). Darmowa ścieżka dla wszystkich, złota za 500 Klejnotów.
+- **Klejnoty** — pakiety. Dopóki serwer ma tryb testowy (`TEST_SPEED` większe niż 1), pakiety są bez płatności — do sprawdzenia sklepu. Przy `TEST_SPEED=1` zakup testowy jest wyłączony, a płatności ruszą w aplikacji z Google Play.
+
+Na polu walki co kilka minut pojawia się ikonka rudy albo złota z „×2” — po obejrzeniu reklamy (na razie testowej, 5 sekund) przez godzinę wpada dwa razy więcej rudy albo złota, także w nagrodach za nieobecność. Klejnoty trzyma serwer, więc nie znikają przy „Nowej grze”.
+
+Płatności w Google Play (przy wydaniu w sklepie): w Google Play Console trzeba utworzyć produkty o identyfikatorach z `src/data/shop.ts` (`starter`, `gems_100` …) i konto usługi z dostępem do API, a jego adres i klucz podać Nakamie (`--iap.google.client_email`, `--iap.google.private_key`). Gra wyśle potwierdzenie zakupu do serwera (`iap_google`), a serwer sprawdzi je u Google i doda Klejnoty raz na zakup.
+
 ### Czat
 
 Przycisk **Czat** na górze ekranu: kanał globalny i kanał klanu. Na globalnym piszesz od 5. poziomu kuźni (wcześniej tylko w klanie). Tryb wolny: 3 sekundy między wiadomościami na globalnym, 1 sekunda w klanie. Serwer zamienia wulgaryzmy na gwiazdki. Wiadomość innego gracza możesz wyciszyć (tylko na swoim urządzeniu) albo zgłosić. Gdy wykujesz przedmiot Mityczny lub Boski, na czacie klanu pojawia się jego karta, a przyciskiem pod przedmiotem możesz pochwalić się na czacie globalnym (raz na 10 minut).

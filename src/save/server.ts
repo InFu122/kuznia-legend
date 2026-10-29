@@ -1,6 +1,8 @@
 // Połączenie z serwerem gry (Nakama) przez REST. Gra potrzebuje tylko logowania urządzeniem i wywołań RPC,
 // więc obywa się bez biblioteki klienta. Bez skonfigurowanego serwera (np. w artefakcie) gra działa lokalnie.
+import type { BuffId, GemItemId } from '../data';
 import type { ServerReward } from '../engine/clan';
+import type { ShopSync } from '../engine/game';
 import type { ElemKey, FoundEvent, GameState, Item, SlotId } from '../engine/types';
 
 const DEVICE_KEY = 'kuznia-legend-device';
@@ -36,6 +38,9 @@ export interface DuelShow {
   foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }> };
 }
 export interface ArenaFight extends ArenaState, DuelShow { d: number; gold: number }
+
+/** Odpowiedź RPC sklepu: stan sklepu, nagrody do odebrania i wynik akcji. */
+export interface ShopResp extends ShopSync { rewards: ServerReward[]; serverTime: number; keys?: boolean; cost?: number; given?: number }
 
 export interface WarSide { n: string; tag: string; power: number; total: number; days: number[]; ghost?: boolean }
 export interface WarState {
@@ -192,14 +197,14 @@ export class ServerLink {
    * Zapisuje stan. Gdy serwer ma nowszy zapis z innego urządzenia, zwraca go jako `conflict`
    * (gra wybiera nowszy po `savedAt`).
    */
-  async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number; name?: string; newName?: boolean; clanLvl?: number }> {
-    const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null; name?: string; newName?: boolean; clanLvl?: number }>(
+  async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number; name?: string; newName?: boolean; clanLvl?: number; shop?: ShopSync }> {
+    const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null; name?: string; newName?: boolean; clanLvl?: number } & ShopSync>(
       'save_put', { state, version: this.version });
     this.version = r.version ?? this.version;
     if (r.conflict) return { conflict: r.state ?? null, force: !!r.force };
     this.power = r.power ?? null;
     this.unverified = r.unverified ?? [];
-    return { power: r.power, name: r.name, newName: r.newName, clanLvl: r.clanLvl };
+    return { power: r.power, name: r.name, newName: r.newName, clanLvl: r.clanLvl, shop: { gems: r.gems, shop: r.shop, pass: r.pass, buffs: r.buffs } };
   }
 
   /** Zmiana nicku (unikalny na serwerze, raz na dobę). */
@@ -220,6 +225,15 @@ export class ServerLink {
   clanHelp(up: number, uid?: string): Promise<ClanLife> { return this.rpc('clan_help', uid ? { up, uid } : { up }); }
   clanOreAsk(up: number, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { up, ore }); }
   clanOreGive(up: number, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { up, id, n }); }
+  shopState(): Promise<ShopResp> { return this.rpc('shop_state', {}); }
+  shopBuy(id: GemItemId): Promise<ShopResp> { return this.rpc('shop_buy', { id }); }
+  shopGift(): Promise<ShopResp> { return this.rpc('shop_gift', {}); }
+  adReward(kind: BuffId | 'gems'): Promise<ShopResp> { return this.rpc('ad_reward', { kind }); }
+  passBuy(): Promise<ShopResp> { return this.rpc('pass_buy', {}); }
+  passClaim(): Promise<ShopResp> { return this.rpc('pass_claim', {}); }
+  speedup(what: 'forge' | 'tech'): Promise<ShopResp> { return this.rpc('speedup', { what }); }
+  iapTest(id: string): Promise<ShopResp> { return this.rpc('iap_test', { id }); }
+  iapGoogle(id: string, receipt: string): Promise<ShopResp> { return this.rpc('iap_google', { id, receipt }); }
   warState(): Promise<WarState> { return this.rpc('war_state', {}); }
   warAttack(id: string): Promise<WarState> { return this.rpc('war_attack', { id }); }
   raidState(): Promise<RaidState> { return this.rpc('raid_state', {}); }

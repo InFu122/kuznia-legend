@@ -17,6 +17,13 @@ export function coins(n: number): string {
   return `${fmt(n)} ${w}`;
 }
 
+/** 1 Klejnot, 2–4 Klejnoty, 5+ Klejnotów. */
+export function gemsText(n: number): string {
+  const m10 = n % 10, m100 = n % 100;
+  const w = n === 1 ? 'Klejnot' : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 'Klejnoty' : 'Klejnotów';
+  return `${fmt(n)} ${w}`;
+}
+
 /** Nagroda jako jedna linijka tekstu, np. „1 200 złota · 3 Księgi Wiedzy · 4 × Mithril”. */
 export function rewardText(r: Reward): string {
   const out: string[] = [];
@@ -31,6 +38,7 @@ export function rewardText(r: Reward): string {
   if (r.stones) out.push(`${fmt(r.stones)} Kamieni`);
   if (r.seals) out.push(`${fmt(r.seals)} × Pieczęć Legendy`);
   if (r.coins) out.push(coins(r.coins));
+  if (r.gems) out.push(gemsText(r.gems));
   return out.length ? out.join(' · ') : 'nic';
 }
 

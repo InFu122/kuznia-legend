@@ -193,3 +193,75 @@ def key_icon():
     rows = outline(rows)
     pal = {**K, 'y': '#a8741c', 'Y': '#e8b84a', 'Z': '#fff1b8'}
     return rows, pal
+
+def gem_icon():
+    # Klejnot 16×16 (waluta premium): szlifowany rubin — korona z fasetami i ostro zbiegający spód.
+    rows = [
+        "................",
+        "................",
+        "....bbaaaabb....",
+        "...baawaaaabc...",
+        "..baaaaaaaabbc..",
+        ".bbbbbbbbbbbbcc.",
+        ".cbbabbbbbabccd.",
+        "..cbbabbbabbcd..",
+        "...cbbabababd...",
+        "....cbbaabcd....",
+        ".....cbbacd.....",
+        "......cbcd......",
+        ".......cd.......",
+        "................",
+        "................",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#ff9fc6', 'b': '#f0457a', 'c': '#b8204c', 'd': '#7a1232', 'w': '#ffffff'}
+    return rows, pal
+
+def pass_icon():
+    # Przepustka Kowala 16×16: czerwony proporzec na drążku ze złotą gwiazdą i jaskółczym ogonem.
+    rows = [
+        "................",
+        ".dddddddddddddd.",
+        "..eeeeeeeeeeee..",
+        "..ebbbbbbbbbbc..",
+        "..ebbbbybbbbbc..",
+        "..ebbbyyybbbbc..",
+        "..ebyyyYyyybbc..",
+        "..ebbyyyyybbbc..",
+        "..ebbyybyybbbc..",
+        "..ebbybbbybbbc..",
+        "..ebbbbbbbbbbc..",
+        "..ebbbbbbbbbbc..",
+        "..ebbbbccbbbbc..",
+        "..ebbbc..cbbbc..",
+        "..ebbc....cbbc..",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'b': '#d8433a', 'c': '#8e2420', 'e': '#f07a5a', 'y': '#f2c14e', 'Y': '#fff1b8', 'd': '#8a5a32'}
+    return rows, pal
+
+def ad_icon():
+    # Reklama z nagrodą 16×16: zwój z pieczęcią i trójkątem „odtwórz”.
+    rows = [
+        "................",
+        "..aaaaaaaaaaaa..",
+        ".abbbbbbbbbbbba.",
+        ".abbbbcbbbbbbba.",
+        ".abbbbccbbbbbba.",
+        ".abbbbcccbbbbba.",
+        ".abbbbccccbbbba.",
+        ".abbbbcccbbbbba.",
+        ".abbbbccbbbbbba.",
+        ".abbbbcbbbbbbba.",
+        ".abbbbbbbbbbbba.",
+        "..aaaaaaaaaaaa..",
+        ".....dd..dd.....",
+        "....dd....dd....",
+        "................",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#a07a4c', 'b': '#2a2f3a', 'c': '#f2c14e', 'd': '#6e4a2c'}
+    return rows, pal

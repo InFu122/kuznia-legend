@@ -1,6 +1,7 @@
 // Typy stanu gry. Silnik nie używa DOM ani zegara przeglądarki, więc da się go
 // później uruchomić także na serwerze (Nakama, środowisko TypeScript).
 import type { ClanShopId } from '../data/clan';
+import type { BuffId, GemItemId } from '../data/shop';
 
 export type SlotId = 'bron' | 'helm' | 'zbroja' | 'rekawice' | 'buty' | 'pas' | 'pierscien' | 'amulet';
 export type ElemKey = 'zar' | 'szron' | 'burz' | 'jad' | 'cien' | 'jasn';
@@ -35,6 +36,7 @@ export interface Reward {
   stones?: number;
   seals?: number;
   coins?: number;                           // Monety klanowe
+  gems?: number;                            // Klejnoty (z serwerem — tylko przez portfel serwera)
 }
 
 export interface LabDoorOpt { kind: LabDoorKind; bless?: number }
@@ -94,6 +96,11 @@ export interface FoundEvent { who: string; n: string; r: number }
 
 export interface Companion { lvl: number; stars: number }
 
+/** Liczniki, od których liczą się punkty Przepustki Kowala w danym dniu. */
+export interface PassBase { sm: number; k: number; b: number; keys: number; tw: number }
+/** Przepustka Kowala: sezon, punkty sprzed dzisiaj (`xp`) i z dzisiaj (`dxp`), złota ścieżka, odebrane poziomy. */
+export interface PassTrack { season: number; xp: number; d: string; base: PassBase; dxp: number; prem: boolean; cf: number; cp: number }
+
 export interface GameState {
   v: number;
   name: string;
@@ -146,6 +153,11 @@ export interface GameState {
   clanShop: { week: string; n: Partial<Record<ClanShopId, number>> }; // zakupy w sklepie klanowym w tym tygodniu
   clanHelp: { lvl: number; n: number };                // pomoc klanu już wliczona do ulepszenia kuźni na poziom `lvl`
   clanGot: string[];                                   // numery odebranych nagród od serwera (żeby żadnej nie wziąć dwa razy)
+  gems: number;                                        // Klejnoty (z serwerem: kopia portfela serwera)
+  shop: { day: string; n: Partial<Record<GemItemId, number>>; ads: Partial<Record<BuffId | 'gems', number>>; gift: string; once: string[] }; // dzienne limity sklepu (UTC)
+  buffs: Partial<Record<BuffId, number>>;              // wzmocnienia z reklam: do kiedy działają (ms)
+  pass: PassTrack | null;                              // Przepustka Kowala (z serwerem: kopia stanu serwera)
+  boost: { lvl: number; ms: number };                  // przyspieszenie Klejnotami już wliczone do ulepszenia kuźni na poziom `lvl`
   speed: number;
   savedAt: number;
   lastSeen: number;
@@ -232,7 +244,9 @@ export type ModalData =
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }
   | { kind: 'info'; k: 'forge' | 'level' }
-  | { kind: 'reset' };
+  | { kind: 'reset' }
+  | { kind: 'shop'; tab?: 'sklep' | 'przepustka' | 'klejnoty' }
+  | { kind: 'adOffer'; what: BuffId };
 
 export type GameEvent =
   | { t: 'toast'; msg: string; kind?: 'good' | 'bad' }
