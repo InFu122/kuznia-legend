@@ -112,6 +112,7 @@ export interface GameState {
   auto: boolean;
   autoStop: number;                                    // auto-wytop zatrzymuje się na tej rzadkości (albo wyższej)
   oreSel: number;
+  batch: number;                                       // wytop seryjny: ile wytopów jednym przyciskiem
   elSel: ElemKey | null;
   smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string; k?: 'sent'; n?: number }[] };
   dungeons: Record<DungId, { day: string; keys: number; best: number }>;

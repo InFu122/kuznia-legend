@@ -174,6 +174,13 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
         <div class="irar">{RAR[it.r].n} · poz. {it.lvl}{it.obieg ? ` · kowal: ${it.smith}` : ''}</div>
         {it.jump > 0 && <div class="jump">Przeskok +{it.jump}!</div>}
       </div>
+      {src === 'pending' && game.lastBatch?.best === it && (
+        <div class="batch-sum">
+          Wytop ×{game.lastBatch.count}: to najlepszy z nich.
+          {game.lastBatch.sold > 0 && <> Sprzedano {game.lastBatch.sold} (+{fmt(game.lastBatch.gold)} zł).</>}
+          {game.lastBatch.equipped > 0 && <> Założono {game.lastBatch.equipped} lepsze od dotychczasowych.</>}
+        </div>
+      )}
       <div class={`dec-power ${better ? 'up' : 'down'}`}>
         Moc bohatera: <b>{sign(Math.round(d))}</b>{better ? ' — lepszy od założonego' : ' — słabszy od założonego'}
       </div>

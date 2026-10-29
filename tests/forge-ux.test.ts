@@ -149,3 +149,41 @@ describe('wynik Zwoju', () => {
     expect(Object.keys(s.skills.lv).length).toBeGreaterThan(1);
   });
 });
+
+describe('wytop seryjny i rafinacja', () => {
+  it('×10: dziesięć wytopów, najlepszy czeka na decyzję, reszta założona albo sprzedana', async () => {
+    const { smeltBatch, batchSizes } = await import('../src/engine/forge');
+    const { makeGame: mk } = await import('./helpers');
+    const { ctx, s } = mk(9);
+    s.forge.lvl = 12; s.stats.smelted = 10; s.ores[2] = 25;
+    expect(batchSizes(s)).toEqual([1, 2, 3, 5, 10]);
+    const gold = s.gold;
+    const r = smeltBatch(ctx, 2, 10)!;
+    expect(r.count).toBe(10);
+    expect(s.ores[2]).toBeLessThanOrEqual(15 + 0); // bez Oszczędnego wytopu zużywa 10
+    expect(r.sold + r.equipped).toBe(9);
+    expect(Math.max(...r.all.map(x => x.r))).toBe(r.best.r);
+    expect(s.gold - gold).toBe(r.gold);
+    // gdy rudy brakuje — tyle, ile jest
+    s.ores[2] = 3;
+    expect(smeltBatch(ctx, 2, 10)!.count).toBe(3);
+    // niski poziom kuźni: tylko pojedynczy wytop
+    s.forge.lvl = 2;
+    expect(batchSizes(s)).toEqual([1]);
+  });
+
+  it('rafinacja zamienia nadmiar słabszej rudy na następną, tylko na rudy, które kuźnia wytapia', async () => {
+    const { refine, refineRatio } = await import('../src/engine/forge');
+    const { makeGame: mk } = await import('./helpers');
+    const { ctx, s } = mk(1);
+    s.forge.lvl = 4; s.ores[0] = 100; s.ores[1] = 0;
+    expect(refineRatio(s, 0)).toBe(0);           // rafinacja od 5. poziomu kuźni
+    s.forge.lvl = 5;
+    expect(refineRatio(s, 0)).toBe(8);
+    expect(refineRatio(s, 2)).toBe(0);           // Mithril wytapia się od 10. poziomu
+    expect(refine(ctx, 0, 1000)).toBe(12);       // 100 Miedzi → 12 Żelaza (zostają 4)
+    expect(s.ores[0]).toBe(4);
+    expect(s.ores[1]).toBe(12);
+    expect(refine(ctx, 0, 1)).toBe(0);
+  });
+});

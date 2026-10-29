@@ -77,6 +77,7 @@ export const B = {
   UPGRADE_COST_BASE: 100,       // koszt(n) = 100 × 1,5^(n−1)
   UPGRADE_COST_MULT: 1.5,
   AUTO_FORGE_LVL: 5,
+  REFINE_FORGE_LVL: 5,          // rafinacja rud (słabsza ruda → lepsza)
   ELEM_FORGE_LVL: 10,
   AUTO_INTERVAL_MS: 900,
   WAVES_PER_STAGE: 5,

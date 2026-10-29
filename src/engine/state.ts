@@ -24,7 +24,7 @@ export function newState(now: number): GameState {
     v: SAVE_VERSION, name: 'Kowal', gold: 0, ores: [10, 5, 0, 0, 0, 0, 0], els: {},
     forge: { lvl: 1, up: 0, left: 0 }, pity: 0, eq: {}, pending: null,
     cur: { land: 0, stage: 1, wave: 1 }, maxLand: 0, frontStage: 1, cleared: LANDS.map(() => false), bestG: 0,
-    auto: false, autoStop: 0, oreSel: 1, elSel: null,
+    auto: false, autoStop: 0, oreSel: 1, batch: 1, elSel: null,
     smith: { fame: 0, sent: [], log: [] },
     dungeons: newDungeons(), books: 0, uniq: {}, uniqSel: null, tech: { lv: {}, cur: null },
     scrolls: 0, skills: { lv: {}, cards: {}, eq: Array(SKILL_SLOTS).fill(null) },
@@ -99,6 +99,7 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!Array.isArray(out.obIn)) out.obIn = [];
   if (!Array.isArray(out.obOut)) out.obOut = [];
   if (typeof out.autoStop !== 'number') out.autoStop = 0;
+  if (typeof out.batch !== 'number' || !(out.batch >= 1)) out.batch = 1;
   if (typeof out.clanLvl !== 'number' || !(out.clanLvl >= 0)) out.clanLvl = 0;
   if (typeof out.clanCoins !== 'number' || !(out.clanCoins >= 0)) out.clanCoins = 0;
   if (!isObj(out.clanShop) || !isObj(out.clanShop.n)) out.clanShop = fresh.clanShop;

@@ -1,6 +1,6 @@
 import { useRef } from 'preact/hooks';
-import { B, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS } from '../../data';
-import { canSmelt, sellFor, uniqActive } from '../../engine/forge';
+import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS } from '../../data';
+import { canSmelt, refineRatio, sellFor, uniqActive } from '../../engine/forge';
 import { dist, itemName, jumpChances, maxJump } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
@@ -42,7 +42,9 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
   const sparkRef = useRef<HTMLDivElement>(null);
   const ok = canSmelt(game.ctx, o) && !s.pending;
   const set = uniqActive(s);
-  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}` : `Przetop · ${ORES[o].n}`;
+  const batch = game.batchActive();
+  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}`
+    : batch > 1 ? `Przetop ×${Math.min(batch, s.ores[o])} · ${ORES[o].n}` : `Przetop · ${ORES[o].n}`;
   const rel = techMods(s).jumpRel;
   const n = f.lvl + 1;
   const cost = game.upgradeCost();
@@ -106,6 +108,18 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
             <span class="num">{s.pity}/{B.PITY_MAX}</span>
           </div>
         )}
+        {f.lvl >= BATCH_OPTIONS[1][1] && (
+          <div class="batch" role="radiogroup" aria-label="Wytop seryjny">
+            <span>Wytop seryjny</span>
+            {BATCH_OPTIONS.map(([k, lvl]) => (
+              <button key={k} role="radio" aria-checked={s.batch === k} disabled={f.lvl < lvl} class={`chip${s.batch === k ? ' on' : ''}`}
+                title={f.lvl < lvl ? `Od ${lvl}. poziomu kuźni` : undefined} onClick={() => game.setBatch(k)}>
+                ×{k}{f.lvl < lvl ? <small> · {lvl}</small> : ''}
+              </button>
+            ))}
+          </div>
+        )}
+        {s.batch > 1 && batch === 1 && (s.elSel || set) && <p class="sub">Wytop seryjny działa bez domieszki i rudy unikalnej — teraz kujesz pojedynczo.</p>}
         <div class="anvil">
           <button class="btn primary btn-forge" disabled={!ok} onClick={() => { const it = game.smeltManual(); if (it) sparks(sparkRef.current, it.r); }}>{btnLabel}</button>
           <div class="sparks" ref={sparkRef} />
@@ -132,6 +146,8 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
       </section>
 
       <LastForge game={game} onDecide={onDecide} />
+
+      <Refine game={game} />
 
       {s.found.length > 0 && (
         <section class="card">
@@ -174,6 +190,37 @@ const LevelEyebrow = ({ text, onInfo }: { text: string; onInfo: (k: 'level') => 
     <InfoBtn onClick={() => onInfo('level')} label="Jak działa poziom kuźni" />
   </div>
 );
+
+/** Rafinacja: nadmiar słabszej rudy zamieniany na następną (np. 10 Żelaza → 1 Srebro). */
+function Refine({ game }: { game: Game }) {
+  const s = game.s;
+  if (s.forge.lvl < B.REFINE_FORGE_LVL) return null;
+  const rows = ORES.map((_, i) => i).filter(i => refineRatio(s, i) > 0);
+  if (!rows.length) return null;
+  return (
+    <section class="card refine" aria-label="Rafinacja rud">
+      <div class="eyebrow">Rafinacja rud</div>
+      <p class="sub">Nadmiar słabszej rudy zamienisz na następną. Wytapianie rudy wprost zawsze daje więcej — rafinacja jest na zapasy, których już nie wytapiasz.</p>
+      <ul class="rlist">
+        {rows.map(i => {
+          const k = refineRatio(s, i);
+          const max = Math.floor(s.ores[i] / k);
+          return (
+            <li key={i} class={max ? '' : 'off'}>
+              <span class="rf-from"><Px src={oreUrl(i)} size={24} /><b>{fmt(s.ores[i])}</b></span>
+              <span class="rf-ratio">{k} → 1</span>
+              <span class="rf-to"><Px src={oreUrl(i + 1)} size={24} />{ORES[i + 1].n}</span>
+              <span class="rf-btns">
+                <button class="btn small" disabled={max < 1} onClick={() => game.refine(i, 1)}>+1</button>
+                <button class="btn small primary" disabled={max < 1} onClick={() => game.refine(i, max)}>+{fmt(max)}</button>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
 
 /** Pod kowadłem: przedmiot czekający na decyzję albo ostatni wynik auto-wytopu. */
 function LastForge({ game, onDecide }: { game: Game; onDecide: () => void }) {

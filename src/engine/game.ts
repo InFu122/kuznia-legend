@@ -6,7 +6,7 @@ import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labC
 import { equipBestSkills, equipSkill, levelUp, openSaddle, openScroll, selectBestMount, selectBestPet, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
-import { autoHandle, autoTarget, autoTargets, canSmelt, equip, sell, sellFor, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime } from './forge';
+import { autoHandle, autoTarget, autoTargets, batchSizes, canSmelt, equip, refine, sell, sellFor, smelt, smeltBatch, startUpgrade, tickForge, uniqActive, upgradeCost, upgradeTime, type BatchResult } from './forge';
 import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
@@ -117,10 +117,28 @@ export class Game {
 
   /* ---------- akcje gracza ---------- */
 
+  /** Ostatni wytop seryjny (do podsumowania w oknie decyzji). */
+  lastBatch: BatchResult | null = null;
+  /** Czy następny wytop będzie seryjny (bez domieszki i rudy unikalnej). */
+  batchActive(): number {
+    const s = this.s;
+    return s.batch > 1 && batchSizes(s).includes(s.batch) && !s.elSel && !uniqActive(s) ? s.batch : 1;
+  }
+  setBatch(n: number) { if (batchSizes(this.s).includes(n)) { this.s.batch = n; this.ctx.dirty = true; this.changed(); } }
   smeltManual(): Item | null {
     const ctx = this.ctx;
     if (ctx.s.pending) return null;
-    const it = smelt(ctx, ctx.s.oreSel, ctx.s.elSel);
+    const n = this.batchActive();
+    let it: Item | null;
+    if (n > 1) {
+      const res = smeltBatch(ctx, ctx.s.oreSel, n);
+      this.lastBatch = res && res.count > 1 ? res : null;
+      it = res?.best ?? null;
+      if (res) for (const x of res.all) if (x !== res.best) this.dispatch({ t: 'forged', item: x });
+    } else {
+      this.lastBatch = null;
+      it = smelt(ctx, ctx.s.oreSel, ctx.s.elSel);
+    }
     if (!it) return null;
     ctx.s.pending = it;
     this.lastAuto = null;
@@ -129,6 +147,12 @@ export class Game {
     this.dispatch({ t: 'modal', m: { kind: 'decide' } });
     this.changed();
     return it;
+  }
+  /** Rafinacja rudy `from` na następną (`times` sztuk albo ile się da). */
+  refine(from: number, times: number): number {
+    const n = refine(this.ctx, from, times);
+    if (n) { toast(this.ctx, `Rafinacja: +${n} ${ORES[from + 1].n}`, 'good'); this.changed(); }
+    return n;
   }
   equipPending(): void {
     const it = this.s.pending;
