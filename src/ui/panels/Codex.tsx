@@ -6,6 +6,49 @@ import type { GameState } from '../../engine/types';
 import { ServerError, getLink } from '../../save/server';
 import { fmt } from '../format';
 import type { SaveInfo } from '../App';
+import { APP_VERSION, canInstall, install, isIOS, isNative, isStandalone, onPwa } from '../pwa';
+
+/** Adres gry do zaproszeń: z ustawień builda (aplikacja) albo adres tej strony. */
+const publicUrl = () => {
+  const env = import.meta.env.VITE_PUBLIC_URL as string | undefined;
+  if (env) return env;
+  const local = /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
+  return local || isNative() || location.protocol === 'file:' ? '' : location.origin + location.pathname;
+};
+
+/** Aplikacja i test: wersja gry, instalacja na telefonie, zaproszenie znajomych i zgłaszanie uwag. */
+function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
+  const [, force] = useState(0);
+  const [msg, setMsg] = useState('');
+  useEffect(() => onPwa(() => force(x => x + 1)), []);
+  const url = publicUrl();
+  const invite = async () => {
+    const text = `Zagraj ze mną w Kuźnię Legend — wykuwamy legendarny ekwipunek! Mój nick: ${game.s.name}.`;
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Kuźnia Legend', text, url }); return; }
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setMsg('Skopiowano zaproszenie — wklej je znajomym.');
+    } catch { /* anulowane */ }
+  };
+  return (
+    <section class="card" aria-label="Aplikacja i test">
+      <div class="eyebrow">Aplikacja · wersja {APP_VERSION}</div>
+      <div class="h">Test gry</div>
+      <div class="app-actions">
+        {game.net && <button class="btn primary small" onClick={onFeedback}>Zgłoś uwagę lub błąd</button>}
+        {url && <button class="btn small" onClick={invite}>Zaproś znajomych</button>}
+        {canInstall() && <button class="btn small" onClick={() => void install()}>Zainstaluj grę</button>}
+      </div>
+      {!isNative() && !isStandalone() && !canInstall() && (
+        <p class="sub" style={{ marginTop: '8px' }}>
+          {isIOS() ? 'Na iPhonie: w Safari stuknij „Udostępnij”, potem „Do ekranu początkowego” — gra otworzy się jak aplikacja.' : 'Grę możesz dodać do ekranu głównego z menu przeglądarki („Zainstaluj aplikację” albo „Dodaj do ekranu głównego”).'}
+        </p>
+      )}
+      {isStandalone() && <p class="sub" style={{ marginTop: '8px' }}>Gra jest zainstalowana na tym urządzeniu.</p>}
+      {msg && <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p>}
+    </section>
+  );
+}
 
 const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
 const showCode = (c: string) => c.slice(0, 4) + '-' + c.slice(4);
@@ -106,7 +149,7 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
   );
 }
 
-export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; save: SaveInfo; onReset: () => void; onRanking: () => void }) {
+export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { game: Game; save: SaveInfo; onReset: () => void; onRanking: () => void; onFeedback: () => void }) {
   const saveMode = save.mode;
   const s = game.s;
   const sm = s.smith;
@@ -147,6 +190,7 @@ export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; sav
           {save.error && <div class="lockline">Serwer odrzucił zapis: {save.error}</div>}
         </section>
       )}
+      <AppCard game={game} onFeedback={onFeedback} />
       {game.net && <AccountCard game={game} save={save} />}
       <ObiegNews log={sm.log} />
       <section class="card">
@@ -192,6 +236,12 @@ export function CodexPanel({ game, save, onReset, onRanking }: { game: Game; sav
             <input id="mvol" type="range" min={0} max={100} step={5} value={Math.round(s.opts.mvol * 100)}
               onInput={e => game.setMusic(true, Number(e.currentTarget.value) / 100)} />
           </label>
+        )}
+        {isNative() && (
+          <div class="row">
+            <span class="sub">Powiadomienia: kuźnia gotowa, koniec badania, wyklute jajo.</span>
+            <button class={`toggle${s.opts.notify ? ' on' : ''}`} aria-pressed={s.opts.notify} onClick={() => game.setNotify(!s.opts.notify)}><span class="knob" />Powiadomienia</button>
+          </div>
         )}
         <p class="sub credits">Muzyka: eBunny, Sonican · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
         {game.speeds.length > 1 && (

@@ -6,3 +6,5 @@ server/build
 .git
 .env
 *.log
+android
+.github

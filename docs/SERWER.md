@@ -146,7 +146,7 @@ Przyczynę braku połączenia gra pokazuje w zakładce Kodeks, w karcie **Serwer
 
 ## Bezpieczeństwo
 
-- Nie wystawiaj portów 7350, 7351 i 8080 do internetu bez HTTPS. Publiczny adres z domeną i certyfikatem przygotujemy przed wydaniem aplikacji (etap 5).
+- Nie wystawiaj portów 7350, 7351 i 8080 do internetu bez HTTPS (przekierowaniem portów w routerze). Publiczny adres z HTTPS daje Tailscale Funnel — patrz [TEST.md](TEST.md); na zewnątrz widać wtedy tylko grę (8080), a konsola i baza zostają w domu.
 - Przed udostępnieniem gry innym graczom wyłącz tempo testowe: `TEST_SPEED=1` w `.env`.
 - `NAKAMA_SERVER_KEY` jest wbudowany w grę — to normalne w Nakamie. Tajne są pozostałe klucze i hasła z `.env`; plik `.env` nie trafia do repozytorium.
 

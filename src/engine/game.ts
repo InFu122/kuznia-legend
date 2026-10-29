@@ -212,6 +212,7 @@ export class Game {
   canClaimLogin(): boolean { return canClaimLogin(this.ctx); }
   missions() { ensureMissions(this.ctx); return this.s.missions; }
   setSound(on: boolean, vol = this.s.opts.vol) { this.s.opts = { ...this.s.opts, sound: on, vol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
+  setNotify(on: boolean) { this.s.opts = { ...this.s.opts, notify: on }; this.ctx.dirty = true; this.changed(); }
   setMusic(on: boolean, vol = this.s.opts.mvol) { this.s.opts = { ...this.s.opts, music: on, mvol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
 
   /** Decyzja o znalezisku ze Zbrojowni: załóż albo sprzedaj. */

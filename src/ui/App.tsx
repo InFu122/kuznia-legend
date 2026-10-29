@@ -21,6 +21,11 @@ import { TUTORIAL } from '../data';
 import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
+import { hasUpdate, onPwa } from './pwa';
+import { initNative } from './native';
+
+/** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
+const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide']);
 
 const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['klan', 'Klan'], ['kodeks', 'Kodeks']];
 
@@ -30,6 +35,7 @@ export interface SaveInfo {
   reason?: string;             // dlaczego nie ma połączenia
   retry?: () => void;          // połącz ponownie teraz
   redeem?: (code: string) => Promise<void>;  // przejmij konto z kodu przeniesienia
+  flush?: () => Promise<void>;               // zapisz teraz (np. przed odświeżeniem po aktualizacji)
 }
 
 const SAVE_LABEL: Record<SaveInfo['mode'], string> = {
@@ -55,6 +61,14 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       else if (e.t === 'drop') play(e.rare ? 'dropRare' : 'drop');
     });
     const id = setInterval(() => force(x => x + 1), 250);
+    const offPwa = onPwa(() => force(x => x + 1));
+    // Aplikacja na telefon: powiadomienia i „wstecz” (zamyka okno; okna z decyzją zostają, bez okna — gra chowa się).
+    void initNative(game, () => {
+      const top = queue.current[0];
+      if (!top) return false;
+      if (!LOCKED.has(top.kind)) { queue.current.shift(); force(x => x + 1); }
+      return true;
+    });
     force(x => x + 1);
     onReady?.();
     // Kalendarz logowania wita gracza, który już grał (nowy gracz ma najpierw wstęp i samouczek).
@@ -64,7 +78,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     const unlock = () => { unlockAudio(); initMusic(); kickMusic(); };
     const evs = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
     for (const ev of evs) window.addEventListener(ev, unlock, { capture: true, passive: true });
-    return () => { off(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
+    return () => { off(); offPwa(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
   }, [game]);
 
   // Podświetlenie przycisku, o którym mówi bieżący krok samouczka.
@@ -131,6 +145,12 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             <div class="hchip books" title="Księgi Wiedzy"><Px src={resUrl('ksiega')} size={20} /><div><b>{fmt(s.books)}</b><small>Księgi</small></div></div>
           </div>
         </header>
+        {hasUpdate() && (
+          <section class="updbar" role="status">
+            <span>Jest nowa wersja gry.</span>
+            <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => location.reload()); }}>Odśwież</button>
+          </section>
+        )}
         <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} />
         {step && (
           <section class="tutbar" aria-label="Samouczek">
@@ -149,7 +169,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'krainy' && <LandsPanel game={game} onInfo={land => open({ kind: 'landinfo', land })} />}
           {tab === 'klan' && <ClanPanel game={game} online={save.mode === 'server'} openChat={() => open({ kind: 'chat', ch: 'clan' })} />}
           {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} onInfo={id => open({ kind: 'dunginfo', id })} />}
-          {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
+          {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} onFeedback={() => open({ kind: 'feedback' })} />}
         </main>
       </div>
       <nav class="tabs" aria-label="Zakładki">
@@ -163,7 +183,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </div>
       </nav>
       {modal && (
-        <ModalShell locked={modal.kind === 'dungChoice' || modal.kind === 'labChoice' || modal.kind === 'decide'} onClose={close}>
+        <ModalShell locked={LOCKED.has(modal.kind)} onClose={close}>
           <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} />
         </ModalShell>
       )}

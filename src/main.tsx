@@ -9,6 +9,9 @@ import { CLAN_SYNC_MS, clanLife } from './save/clanlife';
 import { ServerError, ServerLink, serverConfig, setLink } from './save/server';
 import { connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
+import { initPwa } from './ui/pwa';
+import { watchErrors } from './ui/report';
+import './ui/fonts.css';
 import './ui/styles.css';
 
 const RETRY_MS = 60000;
@@ -208,6 +211,9 @@ function boot(hotData?: { s?: string }) {
     void persist().finally(() => { refill = false; });
   }, 2000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) void persist(); });
+  save.flush = persist;
+  initPwa();
+  watchErrors(game);
   window.claude?.hot?.snapshot?.(() => ({ s: JSON.stringify(game.s) }));
 }
 

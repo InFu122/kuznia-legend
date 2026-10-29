@@ -852,3 +852,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .tnode.busy{border-color:var(--ember)}
 .tnode.busy .tn-l{color:var(--ember); font-weight:700}
 .tech-detail .techs{margin-top:4px}
+/* ---------- test gry: aktualizacja, aplikacja, zgłoszenia ---------- */
+.updbar{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 12px; border-radius:12px; background:color-mix(in srgb, var(--straw) 16%, var(--plate)); border:1px solid color-mix(in srgb, var(--straw) 50%, var(--rivet)); font-weight:600}
+.app-actions{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+.fb-text{width:100%; resize:vertical; min-height:110px; font:inherit; color:var(--frost); background:#100c09; border:1px solid var(--rivet); border-radius:10px; padding:10px; margin-top:6px}

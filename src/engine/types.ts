@@ -134,7 +134,7 @@ export interface GameState {
   missions: { day: string; daily: Mission[]; chest: boolean; week: string; weekly: Mission[] };
   login: { last: string; idx: number };                // kalendarz logowania: ostatni odbiór, następny dzień 0–6
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
-  opts: { sound: boolean; vol: number; music: boolean; mvol: number };
+  opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean };
   stats: { smelted: number; jumps: number; kills: number; bosses: number };
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
@@ -222,6 +222,7 @@ export type ModalData =
   | { kind: 'mix'; what: 'el' | 'set' }
   | { kind: 'landinfo'; land: number }
   | { kind: 'dunginfo'; id: DungId }
+  | { kind: 'feedback' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
   | { kind: 'ranking' }
   | { kind: 'arena' }

@@ -200,6 +200,8 @@ export class ServerLink {
   /** Karta przedmiotu Mitycznego lub Boskiego na czacie klanu albo globalnym. */
   chatDrop(item: Item, global: boolean): Promise<{ ok: boolean }> { return this.rpc('chat_drop', { item, global }); }
   chatReport(r: { channel: string; message: string; sender: string; name: string; text: string }): Promise<{ ok: boolean }> { return this.rpc('chat_report', r); }
+  /** Uwaga albo błąd od testera (kind: uwaga, blad) lub automatyczny raport błędu skryptu (auto). */
+  feedback(kind: 'uwaga' | 'blad' | 'auto', text: string, meta: Record<string, string | number>): Promise<{ ok: boolean }> { return this.rpc('feedback', { kind, text, meta }); }
 
   ranking(board: BoardId): Promise<Ranking> {
     return this.rpc<Ranking>('ranking', { board, limit: 30 });

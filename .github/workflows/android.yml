@@ -1,0 +1,89 @@
+# Aplikacja testowa na Androida (APK) budowana w chmurze GitHuba po każdej zmianie gry.
+# Gotowy plik: zakładka Releases → „Kuźnia Legend — Android (test)” (stały link do pobrania dla znajomych).
+#
+# Ustawienia repozytorium (Settings → Secrets and variables → Actions → zakładka Variables):
+#   NAKAMA_SERVER_KEY — ten sam klucz co w .env na serwerze (jest wbudowany w grę, nie jest tajny)
+#   SERVER_URL        — publiczny adres gry (domyślnie adres z Tailscale Funnel poniżej)
+name: Android (APK testowe)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'android/**'
+      - 'index.html'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SERVER_URL: ${{ vars.SERVER_URL || 'https://adamserver.taild0a9c3.ts.net' }}
+      VITE_PUBLIC_URL: ${{ vars.SERVER_URL || 'https://adamserver.taild0a9c3.ts.net' }}
+      VITE_SERVER_KEY: ${{ vars.NAKAMA_SERVER_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sprawdź ustawienia
+        run: |
+          if [ -z "$VITE_SERVER_KEY" ]; then
+            echo "::error::Brak zmiennej NAKAMA_SERVER_KEY — dodaj ją w Settings → Secrets and variables → Actions → Variables (wartość z pliku .env na serwerze)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Gra (web)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Projekt Androida
+        run: npx cap sync android
+
+      - name: APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Plik do pobrania
+        run: cp android/app/build/outputs/apk/release/app-release.apk kuznia-legend.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kuznia-legend-apk
+          path: kuznia-legend.apk
+          retention-days: 14
+
+      - name: Wydanie „android-test” (stały link)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-test --yes --cleanup-tag || true
+          gh release create android-test kuznia-legend.apk \
+            --prerelease \
+            --title "Kuźnia Legend — Android (test)" \
+            --notes "Wersja testowa nr ${GITHUB_RUN_NUMBER} (commit ${GITHUB_SHA::7}). Pobierz kuznia-legend.apk na telefonie i zainstaluj (zezwól na instalację z tego źródła). Nowa wersja instaluje się na starej — postęp zostaje na serwerze."

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kuźnia Legend</string>
+    <string name="title_activity_main">Kuźnia Legend</string>
+    <string name="package_name">pl.kuznialegend.gra</string>
+    <string name="custom_url_scheme">pl.kuznialegend.gra</string>
+</resources>

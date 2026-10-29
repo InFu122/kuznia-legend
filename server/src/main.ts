@@ -8,6 +8,7 @@ import { chatBlock, chatJoin, chatSend, rpcChatDrop, rpcChatReport } from './cha
 import { blockGroupApi, rpcClanCreate, rpcClanInfo, rpcClanJoin, rpcClanLeave, rpcClanList, rpcClanManage, rpcClanSettings } from './clan';
 import { rpcClanBossAttack, rpcClanDonate, rpcClanHelp, rpcClanHelpAsk, rpcClanOreAsk, rpcClanOreGive, rpcClanSync } from './clanlife';
 import { SYSTEM_USER, signSecret, testSpeed } from './common';
+import { rpcFeedback, rpcFeedbackList } from './feedback';
 import { rpcNameSet } from './names';
 import { rpcObiegSync } from './obieg';
 import { createBoards, rpcRanking } from './ranking';
@@ -53,6 +54,8 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('clan_ore_give', rpcClanOreGive);
   initializer.registerRpc('chat_drop', rpcChatDrop);
   initializer.registerRpc('chat_report', rpcChatReport);
+  initializer.registerRpc('feedback', rpcFeedback);
+  initializer.registerRpc('feedback_list', rpcFeedbackList);
   // Czat: tylko dozwolone kanały, filtr i tryb wolny; bez edycji i usuwania wiadomości.
   initializer.registerRtBefore('ChannelJoin', chatJoin);
   initializer.registerRtBefore('ChannelMessageSend', chatSend);

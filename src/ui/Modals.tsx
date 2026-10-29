@@ -22,6 +22,7 @@ import { MissionsView } from './panels/Missions';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
 import { DungInfoView } from './panels/Dungeon';
+import { FeedbackView } from './panels/Feedback';
 import { ChatView } from './panels/Chat';
 import type { Tab } from './icons';
 
@@ -185,6 +186,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <LandInfoView game={game} land={m.land} close={close} />;
     case 'dunginfo':
       return <DungInfoView game={game} id={m.id} close={close} />;
+    case 'feedback':
+      return <FeedbackView game={game} close={close} />;
     case 'missions':
       return <MissionsView game={game} initial={m.tab} close={close} />;
     case 'ranking':
