@@ -2,7 +2,7 @@
 // (numer wytopu `sx`), więc serwer może odtworzyć losowanie i sprawdzić, czy przedmiot jest prawdziwy.
 import { B, KIND_POOL_SIZES, ORES, SET_FORGE_LVL, SLOTS, SLOT_ORDER } from '../data';
 import { rollSubs, smeltDraws } from './forge';
-import { itemLevelFor, jumpChances, maxJump } from './formulas';
+import { JUMP_V, itemLevelFor, jumpChances, maxJump, pityAllowed } from './formulas';
 import { mulberry32 } from './rng';
 import type { Item } from './types';
 
@@ -10,8 +10,10 @@ import type { Item } from './types';
  * Odtwarza wytop z ziarna i porównuje z przedmiotem. Zwraca opis niezgodności albo null, gdy przedmiot się zgadza.
  * `maxRel` to obecna premia do przeskoku z technologii — w chwili wytopu mogła być tylko mniejsza.
  * `forgeLvl` to obecny poziom kuźni — przedmiot nie mógł powstać na wyższym.
+ * `oldOk` — przedmiot mógł powstać według dawnych zasad przeskoku (wersja 1; serwer pozwala na to tylko
+ * wytopom z numerem sprzed aktualizacji). Inaczej obowiązują obecne zasady.
  */
-export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: number): string | null {
+export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: number, oldOk = false): string | null {
   const O = ORES[it.ore];
   if (!O || !SLOTS[it.slot]) return 'nieznana ruda lub miejsce';
   if (!(it.flvl >= 1 && it.flvl <= forgeLvl)) return 'poziom kuźni w chwili wytopu';
@@ -20,10 +22,12 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
   if (it.el && it.flvl < B.ELEM_FORGE_LVL) return 'domieszka przed odblokowaniem';
   const mj = maxJump(it.ore);
   if (!(it.jump >= 0 && it.jump <= mj) || it.r !== Math.min(6, O.floor + it.jump)) return 'rzadkość';
+  if (it.jv !== undefined && it.jv !== JUMP_V) return 'wersja zasad przeskoku';
+  const ver = it.jv === undefined && oldOk ? 1 : JUMP_V;
 
   const rng = mulberry32(seed);
   const d = smeltDraws(rng);
-  const [p1, p2] = jumpChances(it.flvl, maxRel);
+  const [p1, p2] = jumpChances(it.flvl, maxRel, it.ore, ver);
   switch (it.forced) {
     case '':
       if (it.jump === 2 && d.roll >= p2) return 'przeskok o 2 bez wylosowania';
@@ -34,8 +38,8 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
       break;
     case 'pity': {
       // Pewny przeskok przychodzi tylko po nieudanym losowaniu.
-      const [q1, q2] = jumpChances(it.flvl, 0);
-      if (it.jump !== 1 || d.roll < q1 + q2) return 'pewny przeskok';
+      const [q1, q2] = jumpChances(it.flvl, 0, it.ore, ver);
+      if (it.jump !== 1 || d.roll < q1 + q2 || !pityAllowed(it.ore, ver)) return 'pewny przeskok';
       break;
     }
     case 'set':

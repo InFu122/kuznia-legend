@@ -181,7 +181,7 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
       {cur && cur.fame > 0 && <p class="sub">Po zmianie połowa Sławy Czynów założonego przedmiotu ({fmt(cur.fame)}) przejdzie na nowy.</p>}
       {src === 'pending' && !it.obieg && it.flvl > 0 && (
         <p class="sub dec-odds">
-          Szanse tego wytopu ({ORES[it.ore].n}, kuźnia {it.flvl}): {dist(it.ore, it.flvl, techMods(s).jumpRel).map(([r, p], i) => <span key={r}>{i > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n} {pct(p)}</span></span>)}
+          Szanse tego wytopu ({ORES[it.ore].n}, kuźnia {it.flvl}): {dist(it.ore, it.flvl, techMods(s).jumpRel, it.jv ?? 1).map(([r, p], i) => <span key={r}>{i > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n} {pct(p)}</span></span>)}
           {it.forced === 'pity' ? ' · przeskok z gwarancji' : it.forced === 'tut' ? ' · pierwszy przeskok gwarantowany' : it.forced === 'set' ? ' · przeskok gwarantowany przez rudę unikalną' : ''}
         </p>
       )}

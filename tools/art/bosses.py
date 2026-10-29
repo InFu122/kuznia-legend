@@ -169,3 +169,27 @@ def anvil():
     rows = outline(rows)
     pal = {**K, 'p': '#9aa4ae', 'q': '#5d646d', 's': '#3a3f46', 'r': '#ff8a3c'}
     return rows, pal
+
+def key_icon():
+    # Klucz do lochów 16×16: złote ucho z otworem, trzon i ząbki, ukośnie.
+    rows = [
+        "................",
+        "................",
+        "..yyyy..........",
+        ".yYYYYy.........",
+        "yYZ..YYy........",
+        "yY....Yy........",
+        "yY....Yyy.......",
+        "yYY..YYYYy......",
+        ".yYYYYyYYYy.....",
+        "..yyyy.yYYYy....",
+        ".........yYYy...",
+        "........yyYYYy..",
+        "........yYyYYYy.",
+        ".........y.yYy..",
+        "............y...",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'y': '#a8741c', 'Y': '#e8b84a', 'Z': '#fff1b8'}
+    return rows, pal

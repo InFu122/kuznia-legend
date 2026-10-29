@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks';
 import { TECH, TECH_BRANCHES, TECH_IDS, TECH_UNLOCK_FORGE } from '../../data';
 import { resUrl, techUrl } from '../../art/render';
 import { Costs, Px } from '../Px';
@@ -17,6 +18,24 @@ const BLOCK: Record<Exclude<TechBlock, null>, string> = {
 
 /** Jednostka efektu wzięta z opisu (np. „%” albo „ min”). */
 const unit = (id: TechId) => { const after = TECH[id].d.split('{v}')[1] ?? ''; return after.startsWith('%') ? '%' : after.startsWith(' min') ? ' min' : ''; };
+
+/** Węzeł drzewka: ikona, nazwa i poziom. Dotknięcie pokazuje szczegóły i przycisk badania. */
+function TechNode({ game, id, on, pick }: { game: Game; id: TechId; on: boolean; pick: (id: TechId) => void }) {
+  const s = game.s;
+  const T = TECH[id];
+  const l = techLvl(s, id);
+  const block = techBlock(s, id);
+  const cur = s.tech.cur?.id === id;
+  const cls = ['tnode', on ? 'on' : '', l >= T.max ? 'max' : '', block === 'forge' ? 'locked' : '', cur ? 'busy' : '', !block ? 'can' : ''].filter(Boolean).join(' ');
+  return (
+    <button class={cls} onClick={() => pick(id)} aria-pressed={on} aria-label={`${T.n}, poziom ${l} z ${T.max}`}>
+      <Px src={techUrl(id)} size={32} />
+      <span class="tn-n">{T.n}</span>
+      <span class="tn-l">{block === 'forge' ? `od ${Math.max(T.req, TECH_UNLOCK_FORGE)}. poz.` : cur ? 'w toku' : `${l}/${T.max}`}</span>
+      <i class="tn-bar"><i style={{ width: (l / T.max) * 100 + '%' }} /></i>
+    </button>
+  );
+}
 
 function TechRow({ game, id }: { game: Game; id: TechId }) {
   const s = game.s;
@@ -55,6 +74,9 @@ function TechRow({ game, id }: { game: Game; id: TechId }) {
 export function ResearchPanel({ game }: { game: Game }) {
   const s = game.s;
   const cur = s.tech.cur;
+  const [sel, setSel] = useState<TechId | null>(null);
+  // Domyślnie: trwające badanie albo pierwsze, które można teraz zbadać.
+  const shown = sel ?? cur?.id ?? TECH_IDS.find(id => !techBlock(s, id)) ?? TECH_IDS[0];
   if (s.forge.lvl < TECH_UNLOCK_FORGE) {
     return (
       <section class="card">
@@ -86,12 +108,24 @@ export function ResearchPanel({ game }: { game: Game }) {
         ) : <p class="sub">Jedno badanie naraz. Czas biegnie także, gdy nie grasz.</p>}
         <p class="sub" style={{ marginTop: '6px' }}>Księgi Wiedzy wypadają z bossów (najwięcej za pierwsze pokonanie), rzadko z fal wrogów i co 5 pięter Wieży Wyzwań.</p>
       </section>
-      {TECH_BRANCHES.map(br => (
-        <section class="card" key={br.id}>
-          <div class="eyebrow">{br.n}</div>
-          <ul class="techs">{TECH_IDS.filter(id => TECH[id].branch === br.id).map(id => <TechRow key={id} game={game} id={id} />)}</ul>
+      <section class="card tech-tree" aria-label="Drzewka badań">
+        <div class="tt-cols">
+          {TECH_BRANCHES.map(br => (
+            <div class="tt-col" key={br.id}>
+              <div class="tt-h">{br.n}</div>
+              {TECH_IDS.filter(id => TECH[id].branch === br.id).sort((a, b) => TECH[a].req - TECH[b].req).map(id => (
+                <TechNode key={id} game={game} id={id} on={id === shown} pick={setSel} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
+      {shown && (
+        <section class="card tech-detail">
+          <div class="eyebrow">{TECH_BRANCHES.find(b => b.id === TECH[shown].branch)?.n} · szczegóły</div>
+          <ul class="techs"><TechRow game={game} id={shown} /></ul>
         </section>
-      ))}
+      )}
     </>
   );
 }

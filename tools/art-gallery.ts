@@ -19,7 +19,7 @@ const tile = (src: string, name: string, sub = '', size = 16) =>
 
 const RES_N: Record<string, string> = {
   zloto: 'Złoto', ksiega: 'Księga Wiedzy', zwoj: 'Zwój zaklęć', siodlo: 'Siodło', kamien: 'Kamień', pieczec: 'Pieczęć Legendy',
-  moneta: 'Moneta klanowa', jajo0: 'Jajo zwykłe', jajo1: 'Jajo niepospolite', jajo2: 'Jajo rzadkie', jajo3: 'Jajo epickie', jajo4: 'Jajo legendarne',
+  moneta: 'Moneta klanowa', czas: 'Czas', moc: 'Moc', kowadlo: 'Kuźnia', klucz: 'Klucz do lochu', jajo0: 'Jajo zwykłe', jajo1: 'Jajo niepospolite', jajo2: 'Jajo rzadkie', jajo3: 'Jajo epickie', jajo4: 'Jajo legendarne',
 };
 const TIER_N = ['proste', 'zdobione', 'mistrzowskie'];
 

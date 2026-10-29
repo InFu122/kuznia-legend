@@ -1,6 +1,6 @@
 import { B, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
 import { toast, type Ctx } from './context';
-import { itemLevelFor, itemName, jumpChances, maxJump, sellPrice, upCost, upTime } from './formulas';
+import { JUMP_V, itemLevelFor, itemName, jumpChances, maxJump, pityAllowed, sellPrice, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
 import { allMods } from './mods';
 import { maybeObieg } from './obieg';
@@ -57,14 +57,14 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   if (d.save >= mods.saveOre) s.ores[ore]--;
   const set = uniqActive(s);
   if (set) s.uniq[set] = (s.uniq[set] ?? 0) - 1;
-  const [p1, p2] = jumpChances(s.forge.lvl, mods.jumpRel);
+  const [p1, p2] = jumpChances(s.forge.lvl, mods.jumpRel, ore);
   const mj = maxJump(ore);
   let jump = 0;
   if (mj >= 2 && d.roll < p2) jump = 2;
   else if (mj >= 1 && d.roll < p1 + p2) jump = 1;
   let forced: Item['forced'] = '';
   if (s.stats.smelted === 2 && mj >= 1 && jump === 0) { jump = 1; forced = 'tut'; } // samouczek
-  if (jump === 0 && mj >= 1 && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
+  if (jump === 0 && pityAllowed(ore) && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
   if (set && jump === 0 && mj >= 1) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok
   if (mj >= 1) s.pity = jump > 0 ? 0 : s.pity + 1;
   const r = Math.min(6, ORES[ore].floor + jump);
@@ -82,7 +82,7 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   ctx.dirty = true;
   const it: Item = {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, d.lvl),
-    subs: rollSubs(rng, r), el: elKey, jump, flvl: s.forge.lvl, forced,
+    subs: rollSubs(rng, r), el: elKey, jump, flvl: s.forge.lvl, forced, jv: JUMP_V,
     smith: s.name, land: LANDS[s.cur.land].n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
   if (sx !== undefined) it.sx = sx;

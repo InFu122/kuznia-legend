@@ -20,7 +20,7 @@ export type LabDoorKind = 'walka' | 'elita' | 'skarb' | 'zrodlo' | 'oltarz';
 export type KryptaRuleId = 'zywioly' | 'szybkosc' | 'krew' | 'giganci';
 export type MissionKind = 'smelt' | 'wave' | 'boss' | 'jump' | 'sell' | 'equip' | 'dung' | 'research' | 'scroll';
 export interface Mission { kind: MissionKind; goal: number; n: number; claimed: boolean }
-export type SfxKind = 'smelt' | 'jump' | 'hit' | 'crit' | 'hurt' | 'dodge' | 'block' | 'skill' | 'boss' | 'win' | 'lose' | 'levelup' | 'claim' | 'rare' | 'alert';
+export type SfxKind = 'smelt' | 'jump' | 'hit' | 'crit' | 'hurt' | 'dodge' | 'block' | 'kill' | 'skill' | 'boss' | 'win' | 'lose' | 'levelup' | 'claim' | 'rare' | 'alert';
 
 /** Nagroda do przyznania i pokazania w podsumowaniu. */
 export interface Reward {
@@ -73,6 +73,7 @@ export interface Item {
   jump: number;         // o ile rzadkości przeskoczył ponad minimum rudy
   flvl: number;         // poziom kuźni w chwili wytopu (0 = nieznany, np. z Obiegu)
   forced: '' | 'tut' | 'pity' | 'set';
+  jv?: number;          // wersja zasad przeskoku (brak = 1, przedmioty sprzed października 2026)
   smith: string;        // Piętno Kowala
   land: string;         // kraina wykucia
   fame: number;         // Sława Czynów
@@ -220,11 +221,12 @@ export type ModalData =
   | { kind: 'decide' }
   | { kind: 'mix'; what: 'el' | 'set' }
   | { kind: 'landinfo'; land: number }
+  | { kind: 'dunginfo'; id: DungId }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
   | { kind: 'ranking' }
   | { kind: 'arena' }
   | { kind: 'chat'; ch?: 'global' | 'clan' }
-  | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean }
+  | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean; from?: number; to?: number; cards?: number; need?: number; stones?: number }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }
   | { kind: 'info'; k: 'forge' | 'level' }

@@ -79,7 +79,7 @@ export function rpcChatDrop(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   if (!save || !it || typeof it !== 'object' || typeof it.sx !== 'number') throw err('Brak przedmiotu.', INVALID);
   if (it.r < 5) throw err('Na czacie można pochwalić się przedmiotem Mitycznym albo Boskim.', INVALID);
   const s = save.value.state;
-  if (!smeltOk(proofFor(nk, userId, s), it, (s.sx || 0) + SEEDS_AHEAD)) throw err('Serwer nie potwierdził tego wytopu.', INVALID);
+  if (!smeltOk(proofFor(nk, userId, s, save.value.meta), it, (s.sx || 0) + SEEDS_AHEAD)) throw err('Serwer nie potwierdził tego wytopu.', INVALID);
   const where = req.global === true ? 'global' : 'clan';
   const o = nk.storageRead([{ collection: 'chat', key: 'brag', userId }]);
   const done = o.length ? (o[0].value as { sx: string[]; g: number }) : { sx: [], g: 0 };

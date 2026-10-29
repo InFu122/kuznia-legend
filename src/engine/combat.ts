@@ -182,6 +182,7 @@ function enemyHit(ctx: Ctx, st: Stats, e: Enemy): void {
 
 function onEnemyDown(ctx: Ctx, e: Enemy): void {
   const { s, b } = ctx;
+  if (!e.boss) ctx.emit({ t: 'sfx', k: 'kill' });
   if (b.mode === 'dung') { dungFloor(ctx); return; }
   if (e.boss) { bossWon(ctx, e); return; }
   const L = LANDS[s.cur.land];

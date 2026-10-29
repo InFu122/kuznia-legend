@@ -20,9 +20,9 @@ export const InfoBtn = ({ onClick, label }: { onClick: () => void; label: string
 );
 
 /** Pasek szans wytopu: segmenty w kolorach rzadkości, z procentami pod spodem. */
-function OddsBar({ d, note }: { d: [number, number][]; note?: string }) {
+export function OddsBar({ d, note, cls = '' }: { d: [number, number][]; note?: string; cls?: string }) {
   return (
-    <div class="oddsbar" aria-label="Szanse wytopu">
+    <div class={`oddsbar ${cls}`} aria-label="Szanse wytopu">
       <div class="ob-bar">{d.map(([r, p]) => <i key={r} class={`rb-${r}`} style={{ flexGrow: Math.max(p, 0.6) }} />)}</div>
       <div class="ob-lab">
         {d.map(([r, p]) => <span key={r} class={`rt${r}`}><b>{pct(p)}</b> {RAR[r].n}</span>)}
@@ -50,8 +50,11 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
   const setOn = f.lvl >= SET_FORGE_LVL;
   const targets = game.autoTargets();
   const target = game.autoTarget();
-  const [j1, j2] = jumpChances(f.lvl, rel);
-  const [k1, k2] = jumpChances(n, rel);
+  // Szansa na przeskok dla wybranej rudy (rzadsze wyniki są trudniejsze); Gwiezdny Kruszec nie przeskakuje — wtedy bazowa.
+  const jo = mj >= 1 ? o : -1;
+  const jn = jo >= 0 ? ` (${ORES[jo].n})` : '';
+  const [j1, j2] = jumpChances(f.lvl, rel, jo);
+  const [k1, k2] = jumpChances(n, rel, jo);
 
   return (
     <>
@@ -146,7 +149,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
           <>
             <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
             <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
-            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
+            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
             {game.net && <ClanHelpLine game={game} />}
           </>
         ) : (
@@ -154,7 +157,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
             <div>
               <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
               <div class="h">Ulepsz do poziomu {n}</div>
-              <p class="sub">Szansa na przeskok {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
+              <p class="sub">Szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
               <p class="sub upcost"><Costs items={[[resUrl('zloto'), `${fmt(cost)} złota`], [resUrl('czas'), tfmt(game.upgradeTime())]]} cls={s.gold < cost ? 'lack-0' : ''} /></p>
             </div>
             <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>

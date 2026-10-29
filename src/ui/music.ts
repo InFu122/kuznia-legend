@@ -18,7 +18,7 @@ const FADE = 2.5;        // s, przejście między utworami
 const FADE_FAST = 1.2;   // s, wejście i zejście muzyki bossa
 const LEAVE_BOSS_MS = 2500;
 
-interface Deck { el: HTMLAudioElement; g: GainNode; track: string; handoff: boolean }
+interface Deck { el: HTMLAudioElement; g: GainNode; track: string; handoff: boolean; unlocked: boolean }
 let decks: Deck[] = [];
 let bus: GainNode | null = null;
 let active = 0;
@@ -28,6 +28,8 @@ let mood: Mood = 'camp';
 let playing: Mood | null = null;
 let leaveTimer = 0;
 let duckUntil = 0;
+/** Przeglądarka odmówiła odtwarzania (brak gestu gracza) — spróbujemy przy następnym dotknięciu. */
+let blocked = false;
 const lastTrack: Partial<Record<Mood, string>> = {};
 
 const level = () => vol * LEVEL;
@@ -60,7 +62,9 @@ function crossTo(m: Mood, fade = FADE) {
   to.el.loop = m === 'boss';  // walka z bossem trwa różnie długo — jego utwór się zapętla
   to.el.src = audioUrl(`m-${track}.mp3`);
   to.g.gain.value = 0;
-  to.el.play().then(() => ramp(to.g, 1, fade)).catch(() => { /* np. brak pliku — spróbujemy przy następnej zmianie */ });
+  to.el.play()
+    .then(() => { to.unlocked = true; blocked = false; ramp(to.g, 1, fade); })
+    .catch((e: unknown) => { if ((e as { name?: string })?.name === 'NotAllowedError') blocked = true; });
   ramp(from.g, 0, fade);
   const old = from.el;
   setTimeout(() => { if (decks[active].el !== old) old.pause(); }, fade * 1000 + 100);
@@ -84,7 +88,7 @@ function makeDeck(): Deck | null {
   const g = ac.createGain();
   g.gain.value = 0;
   ac.createMediaElementSource(el).connect(g).connect(bus);
-  const d: Deck = { el, g, track: '', handoff: false };
+  const d: Deck = { el, g, track: '', handoff: false, unlocked: false };
   // Przed końcem utworu (nie zapętlonego) zaczynamy następny, żeby nie było ciszy.
   el.addEventListener('timeupdate', () => {
     if (decks[active] !== d || el.loop || d.handoff || !playing || !Number.isFinite(el.duration)) return;
@@ -105,18 +109,31 @@ export function initMusic(): void {
   if (!a || !b) return;
   decks = [a, b];
   setDuckHook(duck);
-  // Każdy deck musi raz zagrać w geście gracza (wymóg Safari na iPhonie) — po cichu; nieużywany od razu staje.
-  for (const d of decks) {
-    d.el.src = audioUrl(`m-${PLAYLISTS.camp[0]}.mp3`);
-    d.el.play().then(() => { if (decks[active] !== d || !playing) d.el.pause(); }).catch(() => {});
-  }
   if (on) crossTo(mood, FADE_FAST);
+  kickMusic();
   document.addEventListener('visibilitychange', () => {
     const d = decks[active];
     if (!d) return;
     if (document.hidden) d.el.pause();
     else if (on && playing) d.el.play().catch(() => {});
   });
+}
+
+/**
+ * Wołane przy każdym geście gracza. Na telefonie pierwsze dotknięcie (pointerdown) nie wystarcza przeglądarce
+ * do odtwarzania — dopiero puszczenie palca. Jeśli muzyka miała grać, a przeglądarka odmówiła, startuje teraz.
+ * Każdy deck musi też raz zagrać w geście (wymóg Safari na iPhonie) — nieużywany gra po cichu i od razu staje.
+ */
+export function kickMusic(): void {
+  if (!decks.length || document.hidden) return;
+  for (const d of decks) {
+    if (d === decks[active] && on && playing && (blocked || d.el.paused)) {
+      d.el.play().then(() => { d.unlocked = true; blocked = false; ramp(d.g, 1, FADE_FAST); }).catch(() => {});
+    } else if (!d.unlocked) {
+      if (!d.el.src) d.el.src = audioUrl(`m-${PLAYLISTS.camp[0]}.mp3`);
+      d.el.play().then(() => { d.unlocked = true; if (decks[active] !== d || !playing) d.el.pause(); }).catch(() => {});
+    }
+  }
 }
 
 /** Włączenie/wyłączenie i głośność (z ustawień gracza). */

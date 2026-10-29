@@ -129,3 +129,23 @@ describe('Wieści z Obiegu', () => {
     expect(s.smith.log[0].n).toBe(5);
   });
 });
+
+describe('wynik Zwoju', () => {
+  it('pokazuje poziom przed i po kopii', async () => {
+    const { drawSkill } = await import('../src/engine/companions');
+    const { makeGame: mk } = await import('./helpers');
+    const { ctx, s } = mk(4);
+    const a = drawSkill(ctx, 0);
+    expect(a.dupe).toBe(false);
+    expect(a.from).toBe(0);
+    expect(a.to).toBe(1);
+    // kopie tej samej umiejętności: poziom rośnie albo rosną kopie do następnego poziomu
+    let up = 0;
+    for (let i = 0; i < 200; i++) {
+      const r = drawSkill(ctx, 0);
+      if (r.dupe) { expect(r.to).toBeGreaterThanOrEqual(r.from); if (r.to > r.from) up++; else expect(r.cards).toBeGreaterThan(0); }
+    }
+    expect(up).toBeGreaterThan(0);
+    expect(Object.keys(s.skills.lv).length).toBeGreaterThan(1);
+  });
+});

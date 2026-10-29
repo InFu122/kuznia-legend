@@ -1,11 +1,11 @@
-// Zakładka Lochy: osobno Lochy (zwarte kafelki z tłem i ikoną nagrody) i Arena (z serwerem).
-import { useState } from 'preact/hooks';
+// Zakładka Lochy: na górze Arena (z serwerem), potem dostępne lochy jako kafelki z kluczami
+// i nagrodą, a na końcu te, które dopiero się odblokują. Szczegóły lochu — w oknie „i” (DungInfoView).
 import { B, DUNGEONS, DUNG_ORDER, DUNG_SOON, ELEM, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
 import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
 import { elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
 import type { Game } from '../../engine/game';
 import type { DungId } from '../../engine/types';
-import { fmt } from '../format';
+import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 
 function best(game: Game, id: DungId): string {
@@ -23,7 +23,7 @@ function best(game: Game, id: DungId): string {
   }
 }
 
-/** Nagroda lochu dziś: nazwa i ikona. */
+/** Główna nagroda lochu dziś: nazwa i ikona. */
 function reward(game: Game, id: DungId): [string, string] {
   const now = game.ctx.now();
   switch (id) {
@@ -39,36 +39,147 @@ function reward(game: Game, id: DungId): [string, string] {
   }
 }
 
-function DungTile({ game, id, open, setOpen }: { game: Game; id: DungId; open: boolean; setOpen: (id: DungId | null) => void }) {
+/** Wszystkie nagrody lochu z ikonami (okno „i”). */
+export function rewardList(game: Game, id: DungId): [string, string][] {
+  const now = game.ctx.now();
+  switch (id) {
+    case 'skarbiec': return [[resUrl('zloto'), 'Złoto — każdy kolejny goblin daje więcej']];
+    case 'sztolnia': return [[oreUrl(game.dungTier()), `${ORES[game.dungTier()].n} — ruda o poziom lepsza niż w twojej krainie`]];
+    case 'wieza': return [[resUrl('ksiega'), 'Księgi Wiedzy co 5 pięter'], [resUrl('zloto'), 'Złoto z każdego piętra']];
+    case 'leza': return lezaBosses(game.ctx).map(land => { const set = setOfLand(land)!; return [setOreUrl(set), `${SETS[set].ore} — ${LANDS[land].boss}`] as [string, string]; });
+    case 'oltarze': { const el = elementOfDay(now); return [[elemUrl(el), `${ELEM[el].n} — żywioł dnia (${ELEM[el].el})`]]; }
+    case 'kopalnia': return [[resUrl('kamien'), 'Kamienie z każdej fali'], [resUrl('siodlo'), 'Siodło za 10. falę (od aktu III)']];
+    case 'labirynt': return [[oreUrl(Math.min(6, game.dungTier())), 'Rzadkie rudy'], [resUrl('ksiega'), 'Księgi Wiedzy'], [resUrl('zwoj'), 'Zwoje zaklęć']];
+    case 'zbrojownia': return [[itemUrl('Miecz', 3, 3), 'Przedmioty z historią z Wielkiego Obiegu (do decyzji)']];
+    case 'krypta': return [[resUrl('pieczec'), 'Pieczęcie Legendy (+1000 Sławy Czynów)']];
+  }
+}
+
+/** Klucze jako ikonki: pełne — dostępne, przygaszone — zużyte dziś. */
+export function Keys({ game, id }: { game: Game; id: DungId }) {
   const D = DUNGEONS[id];
-  const unlocked = game.dungUnlocked(id);
+  const keys = game.dungKeys(id);
+  if (!Number.isFinite(keys)) return <span class="dkeys inf" aria-label="Bez limitu wejść">∞ bez limitu</span>;
+  return (
+    <span class="dkeys" aria-label={`Klucze: ${keys} z ${D.keys}`}>
+      {Array.from({ length: D.keys }, (_, i) => <Px key={i} src={resUrl('klucz')} size={18} cls={i < keys ? '' : 'used'} />)}
+    </span>
+  );
+}
+
+/** Do północy (klucze odnawiają się o północy). */
+export const untilMidnight = (now: number) => { const d = new Date(now); d.setHours(24, 0, 0, 0); return d.getTime() - now; };
+
+function DungTile({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: DungId) => void }) {
+  const D = DUNGEONS[id];
   const keys = game.dungKeys(id);
   const unlimited = !Number.isFinite(keys);
   const run = game.b.mode === 'dung' ? game.b.dung : null;
   const here = run?.id === id;
   const blocked = run && !here ? 'Trwa inny loch' : !unlimited && keys < 1 ? 'Jutro' : '';
   const [rn, ric] = reward(game, id);
-  const enter = (land?: number) => { if (game.startDung(id, land)) window.scrollTo?.({ top: 0, behavior: 'smooth' }); };
+  const enter = () => { if (game.startDung(id)) window.scrollTo?.({ top: 0, behavior: 'smooth' }); };
   return (
-    <section class={`card dung tile${unlocked ? '' : ' locked'}${open ? ' wide' : ''}${here ? ' here' : ''}`} aria-label={D.n} style={{ '--bg': `url(${dungeonBgUrl(id)})` } as Record<string, string>}>
+    <section class={`card dung tile${here ? ' here' : ''}${blocked ? ' spent' : ''}`} aria-label={D.n} style={{ '--bg': `url(${dungeonBgUrl(id)})` } as Record<string, string>}>
       <div class="dt-top">
         <span class="dt-reward"><Px src={ric} size={20} />{rn}</span>
-        <button class="info" aria-expanded={open} onClick={() => setOpen(open ? null : id)} aria-label={`Opis: ${D.n}`}>i</button>
+        <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${D.n}`}>i</button>
       </div>
       <div class="dt-name">{D.n}</div>
-      {unlocked ? (
-        <div class="dt-meta">{unlimited ? 'bez limitu' : `klucze ${keys}/${D.keys}`} · {id === 'leza' ? '' : 'rekord: '}{best(game, id)}</div>
-      ) : <div class="dt-meta">Odblokujesz {D.unlock}</div>}
-      {open && (
-        <div class="dt-more">
-          <p class="sub">{D.how}{id === 'krypta' && unlocked ? ` W tym tygodniu: ${KRYPTA_RULES[kryptaRule(game.ctx.now())].d}.` : ''}</p>
-          <p class="sub"><b>Nagroda:</b> {D.reward}.</p>
-        </div>
+      <div class="dt-row"><Keys game={game} id={id} /><span class="dt-meta">{id === 'leza' ? '' : 'rekord: '}{best(game, id)}</span></div>
+      {here ? <div class="dt-here">Trwa — walka u góry</div>
+        : id === 'leza' && !blocked ? <button class="btn primary small" onClick={() => onInfo(id)}>Wybierz bossa</button>
+          : (
+            <button class="btn primary small" disabled={!!blocked} onClick={enter}>
+              {blocked || (unlimited ? `Piętro ${game.s.dungeons.wieza.best + 1}` : 'Wejdź')}
+            </button>
+          )}
+    </section>
+  );
+}
+
+/** Arena z innymi graczami — na samej górze zakładki, żeby była łatwa do znalezienia. */
+function ArenaBanner({ game, online, onArena }: { game: Game; online: boolean; onArena: () => void }) {
+  const open = game.s.maxLand >= B.ARENA_UNLOCK_LAND;
+  return (
+    <section class={`card arena-banner${open ? '' : ' locked'}`} aria-label="Arena" style={{ '--bg': `url(${dungeonBgUrl('arena')})` } as Record<string, string>}>
+      <div class="ab-ic"><Px src={resUrl('moc')} size={36} /></div>
+      <div class="ab-main">
+        <div class="eyebrow">Gracz kontra gracz</div>
+        <div class="ab-name">Arena</div>
+        <div class="ab-sub">{open ? `${B.ARENA_FIGHTS} walk dziennie z kopiami bohaterów innych graczy · ocena i złoto` : `Odblokujesz po pokonaniu bossa krainy ${LANDS[B.ARENA_UNLOCK_LAND - 1]?.n ?? LANDS[0].n}`}</div>
+      </div>
+      {open && <button class="btn primary" disabled={!online} onClick={onArena} title={online ? undefined : 'Potrzebne połączenie z serwerem'}>{online ? 'Walcz' : 'Offline'}</button>}
+    </section>
+  );
+}
+
+export function DungeonPanel({ game, online = false, onArena, onInfo }: { game: Game; online?: boolean; onArena?: () => void; onInfo: (id: DungId) => void }) {
+  const arena = game.net && !!onArena;
+  const open = DUNG_ORDER.filter(id => game.dungUnlocked(id));
+  const locked = DUNG_ORDER.filter(id => !game.dungUnlocked(id));
+  return (
+    <>
+      {arena && <ArenaBanner game={game} online={online} onArena={onArena!} />}
+      <div class="dung-head">
+        <div><div class="eyebrow">Lochy</div><div class="h">Wyprawy po łupy</div></div>
+        <span class="dh-reset"><Px src={resUrl('klucz')} size={18} />nowe klucze za {tfmt(untilMidnight(game.ctx.now()))}</span>
+      </div>
+      {open.length > 0 ? (
+        <div class="dgrid">{open.map(id => <DungTile key={id} game={game} id={id} onInfo={onInfo} />)}</div>
+      ) : <section class="card"><p class="sub">Pierwszy loch otworzy się po pokonaniu bossa pierwszej krainy.</p></section>}
+      {locked.length > 0 && (
+        <section class="card">
+          <div class="eyebrow">Do odblokowania</div>
+          <ul class="dlocked">
+            {locked.map(id => {
+              const [rn, ric] = reward(game, id);
+              return (
+                <li key={id}>
+                  <Px src={ric} size={24} />
+                  <div><b>{DUNGEONS[id].n}</b><small>{rn} · {DUNGEONS[id].unlock}</small></div>
+                  <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${DUNGEONS[id].n}`}>i</button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
-      {unlocked && (
-        here ? <div class="dt-here">Trwa — walka u góry</div>
-          : id === 'leza' && !blocked ? (
-            open ? (
+      <p class="sub dung-soon">Wkrótce: {DUNG_SOON.join(', ')}.</p>
+    </>
+  );
+}
+
+/** Okno „i” lochu: opis, nagrody z ikonami, klucze, rekord i wejście (w Leżu — wybór bossa). */
+export function DungInfoView({ game, id, close }: { game: Game; id: DungId; close: () => void }) {
+  const D = DUNGEONS[id];
+  const unlocked = game.dungUnlocked(id);
+  const keys = game.dungKeys(id);
+  const unlimited = !Number.isFinite(keys);
+  const run = game.b.mode === 'dung' ? game.b.dung : null;
+  const blocked = run ? (run.id === id ? 'Trwa — walka u góry' : 'Trwa inny loch') : !unlimited && keys < 1 ? 'Klucze wrócą o północy' : '';
+  const enter = (land?: number) => { if (game.startDung(id, land)) { close(); window.scrollTo?.({ top: 0, behavior: 'smooth' }); } };
+  return (
+    <>
+      <div class="li-head" style={{ '--bg': `url(${dungeonBgUrl(id)})` } as Record<string, string>}>
+        <div class="eyebrow">Loch{unlocked ? '' : ' · zablokowany'}</div>
+        <div class="h">{D.n}</div>
+      </div>
+      <p class="sub">{D.how}</p>
+      {id === 'krypta' && unlocked && <p class="sub"><b>W tym tygodniu:</b> {KRYPTA_RULES[kryptaRule(game.ctx.now())].d}.</p>}
+      <div class="eyebrow">Nagrody</div>
+      <ul class="droplist">
+        {rewardList(game, id).map(([ic, t]) => <li key={t}><Px src={ic} size={24} /><span>{t}</span></li>)}
+      </ul>
+      <div class="di-stats">
+        <div class="stat"><small>Klucze</small><b>{unlocked ? <Keys game={game} id={id} /> : `${D.keys || '∞'} dziennie`}</b></div>
+        <div class="stat"><small>{id === 'leza' ? 'Zwycięstwa' : 'Rekord'}</small><b>{best(game, id)}</b></div>
+      </div>
+      {!unlocked ? <div class="lockline">Odblokujesz {D.unlock}.</div>
+        : blocked ? <div class="lockline">{blocked}</div>
+          : id === 'leza' ? (
+            <>
+              <div class="eyebrow">Wybierz bossa</div>
               <div class="mix">
                 {lezaBosses(game.ctx).map(land => {
                   const set = setOfLand(land)!;
@@ -79,57 +190,9 @@ function DungTile({ game, id, open, setOpen }: { game: Game; id: DungId; open: b
                   );
                 })}
               </div>
-            ) : <button class="btn primary small" onClick={() => setOpen(id)}>Wybierz bossa</button>
-          ) : (
-            <button class="btn primary small" disabled={!!blocked} onClick={() => enter()}>
-              {blocked || (unlimited ? `Piętro ${game.s.dungeons.wieza.best + 1}` : 'Wejdź')}
-            </button>
-          )
-      )}
-    </section>
-  );
-}
-
-/** Arena z innymi graczami — tylko z serwerem gry. */
-function ArenaTab({ game, online, onArena }: { game: Game; online: boolean; onArena: () => void }) {
-  const open = game.s.maxLand >= B.ARENA_UNLOCK_LAND;
-  return (
-    <section class={`card dung tile wide arena-tile${open ? '' : ' locked'}`} aria-label="Arena" style={{ '--bg': `url(${dungeonBgUrl('arena')})` } as Record<string, string>}>
-      <div class="dt-top"><span class="dt-reward"><Px src={resUrl('zloto')} size={20} />Ocena i złoto</span>{open && <span class="keys">{B.ARENA_FIGHTS} walk dziennie</span>}</div>
-      <div class="dt-name">Arena</div>
-      <p class="sub">Walczysz z kopiami bohaterów innych graczy — ekwipunek, umiejętności i chowaniec z ich ostatniego zapisu. Walkę liczy serwer; za wygraną rośnie ocena i dostajesz złoto. Ranking areny jest w Kodeksie.</p>
-      {!open ? <div class="lockline">Odblokujesz po pokonaniu bossa krainy {LANDS[0].n}</div> : (
-        <div>
-          <button class="btn primary" disabled={!online} onClick={onArena}>Wejdź na arenę</button>
-          {!online && <span class="sub" style={{ marginLeft: '10px' }}>Potrzebne połączenie z serwerem.</span>}
-        </div>
-      )}
-    </section>
-  );
-}
-
-export function DungeonPanel({ game, online = false, onArena }: { game: Game; online?: boolean; onArena?: () => void }) {
-  const [tab, setTab] = useState<'lochy' | 'arena'>('lochy');
-  const [open, setOpen] = useState<DungId | null>(null);
-  const arena = game.net && !!onArena;
-  return (
-    <>
-      {arena && (
-        <div class="seg seg2" role="tablist" aria-label="Lochy i arena">
-          <button role="tab" aria-selected={tab === 'lochy'} class={tab === 'lochy' ? 'on' : ''} onClick={() => setTab('lochy')}>Lochy</button>
-          <button role="tab" aria-selected={tab === 'arena'} class={tab === 'arena' ? 'on' : ''} onClick={() => setTab('arena')}>Arena</button>
-        </div>
-      )}
-      {tab === 'arena' && arena ? <ArenaTab game={game} online={online} onArena={onArena!} /> : (
-        <>
-          <div class="dgrid">
-            {DUNG_ORDER.map(id => <DungTile key={id} game={game} id={id} open={open === id} setOpen={setOpen} />)}
-          </div>
-          <section class="card">
-            <p class="sub">Klucze odnawiają się codziennie o północy. Wkrótce: {DUNG_SOON.join(', ')}.</p>
-          </section>
-        </>
-      )}
+            </>
+          ) : <button class="btn primary" onClick={() => enter()}>{unlimited ? `Wejdź na piętro ${game.s.dungeons.wieza.best + 1}` : 'Wejdź'}</button>}
+      <button class="btn" onClick={close}>Zamknij</button>
     </>
   );
 }

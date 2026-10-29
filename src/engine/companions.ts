@@ -29,7 +29,10 @@ export function drawRarity(ctx: Ctx, min = 0): number {
 export const skillNeed = (lvl: number) => lvl;
 
 /** Otwiera Zwój: nowa umiejętność albo kopia, która podnosi poziom. */
-export function openScroll(ctx: Ctx): { id: SkillId; dupe: boolean } | null {
+/** Wynik losowania: co wypadło i jak zmienił się poziom (umiejętność) albo gwiazdki (chowaniec, wierzchowiec). */
+export interface DrawResult<K> { id: K; dupe: boolean; from: number; to: number; cards?: number; need?: number; stones?: number }
+
+export function openScroll(ctx: Ctx): DrawResult<SkillId> | null {
   const s = ctx.s;
   if (s.scrolls < 1 || !skillsUnlocked(s)) return null;
   s.scrolls--;
@@ -38,11 +41,12 @@ export function openScroll(ctx: Ctx): { id: SkillId; dupe: boolean } | null {
 }
 
 /** Losuje umiejętność od rzadkości `min` (epicki Zwój z kalendarza: min = 3). */
-export function drawSkill(ctx: Ctx, min: number): { id: SkillId; dupe: boolean } {
+export function drawSkill(ctx: Ctx, min: number): DrawResult<SkillId> {
   const s = ctx.s;
   const r = drawRarity(ctx, min);
   const id = pick(ctx.rng, SKILL_IDS.filter(k => SKILLS[k].r === r));
   const dupe = !!s.skills.lv[id];
+  const from = s.skills.lv[id] ?? 0;
   if (!dupe) {
     s.skills.lv[id] = 1;
     s.skills.cards[id] = 0;
@@ -56,7 +60,8 @@ export function drawSkill(ctx: Ctx, min: number): { id: SkillId; dupe: boolean }
   }
   invalidate(ctx);
   ctx.dirty = true;
-  return { id, dupe };
+  const to = s.skills.lv[id] ?? 1;
+  return { id, dupe, from, to, cards: s.skills.cards[id] ?? 0, need: to < SKILL_MAX ? skillNeed(to) : 0 };
 }
 
 export function equipSkill(ctx: Ctx, id: SkillId | null, slot: number): boolean {
@@ -73,12 +78,13 @@ export function equipSkill(ctx: Ctx, id: SkillId | null, slot: number): boolean 
 /* ---------- chowańce ---------- */
 
 /** Dodaje chowańca albo wierzchowca do kolekcji; duplikat daje gwiazdkę (albo Kamienie po 5 gwiazdkach). */
-function grant<K extends string>(ctx: Ctx, coll: Partial<Record<K, { lvl: number; stars: number }>>, id: K): boolean {
+function grant<K extends string>(ctx: Ctx, coll: Partial<Record<K, { lvl: number; stars: number }>>, id: K): DrawResult<K> {
   const c = coll[id];
-  if (!c) { coll[id] = { lvl: 1, stars: 0 }; return false; }
-  if (c.stars < STARS_MAX) c.stars++;
-  else ctx.s.stones += DUPE_STONES;
-  return true;
+  if (!c) { coll[id] = { lvl: 1, stars: 0 }; return { id, dupe: false, from: 0, to: 0 }; }
+  const from = c.stars;
+  if (c.stars < STARS_MAX) { c.stars++; return { id, dupe: true, from, to: c.stars }; }
+  ctx.s.stones += DUPE_STONES;
+  return { id, dupe: true, from, to: from, stones: DUPE_STONES };
 }
 
 export function startHatch(ctx: Ctx, r: number): boolean {
@@ -98,11 +104,11 @@ export function tickHatch(ctx: Ctx, ms: number, quiet = false): PetId | null {
   if (h.left > 0) return null;
   ctx.s.hatch = null;
   const id = pick(ctx.rng, PET_IDS.filter(k => PETS[k].r === h.r));
-  const dupe = grant(ctx, ctx.s.pets, id);
+  const res = grant(ctx, ctx.s.pets, id);
   if (!ctx.s.petSel) ctx.s.petSel = id;
   invalidate(ctx);
   ctx.dirty = true;
-  if (!quiet) ctx.emit({ t: 'modal', m: { kind: 'draw', what: 'pet', id, dupe } });
+  if (!quiet) ctx.emit({ t: 'modal', m: { kind: 'draw', what: 'pet', ...res } });
   return id;
 }
 
@@ -116,17 +122,17 @@ export function selectPet(ctx: Ctx, id: PetId | null): boolean {
 
 /* ---------- wierzchowce ---------- */
 
-export function openSaddle(ctx: Ctx): { id: MountId; dupe: boolean } | null {
+export function openSaddle(ctx: Ctx): DrawResult<MountId> | null {
   const s = ctx.s;
   if (s.saddles < 1 || !mountsUnlocked(s)) return null;
   s.saddles--;
   const r = drawRarity(ctx);
   const id = pick(ctx.rng, MOUNT_IDS.filter(k => MOUNTS[k].r === r));
-  const dupe = grant(ctx, s.mounts, id);
+  const res = grant(ctx, s.mounts, id);
   if (!s.mountSel) s.mountSel = id;
   invalidate(ctx);
   ctx.dirty = true;
-  return { id, dupe };
+  return res;
 }
 
 export function selectMount(ctx: Ctx, id: MountId | null): boolean {

@@ -62,10 +62,16 @@ export const recPower = (land: number) => {
 };
 
 /**
- * Szansa (w %) na przeskok o 1 i o 2 rzadkości na danym poziomie kuźni.
- * `rel` to względna premia z Hartowania (np. 10 = szanse × 1,1).
+ * Wersja zasad przeskoku zapisana w przedmiocie (`jv`), żeby serwer sprawdzał każdy wytop według zasad,
+ * z którymi powstał. 1 — do października 2026: ta sama szansa na każdą rzadkość. 2 — obecna: przeskok na
+ * rzadkości Legendarną, Mityczną i Boską jest trudniejszy, a pewny przeskok nie daje Boskiego.
  */
-export function jumpChances(lvl: number, rel = 0): [number, number] {
+export const JUMP_V = 2;
+/** Mnożnik szansy na przeskok, który kończy się na danej rzadkości (wersja 2). */
+export const JUMP_TO_MULT = [1, 1, 1, 1, 0.8, 0.55, 0.25];
+
+/** Bazowa szansa (w %) na przeskok o 1 i o 2 rzadkości na danym poziomie kuźni (z premią Hartowania `rel`). */
+export function jumpBase(lvl: number, rel = 0): [number, number] {
   const k = 1 + rel / 100;
   for (let i = 0; i < JUMP_TABLE.length - 1; i++) {
     const [a, p1, q1] = JUMP_TABLE[i];
@@ -81,9 +87,26 @@ export function jumpChances(lvl: number, rel = 0): [number, number] {
 /** Smocza Stal przeskakuje najwyżej o 1, Gwiezdny Kruszec wcale. */
 export const maxJump = (ore: number) => (ore === 6 ? 0 : ore === 5 ? 1 : 2);
 
+/**
+ * Szansa (w %) na przeskok o 1 i o 2 rzadkości przy wytopie rudy `ore` (bez rudy — szansa bazowa).
+ * Od wersji 2 przeskok tym trudniejszy, im rzadszy wynik (JUMP_TO_MULT). Gdy ruda przeskakuje najwyżej o 1,
+ * obie szanse prowadzą do tej samej rzadkości (wytop sumuje je).
+ */
+export function jumpChances(lvl: number, rel = 0, ore = -1, ver = JUMP_V): [number, number] {
+  const [p1, p2] = jumpBase(lvl, rel);
+  if (ore < 0 || ver < 2 || !ORES[ore]) return [p1, p2];
+  const f = ORES[ore].floor;
+  const m1 = JUMP_TO_MULT[Math.min(6, f + 1)];
+  const m2 = maxJump(ore) >= 2 ? JUMP_TO_MULT[Math.min(6, f + 2)] : m1;
+  return [p1 * m1, p2 * m2];
+}
+
+/** Czy pewny przeskok (po PITY_MAX wytopach bez przeskoku) działa dla tej rudy. Od wersji 2 nie daje Boskiego. */
+export const pityAllowed = (ore: number, ver = JUMP_V) => maxJump(ore) >= 1 && (ver < 2 || ORES[ore].floor + 1 <= 5);
+
 /** Rozkład wyniku wytopu: lista [rzadkość, szansa w %]. */
-export function dist(ore: number, lvl: number, rel = 0): [number, number][] {
-  const [p1, p2] = jumpChances(lvl, rel);
+export function dist(ore: number, lvl: number, rel = 0, ver = JUMP_V): [number, number][] {
+  const [p1, p2] = jumpChances(lvl, rel, ore, ver);
   const r = ORES[ore].floor;
   const mj = maxJump(ore);
   if (mj === 0) return [[r, 100]];

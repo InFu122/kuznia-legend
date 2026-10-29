@@ -627,6 +627,24 @@ export const RES_ICONS: Record<string, IconData> = {
     '................',
     '................',
   ], pal: {"k": "#120d16", "p": "#9aa4ae", "q": "#5d646d", "s": "#3a3f46", "r": "#ff8a3c"} },
+  'klucz': { rows: [
+    '................',
+    '..kkkk..........',
+    '.kyyyyk.........',
+    'kyYYYYyk........',
+    'yYZkkYYyk.......',
+    'yYk..kYyk.......',
+    'yYk..kYyyk......',
+    'yYYkkYYYYyk.....',
+    'kyYYYYyYYYyk....',
+    '.kyyyykyYYYyk...',
+    '..kkkk.kkyYYyk..',
+    '.......kyyYYYyk.',
+    '.......kyYyYYYyk',
+    '........kykyYyk.',
+    '.........k.kyk..',
+    '............k...',
+  ], pal: {"k": "#120d16", "y": "#a8741c", "Y": "#e8b84a", "Z": "#fff1b8"} },
 };
 
 /** Umiejętności 24×24. */

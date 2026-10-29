@@ -20,7 +20,7 @@ import { ResearchPanel } from './panels/Research';
 import { TUTORIAL } from '../data';
 import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
-import { initMusic, moodOf, setMood, setMusic } from './music';
+import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
 
 const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['klan', 'Klan'], ['kodeks', 'Kodeks']];
 
@@ -59,10 +59,12 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     onReady?.();
     // Kalendarz logowania wita gracza, który już grał (nowy gracz ma najpierw wstęp i samouczek).
     if (game.s.stats.smelted > 0 && game.canClaimLogin()) { queue.current.push({ kind: 'missions', tab: 'login' }); force(x => x + 1); }
-    const unlock = () => { unlockAudio(); initMusic(); };
-    window.addEventListener('pointerdown', unlock);
-    window.addEventListener('keydown', unlock);
-    return () => { off(); clearInterval(id); window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
+    // Na telefonie przeglądarka pozwala na dźwięk dopiero po puszczeniu palca (pointerup/touchend/click),
+    // a nie przy samym dotknięciu — dlatego nasłuchujemy kilku zdarzeń i ponawiamy start muzyki.
+    const unlock = () => { unlockAudio(); initMusic(); kickMusic(); };
+    const evs = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
+    for (const ev of evs) window.addEventListener(ev, unlock, { capture: true, passive: true });
+    return () => { off(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
   }, [game]);
 
   // Podświetlenie przycisku, o którym mówi bieżący krok samouczka.
@@ -146,7 +148,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} onInfo={land => open({ kind: 'landinfo', land })} />}
           {tab === 'klan' && <ClanPanel game={game} online={save.mode === 'server'} openChat={() => open({ kind: 'chat', ch: 'clan' })} />}
-          {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} />}
+          {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} onInfo={id => open({ kind: 'dunginfo', id })} />}
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} />}
         </main>
       </div>

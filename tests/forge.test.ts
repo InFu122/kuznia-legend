@@ -19,7 +19,7 @@ describe('wytop', () => {
     }
   });
 
-  it('na 30. poziomie około co czwarty wytop Mithrilu przeskakuje', () => {
+  it('na 30. poziomie około co piąty wytop Mithrilu przeskakuje na Legendarny, a co 45. na Mityczny', () => {
     const { ctx, s } = makeGame(11);
     s.forge.lvl = 30;
     s.stats.smelted = 10;
@@ -30,10 +30,11 @@ describe('wytop', () => {
       if (it.r === 4) up1++;
       if (it.r === 5) up2++;
     }
-    expect(up1 / 20000).toBeGreaterThan(0.23);
-    expect(up1 / 20000).toBeLessThan(0.27);
-    expect(up2 / 20000).toBeGreaterThan(0.03);
-    expect(up2 / 20000).toBeLessThan(0.05);
+    // bazowo 25% i 4%, ale przeskok na Legendarny ×0,8, na Mityczny ×0,55
+    expect(up1 / 20000).toBeGreaterThan(0.18);
+    expect(up1 / 20000).toBeLessThan(0.22);
+    expect(up2 / 20000).toBeGreaterThan(0.016);
+    expect(up2 / 20000).toBeLessThan(0.029);
   });
 
   it(`po ${B.PITY_MAX} wytopach bez przeskoku następny przeskakuje na pewno`, () => {

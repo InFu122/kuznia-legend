@@ -60,7 +60,7 @@ export function rpcObiegSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
   if (!save) throw err('Najpierw zapisz grę.', PRECONDITION);
   const s = save.value.state;
   const now = Date.now();
-  const proof = proofFor(nk, userId, s);
+  const proof = proofFor(nk, userId, s, save.value.meta);
   const rng = serverRng(nk);
 
   // 1. Twoje przedmioty do puli — tylko prawdziwe wytopy, każdy raz.

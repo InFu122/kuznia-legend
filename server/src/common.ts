@@ -38,6 +38,7 @@ export interface SaveMeta {
   f0: number;        // poziom kuźni w chwili t0
   pity: number[];    // numery wytopów z pewnym przeskokiem, które serwer już uznał
   clMax?: number;    // najwyższy poziom klanu gracza (premia do czasu ulepszeń w kontroli tempa)
+  jv2?: number;      // od tego numeru wytopu obowiązują zasady przeskoku w wersji 2 (wcześniejsze mogą mieć dawne)
 }
 export interface SaveValue { state: GameState; power: number; savedAt: number; meta?: SaveMeta }
 

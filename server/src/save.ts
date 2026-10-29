@@ -22,17 +22,23 @@ export const SEEDS_AHEAD = B.SEEDS_RESERVE + 100;
 /** Zapas czasu w kontroli tempa kuźni (opóźnienia, zegar). */
 const PACE_SLACK_MS = 10 * 60000;
 
-/** Klucze, którymi serwer sprawdza przedmioty jednego gracza. */
-export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number }
+/** Klucze, którymi serwer sprawdza przedmioty jednego gracza. `jvFrom` — od którego wytopu obowiązują nowe zasady przeskoku. */
+export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number; jvFrom: number }
 
-export function proofFor(nk: nkruntime.Nakama, userId: string, s: GameState): Proof {
-  return { nk, secret: smeltSecret(nk, userId), sign: signSecret(nk), maxRel: techMods(s).jumpRel, forge: s.forge.lvl };
+/**
+ * Pierwszy numer wytopu, który musi spełniać zasady przeskoku w wersji 2. Wytopy wydane przed aktualizacją
+ * (do zapisanego numeru plus zapas ziaren, które gra mogła już mieć) mogą mieć dawne, wyższe szanse.
+ */
+export const jvFromFor = (sx: number) => sx + SEEDS_AHEAD * 4;
+
+export function proofFor(nk: nkruntime.Nakama, userId: string, s: GameState, meta?: SaveMeta): Proof {
+  return { nk, secret: smeltSecret(nk, userId), sign: signSecret(nk), maxRel: techMods(s).jumpRel, forge: s.forge.lvl, jvFrom: meta?.jv2 ?? jvFromFor(s.sx || 0) };
 }
 
 /** Czy wytop przedmiotu zgadza się z ziarnem serwera. */
 export function smeltOk(p: Proof, it: Item, sxNext: number): boolean {
   if (typeof it.sx !== 'number' || !Number.isInteger(it.sx) || it.sx < 0 || it.sx >= sxNext) return false;
-  return verifySmelt(it, seedOf(p.nk, p.secret, it.sx), p.maxRel, p.forge) === null;
+  return verifySmelt(it, seedOf(p.nk, p.secret, it.sx), p.maxRel, p.forge, it.sx < p.jvFrom) === null;
 }
 
 /**
@@ -140,6 +146,8 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   // Zapis sprzed wersji 8 (dawne, krótsze czasy ulepszeń): tempo kuźni liczy się od teraz.
   if (cur && (Number(cur.value.state.v) || 0) < 8) meta = { t0: now, f0: target, pity: meta.pity, clMax: meta.clMax };
   meta.clMax = Math.max(meta.clMax || 0, s.clanLvl);
+  // Nowe zasady przeskoku (wersja 2): wytopy wydane przed aktualizacją zachowują dawne szanse.
+  if (meta.jv2 === undefined) meta.jv2 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
   // W trybie testowym serwer nie pilnuje tempa kuźni, tylko przesuwa punkt odniesienia — po wyłączeniu
   // trybu testowego tempo liczy się od ostatniego zapisu, a nie od początku testów.
   if (maxSpeed > 1) { meta.t0 = now; meta.f0 = target; }
@@ -153,7 +161,7 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   const nick = ensureName(nk, userId, s.name);
   s.name = nick.name;
 
-  const proof = proofFor(nk, userId, s);
+  const proof = proofFor(nk, userId, s, meta);
   const ver = verifiedEq(proof, s, meta.pity || []);
   meta.pity = ver.pity;
   const power = powerOf(s, ver.eq);

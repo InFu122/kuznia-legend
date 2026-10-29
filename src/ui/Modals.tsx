@@ -1,10 +1,10 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
   B, DUNGEONS, ELEM, ELEM_KEYS, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
-  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, TECH, TECH_UNLOCK_FORGE, oreShares, setOfLand,
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, oreShares, setOfLand, skillValue,
 } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
-import { baseName, dist, gOf, goldWave, itemName, jumpChances, recPower } from '../engine/formulas';
+import { JUMP_TO_MULT, baseName, dist, gOf, goldWave, itemName, jumpChances, recPower } from '../engine/formulas';
 import { allMods } from '../engine/mods';
 import { upgradeCost, upgradeTime } from '../engine/forge';
 import type { Game } from '../engine/game';
@@ -13,14 +13,15 @@ import type { ModalData } from '../engine/types';
 import { ItemCard } from './ItemCard';
 import { DecisionView } from './Decision';
 import { Px } from './Px';
-import { elemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, techUrl } from '../art/render';
+import { elemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl, techUrl } from '../art/render';
 import { hasProof } from '../engine/verify';
-import { fmt, pct, pctS, tfmt } from './format';
-import { Dist } from './panels/Forge';
+import { f1, fmt, pct, pctS, tfmt } from './format';
+import { OddsBar } from './panels/Forge';
 import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
+import { DungInfoView } from './panels/Dungeon';
 import { ChatView } from './panels/Chat';
 import type { Tab } from './icons';
 
@@ -182,6 +183,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <MixView game={game} what={m.what} close={close} />;
     case 'landinfo':
       return <LandInfoView game={game} land={m.land} close={close} />;
+    case 'dunginfo':
+      return <DungInfoView game={game} id={m.id} close={close} />;
     case 'missions':
       return <MissionsView game={game} initial={m.tab} close={close} />;
     case 'ranking':
@@ -190,19 +193,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <ArenaView game={game} close={close} />;
     case 'chat':
       return <ChatView game={game} initial={m.ch} close={close} goClan={() => { close(); goTab?.('klan'); }} />;
-    case 'draw': {
-      const name = m.what === 'skill' ? SKILLS[m.id as SkillId].n : m.what === 'pet' ? PETS[m.id as PetId].n : MOUNTS[m.id as MountId].n;
-      const r = m.what === 'skill' ? SKILLS[m.id as SkillId].r : m.what === 'pet' ? PETS[m.id as PetId].r : MOUNTS[m.id as MountId].r;
-      const what = m.what === 'skill' ? 'Umiejętność' : m.what === 'pet' ? 'Chowaniec' : 'Wierzchowiec';
-      return (
-        <>
-          <div class="eyebrow">{m.what === 'pet' ? 'Jajo się wykluło' : m.what === 'skill' ? 'Zwój zaklęć' : 'Siodło'}</div>
-          <div class={`h rt${r}`}>{name}</div>
-          <p class="sub">{what} · {RAR[r].n}. {m.dupe ? (m.what === 'skill' ? 'Kopia przybliża następny poziom.' : 'Kopia dodaje gwiazdkę (albo Kamienie, gdy gwiazdek jest już 5).') : 'Nowość w kolekcji!'}</p>
-          <Close onClose={close} label="Dalej" />
-        </>
-      );
-    }
+    case 'draw':
+      return <DrawView m={m} close={close} />;
     case 'reset':
       return (
         <>
@@ -215,38 +207,104 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         </>
       );
     case 'info':
-      return m.k === 'level' ? <LevelInfo game={game} close={close} /> : (
-        <>
-          <div class="eyebrow">Kuźnia · poziom {s.forge.lvl}</div>
-          <div class="h">Jak działa wytop</div>
-          <p class="sub">Kuźnia zamienia rudę zdobytą w walce na ekwipunek. Jedna ruda to jeden wytop i jeden losowy przedmiot: losuje się slot, poziom przedmiotu i dodatkowe statystyki.</p>
-          <p class="sub">Ruda gwarantuje minimalną rzadkość. Na przykład z Mithrilu zawsze wyjdzie co najmniej Epicki przedmiot. Poziom kuźni daje szansę, że przedmiot przeskoczy o jedną lub dwie rzadkości wyżej.</p>
-          <div class="eyebrow">Szanse na twoim poziomie kuźni (zablokowane rudy — po odblokowaniu)</div>
-          <div class="otable-wrap">
-            <table class="otable">
-              <thead><tr><th>Ruda</th><th>Co może wyjść</th></tr></thead>
-              <tbody>
-                {ORES.map((o, i) => {
-                  const off = s.forge.lvl < o.lvl;
-                  return (
-                    <tr key={o.n} class={`${i === s.oreSel ? 'sel' : ''}${off ? ' off' : ''}`}>
-                      <td class="oname"><span class="orow"><Px src={oreUrl(i)} size={24} />{o.n}</span>{off && <small class="unl">od {o.lvl}. poz. kuźni</small>}</td>
-                      <td><Dist d={dist(i, Math.max(s.forge.lvl, o.lvl), techMods(s).jumpRel)} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p class="sub iline"><Px src={resUrl('czas')} size={20} /><span><b>Gwarancja przeskoku:</b> jeśli {B.PITY_MAX} wytopów z rzędu nie przeskoczy, następny przeskakuje na pewno. Twój licznik: {s.pity}/{B.PITY_MAX}. Smocza Stal przeskakuje najwyżej o 1 rzadkość, a Gwiezdny Kruszec wcale.</span></p>
-          <p class="sub iline"><Px src={elemUrl('zar')} size={20} /><span><b>Domieszki</b> (od {B.ELEM_FORGE_LVL}. poziomu kuźni) nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans na rzadkość.</span></p>
-          <p class="sub iline"><Px src={setOreUrl('lowca')} size={20} /><span><b>Rudy unikalne</b> (od {SET_FORGE_LVL}. poziomu kuźni) dodane do wytopu robią z przedmiotu część zestawu. 2 i 4 części tego samego zestawu dają premie. Taki wytop zawsze przeskakuje o co najmniej 1 rzadkość (jeśli ruda bazowa w ogóle może przeskoczyć).</span></p>
-          <p class="sub iline"><Px src={techUrl('k_hart')} size={20} /><span><b>Hartowanie</b> w Nauce (od {TECH_UNLOCK_FORGE}. poziomu kuźni) mnoży szanse na przeskok{techMods(s).jumpRel ? `; twoja premia: +${pct(techMods(s).jumpRel)} względnie, już wliczona w tabelę` : ''}.</span></p>
-          <p class="sub iline"><Px src={resUrl('zloto')} size={20} /><span><b>Po wytopie</b> porównujesz przedmiot z założonym: zielona liczba to zysk Mocy. Załóż go albo sprzedaj za złoto. Sprzedane przedmioty Rzadkie i lepsze mogą trafić do Wielkiego Obiegu.</span></p>
-          <Close onClose={close} label="Rozumiem" />
-        </>
-      );
+      return m.k === 'level' ? <LevelInfo game={game} close={close} /> : <ForgeInfo game={game} close={close} />;
   }
+}
+
+/** Liczba z przecinkiem dziesiętnym (0,55). */
+const f2 = (v: number) => String(v).replace('.', ',');
+
+/** Okno „Jak działa wytop”: trzy kroki, szanse każdej rudy na pasku i krótkie karty z zasadami. */
+function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
+  const s = game.s;
+  const rel = techMods(s).jumpRel;
+  const sel = s.oreSel;
+  const tips: [string, string, JSX.Element][] = [
+    [resUrl('czas'), 'Gwarancja przeskoku', <>Po {B.PITY_MAX} wytopach bez przeskoku następny przeskakuje na pewno o 1 (ale nie na Boski). Twój licznik: <b>{s.pity}/{B.PITY_MAX}</b>.</>],
+    [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy bazowej, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski ×{f2(JUMP_TO_MULT[6])}. Paski wyżej już to uwzględniają.</>],
+    [elemUrl('zar'), `Domieszki · od ${B.ELEM_FORGE_LVL}. poziomu`, <>Nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans.</>],
+    [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Robią z przedmiotu część zestawu (premie za 2 i 4 części) i dają pewny przeskok o co najmniej 1.</>],
+    [techUrl('k_hart'), `Hartowanie · od ${TECH_UNLOCK_FORGE}. poziomu`, <>Badanie w Nauce mnoży szanse na przeskok.{rel ? <> Twoja premia: <b>+{pct(rel)}</b>, już w paskach.</> : ''}</>],
+    [resUrl('zloto'), 'Sprzedaż', <>Niepotrzebny przedmiot sprzedajesz za złoto. Rzadkie i lepsze mogą trafić do Wielkiego Obiegu.</>],
+  ];
+  return (
+    <>
+      <div class="eyebrow">Kuźnia · poziom {s.forge.lvl}</div>
+      <div class="h">Jak działa wytop</div>
+      <div class="fi-steps">
+        <div class="fi-step"><Px src={oreUrl(sel)} size={32} /><b>1. Ruda</b><small>wyznacza najniższą rzadkość</small></div>
+        <div class="fi-step"><Px src={resUrl('kowadlo')} size={32} /><b>2. Kuźnia</b><small>szansa na przeskok o 1–2 wyżej</small></div>
+        <div class="fi-step"><Px src={resUrl('zloto')} size={32} /><b>3. Decyzja</b><small>załóż albo sprzedaj</small></div>
+      </div>
+      <div class="fi-sec">Szanse na twoim poziomie kuźni</div>
+      <ul class="fi-odds">
+        {ORES.map((o, i) => {
+          const off = s.forge.lvl < o.lvl;
+          return (
+            <li key={o.n} class={`${i === sel ? 'sel' : ''}${off ? ' off' : ''}`}>
+              <Px src={oreUrl(i)} size={28} />
+              <div class="fi-o">
+                <div class="fi-on"><b>{o.n}</b><small>min. <span class={`rt${o.floor}`}>{RAR[o.floor].n}</span>{off ? ` · od ${o.lvl}. poziomu` : ''}</small></div>
+                <OddsBar d={dist(i, Math.max(s.forge.lvl, o.lvl), rel)} cls="compact" />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <div class="fi-sec">Warto wiedzieć</div>
+      <div class="fi-tips">
+        {tips.map(([ic, h, d]) => (
+          <div class="fi-tip" key={h}><Px src={ic} size={24} /><div><b>{h}</b><p>{d}</p></div></div>
+        ))}
+      </div>
+      <Close onClose={close} label="Rozumiem" />
+    </>
+  );
+}
+
+/** Wynik Zwoju, Jaja albo Siodła: ikona, rzadkość i co się zmieniło (nowość, poziom, gwiazdki). */
+function DrawView({ m, close }: { m: Extract<ModalData, { kind: 'draw' }>; close: () => void }) {
+  const skill = m.what === 'skill' ? SKILLS[m.id as SkillId] : null;
+  const def = skill ?? (m.what === 'pet' ? PETS[m.id as PetId] : MOUNTS[m.id as MountId]);
+  const r = def.r;
+  const icon = m.what === 'skill' ? skillUrl(m.id) : m.what === 'pet' ? resUrl('jajo' + Math.min(4, r)) : resUrl('siodlo');
+  const from = m.from ?? 0, to = m.to ?? 0;
+  const head = m.what === 'pet' ? 'Jajo się wykluło' : m.what === 'skill' ? 'Zwój zaklęć' : 'Siodło';
+  const what = m.what === 'skill' ? 'Umiejętność' : m.what === 'pet' ? 'Chowaniec' : 'Wierzchowiec';
+  const stars = (n: number, hl = -1) => Array.from({ length: STARS_MAX }, (_, i) => <i key={i} class={`${i < n ? 'on' : ''}${i === hl ? ' new' : ''}`}>★</i>);
+  let change: JSX.Element;
+  if (!m.dupe) change = <div class="draw-tag new">Nowość w kolekcji!</div>;
+  else if (skill) {
+    change = to > from ? (
+      <div class="draw-tag up">Poziom {from} → <b>{to}</b>{to - from > 1 ? ` (+${to - from})` : ''}</div>
+    ) : to >= SKILL_MAX ? <div class="draw-tag">Maksymalny poziom {SKILL_MAX}</div> : (
+      <div class="draw-prog">
+        <div class="row"><span>Kopia · poziom {to}</span><b>{m.cards ?? 0}/{m.need ?? 1} do poziomu {to + 1}</b></div>
+        <div class="bar"><i style={{ width: Math.min(100, ((m.cards ?? 0) / Math.max(1, m.need ?? 1)) * 100) + '%' }} /></div>
+      </div>
+    );
+  } else {
+    change = m.stones ? <div class="draw-tag">Komplet gwiazdek — dostajesz {m.stones} Kamieni</div>
+      : <div class="draw-tag up"><span class="stars">{stars(to, to - 1)}</span> {from} → <b>{to}</b> gwiazdek</div>;
+  }
+  return (
+    <div class={`dec draw r${r}`}>
+      <div class="eyebrow">{head}</div>
+      <div class="dec-drop" aria-hidden="true">
+        <span class="dec-burst" />
+        <Px src={icon} size={72} cls="dec-ico" />
+      </div>
+      <div class="dec-title">
+        <div class="dec-name">{def.n}</div>
+        <div class="irar">{what} · {RAR[r].n}</div>
+      </div>
+      {change}
+      {skill && <p class="sub draw-eff">{skill.d.replace('{v}', to > from && from > 0 ? `${f1(skillValue(m.id as SkillId, from))} → ${f1(skillValue(m.id as SkillId, to))}` : f1(skillValue(m.id as SkillId, Math.max(1, to))))}</p>}
+      {m.what === 'pet' && <p class="sub draw-eff">{PETS[m.id as PetId].d.replace('{v}', String(PETS[m.id as PetId].tv))}</p>}
+      {m.what === 'mount' && <p class="sub draw-eff">Bazowo: +{MOUNTS[m.id as MountId].dmg}% obrażeń, +{MOUNTS[m.id as MountId].hp}% zdrowia</p>}
+      <Close onClose={close} label="Dalej" />
+    </div>
+  );
 }
 
 /** Co wypada w krainie: z fal i z bossa (przycisk „i” na polu walki). */
@@ -372,7 +430,7 @@ function LevelInfo({ game, close }: { game: Game; close: () => void }) {
           </tbody>
         </table>
       </div>
-      <p class="sub">„Przeskok” to łączna szansa na rzadkość wyższą niż minimum rudy (w nawiasie: o dwie). {rel ? `Wliczona premia Hartowania: +${pct(rel)} względnie.` : ''}</p>
+      <p class="sub">„Przeskok” to bazowa szansa na rzadkość wyższą niż minimum rudy (w nawiasie: o dwie) — tyle ma przeskok do Epickiego. Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} tej szansy, na Mityczny ×{f2(JUMP_TO_MULT[5])}, na Boski ×{f2(JUMP_TO_MULT[6])}. {rel ? `Wliczona premia Hartowania: +${pct(rel)} względnie.` : ''}</p>
       <Close onClose={close} label="Rozumiem" />
     </>
   );
