@@ -7,6 +7,7 @@ import { computeStats, extraOf } from '../../src/engine/stats';
 import type { GameState, Item, SlotId } from '../../src/engine/types';
 import { verifySmelt } from '../../src/engine/verify';
 import { updateArenaHero } from './arena';
+import { announceDivine } from './chat';
 import {
   INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, testSpeed, userOf,
   type SaveMeta, type SaveValue,
@@ -27,7 +28,7 @@ export const SEEDS_AHEAD = B.SEEDS_RESERVE + 100;
 const PACE_SLACK_MS = 10 * 60000;
 
 /** Klucze, którymi serwer sprawdza przedmioty jednego gracza. `jvFrom` — od którego wytopu obowiązują nowe zasady przeskoku. */
-export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number; jvFrom: number }
+export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number; jvFrom: number; jv3From: number }
 
 /**
  * Pierwszy numer wytopu, który musi spełniać zasady przeskoku w wersji 2. Wytopy wydane przed aktualizacją
@@ -36,13 +37,16 @@ export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; max
 export const jvFromFor = (sx: number) => sx + SEEDS_AHEAD * 4;
 
 export function proofFor(nk: nkruntime.Nakama, userId: string, s: GameState, meta?: SaveMeta): Proof {
-  return { nk, secret: smeltSecret(nk, userId), sign: signSecret(nk), maxRel: techMods(s).jumpRel, forge: s.forge.lvl, jvFrom: meta?.jv2 ?? jvFromFor(s.sx || 0) };
+  return {
+    nk, secret: smeltSecret(nk, userId), sign: signSecret(nk), maxRel: techMods(s).jumpRel, forge: s.forge.lvl,
+    jvFrom: meta?.jv2 ?? jvFromFor(s.sx || 0), jv3From: meta?.jv3 ?? jvFromFor(s.sx || 0),
+  };
 }
 
 /** Czy wytop przedmiotu zgadza się z ziarnem serwera. */
 export function smeltOk(p: Proof, it: Item, sxNext: number): boolean {
   if (typeof it.sx !== 'number' || !Number.isInteger(it.sx) || it.sx < 0 || it.sx >= sxNext) return false;
-  return verifySmelt(it, seedOf(p.nk, p.secret, it.sx), p.maxRel, p.forge, it.sx < p.jvFrom) === null;
+  return verifySmelt(it, seedOf(p.nk, p.secret, it.sx), p.maxRel, p.forge, it.sx < p.jvFrom, it.sx < p.jv3From) === null;
 }
 
 /**
@@ -154,6 +158,8 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   meta.clMax = Math.max(meta.clMax || 0, s.clanLvl);
   // Nowe zasady przeskoku (wersja 2): wytopy wydane przed aktualizacją zachowują dawne szanse.
   if (meta.jv2 === undefined) meta.jv2 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
+  // Zasady w wersji 3 (nowe rudy, Boski tylko z przeskoku): wcześniejsze wytopy zachowują zasady wersji 2.
+  if (meta.jv3 === undefined) meta.jv3 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
   // W trybie testowym serwer nie pilnuje tempa kuźni, tylko przesuwa punkt odniesienia — po wyłączeniu
   // trybu testowego tempo liczy się od ostatniego zapisu, a nie od początku testów.
   if (maxSpeed > 1) { meta.t0 = now; meta.f0 = target; }
@@ -192,6 +198,12 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   }
   submitBoards(nk, logger, userId, ctx.username ?? '', s, power);
   updateArenaHero(nk, logger, userId, ctx.username ?? '', s, ver.eq, power);
+  // Nowy Boski przedmiot (założony albo czekający na decyzję) — ogłoszenie na czacie globalnym.
+  try {
+    const divine = Object.values(ver.eq).filter((it): it is Item => !!it);
+    if (s.pending && s.pending.r >= 6 && smeltOk(proof, s.pending, s.sx || 0)) divine.push(s.pending);
+    announceDivine(nk, userId, ctx.username ?? '', divine);
+  } catch (e) { logger.warn('Ogłoszenie Boskiego przedmiotu gracza %s: %s', userId, String(e)); }
   // Nagrody klanu zapisane w grze (numery w clanGot) znikają z kolejki do odebrania.
   try { ackRewards(nk, userId, s.clanGot); } catch (e) { logger.warn('Kolejka nagród klanu gracza %s: %s', userId, String(e)); }
   // Wojna klanów: punkty za aktywność dnia (kucie, walka, lochy) z różnicy liczników.

@@ -14,7 +14,7 @@ export const ACHIEVEMENTS: Record<AchId, AchDef> = {
   klucze: { n: 'Odkrywca lochów', d: 'Zużyj {n} kluczy w lochach', tiers: [10, 100, 500, 2000, 6000] },
   wieza: { n: 'Zdobywca Wieży', d: 'Dojdź do {n}. piętra Wieży Wyzwań', tiers: [25, 50, 100, 200, 400] },
   rzadkosc: { n: 'Blask rzadkości', d: 'Wykuj przedmiot co najmniej {n}', tiers: [3, 4, 5, 6] },
-  kolekcja: { n: 'Kolekcjoner', d: 'Odkryj {n} modeli przedmiotów', tiers: [20, 50, 100, 150, 217] },
+  kolekcja: { n: 'Kolekcjoner', d: 'Odkryj {n} modeli przedmiotów', tiers: [20, 50, 100, 150, 217, 310] },
   pokolenia: { n: 'Ród kowali', d: 'Zacznij {n}. pokolenie (Dziedzictwo)', tiers: [1, 3, 5, 10] },
   runy: { n: 'Runmistrz', d: 'Zbierz {n} poziomów run', tiers: [10, 50, 120, 240] },
   towarzysze: { n: 'Przyjaciel zwierząt', d: 'Zdobądź {n} chowańców i wierzchowców', tiers: [2, 6, 12, 18] },

@@ -97,6 +97,9 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
       for (const [t, v] of Object.entries(b.vs ?? {}) as [FoeType, number][]) vs[t] = (vs[t] ?? 0) + v;
     }
   }
+  // Boska aura: każdy założony Boski przedmiot wzmacnia całego bohatera
+  const aura = Object.values(eq).filter(it => it && it.r >= 6).length;
+  dmgPct += aura * B.DIVINE_AURA; hpPct += aura * B.DIVINE_AURA;
   dmg *= 1 + dmgPct / 100;
   hp *= 1 + hpPct / 100;
   crit = Math.min(crit, STAT_CAPS.crit); critd = Math.min(critd, STAT_CAPS.critd); spd = Math.min(spd, STAT_CAPS.spd);
@@ -108,7 +111,7 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
   const [sd, sh] = skillFactor(extra.skills, spd);
   const dps = dmg * (1 + (crit / 100) * (critd / 100)) * (1 + spd / 100) * (1 + eldmg / 100) + (petInt ? petAtk * 1000 / petInt : 0);
   const power = Math.round(dps * 4 * sd + (hp * 0.4 / (1 - dodge / 100)) * sh);
-  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, vs, sets, petAtk, petInt, power };
+  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, vs, sets, aura, petAtk, petInt, power };
 }
 
 /** Ekwipunek, którym walczy bohater: w Krypcie Bohaterów tylko przedmioty z legendą. */

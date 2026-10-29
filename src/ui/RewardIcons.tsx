@@ -1,6 +1,6 @@
 // Nagrody i zasoby jako ikonki z liczbą i nazwą — wszędzie, gdzie gra wymienia złoto, rudy, Księgi, Klejnoty itd.
 import type { ComponentChildren } from 'preact';
-import { ELEM, FRAMES, ORES, RAR, SETS, SKINS, type FrameId } from '../data';
+import { DIVINE_ORE, ELEM, FRAMES, ORES, RAR, SETS, SKINS, type FrameId } from '../data';
 import { avatarUrl, elemUrl, oreUrl, resUrl, setOreUrl } from '../art/render';
 import type { ElemKey, Reward, SetId } from '../engine/types';
 import { Avatar } from './Avatar';
@@ -24,7 +24,7 @@ export function rewardChips(r: Reward): RewardChip[] {
   const out: RewardChip[] = [];
   const add = (key: string, ic: string, v: number, w: string, nm: string, cls?: string) => out.push({ key, ic, n: short(v), w, nm, t: `${short(v)} ${w}`, cls });
   if (r.gold) add('gold', resUrl('zloto'), r.gold, 'złota', 'złoto', 'gold');
-  for (const [k, v] of Object.entries(r.ores ?? {})) if (v) add('o' + k, oreUrl(Number(k)), v, '× ' + ORES[Number(k)].n, ORES[Number(k)].n);
+  for (const [k, v] of Object.entries(r.ores ?? {})) if (v) add('o' + k, oreUrl(Number(k)), v, '× ' + ORES[Number(k)].n, ORES[Number(k)].n, Number(k) === DIVINE_ORE ? 'rt6' : undefined);
   for (const [k, v] of Object.entries(r.els ?? {})) if (v) add('e' + k, elemUrl(k), v, '× ' + ELEM[k as ElemKey].n, ELEM[k as ElemKey].n);
   for (const [k, v] of Object.entries(r.uniq ?? {})) if (v) add('u' + k, setOreUrl(k), v, '× ' + SETS[k as SetId].ore, SETS[k as SetId].ore);
   if (r.books) add('books', resUrl('ksiega'), r.books, pl(r.books, 'Księga', 'Księgi', 'Ksiąg') + ' Wiedzy', 'Księgi Wiedzy');

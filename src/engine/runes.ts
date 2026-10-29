@@ -3,7 +3,7 @@
 // Koszt rośnie po pięć poziomów na każdą rudę: 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal.
 // Przekuwanie: jedna statystyka dodatkowa przedmiotu losowana od nowa za rudę przedmiotu i złoto; gracz wybiera, którą wersję zatrzymać.
 // Z serwerem przekuwa serwer (server/src/runes.ts) i podpisuje przedmiot, żeby dalej liczył się do rankingów.
-import { B, ORES, RAR, SLOTS, SUBS, SUB_IDS } from '../data';
+import { B, DIVINE_ORE, ORES, RAR, SLOTS, SUBS, SUB_IDS } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWave } from './formulas';
 import { rnd, type Rng } from './rng';
@@ -18,7 +18,7 @@ export const runeLvl = (s: GameState, slot: SlotId) => Math.max(0, Math.min(B.RU
 
 /** Koszt wzmocnienia runy na poziom `lvl` (1–30). */
 export function runeCost(s: GameState, lvl: number): Cost {
-  const tier = Math.min(ORES.length - 2, Math.floor((lvl - 1) / 5));
+  const tier = Math.min(5, Math.floor((lvl - 1) / 5)); // Miedź … Smocza Stal (indeksy 0–5)
   return { ore: tier, n: 20 + 10 * ((lvl - 1) % 5), gold: goldWave(s.bestG) * 5 * lvl };
 }
 
@@ -48,9 +48,9 @@ export function upgradeRune(ctx: Ctx, slot: SlotId): boolean {
 
 /* ---------- przekuwanie ---------- */
 
-/** Koszt przekucia jednej statystyki: ruda przedmiotu i złoto, więcej dla wyższej rzadkości. */
+/** Koszt przekucia jednej statystyki: ruda przedmiotu (z Boskiej Rudy — Gwiezdny Kruszec) i złoto, więcej dla wyższej rzadkości. */
 export function reforgeCost(s: GameState, it: Item): Cost {
-  return { ore: it.ore, n: 15 * (it.r + 1), gold: goldWave(s.bestG) * 10 * (it.r + 1) };
+  return { ore: it.ore === DIVINE_ORE ? 6 : it.ore, n: 15 * (it.r + 1), gold: goldWave(s.bestG) * 10 * (it.r + 1) };
 }
 
 export function reforgeBlock(s: GameState, it: Item): string | null {

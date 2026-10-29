@@ -1,5 +1,5 @@
 // Krainy: karty z pixel-artowym tłem krainy, rudami (ikony i szanse), bossem i zalecaną Mocą.
-import { ELEM, LANDS, ORES, ROMAN } from '../../data';
+import { ELEM, LANDS, ORES, ROMAN, isRareOre } from '../../data';
 import { elemUrl, landBgUrl, oreUrl } from '../../art/render';
 import { recPower } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
@@ -36,7 +36,7 @@ export function LandsPanel({ game, onInfo }: { game: Game; onInfo: (land: number
                 <div class="lc-bot">
                   <div class="lc-info">
                     <div class="lc-ores">
-                      {L.drops.map(([o, p]) => <span key={o} class={`lo${o > L.main ? ' rare' : ''}`} title={ORES[o].n}><Px src={oreUrl(o)} size={16} />{pctS(p)}</span>)}
+                      {L.drops.map(([o, p]) => <span key={o} class={`lo${isRareOre(L, o) ? ' rare' : ''}`} title={ORES[o].n}><Px src={oreUrl(o)} size={16} />{pctS(p)}</span>)}
                       {L.el && <span class="lo" title={`Domieszka: ${ELEM[L.el].n}`}><Px src={elemUrl(L.el)} size={16} />4%</span>}
                     </div>
                     <div class="lc-boss">Boss: {L.boss} · Moc <span class={cls}>{fmt(rec)}</span></div>

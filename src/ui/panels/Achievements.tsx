@@ -1,6 +1,6 @@
 // Osiągnięcia (zakładka w oknie Zadań) i Kolekcja Kowala (karta w Kodeksie).
 import { useState } from 'preact/hooks';
-import { ACHIEVEMENTS, ACH_IDS, CODEX_PCT, ORES, SLOTS, SLOT_ORDER } from '../../data';
+import { ACHIEVEMENTS, ACH_IDS, CODEX_PCT, ORES, ORE_ORDER, SLOTS, SLOT_ORDER } from '../../data';
 import { itemUrl, oreUrl } from '../../art/render';
 import { ALL_KINDS, CODEX_TOTAL, achClaimed, achGoalText, achReached, achReward, achValue, codexOre } from '../../engine/achievements';
 import { RewardIcons } from '../RewardIcons';
@@ -52,7 +52,8 @@ export function CodexCard({ game }: { game: Game }) {
       <div class="h">+{f1(n * CODEX_PCT)}% obrażeń i zdrowia</div>
       <p class="sub">Każdy nowy model przedmiotu (rodzaj × ruda) daje na zawsze +{String(CODEX_PCT).replace('.', ',')}% obrażeń i zdrowia. Kolekcja zostaje po Dziedzictwie.</p>
       <ul class="codexores">
-        {ORES.map((o, i) => {
+        {ORE_ORDER.map(i => {
+          const o = ORES[i];
           const c = codexOre(s, i);
           return (
             <li key={i}>

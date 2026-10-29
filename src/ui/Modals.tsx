@@ -1,7 +1,7 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
-  B, ELEM, ELEM_KEYS, EVENT, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
-  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, oreShares, setOfLand, skillValue,
+  B, DIVINE_JUMP, DIVINE_ORE, ELEM, ELEM_KEYS, EVENT, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, ORE_ORDER, isRareOre, oreShares, setOfLand, skillValue,
 } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
 import { JUMP_TO_MULT, baseName, dist, gOf, goldWave, itemName, jumpChances, recPower } from '../engine/formulas';
@@ -68,7 +68,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         <>
           <div class="eyebrow">Boss pokonany</div>
           <div class="h">{L.boss}</div>
-          <RewardTiles r={{ gold: m.gold, ores: { [L.rare]: m.n }, books: m.books, uniq: set && m.uniq ? { [set]: m.uniq } : undefined, ...m.extra }} />
+          <RewardTiles r={{ ...m.extra, gold: m.gold, ores: { [L.rare]: m.n, ...m.extra?.ores }, books: m.books, uniq: set && m.uniq ? { [set]: m.uniq } : undefined }} />
           {m.found && <p class="sub">Ze skrzyni bossa wypadł przedmiot z Wielkiego Obiegu — sprawdź go w Kuźni.</p>}
           {set && m.uniq > 0 && (
             <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej część zestawu <b>{SETS[set].n}</b>. Więcej dają Leża Bossów.</p>
@@ -251,6 +251,9 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
 /** Liczba z przecinkiem dziesiętnym (0,55). */
 const f2 = (v: number) => String(v).replace('.', ',');
 
+/** Mnożniki przeskoku na Boski według rudy (np. „zwykle ×0,04, Eteryt ×0,07, …”). */
+const divMults = 'zwykle ×' + f2(DIVINE_JUMP) + ', ' + ORE_ORDER.filter(i => ORES[i].div).map(i => `${ORES[i].n} ×${f2(ORES[i].div!)}`).join(', ');
+
 /** Okno „Jak działa wytop”: trzy kroki, szanse każdej rudy na pasku i krótkie karty z zasadami. */
 function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
   const s = game.s;
@@ -258,9 +261,10 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
   const sel = s.oreSel;
   const tips: [string, string, JSX.Element][] = [
     [resUrl('czas'), 'Gwarancja przeskoku', <>Po {B.PITY_MAX} wytopach bez przeskoku następny przeskakuje na pewno o 1 (ale nie na Boski). Twój licznik: <b>{s.pity}/{B.PITY_MAX}</b>.</>],
-    [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy bazowej, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski ×{f2(JUMP_TO_MULT[6])}. Paski wyżej już to uwzględniają.</>],
+    [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy bazowej, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski {divMults}. Paski wyżej już to uwzględniają.</>],
+    [oreUrl(DIVINE_ORE), 'Boski przedmiot', <>Żadna ruda nie daje go na pewno. Ma własne imię, złotą ramkę i Boską aurę (+{B.DIVINE_AURA}% obrażeń i zdrowia za każdy założony), a serwer ogłasza go na czacie. {ORES[DIVINE_ORE].n}: bossowie aktu IV, loch sezonowy, wydarzenia i Przepustka.</>],
     [elemUrl('zar'), `Domieszki · od ${B.ELEM_FORGE_LVL}. poziomu`, <>Nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans.</>],
-    [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Robią z przedmiotu część zestawu (premie za 2 i 4 części) i dają pewny przeskok o co najmniej 1.</>],
+    [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Robią z przedmiotu część zestawu (premie za 2 i 4 części) i dają pewny przeskok o co najmniej 1 (ale nie na Boski).</>],
     [techUrl('k_hart'), `Hartowanie · od ${TECH_UNLOCK_FORGE}. poziomu`, <>Badanie w Nauce mnoży szanse na przeskok.{rel ? <> Twoja premia: <b>+{pct(rel)}</b>, już w paskach.</> : ''}</>],
     [resUrl('zloto'), 'Sprzedaż', <>Niepotrzebny przedmiot sprzedajesz za złoto. Rzadkie i lepsze mogą trafić do Wielkiego Obiegu.</>],
   ];
@@ -275,7 +279,8 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
       </div>
       <div class="fi-sec">Szanse na twoim poziomie kuźni</div>
       <ul class="fi-odds">
-        {ORES.map((o, i) => {
+        {ORE_ORDER.map(i => {
+          const o = ORES[i];
           const off = s.forge.lvl < o.lvl;
           return (
             <li key={o.n} class={`${i === sel ? 'sel' : ''}${off ? ' off' : ''}`}>
@@ -365,8 +370,8 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
         <li><Px src={resUrl('zloto')} size={24} /><span>Złoto</span><b>ok. {fmt(wave)} na falę</b></li>
         <li class="dl-sub"><span>Ruda — z {pct(B.ORE_DROP * 100)} fal (główna 1–{B.ORE_MAIN_MAX} sztuki, rzadsze po 1):</span></li>
         {shares.map(([o, p]) => (
-          <li key={o} class={o > L.main ? 'rare' : ''}>
-            <Px src={oreUrl(o)} size={24} /><span>{ORES[o].n}{o === L.main ? ' · główna' : o > L.main ? ' · rzadka' : ''}</span><b>{pctS(p)} dropów</b>
+          <li key={o} class={isRareOre(L, o) ? 'rare' : ''}>
+            <Px src={oreUrl(o)} size={24} /><span>{ORES[o].n}{o === L.main ? ' · główna' : isRareOre(L, o) ? ' · rzadka' : ''}</span><b>{pctS(p)} dropów</b>
           </li>
         ))}
         {L.el && <li><Px src={elemUrl(L.el)} size={24} /><span>Domieszka: {ELEM[L.el].n}</span><b>{pct(B.ELEM_DROP * 100)} fal</b></li>}
@@ -467,7 +472,7 @@ function LevelInfo({ game, close }: { game: Game; close: () => void }) {
           </tbody>
         </table>
       </div>
-      <p class="sub">„Przeskok” to bazowa szansa na rzadkość wyższą niż minimum rudy (w nawiasie: o dwie) — tyle ma przeskok do Epickiego. Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} tej szansy, na Mityczny ×{f2(JUMP_TO_MULT[5])}, na Boski ×{f2(JUMP_TO_MULT[6])}. {rel ? `Wliczona premia Hartowania: +${pct(rel)} względnie.` : ''}</p>
+      <p class="sub">„Przeskok” to bazowa szansa na rzadkość wyższą niż minimum rudy (w nawiasie: o dwie) — tyle ma przeskok do Epickiego. Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} tej szansy, na Mityczny ×{f2(JUMP_TO_MULT[5])}, na Boski {divMults}. {rel ? `Wliczona premia Hartowania: +${pct(rel)} względnie.` : ''}</p>
       <Close onClose={close} label="Rozumiem" />
     </>
   );

@@ -65,6 +65,7 @@ function boot(hotData?: { s?: string }) {
   const startChat = (l: ServerLink) => {
     if (chat) return;
     chat = new ChatLink(l);
+    chat.onDivine = m => toast(game.ctx, m.t, 'good');
     setChat(chat);
     void chat.start();
     l.clanInfo().then(i => chat?.setClan(i.clan?.id ?? null, i.clan?.name ?? '', i.clan?.ann ?? '')).catch(() => {});

@@ -384,6 +384,7 @@ export function rpcClanOreAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   const req = parse(payload);
   const ore = Math.floor(Number(req.ore));
   if (!ORES[ore]) throw err('Nieznana ruda.', INVALID);
+  if (!(ORE_WANT[ore] > 0)) throw err(`O ${ORES[ore].n} nie można prosić klanu.`, INVALID);
   const x = clanCtx(nk, userId);
   const up = upOf(nk, userId, req.up);
   const save = readSave(nk, userId);

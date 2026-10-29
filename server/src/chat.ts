@@ -2,7 +2,7 @@
 // filtruje wulgaryzmy, pilnuje trybu wolnego i podpisuje wiadomości nickiem gracza.
 // Wiadomość to JSON: { k: 'msg' | 'sys' | 'drop' | 'ann', t: tekst, n: nick, it?: przedmiot }.
 import { B, RAR } from '../../src/data';
-import { itemName } from '../../src/engine/formulas';
+import { JUMP_V, itemName } from '../../src/engine/formulas';
 import type { Item } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { INVALID, PRECONDITION, SYSTEM_USER, err, parse, readSave, userOf } from './common';
@@ -67,6 +67,40 @@ export function chatBlock(_ctx: nkruntime.Context, _logger: nkruntime.Logger, _n
   throw err('Wiadomości nie można zmieniać.', PRECONDITION);
 }
 
+/** Karta przedmiotu na czacie. */
+const dropCard = (it: Item) => ({ name: itemName(it), r: it.r, slot: it.slot, kind: it.kind, lvl: it.lvl, ore: it.ore, subs: it.subs, el: it.el, set: it.set });
+const globalRoom = (nk: nkruntime.Nakama) => nk.channelIdBuild(undefined, ROOMS[0], 1 as nkruntime.ChanType);
+interface Brag { sx: string[]; g: number }
+const readBrag = (nk: nkruntime.Nakama, userId: string): Brag => {
+  const o = nk.storageRead([{ collection: 'chat', key: 'brag', userId }]);
+  return o.length ? (o[0].value as unknown as Brag) : { sx: [], g: 0 };
+};
+const writeBrag = (nk: nkruntime.Nakama, userId: string, done: Brag) =>
+  nk.storageWrite([{ collection: 'chat', key: 'brag', userId, value: done as unknown as { [k: string]: unknown }, permissionRead: 0, permissionWrite: 0 }]);
+
+/**
+ * Boski przedmiot wykuty według zasad wersji 3 (nowe rudy, Boski tylko z przeskoku) — serwer sam ogłasza go
+ * na czacie globalnym, raz na przedmiot (bez limitu czasu i poziomu kuźni). `items` to przedmioty, których
+ * wytop serwer już potwierdził. Przedmioty sprzed aktualizacji (inna wersja zasad) nie są ogłaszane.
+ */
+export function announceDivine(nk: nkruntime.Nakama, userId: string, username: string, items: Item[]): number {
+  const fresh = items.filter(it => it && it.r >= 6 && typeof it.sx === 'number' && it.jv === JUMP_V && !it.obieg);
+  if (!fresh.length) return 0;
+  const done = readBrag(nk, userId);
+  const n = nameOf(nk, userId) || 'Kowal';
+  let k = 0;
+  for (const it of fresh) {
+    const mark = 'global:' + it.sx;
+    if (done.sx.includes(mark)) continue;
+    const content = { k: 'drop', n, div: true, t: `✦ ${n} wykuł(a) BOSKI przedmiot: ${itemName(it)}! ✦`, it: dropCard(it) };
+    nk.channelMessageSend(globalRoom(nk), content, userId, username, true);
+    done.sx = done.sx.concat(mark).slice(-60);
+    k++;
+  }
+  if (k) writeBrag(nk, userId, done);
+  return k;
+}
+
 /**
  * „Pochwal się dropem”: karta przedmiotu Mitycznego lub Boskiego na czacie klanu (automatycznie)
  * albo globalnym (na życzenie, raz na 10 minut). Serwer sprawdza, czy przedmiot naprawdę wykuto.
@@ -81,8 +115,7 @@ export function rpcChatDrop(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const s = save.value.state;
   if (!smeltOk(proofFor(nk, userId, s, save.value.meta), it, (s.sx || 0) + SEEDS_AHEAD)) throw err('Serwer nie potwierdził tego wytopu.', INVALID);
   const where = req.global === true ? 'global' : 'clan';
-  const o = nk.storageRead([{ collection: 'chat', key: 'brag', userId }]);
-  const done = o.length ? (o[0].value as { sx: string[]; g: number }) : { sx: [], g: 0 };
+  const done = readBrag(nk, userId);
   const mark = where + ':' + it.sx;
   if (done.sx.includes(mark)) return JSON.stringify({ ok: true, again: true });
   const now = Date.now();
@@ -93,10 +126,10 @@ export function rpcChatDrop(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const n = nameOf(nk, userId) || 'Kowal';
   const content = {
     k: 'drop', n, t: `${n} wykuł(a) ${RAR[it.r].n.toLowerCase()} przedmiot: ${itemName(it)}!`,
-    it: { name: itemName(it), r: it.r, slot: it.slot, lvl: it.lvl, ore: it.ore, subs: it.subs, el: it.el, set: it.set },
+    it: dropCard(it),
   };
   if (where === 'global') {
-    nk.channelMessageSend(nk.channelIdBuild(undefined, ROOMS[0], 1 as nkruntime.ChanType), content, userId, ctx.username ?? '', true);
+    nk.channelMessageSend(globalRoom(nk), content, userId, ctx.username ?? '', true);
     done.g = now;
   } else {
     const c = clanOf(nk, userId);
@@ -104,7 +137,7 @@ export function rpcChatDrop(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
     postClan(nk, c.g.id, content);
   }
   done.sx = done.sx.concat(mark).slice(-60);
-  nk.storageWrite([{ collection: 'chat', key: 'brag', userId, value: done, permissionRead: 0, permissionWrite: 0 }]);
+  writeBrag(nk, userId, done);
   return JSON.stringify({ ok: true });
 }
 

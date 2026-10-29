@@ -62,7 +62,8 @@ export const CLAN = {
 } as const;
 
 /** Ile rudy można poprosić (według rudy: Miedź … Gwiezdny Kruszec). */
-export const ORE_WANT = [30, 25, 20, 15, 10, 6, 4];
+/** Ile sztuk rudy (indeks jak ORES) można poprosić w klanie; 0 — nie można (Boska Ruda). */
+export const ORE_WANT = [30, 25, 20, 15, 10, 6, 4, 8, 5, 0];
 
 /** Bossowie klanowi — kolejni po każdym pokonaniu (potem od nowa, silniejsi). */
 export const CLAN_BOSSES = [

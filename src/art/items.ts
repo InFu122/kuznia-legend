@@ -1,5 +1,5 @@
 // Ekwipunek w pixel arcie (16×16). Każdy rodzaj przedmiotu ma 3 szablony — prosty (Miedź, Żelazo),
-// zdobiony (Srebro, Mithril, Adamantyt) i mistrzowski (Smocza Stal, Gwiezdny Kruszec) — a metal
+// zdobiony (Srebro, Mithril, Adamantyt, Obsydian) i mistrzowski (Smocza Stal, Eteryt, Gwiezdny Kruszec, Boska Ruda) — a metal
 // przemalowuje paleta rudy. Szablony: items-data.ts (generuje je tools/art/export.py).
 //
 // Znaki szablonu:
@@ -18,6 +18,9 @@ export const METALS: { n: string; ramp: [string, string, string, string]; gem: [
   { n: 'Adamantyt', ramp: ['#24502a', '#3f8742', '#79b86c', '#d0f0b4'], gem: ['#a3262e', '#ff6b6b'] },
   { n: 'Smocza Stal', ramp: ['#4e1015', '#8f2125', '#cf4637', '#ff9c78'], gem: ['#c76a00', '#ffc23a'] },
   { n: 'Gwiezdny Kruszec', ramp: ['#7a5a1d', '#c09a3e', '#f1dd96', '#fffbe8'], gem: ['#2a8fd6', '#9fe8ff'] },
+  { n: 'Obsydian', ramp: ['#17121f', '#33294a', '#5f5180', '#b9a6e0'], gem: ['#a3122e', '#ff5470'] },
+  { n: 'Eteryt', ramp: ['#1d5674', '#3f9cc4', '#8fd8f0', '#effdff'], gem: ['#6a35b8', '#d9a6ff'] },
+  { n: 'Boska Ruda', ramp: ['#8a5a12', '#d8a537', '#ffe48f', '#fffdf0'], gem: ['#e0306a', '#ffb3d1'] },
 ];
 
 const FIXED: Palette = {
@@ -37,8 +40,8 @@ export function itemPalette(ore: number): Palette {
 
 export type ItemKind = 'Miecz' | 'Topór' | 'Młot' | 'Włócznia' | 'Buława' | 'Hełm' | 'Napierśnik' | 'Rękawice' | 'Buty' | 'Pas' | 'Pierścień' | 'Amulet';
 
-/** Poziom zdobień z rudy: 0 — Miedź, Żelazo; 1 — Srebro, Mithril, Adamantyt; 2 — Smocza Stal, Gwiezdny Kruszec. */
-export const tierOf = (ore: number) => (ore <= 1 ? 0 : ore <= 4 ? 1 : 2);
+/** Poziom zdobień z rudy: 0 — Miedź, Żelazo; 1 — Srebro, Mithril, Adamantyt, Obsydian; 2 — Smocza Stal, Eteryt, Gwiezdny Kruszec, Boska Ruda. */
+export const tierOf = (ore: number) => (ore <= 1 ? 0 : ore <= 4 || ore === 7 ? 1 : 2);
 
 export const ITEM_KINDS = Object.keys(ITEM_TEMPLATES) as ItemKind[];
 

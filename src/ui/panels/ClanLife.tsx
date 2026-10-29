@@ -1,7 +1,7 @@
 // Życie klanu w zakładce Klan: Wspólna Kuźnia, boss klanowy, pomoc (ulepszenia i ruda) oraz sklep klanowy.
 // Stan przychodzi z serwera (clan_sync i akcje klanu); nagrody i pomoc klanu od razu trafiają do gry.
 import { useEffect, useState } from 'preact/hooks';
-import { CLAN, CLAN_LEVELS, CLAN_SHOP, CLAN_SHOP_IDS, ORES, ORE_WANT, type ClanShopId } from '../../data';
+import { CLAN, CLAN_LEVELS, CLAN_SHOP, CLAN_SHOP_IDS, ORES, ORE_ORDER, ORE_WANT, type ClanShopId } from '../../data';
 import { bossUrl, oreUrl, resUrl } from '../../art/render';
 import { donateCost, shopBlock, shopLeft, shopReward } from '../../engine/clan';
 import type { Game } from '../../engine/game';
@@ -157,7 +157,7 @@ export function ClanBossTab({ game }: { game: Game }) {
 function OreAsk({ game, d }: { game: Game; d: ClanLife }) {
   const a = useAction();
   const s = game.s;
-  const open = ORES.map((_, i) => i).filter(i => ORES[i].lvl <= s.forge.lvl);
+  const open = ORE_ORDER.filter(i => ORES[i].lvl <= s.forge.lvl && ORE_WANT[i] > 0);
   const [ore, setOre] = useState(open.includes(s.oreSel) ? s.oreSel : open[open.length - 1] ?? 0);
   const wait = d.oreNext ? d.oreNext - game.ctx.now() : 0;
   if (d.myOre) {

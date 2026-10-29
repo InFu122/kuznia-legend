@@ -1,8 +1,8 @@
 import { useRef } from 'preact/hooks';
-import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS } from '../../data';
-import { batchOf, canSmelt, refineRatio, sellFor, uniqActive } from '../../engine/forge';
+import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS , ORE_ORDER } from '../../data';
+import { batchOf, canSmelt, refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
 import { SpeedupButton } from './Shop';
-import { dist, itemName, jumpChances, maxJump } from '../../engine/formulas';
+import { dist, itemName, jumpChances, maxJump, pityAllowed } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
 import { Brag } from '../Decision';
@@ -53,7 +53,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
   const setOn = f.lvl >= SET_FORGE_LVL;
   const targets = game.autoTargets();
   const target = game.autoTarget();
-  // Szansa na przeskok dla wybranej rudy (rzadsze wyniki są trudniejsze); Gwiezdny Kruszec nie przeskakuje — wtedy bazowa.
+  // Szansa na przeskok dla wybranej rudy (rzadsze wyniki są trudniejsze, a przeskok do Boskiego zależy od rudy).
   const jo = mj >= 1 ? o : -1;
   const jn = jo >= 0 ? ` (${ORES[jo].n})` : '';
   const [j1, j2] = jumpChances(f.lvl, rel, jo);
@@ -71,7 +71,8 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
           <InfoBtn onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
         </div>
         <div class="ores2" role="radiogroup" aria-label="Ruda">
-          {ORES.map((x, i) => {
+          {ORE_ORDER.map(i => {
+            const x = ORES[i];
             const locked = f.lvl < x.lvl;
             return (
               <button key={x.n} role="radio" aria-checked={i === o} class={`ore2 rb${x.floor}${i === o ? ' on' : ''}${locked ? ' locked' : ''}`}
@@ -84,7 +85,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
           })}
         </div>
         <div class="o2-sel">
-          <b>{ORES[o].n}</b> · minimum <span class={`rt${ORES[o].floor}`}>{RAR[ORES[o].floor].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}
+          <b>{ORES[o].n}</b> · minimum <span class={`rt${ORES[o].floor}`}>{RAR[ORES[o].floor].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
         </div>
         {(elOn || setOn || SET_IDS.some(k => (s.uniq[k] ?? 0) > 0)) && (
           <div class="mixrow">
@@ -104,9 +105,9 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
             ) : SET_IDS.some(k => (s.uniq[k] ?? 0) > 0) && <span class="sub">Rudy unikalne wytopisz od {SET_FORGE_LVL}. poziomu kuźni.</span>}
           </div>
         )}
-        {set && <p class="sub">Następny wytop: część zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b>{mj >= 1 ? ' z pewnym przeskokiem o co najmniej 1 rzadkość' : ''}.</p>}
-        <OddsBar d={dist(o, Math.max(f.lvl, ORES[o].lvl), rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && mj >= 1 ? 'z zestawem bez najniższej' : undefined} />
-        {mj >= 1 && (
+        {set && <p class="sub">Następny wytop: część zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b>{pityAllowed(o) ? ' z pewnym przeskokiem o co najmniej 1 rzadkość' : mj >= 1 ? ' (przeskok do Boskiego nigdy nie jest pewny)' : ''}.</p>}
+        <OddsBar d={dist(o, Math.max(f.lvl, ORES[o].lvl), rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && pityAllowed(o) ? 'z zestawem bez najniższej' : undefined} />
+        {pityAllowed(o) && (
           <div class="pity">
             <span>Gwarancja przeskoku</span>
             <div class="bar"><i style={{ width: Math.min(100, (s.pity / B.PITY_MAX) * 100) + '%' }} /></div>
@@ -204,7 +205,7 @@ const LevelEyebrow = ({ text, onInfo }: { text: string; onInfo: (k: 'level') => 
 function Refine({ game }: { game: Game }) {
   const s = game.s;
   if (s.forge.lvl < B.REFINE_FORGE_LVL) return null;
-  const rows = ORES.map((_, i) => i).filter(i => refineRatio(s, i) > 0);
+  const rows = ORE_ORDER.filter(i => refineRatio(s, i) > 0);
   if (!rows.length) return null;
   return (
     <section class="card refine" aria-label="Rafinacja rud">
@@ -218,7 +219,7 @@ function Refine({ game }: { game: Game }) {
             <li key={i} class={max ? '' : 'off'}>
               <span class="rf-from"><Px src={oreUrl(i)} size={24} /><b>{fmt(s.ores[i])}</b></span>
               <span class="rf-ratio">{k} → 1</span>
-              <span class="rf-to"><Px src={oreUrl(i + 1)} size={24} />{ORES[i + 1].n}</span>
+              <span class="rf-to"><Px src={oreUrl(refineTo(i))} size={24} />{ORES[refineTo(i)].n}</span>
               <span class="rf-btns">
                 <button class="btn small" disabled={max < 1} onClick={() => game.refine(i, 1)}>+1</button>
                 <button class="btn small primary" disabled={max < 1} onClick={() => game.refine(i, max)}>+{fmt(max)}</button>

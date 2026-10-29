@@ -6,7 +6,7 @@ import { itemUrl, resUrl } from '../art/render';
 import { sparks } from './fx';
 import { play } from './sound';
 import { sellFor } from '../engine/forge';
-import { dist, itemName, mainVal, maxJump } from '../engine/formulas';
+import { dist, itemName, mainVal, maxJump, oreFloor } from '../engine/formulas';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
 import type { Item, SubId } from '../engine/types';
@@ -81,8 +81,8 @@ const STEP_MS = 420;
  * (od minimum rudy aż do wyniku). Im wyższy przeskok, tym dłuższa wspinaczka. Dotknięcie pomija animację.
  */
 function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
-  const floor = ORES[it.ore].floor;
-  const mj = maxJump(it.ore);
+  const floor = oreFloor(it.ore, it.jv ?? 1);
+  const mj = maxJump(it.ore, it.jv ?? 1);
   const steps: (number | 'hot')[] = ['hot', 'hot', ...Array.from({ length: it.r - floor + 1 }, (_, i) => floor + i)];
   const [i, setI] = useState(0);
   const box = useRef<HTMLDivElement>(null);

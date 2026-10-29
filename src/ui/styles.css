@@ -350,7 +350,10 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .cm.sys{font-size:12px; color:var(--ash); font-style:italic; text-align:center}
 .cm.ann{font-size:13px; background:rgba(231,190,98,.1); border-radius:8px; padding:6px 10px; color:var(--straw)}
 .cm.drop{--rc:var(--r5); border-left:3px solid var(--rc); background:var(--plate-2); border-radius:8px; padding:6px 10px}
-.cm.drop.r6{--rc:var(--r6)}
+.cm.drop.r6{--rc:var(--r6); border:1px solid #ffd84a88; border-left:3px solid var(--rc); box-shadow:0 0 14px -4px #ffd84a;
+  background:linear-gradient(110deg, #ffd84a22, var(--plate-2) 60%)}
+.cm.drop .cm-t{display:flex; flex-wrap:wrap; align-items:center; gap:4px}
+.cm-div{font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#ffe48f; text-shadow:0 0 6px #ffb80088}
 .cm.drop .rar{color:var(--rc)}
 .cm-subs{font-size:12px; color:var(--ash); font-variant-numeric:tabular-nums}
 .chat-in{display:flex; gap:8px; align-items:stretch}
@@ -384,7 +387,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .ore-fly img{position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; filter:drop-shadow(0 0 4px var(--c))}
 .ore-fly:has(img){width:24px; height:24px}
 .ore-fly.rare:has(img){width:32px; height:32px}
-/* Barwy rzadkości: od szarego Zwykłego po tęczowy Boski — im rzadszy przedmiot, tym mocniejszy efekt */
+/* Barwy rzadkości: od szarego Zwykłego po złoty Boski — im rzadszy przedmiot, tym mocniejszy efekt */
 .icard{position:relative; overflow:hidden}
 .icard:not(.r0) .ico{background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #140f0c), #140f0c 74%)}
 .icard:not(.r0) .iname{color:color-mix(in srgb, var(--rc) 78%, #ffffff)}
@@ -393,11 +396,21 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .icard.r3 .ico, .icard.r4 .ico, .icard.r5 .ico, .icard.r6 .ico{box-shadow:inset 0 0 0 1px var(--rc), 0 0 12px -2px var(--rc)}
 .icard.r4 .ico, .icard.r5 .ico, .icard.r6 .ico{animation:rpulse 2.4s ease-in-out infinite}
 @keyframes rpulse{50%{box-shadow:inset 0 0 0 1px var(--rc), 0 0 20px 1px var(--rc)}}
-/* Mityczny: obracające się promienie; Boski: tęczowe promienie i połysk przesuwający się po karcie */
+/* Mityczny: obracające się promienie; Boski: złote promienie, złota obracająca się ramka i połysk przesuwający się po karcie */
 .icard.r5 .ico::before, .icard.r6 .ico::before{content:""; position:absolute; inset:-60%; z-index:-1;
   background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 50%, transparent) 0 14deg, transparent 14deg 36deg);
   animation:rspin 9s linear infinite}
-.icard.r6 .ico::before{background:repeating-conic-gradient(from 0deg, #ff4f6488 0 10deg, #ffa23a88 10deg 20deg, #ffe06688 20deg 30deg, #5be37a88 30deg 40deg, #45a6ff88 40deg 50deg, #b77bff88 50deg 60deg)}
+.icard.r6 .ico::before{background:repeating-conic-gradient(from 0deg, #ffe48faa 0 9deg, transparent 9deg 22deg, #fff7c477 22deg 27deg, transparent 27deg 40deg)}
+@property --ga{syntax:'<angle>'; inherits:false; initial-value:0deg}
+@keyframes goldspin{to{--ga:360deg}}
+.icard.r6{border-color:transparent; animation:goldspin 4s linear infinite;
+  background:var(--div-bg, var(--plate-2)) padding-box, conic-gradient(from var(--ga), #7a4f10, #d8a537, #fff4c2, #ffd84a, #9a6a18, #ffe48f, #7a4f10) border-box}
+.icard.r6{--div-bg:linear-gradient(118deg, color-mix(in srgb, var(--r6) 18%, var(--plate-2)) 0%, var(--plate-2) 62%); border-width:2px; border-left-width:3px;
+  box-shadow:0 0 18px -4px #ffd84aaa}
+.icard.r6 .iname{color:#ffe48f; text-shadow:0 0 8px #ffb80066}
+.iaura{display:flex; align-items:center; gap:6px; font-size:12.5px; color:#ffe9a8; padding:6px 8px; border-radius:8px;
+  background:linear-gradient(90deg, #ffd84a26, transparent); border:1px solid #ffd84a55}
+.iaura b{color:#fff4c2}
 @keyframes rspin{to{transform:rotate(360deg)}}
 .icard.r6::after{content:""; position:absolute; inset:0; pointer-events:none;
   background:linear-gradient(105deg, transparent 35%, rgba(255,240,180,.16) 48%, transparent 61%); background-size:250% 100%; animation:sheen 3.2s ease-in-out infinite}
@@ -421,15 +434,18 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .slot.r5::before, .slot.r6::before{content:""; position:absolute; left:50%; top:26px; width:150px; height:150px; margin:-75px 0 0 -75px; z-index:-1; pointer-events:none;
   background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 45%, transparent) 0 14deg, transparent 14deg 36deg);
   animation:rspin 9s linear infinite}
-.slot.r6::before{background:repeating-conic-gradient(from 0deg, #ff4f6477 0 10deg, #ffa23a77 10deg 20deg, #ffe06677 20deg 30deg, #5be37a77 30deg 40deg, #45a6ff77 40deg 50deg, #b77bff77 50deg 60deg)}
+.slot.r6::before{background:repeating-conic-gradient(from 0deg, #ffe48f99 0 9deg, transparent 9deg 22deg, #fff7c466 22deg 27deg, transparent 27deg 40deg)}
+.slot.r6:not(.empty){border-width:2px; border-color:transparent; box-shadow:0 0 14px -3px #ffd84a; animation:goldspin 4s linear infinite;
+  background:radial-gradient(circle at 50% 30px, color-mix(in srgb, var(--r6) 34%, var(--plate-2)), var(--plate-2) 70%) padding-box,
+    conic-gradient(from var(--ga), #7a4f10, #d8a537, #fff4c2, #ffd84a, #9a6a18, #ffe48f, #7a4f10) border-box}
 .slot.r6::after{content:""; position:absolute; inset:0; pointer-events:none;
   background:linear-gradient(105deg, transparent 35%, rgba(255,240,180,.18) 48%, transparent 61%); background-size:250% 100%; animation:sheen 3.2s ease-in-out infinite}
 /* Iskry spod młota w kolorze rzadkości */
 .spark.r1{--sc:var(--r1)} .spark.r2{--sc:var(--r2)} .spark.r3{--sc:var(--r3)} .spark.r4{--sc:var(--r4)} .spark.r5{--sc:var(--r5)}
-.spark.r6{--sc:hsl(calc(var(--h) * 1deg) 95% 65%)}
+.spark.r6{--sc:hsl(calc(38deg + var(--h) * .04deg) 100% calc(58% + var(--h) * .07%))}
 .spark[class*=" r"]:not(.r0){background:var(--sc); box-shadow:0 0 8px var(--sc)}
 @media (prefers-reduced-motion: reduce){
-  .icard .ico, .icard .ico::before, .icard::after, .slot, .slot::before, .slot::after{animation:none !important}
+  .icard, .icard .ico, .icard .ico::before, .icard::after, .slot, .slot::before, .slot::after{animation:none !important}
   .icard.reveal::before{display:none}
 }
 .slot.r4 span, .slot.r5 span, .slot.r6 span{text-shadow:0 1px 2px #000, 0 0 4px #000}
@@ -523,7 +539,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .ob-bar{display:flex; gap:2px; height:10px; border-radius:5px; overflow:hidden; background:#100c09}
 .ob-bar i{display:block; min-width:3px}
 .rb-0{background:var(--r0)} .rb-1{background:var(--r1)} .rb-2{background:var(--r2)} .rb-3{background:var(--r3)} .rb-4{background:var(--r4)} .rb-5{background:var(--r5)}
-.rb-6{background:linear-gradient(90deg,#ff5f6d,#ffc371,#5bff9a,#58c7ff,#c77dff)}
+.rb-6{background:linear-gradient(90deg,#b8801c,#ffd84a,#fff4c2,#ffd84a,#d8a537)}
 .ob-lab{display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:5px; font-size:13px; font-variant-numeric:tabular-nums}
 .ob-lab b{font-weight:700}
 .ob-note{color:var(--ash); font-size:12px}
@@ -547,7 +563,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
   opacity:0; animation:decBurst 1.2s ease-out .25s both; mask:radial-gradient(circle, #000 20%, transparent 62%); -webkit-mask:radial-gradient(circle, #000 20%, transparent 62%)}
 .dec.r0 .dec-burst, .dec.r1 .dec-burst{display:none}
 .dec.r5 .dec-burst, .dec.r6 .dec-burst{animation:decBurst 1.2s ease-out .25s both, rspin 9s linear 1.4s infinite; opacity:.5}
-.dec.r6 .dec-burst{background:repeating-conic-gradient(from 0deg, #ff5f6d 0 6deg, transparent 6deg 18deg, #58c7ff 18deg 24deg, transparent 24deg 36deg, #ffc371 36deg 42deg, transparent 42deg 54deg)}
+.dec.r6 .dec-burst{background:repeating-conic-gradient(from 0deg, #ffd84a 0 6deg, transparent 6deg 18deg, #fff4c2 18deg 24deg, transparent 24deg 36deg, #e0a028 36deg 42deg, transparent 42deg 54deg)}
 @keyframes decDrop{0%{opacity:0; transform:translateY(-70px) scale(.5) rotate(-12deg)} 60%{opacity:1; transform:translateY(6px) scale(1.12) rotate(3deg)} 100%{transform:none}}
 @keyframes decBurst{0%{opacity:0; transform:scale(.4)} 40%{opacity:.9} 100%{opacity:.35; transform:scale(1)}}
 .dec-title{text-align:center}
@@ -686,7 +702,7 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .fa-glow{position:absolute; left:50%; top:58%; width:220px; height:220px; translate:-50% -50%; border-radius:50%; z-index:-1;
   background:radial-gradient(circle, color-mix(in srgb, var(--gc) 70%, transparent), transparent 62%); animation:faPulse .42s ease-out infinite}
 .fanim.climb .fa-glow{animation:faBurst .42s ease-out}
-.fanim.r6 .fa-glow{background:conic-gradient(from 0deg, #ff5f6d, #ffc371, #5bff9a, #58c7ff, #c77dff, #ff5f6d); mask:radial-gradient(circle, #000 15%, transparent 62%); -webkit-mask:radial-gradient(circle, #000 15%, transparent 62%); animation:rspin 2s linear infinite}
+.fanim.r6 .fa-glow{background:conic-gradient(from 0deg, #ffd84a, #fff4c2, #d8a537, #ffe48f, #b8801c, #ffd84a); mask:radial-gradient(circle, #000 15%, transparent 62%); -webkit-mask:radial-gradient(circle, #000 15%, transparent 62%); animation:rspin 2s linear infinite}
 .fa-anvil{position:absolute; left:50%; bottom:46px; translate:-50% 0; z-index:1; filter:drop-shadow(0 6px 0 rgba(0,0,0,.5))}
 .fa-ingot{position:absolute; left:50%; bottom:112px; width:40px; height:10px; translate:-50% 0; z-index:2; border-radius:3px;
   background:linear-gradient(180deg, #fff6d8, var(--gc)); box-shadow:0 0 14px 4px var(--gc), 0 0 30px 6px color-mix(in srgb, var(--gc) 55%, transparent); animation:faIngot .42s ease-out}

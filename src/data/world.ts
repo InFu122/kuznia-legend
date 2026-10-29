@@ -1,4 +1,5 @@
 import type { ElemKey, FoeType } from '../engine/types';
+import { oreRank } from './items';
 
 export interface LandDef {
   n: string;
@@ -22,19 +23,22 @@ export const LANDS: LandDef[] = [
   { n: 'Lodowe Szczyty', act: 2, main: 2, rare: 3, drops: [[1, 20], [2, 70], [3, 9], [4, 1]], el: 'szron', boss: 'Lodowy Olbrzym', type: 'Bestie', foes: ['Śnieżny wilk', 'Yeti', 'Lodowy żywiołak'] },
   { n: 'Grzmiące Przełęcze', act: 2, main: 2, rare: 3, drops: [[1, 10], [2, 74], [3, 14], [4, 2]], el: 'burz', boss: 'Gromowy Gryf', type: 'Bestie', foes: ['Harpia', 'Burzowy sokół', 'Górski troll'] },
   { n: 'Głębiny Podgórza', act: 2, main: 2, rare: 3, drops: [[2, 70], [3, 26], [4, 4]], el: 'cien', boss: 'Pajęcza Królowa', type: 'Bestie', foes: ['Jaskiniowy pająk', 'Ślepy pełzacz', 'Grzybołak'] },
-  { n: 'Nawiedzone Krypty', act: 3, main: 2, rare: 3, drops: [[2, 50], [3, 42], [4, 7], [5, 1]], el: 'cien', boss: 'Upiorny Hrabia', type: 'Nieumarli', foes: ['Ghul', 'Szkielet', 'Upiór'] },
-  { n: 'Pustynia Kości', act: 3, main: 3, rare: 4, drops: [[2, 35], [3, 52], [4, 11], [5, 2]], el: 'zar', boss: 'Kościany Skorpion', type: 'Nieumarli', foes: ['Mumia', 'Pustynny skorpion', 'Piaskowy upiór'] },
-  { n: 'Cytadela Lisza', act: 3, main: 3, rare: 4, drops: [[2, 20], [3, 58], [4, 18], [5, 4]], el: 'cien', boss: 'Król Lisz', type: 'Nieumarli', foes: ['Rycerz śmierci', 'Nekromanta', 'Kościany golem'] },
-  { n: 'Spaczony Klasztor', act: 3, main: 3, rare: 4, drops: [[2, 10], [3, 58], [4, 26], [5, 6]], el: 'jasn', boss: 'Upadły Opat', type: 'Demony', foes: ['Opętany mnich', 'Chochlik', 'Spaczony kapłan'] },
-  { n: 'Wulkaniczne Pustkowia', act: 4, main: 3, rare: 4, drops: [[3, 50], [4, 38], [5, 11], [6, 1]], el: 'zar', boss: 'Ognisty Tytan', type: 'Demony', foes: ['Ognisty chochlik', 'Magmowy golem', 'Piekielny ogar'] },
-  { n: 'Smocze Turnie', act: 4, main: 4, rare: 5, drops: [[3, 35], [4, 45], [5, 17], [6, 3]], el: 'zar', boss: 'Czerwony Smok', type: 'Smoki', foes: ['Wywerna', 'Smoczy kultysta', 'Młody smok'] },
-  { n: 'Burzowe Wyspy', act: 4, main: 4, rare: 5, drops: [[3, 22], [4, 48], [5, 25], [6, 5]], el: 'burz', boss: 'Burzowy Lewiatan', type: 'Smoki', foes: ['Morski wąż', 'Burzowa wywerna', 'Smok błyskawic'] },
-  { n: 'Gwiezdny Krater', act: 4, main: 4, rare: 5, drops: [[3, 10], [4, 45], [5, 36], [6, 9]], el: 'jasn', boss: 'Gwiezdny Pożeracz', type: 'Demony', foes: ['Gwiezdny pomiot', 'Pustkowiec', 'Strażnik krateru'] },
+  { n: 'Nawiedzone Krypty', act: 3, main: 2, rare: 3, drops: [[2, 50], [3, 42], [4, 6], [7, 1], [5, 1]], el: 'cien', boss: 'Upiorny Hrabia', type: 'Nieumarli', foes: ['Ghul', 'Szkielet', 'Upiór'] },
+  { n: 'Pustynia Kości', act: 3, main: 3, rare: 4, drops: [[2, 35], [3, 52], [4, 9], [7, 2], [5, 2]], el: 'zar', boss: 'Kościany Skorpion', type: 'Nieumarli', foes: ['Mumia', 'Pustynny skorpion', 'Piaskowy upiór'] },
+  { n: 'Cytadela Lisza', act: 3, main: 3, rare: 4, drops: [[2, 20], [3, 58], [4, 15], [7, 3], [5, 4]], el: 'cien', boss: 'Król Lisz', type: 'Nieumarli', foes: ['Rycerz śmierci', 'Nekromanta', 'Kościany golem'] },
+  { n: 'Spaczony Klasztor', act: 3, main: 3, rare: 4, drops: [[2, 10], [3, 58], [4, 21], [7, 5], [5, 6]], el: 'jasn', boss: 'Upadły Opat', type: 'Demony', foes: ['Opętany mnich', 'Chochlik', 'Spaczony kapłan'] },
+  { n: 'Wulkaniczne Pustkowia', act: 4, main: 3, rare: 4, drops: [[3, 50], [4, 33], [7, 5], [5, 10], [8, 1], [6, 1]], el: 'zar', boss: 'Ognisty Tytan', type: 'Demony', foes: ['Ognisty chochlik', 'Magmowy golem', 'Piekielny ogar'] },
+  { n: 'Smocze Turnie', act: 4, main: 4, rare: 5, drops: [[3, 35], [4, 38], [7, 7], [5, 15], [8, 2], [6, 3]], el: 'zar', boss: 'Czerwony Smok', type: 'Smoki', foes: ['Wywerna', 'Smoczy kultysta', 'Młody smok'] },
+  { n: 'Burzowe Wyspy', act: 4, main: 4, rare: 5, drops: [[3, 22], [4, 40], [7, 8], [5, 22], [8, 3], [6, 5]], el: 'burz', boss: 'Burzowy Lewiatan', type: 'Smoki', foes: ['Morski wąż', 'Burzowa wywerna', 'Smok błyskawic'] },
+  { n: 'Gwiezdny Krater', act: 4, main: 4, rare: 5, drops: [[3, 10], [4, 37], [7, 8], [5, 32], [8, 4], [6, 9]], el: 'jasn', boss: 'Gwiezdny Pożeracz', type: 'Demony', foes: ['Gwiezdny pomiot', 'Pustkowiec', 'Strażnik krateru'] },
 ];
+
+/** Ruda rzadsza niż główna ruda krainy. */
+export const isRareOre = (L: LandDef, ore: number) => oreRank(ore) > oreRank(L.main);
 
 /** Rozkład rud krainy w % dropów; `rarePct` (Poszukiwacz, Sowa) zwiększa udział rud rzadszych niż główna. */
 export function oreShares(L: LandDef, rarePct = 0): [number, number][] {
-  const w = L.drops.map(([o, p]) => [o, o > L.main ? p * (1 + rarePct / 100) : p] as [number, number]);
+  const w = L.drops.map(([o, p]) => [o, isRareOre(L, o) ? p * (1 + rarePct / 100) : p] as [number, number]);
   const sum = w.reduce((a, [, p]) => a + p, 0);
   return w.map(([o, p]) => [o, (p / sum) * 100]);
 }

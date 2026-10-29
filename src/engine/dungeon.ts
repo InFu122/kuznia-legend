@@ -1,6 +1,6 @@
 // Lochy. Każdy loch to osobny tryb walki w arenie; nagrody zbierają się w `loot` i trafiają do gracza na końcu.
 import {
-  B, DUNGEONS, DUNGEON_FOES, DUNG_UNLOCK, EVENT, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS,
+  B, DIVINE_ORE, DUNGEONS, DUNGEON_FOES, DUNG_UNLOCK, EVENT, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS,
   LAB_DOORS, LAB_ROOMS, LANDS, ZBROJOWNIA_CHESTS, setOfLand,
   type LabDoor,
 } from '../data';
@@ -275,7 +275,7 @@ export function dungFloor(ctx: Ctx): void {
       if (!real) {
         it.smith = d.ghost ?? it.smith;
         it.owners = [it.smith, ...it.owners.filter(o => o !== it.smith)].slice(0, 3);
-        if (ctx.rng.next() < 0.5 && it.r < 6) { it.r++; it.subs = rollSubs(ctx.rng, it.r); }
+        if (ctx.rng.next() < 0.5 && it.r < 5) { it.r++; it.subs = rollSubs(ctx.rng, it.r); }
       }
       const fame = ri(ctx.rng, 1000, 6000);
       if (fame > it.fame) {
@@ -308,6 +308,7 @@ export function dungFloor(ctx: Ctx): void {
         add(d.loot, 'stones', 10 + Math.floor(s.maxLand / 2));
         add(d.loot, 'gold', Math.round(goldWave(s.bestG) * 20 * gold));
         if (skillsUnlocked(s)) add(d.loot, 'scrolls', 1);
+        if (ctx.rng.next() < B.DIVINE_ORE_EVENT_BOSS) addOre(d.loot, DIVINE_ORE, 1);
         addFame(ctx, 0, ev.type, true);
         track(ctx, 'boss');
         dungEnd(ctx, false);

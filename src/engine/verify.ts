@@ -2,7 +2,7 @@
 // (numer wytopu `sx`), więc serwer może odtworzyć losowanie i sprawdzić, czy przedmiot jest prawdziwy.
 import { B, KIND_POOL_SIZES, ORES, SET_FORGE_LVL, SLOTS, SLOT_ORDER } from '../data';
 import { rollSubs, smeltDraws } from './forge';
-import { JUMP_V, itemLevelFor, jumpChances, maxJump, pityAllowed } from './formulas';
+import { JUMP_V, itemLevelFor, jumpChances, maxJump, oreFloor, pityAllowed } from './formulas';
 import { mulberry32 } from './rng';
 import type { Item } from './types';
 
@@ -10,20 +10,24 @@ import type { Item } from './types';
  * Odtwarza wytop z ziarna i porównuje z przedmiotem. Zwraca opis niezgodności albo null, gdy przedmiot się zgadza.
  * `maxRel` to obecna premia do przeskoku z technologii — w chwili wytopu mogła być tylko mniejsza.
  * `forgeLvl` to obecny poziom kuźni — przedmiot nie mógł powstać na wyższym.
- * `oldOk` — przedmiot mógł powstać według dawnych zasad przeskoku (wersja 1; serwer pozwala na to tylko
- * wytopom z numerem sprzed aktualizacji). Inaczej obowiązują obecne zasady.
+ * `oldOk` — przedmiot mógł powstać według zasad przeskoku w wersji 1 (wytop z numerem sprzed tamtej aktualizacji),
+ * `v2Ok` — według zasad w wersji 2 (wytop z numerem sprzed aktualizacji rud). Inaczej obowiązują obecne zasady.
  */
-export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: number, oldOk = false): string | null {
+export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: number, oldOk = false, v2Ok = false): string | null {
   const O = ORES[it.ore];
   if (!O || !SLOTS[it.slot]) return 'nieznana ruda lub miejsce';
   if (!(it.flvl >= 1 && it.flvl <= forgeLvl)) return 'poziom kuźni w chwili wytopu';
   if (O.lvl > it.flvl) return 'ruda niedostępna na tym poziomie kuźni';
   if (it.set && it.flvl < SET_FORGE_LVL) return 'zestaw przed odblokowaniem';
   if (it.el && it.flvl < B.ELEM_FORGE_LVL) return 'domieszka przed odblokowaniem';
-  const mj = maxJump(it.ore);
-  if (!(it.jump >= 0 && it.jump <= mj) || it.r !== Math.min(6, O.floor + it.jump)) return 'rzadkość';
-  if (it.jv !== undefined && it.jv !== JUMP_V) return 'wersja zasad przeskoku';
-  const ver = it.jv === undefined && oldOk ? 1 : JUMP_V;
+  let ver: number;
+  if (it.jv === JUMP_V) ver = JUMP_V;
+  else if (it.jv === 2 && v2Ok) ver = 2;
+  else if (it.jv === undefined) ver = oldOk ? 1 : 2;
+  else return 'wersja zasad przeskoku';
+  if (ver < 3 && it.ore > 6) return 'ruda z nowszej wersji gry';
+  const mj = maxJump(it.ore, ver);
+  if (!(it.jump >= 0 && it.jump <= mj) || it.r !== Math.min(6, oreFloor(it.ore, ver) + it.jump)) return 'rzadkość';
 
   const rng = mulberry32(seed);
   const d = smeltDraws(rng);
@@ -43,7 +47,7 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
       break;
     }
     case 'set':
-      if (it.jump !== 1 || !it.set) return 'przeskok z rudy unikalnej';
+      if (it.jump !== 1 || !it.set || (ver >= 3 && !pityAllowed(it.ore, ver))) return 'przeskok z rudy unikalnej';
       break;
     default:
       return 'rodzaj przeskoku';

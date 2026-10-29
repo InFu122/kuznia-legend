@@ -8,8 +8,8 @@ import { migrate } from '../src/engine/state';
 import { makeGame, T0 } from './helpers';
 
 describe('Kolekcja Kowala', () => {
-  it('217 modeli; wytop odkrywa model i najlepszą rzadkość; premia do obrażeń i zdrowia', () => {
-    expect(CODEX_TOTAL).toBe(31 * 7);
+  it('310 modeli; wytop odkrywa model i najlepszą rzadkość; premia do obrażeń i zdrowia', () => {
+    expect(CODEX_TOTAL).toBe(31 * 10);
     const { ctx, s } = makeGame(1);
     const m0 = allMods(s);
     s.forge.lvl = 10; s.ores[2] = 100; s.stats.smelted = 10;

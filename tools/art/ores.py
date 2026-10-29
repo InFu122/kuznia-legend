@@ -133,6 +133,32 @@ ORE_ICONS = {
     'Gwiezdny Kruszec': ingot_star,
 }
 
+# ---------- rudy z wersji 3 zasad przeskoku (indeksy 7–9) ----------
+def obsidian():
+    # Obsydian: ostre, szkliste odłamki wulkanicznego szkła na ciemnej skale, z fioletowym połyskiem
+    rows, pal = crystal_cluster(['#7d6aa8', '#3b2f55', '#1f1830', '#120d1a'], base=DARK_STONE)
+    rows = stamp(rows, [(7, 2), (7, 3), (3, 5), (12, 6)], 'w')
+    return rows, {**pal, 'w': '#e6dcff'}
+def eteryt():
+    # Eteryt: lekki, lodowo-błękitny kryształ w szlifie, otoczony iskrami eteru
+    rows, pal = gem(['#effdff', '#8fd8f0', '#3f9cc4', '#1d5674'], 'cut')
+    rows = stamp(rows, [(1, 1), (14, 2), (2, 12), (13, 13), (15, 8)], 'x')
+    rows = stamp(rows, [(7, 5), (8, 5), (8, 6)], 'y')
+    return rows, {**pal, 'x': '#bff4ff', 'y': '#f4fffe'}
+def divine_ore():
+    # Boska Ruda: jasna skała przecięta świecącymi złotymi żyłami, z promieniami blasku dookoła
+    r = list(ROCK)
+    veins = [(3, 9), (4, 8), (5, 8), (6, 7), (7, 7), (8, 6), (9, 6), (10, 5), (8, 8), (9, 9), (10, 10), (11, 10), (12, 9), (5, 11), (6, 12), (11, 7), (12, 7)]
+    r = stamp(r, veins, 'x')
+    rows = finish(r)
+    rows = stamp(rows, [(7, 7), (9, 9), (10, 5)], 'y')
+    rows = stamp(rows, [(7, 0), (8, 0), (0, 7), (15, 6), (1, 1), (14, 1), (1, 14), (14, 14)], 'z')
+    return rows, {**K, **ramp('p', ['#f4ecd9', '#cdbf9f', '#9c8d6e', '#6b5f49']), 'x': '#f5b72e', 'y': '#fff7c4', 'z': '#ffe27a'}
+
+ORE_ICONS['Obsydian'] = obsidian
+ORE_ICONS['Eteryt'] = eteryt
+ORE_ICONS['Boska Ruda'] = divine_ore
+
 # ---------- poprawki rud głównych ----------
 RUST_STONE = ['#8f7466', '#6d564b', '#4e3d35', '#342822']
 BLUE_STONE = ['#7d8796', '#5d6674', '#434a56', '#2e333c']

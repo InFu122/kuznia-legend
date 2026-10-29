@@ -1,4 +1,4 @@
-import { B, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, oreShares, setOfLand, skillValue } from '../data';
+import { B, DIVINE_ORE, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isRareOre, oreShares, setOfLand, skillValue } from '../data';
 import { buffMult } from './shop';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
@@ -196,7 +196,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   if (ctx.rng.next() < B.ORE_DROP) {
     const ore = pickOre(L, ctx.rng.next(), mods.rarePct);
     const nOre = ((ore === L.main ? ri(ctx.rng, 1, B.ORE_MAIN_MAX) : 1) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0)) * buffMult(s, 'ruda', ctx.now());
-    const rare = ore > L.main;
+    const rare = isRareOre(L, ore);
     s.ores[ore] += nOre;
     loot += rare ? ` · ${ORES[ore].n}!` : ` · +${nOre} ${ORES[ore].n}`;
     ctx.emit({ t: 'drop', ore, n: nOre, rare });
@@ -280,6 +280,10 @@ function bossWon(ctx: Ctx, e: Enemy): void {
       (uniq && set ? ` · ${SETS[set].ore}!` : '') + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
     if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });
   }
+  if (extra.ores?.[DIVINE_ORE]) {
+    toast(ctx, `${ORES[DIVINE_ORE].n}! ${L.boss} zostawia bardzo rzadką rudę — największa szansa na Boski przedmiot.`, 'good');
+    ctx.emit({ t: 'sfx', k: 'rare' });
+  }
 }
 
 /** Która ruda wypadła (u ∈ [0, 1)) według rozkładu krainy. */
@@ -307,6 +311,7 @@ function bossExtras(ctx: Ctx, land: number, first: boolean): Reward {
     if (first) r.saddles = B.SADDLES_BOSS_FIRST;
     else if (ctx.rng.next() < B.SADDLE_BOSS_CHANCE) r.saddles = 1;
   }
+  if (act === 4 && ctx.rng.next() < B.DIVINE_ORE_BOSS) r.ores = { [DIVINE_ORE]: 1 };
   return r;
 }
 

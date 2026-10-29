@@ -65,5 +65,5 @@ export const EVENT_MILESTONES: { pts: number; r: PassItem[] }[] = [
   { pts: 3800, r: [{ k: 'books', n: 6 }] },
   { pts: 4700, r: [{ k: 'saddles', n: 1 }] },
   { pts: 5700, r: [{ k: 'seals', n: 2 }] },
-  { pts: 7000, r: [{ k: 'egg', n: 3 }, { k: 'scrolls', n: 2 }] },
+  { pts: 7000, r: [{ k: 'egg', n: 3 }, { k: 'scrolls', n: 2 }, { k: 'divine', n: 1 }] },
 ];

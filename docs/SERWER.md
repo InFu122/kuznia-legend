@@ -157,7 +157,15 @@ Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo 
 ### Osiągnięcia i Kolekcja Kowala
 
 - **Osiągnięcia** — czwarta zakładka w oknie Zadań: 13 długich celów po kilka progów (np. wykuj 100 / 1000 / 10 000 przedmiotów), za każdy próg Księgi, Kamienie i złoto, wyżej także Zwoje i jaja.
-- **Kolekcja Kowala** — karta w Kodeksie: każdy nowy model przedmiotu (rodzaj × ruda, razem 217) daje na zawsze +0,05% obrażeń i zdrowia. Po dotknięciu rudy widać, których modeli jeszcze brakuje.
+- **Kolekcja Kowala** — karta w Kodeksie: każdy nowy model przedmiotu (rodzaj × ruda, razem 310) daje na zawsze +0,05% obrażeń i zdrowia. Po dotknięciu rudy widać, których modeli jeszcze brakuje.
+
+### Rudy i Boskie przedmioty
+
+- **Nowe rudy:** Obsydian (od 17. poziomu kuźni, minimum Legendarny z lepszą jakością), Eteryt (od 23., minimum Mityczny) i bardzo rzadka **Boska Ruda** (od 25.). Obsydian i Eteryt wypadają w aktach III i IV i da się je rafinować (Adamantyt → Obsydian → Smocza Stal → Eteryt → Gwiezdny Kruszec).
+- **Boski tylko z przeskoku:** żadna ruda nie daje Boskiego na pewno. Gwiezdny Kruszec daje najmniej Mityczny i kilka % szansy na Boski, Boska Ruda — kilkanaście %. Gwarancja przeskoku i ruda unikalna nie prowadzą do Boskiego.
+- **Skąd Boska Ruda:** bossowie krain aktu IV (rzadko), skrzynia bossa lochu sezonowego (5%), ostatni próg każdego wydarzenia i 30. poziom złotej ścieżki Przepustki. Nie wypada z fal, nie da się jej rafinować ani poprosić o nią klanu.
+- **Boski przedmiot** ma własne imię, złotą ramkę i Boską aurę: +3% obrażeń i zdrowia całego bohatera za każdy założony. Serwer sam ogłasza nowy Boski przedmiot na czacie globalnym, a inni gracze widzą komunikat w grze.
+- Boskie przedmioty wykute przed tą aktualizacją (np. z Gwiezdnego Kruszcu) zostają bez zmian i dalej liczą się do rankingów. **Najpierw zaktualizuj serwer**, potem aplikację.
 
 ### Runy i przekuwanie
 
@@ -184,7 +192,7 @@ Płatności w Google Play (przy wydaniu w sklepie): w Google Play Console trzeba
 **Ikonki obok pola walki:** ×2 ruda i ×2 złoto za reklamę (godzina, kolejne reklamy przedłużają; zielona ikonka z minutami, gdy trwa) i Przepustka Kowala (poziom, czerwona kropka przy nagrodach). W oknie areny +1 walka za reklamę (2 dziennie). Limity reklam liczy serwer (`ad_reward`).
 ### Czat
 
-Przycisk **Czat** na górze ekranu: kanał globalny i kanał klanu. Na globalnym piszesz od 5. poziomu kuźni (wcześniej tylko w klanie). Tryb wolny: 3 sekundy między wiadomościami na globalnym, 1 sekunda w klanie. Serwer zamienia wulgaryzmy na gwiazdki. Wiadomość innego gracza możesz wyciszyć (tylko na swoim urządzeniu) albo zgłosić. Gdy wykujesz przedmiot Mityczny lub Boski, na czacie klanu pojawia się jego karta, a przyciskiem pod przedmiotem możesz pochwalić się na czacie globalnym (raz na 10 minut).
+Przycisk **Czat** na górze ekranu: kanał globalny i kanał klanu. Na globalnym piszesz od 5. poziomu kuźni (wcześniej tylko w klanie). Tryb wolny: 3 sekundy między wiadomościami na globalnym, 1 sekunda w klanie. Serwer zamienia wulgaryzmy na gwiazdki. Wiadomość innego gracza możesz wyciszyć (tylko na swoim urządzeniu) albo zgłosić. Gdy wykujesz przedmiot Mityczny lub Boski, na czacie klanu pojawia się jego karta, a przyciskiem pod przedmiotem możesz pochwalić się na czacie globalnym (raz na 10 minut). Nowy Boski przedmiot serwer ogłasza na czacie globalnym sam (raz na przedmiot).
 
 Czat używa WebSocketu pod tym samym adresem co gra (`/ws` — nginx przekazuje go do Nakamy), więc nie trzeba otwierać nowych portów.
 

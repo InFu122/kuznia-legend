@@ -25,7 +25,7 @@ function newDungeons(): GameState['dungeons'] {
 
 export function newState(now: number): GameState {
   return {
-    v: SAVE_VERSION, name: 'Kowal', gold: 0, ores: [10, 5, 0, 0, 0, 0, 0], els: {},
+    v: SAVE_VERSION, name: 'Kowal', gold: 0, ores: [10, 5, 0, 0, 0, 0, 0, 0, 0, 0], els: {},
     forge: { lvl: 1, up: 0, left: 0 }, pity: 0, eq: {}, pending: null,
     cur: { land: 0, stage: 1, wave: 1 }, maxLand: 0, frontStage: 1, cleared: LANDS.map(() => false), bestG: 0,
     auto: false, autoStop: 0, oreSel: 1, batch: 1, elSel: null,
@@ -79,7 +79,8 @@ export function migrate(raw: unknown, now: number): GameState {
   for (const id of DUNG_ORDER) if (isObj(dungeons[id])) Object.assign(out.dungeons[id as DungId], dungeons[id]);
   if (isObj(raw.dung)) Object.assign(out.dungeons.sztolnia, raw.dung); // zapis sprzed wersji 3
   delete out.dung;
-  if (!Array.isArray(out.ores) || out.ores.length !== fresh.ores.length) out.ores = fresh.ores;
+  if (!Array.isArray(out.ores) || out.ores.length > fresh.ores.length) out.ores = fresh.ores;
+  while (out.ores.length < fresh.ores.length) out.ores.push(0); // nowe rudy (Obsydian, Eteryt, Boska Ruda)
   if (!Array.isArray(out.cleared)) out.cleared = fresh.cleared;
   while (out.cleared.length < LANDS.length) out.cleared.push(false);
   if (!isObj(out.eq)) out.eq = {};

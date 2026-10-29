@@ -6,7 +6,7 @@ import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labC
 import { equipBestSkills, equipSkill, levelUp, openSaddle, openScroll, selectBestMount, selectBestPet, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
-import { autoHandle, autoTarget, autoTargets, batchOf, batchSizes, canSmelt, equip, refine, sell, sellFor, smelt, smeltBatch, startUpgrade, tickForge, uniqActive, upgradeCost, upgradeTime, type BatchResult } from './forge';
+import { autoHandle, autoTarget, autoTargets, batchOf, batchSizes, canSmelt, equip, refine, sell, sellFor, smelt, smeltBatch, startUpgrade, tickForge, uniqActive, upgradeCost, upgradeTime, type BatchResult , refineTo } from './forge';
 import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
@@ -278,7 +278,7 @@ export class Game {
   /** Rafinacja rudy `from` na następną (`times` sztuk albo ile się da). */
   refine(from: number, times: number): number {
     const n = refine(this.ctx, from, times);
-    if (n) { toast(this.ctx, `Rafinacja: +${n} ${ORES[from + 1].n}`, 'good'); this.changed(); }
+    if (n) { toast(this.ctx, `Rafinacja: +${n} ${ORES[refineTo(from)].n}`, 'good'); this.changed(); }
     return n;
   }
   equipPending(): void {

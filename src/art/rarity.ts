@@ -1,14 +1,14 @@
 // Barwy rzadkości w pixel arcie: obwódka (1 px) wokół sprite'a przedmiotu — od braku przy Zwykłym
-// po tęczową przy Boskim. Te same kolory co w interfejsie (--r0…--r6).
+// po złotą, mieniącą się przy Boskim. Te same kolory co w interfejsie (--r0…--r6).
 
-/** Kolor obwódki dla rzadkości 0–6 (0 — bez obwódki, 6 — tęcza). */
-export const RARITY_GLOW: (string | null)[] = [null, '#5be37a', '#45a6ff', '#b77bff', '#ffa23a', '#ff4f64', 'rainbow'];
+/** Kolor obwódki dla rzadkości 0–6 (0 — bez obwódki, 6 — mieniące się złoto). */
+export const RARITY_GLOW: (string | null)[] = [null, '#5be37a', '#45a6ff', '#b77bff', '#ffa23a', '#ff4f64', 'gold'];
 
 const hex = (c: string) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
 
-/** Kolor tęczy dla kąta (0–1). */
-function rainbow(t: number): number[] {
-  const stops = ['#ff4f64', '#ffa23a', '#ffe066', '#5be37a', '#45a6ff', '#b77bff', '#ff4f64'].map(hex);
+/** Mieniące się złoto dla kąta (0–1): ciemne i jasne pasma na zmianę. */
+function gold(t: number): number[] {
+  const stops = ['#b8801c', '#ffd84a', '#fff4c2', '#ffd84a', '#b8801c', '#ffd84a', '#fff4c2', '#ffd84a', '#b8801c'].map(hex);
   const x = (t % 1) * (stops.length - 1);
   const i = Math.floor(x), f = x - i;
   return stops[i].map((v, k) => Math.round(v + (stops[i + 1][k] - v) * f));
@@ -34,7 +34,7 @@ export function halo(src: Uint8ClampedArray, w: number, h: number, r: number): {
     if (solid(x + 1, y) || solid(x - 1, y) || solid(x, y + 1) || solid(x, y - 1)) ring.push([x, y]);
   }
   for (const [x, y] of ring) {
-    const c = glow === 'rainbow' ? rainbow((Math.atan2(y - H / 2, x - W / 2) / (2 * Math.PI) + 1)) : hex(glow);
+    const c = glow === 'gold' ? gold((Math.atan2(y - H / 2, x - W / 2) / (2 * Math.PI) + 1)) : hex(glow);
     const i = (y * W + x) * 4;
     px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = 255;
   }

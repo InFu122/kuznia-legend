@@ -1,7 +1,9 @@
 // Okno czatu: pokój globalny i kanał klanu, ogłoszenie klanu, karty dropów, wyciszanie i zgłaszanie.
 import { showProfile } from '../profile';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { B, RAR, SUBS } from '../../data';
+import { B, ORES, RAR, SUBS } from '../../data';
+import { itemUrl } from '../../art/render';
+import { Px } from '../Px';
 import type { Game } from '../../engine/game';
 import { getChat, type ChatCh, type ChatMsg } from '../../save/chat';
 import { getLink } from '../../save/server';
@@ -17,8 +19,12 @@ function Message({ m, open, onMenu, onMute, onReport }: { m: ChatMsg; open: bool
     const it = m.it;
     return (
       <li class={`cm drop r${it.r}`}>
+        {it.r >= 6 && <div class="cm-div">✦ Boski przedmiot ✦</div>}
         <div class="cm-h"><b class="cn">{m.n}</b><time>{hhmm(m.time)}</time></div>
-        <div class="cm-t">wykuł(a) <b class="rar">{it.name}</b> · {RAR[it.r].n} · poz. {it.lvl}</div>
+        <div class="cm-t">
+          {it.kind && <Px src={itemUrl(it.kind, it.ore, it.r)} size={24} />}
+          wykuł(a) <b class="rar">{it.name}</b> · {RAR[it.r].n} · poz. {it.lvl}{it.r >= 6 ? ` · ${ORES[it.ore]?.n ?? ''}` : ''}
+        </div>
         {it.subs.length > 0 && <div class="cm-subs">{it.subs.map(s => `${SUBS[s.id].n} +${f1(s.v)}${SUBS[s.id].u}`).join(' · ')}</div>}
       </li>
     );

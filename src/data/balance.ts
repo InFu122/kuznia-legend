@@ -25,8 +25,10 @@ export const FORGE_UNLOCKS: Record<number, string> = {
   12: 'wytop seryjny ×2',
   10: 'wytop Mithrilu, domieszki żywiołów, runy slotów',
   15: 'wytop Adamantytu, przekuwanie przedmiotów',
+  17: 'wytop Obsydianu',
   20: 'wytop Smoczej Stali, wytop seryjny ×3',
-  25: 'wytop Gwiezdnego Kruszcu',
+  23: 'wytop Eterytu',
+  25: 'wytop Gwiezdnego Kruszcu i Boskiej Rudy',
   30: 'pełna szansa na przeskok, Dziedzictwo (nowe pokolenie)',
 };
 
@@ -129,6 +131,9 @@ export const B = {
   BOOKS_BOSS_CHANCE: 0.1,       // kolejne pokonania: szansa na 1 Księgę
   UNIQ_BOSS_FIRST: 2,           // rudy unikalne za pierwsze pokonanie bossa z zestawem
   UNIQ_BOSS_CHANCE: 0.05,       // szansa na rudę unikalną przy kolejnych pokonaniach
+  DIVINE_AURA: 3,               // Boska aura: +% obrażeń i zdrowia bohatera za każdy założony Boski przedmiot
+  DIVINE_ORE_BOSS: 0.01,        // szansa na Boską Rudę z bossa krainy w akcie IV
+  DIVINE_ORE_EVENT_BOSS: 0.05,  // szansa na Boską Rudę ze skrzyni bossa lochu sezonowego
   SKARBIEC_MS: 30000,
   SCROLL_DROP: 0.0002,          // szansa na Zwój zaklęć z fali
   SCROLLS_START: 3,             // Zwoje na start, gdy odblokują się umiejętności

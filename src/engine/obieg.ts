@@ -1,7 +1,7 @@
 // Wielki Obieg: sprzedane przedmioty trafiają do innych graczy. Z serwerem (ctx.net) to prawdziwi gracze:
 // przedmioty czekają w kolejce obOut na wysłanie, a znaleziska przychodzą od serwera do obIn.
 // Bez serwera (np. w artefakcie) inni gracze są symulowani (FAKE_PLAYERS); interfejs mówi o tym wprost.
-import { B, FAKE_PLAYERS, LANDS, ORES, SLOTS, SLOT_ORDER } from '../data';
+import { B, FAKE_PLAYERS, LANDS, ORES, SLOTS, SLOT_ORDER, oreCap } from '../data';
 import { toast, type Ctx } from './context';
 import { clockStr, itemLevelFor, itemName, legStage } from './formulas';
 import { pick, ri } from './rng';
@@ -71,11 +71,10 @@ export function obiegItem(ctx: Ctx): Item {
   const smith = pick(ctx.rng, FAKE_PLAYERS);
   const L = LANDS[ri(ctx.rng, 0, s.maxLand)];
   // Znaleziska z Obiegu są na miarę twojej kuźni: najwyżej z rudy, którą sam umiesz wytopić.
-  let ore = LANDS[s.maxLand].main;
-  while (ore > 0 && ORES[ore].lvl > s.forge.lvl) ore--;
+  const ore = oreCap(LANDS[s.maxLand].main, s.forge.lvl);
   const slot = pick(ctx.rng, SLOT_ORDER);
   const kind = pick(ctx.rng, SLOTS[slot].kinds);
-  const r = Math.min(6, ORES[ore].floor + (ctx.rng.next() < 0.3 ? 1 : 0));
+  const r = Math.min(5, ORES[ore].floor + (ctx.rng.next() < 0.3 ? 1 : 0)); // Boskie nie trafiają do Obiegu
   const fame = ri(ctx.rng, 300, 4500);
   const it: Item = {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, ri(ctx.rng, -1, 1)),

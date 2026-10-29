@@ -10,11 +10,11 @@ const seedFor = (n: number) => (Math.imul(n + 1, 2654435761) ^ 0x5bd1e995) >>> 0
 
 describe('przeskoki w wersji 2: rzadsze wyniki są trudniejsze', () => {
   it('Boski z przeskoku jest rzadki: z Adamantytu ok. 1%, ze Smoczej Stali ok. 7% na 30. poziomie kuźni', () => {
-    const ad = dist(4, 30);   // Legendarny, Mityczny, Boski
+    const ad = dist(4, 30, 0, 2);   // Legendarny, Mityczny, Boski (zasady w wersji 2)
     expect(ad[2][0]).toBe(6);
     expect(ad[2][1]).toBeCloseTo(1, 1);
     expect(ad[1][1]).toBeCloseTo(13.75, 1);
-    const ds = dist(5, 30);   // Mityczny, Boski
+    const ds = dist(5, 30, 0, 2);   // Mityczny, Boski
     expect(ds[1][1]).toBeCloseTo(7.25, 1);
     // niskie rzadkości bez zmian
     expect(jumpChances(10, 0, 0)).toEqual(jumpChances(10, 0));
@@ -24,6 +24,7 @@ describe('przeskoki w wersji 2: rzadsze wyniki są trudniejsze', () => {
     expect(pityAllowed(5)).toBe(false);
     expect(pityAllowed(4)).toBe(true);
     expect(pityAllowed(5, 1)).toBe(true); // dawne zasady
+    expect(pityAllowed(6)).toBe(false); // Gwiezdny Kruszec: pewny przeskok nie daje Boskiego
     const { ctx, s } = makeGame(5);
     s.forge.lvl = 25; s.ores[5] = 5000; s.stats.smelted = 10;
     let pity = 0;

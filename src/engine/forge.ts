@@ -1,7 +1,7 @@
-import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, REFINE_RATIO, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
+import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
-import { JUMP_V, itemLevelFor, itemName, jumpChances, maxJump, pityAllowed, sellPrice, upCost, upTime } from './formulas';
+import { JUMP_V, itemLevelFor, itemName, jumpChances, maxJump, oreFloor, pityAllowed, sellPrice, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
 import { allMods } from './mods';
 import { maybeObieg } from './obieg';
@@ -66,9 +66,9 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   let forced: Item['forced'] = '';
   if (s.stats.smelted === 2 && mj >= 1 && jump === 0) { jump = 1; forced = 'tut'; } // samouczek
   if (jump === 0 && pityAllowed(ore) && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
-  if (set && jump === 0 && mj >= 1) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok
+  if (set && jump === 0 && pityAllowed(ore)) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok (ale nigdy do Boskiego)
   if (mj >= 1) s.pity = jump > 0 ? 0 : s.pity + 1;
-  const r = Math.min(6, ORES[ore].floor + jump);
+  const r = Math.min(6, oreFloor(ore) + jump);
 
   const first = s.stats.smelted === 0;
   const slot: SlotId = first ? 'bron' : set ? setSlot(s, set, d.slot) : SLOT_ORDER[Math.floor(d.slot * SLOT_ORDER.length)];
@@ -140,7 +140,7 @@ export function advancesSet(s: GameState, it: Item): boolean {
  * (ruda bez przeskoku — tylko jej rzadkość).
  */
 export function autoTargets(ore: number): number[] {
-  const f = ORES[ore].floor, top = Math.min(6, f + maxJump(ore));
+  const f = oreFloor(ore), top = Math.min(6, f + maxJump(ore));
   return top === f ? [f] : Array.from({ length: top - f }, (_, i) => f + 1 + i);
 }
 /** Rzadkość, na której auto-wytop się zatrzyma (wybór gracza dopasowany do wybranej rudy). */
@@ -205,9 +205,13 @@ export function smeltBatch(ctx: Ctx, ore: number, n: number): BatchResult | null
   return { best, all: items, count: items.length, sold, gold, equipped };
 }
 
-/** Rafinacja: ile sztuk rudy `from` trzeba na 1 sztukę następnej (0 — nie da się). */
-export const refineRatio = (s: GameState, from: number) =>
-  from >= 0 && from < ORES.length - 1 && s.forge.lvl >= B.REFINE_FORGE_LVL && s.forge.lvl >= ORES[from + 1].lvl ? REFINE_RATIO[from] : 0;
+/** Rafinacja: ile sztuk rudy `from` trzeba na 1 sztukę następnej w kolejności rud (0 — nie da się). */
+export const refineRatio = (s: GameState, from: number) => {
+  const r = REFINE[from];
+  return r && s.forge.lvl >= B.REFINE_FORGE_LVL && s.forge.lvl >= ORES[r.to].lvl ? r.k : 0;
+};
+/** Na którą rudę rafinuje się ruda `from` (−1 — na żadną). */
+export const refineTo = (from: number) => REFINE[from]?.to ?? -1;
 
 /** Zamienia rudę `from` na `times` sztuk następnej rudy (albo tyle, ile się da). Zwraca liczbę nowych sztuk. */
 export function refine(ctx: Ctx, from: number, times: number): number {
@@ -217,7 +221,7 @@ export function refine(ctx: Ctx, from: number, times: number): number {
   const n = Math.max(0, Math.min(Math.floor(times), Math.floor(s.ores[from] / k)));
   if (!n) return 0;
   s.ores[from] -= n * k;
-  s.ores[from + 1] += n;
+  s.ores[refineTo(from)] += n;
   ctx.dirty = true;
   return n;
 }

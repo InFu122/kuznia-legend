@@ -2,7 +2,7 @@
 // (server/src/shop.ts) — z serwerem Klejnoty, limity, przepustkę i wzmocnienia prowadzi serwer, a gra tylko je pokazuje.
 // Bez serwera (artefakt, gra w przeglądarce) wszystko dzieje się tutaj.
 import {
-  AD, AD_BUFFS, DAILY_GIFT, DUNGEONS, DUNG_ORDER, GEM_PACKS, GEM_SHOP, ORES, PASS, PASS_LEVELS, SEASON_NAMES, STARTER_EXTRA, speedupGems,
+  AD, AD_BUFFS, DAILY_GIFT, DUNGEONS, DUNG_ORDER, GEM_PACKS, GEM_SHOP, DIVINE_ORE, PASS, oreCap, PASS_LEVELS, SEASON_NAMES, STARTER_EXTRA, speedupGems,
   adMax, type AdKind, type FrameId, type SkinId,
   type BuffId, type GemItemId, type PassItem,
 } from '../data';
@@ -20,9 +20,7 @@ export const utcDay = (now: number) => new Date(now).toISOString().slice(0, 10);
 
 /** Najlepsza ruda, którą kuźnia wytapia (do nagród „ruda”). */
 export function bestOre(s: GameState): number {
-  let o = 0;
-  for (let i = 0; i < ORES.length; i++) if (ORES[i].lvl <= s.forge.lvl) o = i;
-  return o;
+  return oreCap(DIVINE_ORE, s.forge.lvl);
 }
 
 /** Suma nagród. */
@@ -48,6 +46,7 @@ export function passItemsReward(items: PassItem[], s: GameState): Reward {
     switch (it.k) {
       case 'gold': r = addReward(r, { gold: goldWave(s.bestG) * it.n }); break;
       case 'ore': r = addReward(r, { ores: { [bestOre(s)]: it.n } }); break;
+      case 'divine': r = addReward(r, { ores: { [DIVINE_ORE]: it.n } }); break;
       case 'egg': r = addReward(r, { eggs: { [it.n]: 1 } }); break;
       case 'skin': if (it.id) r = addReward(r, { skins: [it.id as SkinId] }); break;
       case 'frame': if (it.id) r = addReward(r, { frames: [it.id as FrameId] }); break;

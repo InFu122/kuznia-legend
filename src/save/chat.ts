@@ -9,7 +9,7 @@ const MUTED_KEY = 'kuznia-legend-muted';
 const HISTORY = 50;
 const RECONNECT_MS = 5000;
 
-export interface DropCard { name: string; r: number; slot: SlotId; lvl: number; ore: number; subs: { id: SubId; v: number }[]; el: ElemKey | null; set: SetId | null }
+export interface DropCard { name: string; r: number; slot: SlotId; kind?: string; lvl: number; ore: number; subs: { id: SubId; v: number }[]; el: ElemKey | null; set: SetId | null }
 export interface ChatMsg {
   id: string; ch: ChatCh; uid: string; n: string; t: string;
   k: 'msg' | 'sys' | 'drop' | 'ann'; it?: DropCard; time: number; mine: boolean;
@@ -108,6 +108,7 @@ export class ChatLink {
     this.msgs[ch] = this.msgs[ch].concat(msg).slice(-HISTORY * 2);
     if (this.viewing !== ch && !msg.mine && !this.muted.has(msg.uid)) this.unread[ch]++;
     if (msg.k === 'ann') this.ann = msg.t;
+    if (ch === 'global' && msg.k === 'drop' && msg.it && msg.it.r >= 6 && !msg.mine && !this.muted.has(msg.uid)) this.onDivine?.(msg);
     this.changed();
   }
 
@@ -166,6 +167,9 @@ export class ChatLink {
     this.clanId = null;
     if (this.ws) this.ws.close(); else void this.start();
   }
+
+  /** Ogłoszenie Boskiego przedmiotu innego gracza na czacie globalnym (gra pokazuje je jako komunikat). */
+  onDivine?: (m: ChatMsg) => void;
 
   get unreadTotal(): number { return this.unread.global + this.unread.clan; }
 }

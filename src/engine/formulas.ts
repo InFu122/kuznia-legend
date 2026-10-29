@@ -1,4 +1,4 @@
-import { B, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, JUMP_TABLE, LANDS, LEGEND, ORES, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN } from '../data';
+import { B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, JUMP_TABLE, LANDS, LEGEND, ORES, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN } from '../data';
 import type { GameState, Item } from './types';
 
 /** Globalny indeks trudności: kraina × 10 + etap (0–159). */
@@ -63,10 +63,12 @@ export const recPower = (land: number) => {
 
 /**
  * Wersja zasad przeskoku zapisana w przedmiocie (`jv`), żeby serwer sprawdzał każdy wytop według zasad,
- * z którymi powstał. 1 — do października 2026: ta sama szansa na każdą rzadkość. 2 — obecna: przeskok na
+ * z którymi powstał. 1 — do października 2026: ta sama szansa na każdą rzadkość. 2 — przeskok na
  * rzadkości Legendarną, Mityczną i Boską jest trudniejszy, a pewny przeskok nie daje Boskiego.
+ * 3 — obecna: Gwiezdny Kruszec daje najmniej Mityczny, a Boski tylko z przeskoku z małą szansą
+ * (mnożnik `div` rudy, domyślnie DIVINE_JUMP); nowe rudy: Obsydian, Eteryt, Boska Ruda.
  */
-export const JUMP_V = 2;
+export const JUMP_V = 3;
 /** Mnożnik szansy na przeskok, który kończy się na danej rzadkości (wersja 2). */
 export const JUMP_TO_MULT = [1, 1, 1, 1, 0.8, 0.55, 0.25];
 
@@ -84,8 +86,12 @@ export function jumpBase(lvl: number, rel = 0): [number, number] {
   const last = JUMP_TABLE[JUMP_TABLE.length - 1];
   return [last[1] * k, last[2] * k];
 }
-/** Smocza Stal przeskakuje najwyżej o 1, Gwiezdny Kruszec wcale. */
-export const maxJump = (ore: number) => (ore === 6 ? 0 : ore === 5 ? 1 : 2);
+/** Minimalna rzadkość rudy według zasad wersji `ver` (do wersji 2 Gwiezdny Kruszec dawał zawsze Boski). */
+export const oreFloor = (ore: number, ver = JUMP_V) => (ver < 3 && ore === 6 ? 6 : ORES[ore]?.floor ?? 0);
+/** Najwyższy przeskok rudy (do wersji 2: Smocza Stal o 1, Gwiezdny Kruszec wcale). */
+export const maxJump = (ore: number, ver = JUMP_V) => (ver < 3 ? (ore === 6 ? 0 : ore === 5 ? 1 : 2) : ORES[ore]?.mj ?? 2);
+/** Mnożnik szansy na przeskok kończący się rzadkością `r` (od wersji 3 Boski — według rudy). */
+const jumpToMult = (ore: number, r: number, ver: number) => (ver >= 3 && r >= 6 ? ORES[ore]?.div ?? DIVINE_JUMP : JUMP_TO_MULT[Math.min(6, r)]);
 
 /**
  * Szansa (w %) na przeskok o 1 i o 2 rzadkości przy wytopie rudy `ore` (bez rudy — szansa bazowa).
@@ -95,20 +101,20 @@ export const maxJump = (ore: number) => (ore === 6 ? 0 : ore === 5 ? 1 : 2);
 export function jumpChances(lvl: number, rel = 0, ore = -1, ver = JUMP_V): [number, number] {
   const [p1, p2] = jumpBase(lvl, rel);
   if (ore < 0 || ver < 2 || !ORES[ore]) return [p1, p2];
-  const f = ORES[ore].floor;
-  const m1 = JUMP_TO_MULT[Math.min(6, f + 1)];
-  const m2 = maxJump(ore) >= 2 ? JUMP_TO_MULT[Math.min(6, f + 2)] : m1;
+  const f = oreFloor(ore, ver);
+  const m1 = jumpToMult(ore, f + 1, ver);
+  const m2 = maxJump(ore, ver) >= 2 ? jumpToMult(ore, f + 2, ver) : m1;
   return [p1 * m1, p2 * m2];
 }
 
 /** Czy pewny przeskok (po PITY_MAX wytopach bez przeskoku) działa dla tej rudy. Od wersji 2 nie daje Boskiego. */
-export const pityAllowed = (ore: number, ver = JUMP_V) => maxJump(ore) >= 1 && (ver < 2 || ORES[ore].floor + 1 <= 5);
+export const pityAllowed = (ore: number, ver = JUMP_V) => maxJump(ore, ver) >= 1 && (ver < 2 || oreFloor(ore, ver) + 1 <= 5);
 
 /** Rozkład wyniku wytopu: lista [rzadkość, szansa w %]. */
 export function dist(ore: number, lvl: number, rel = 0, ver = JUMP_V): [number, number][] {
   const [p1, p2] = jumpChances(lvl, rel, ore, ver);
-  const r = ORES[ore].floor;
-  const mj = maxJump(ore);
+  const r = oreFloor(ore, ver);
+  const mj = maxJump(ore, ver);
   if (mj === 0) return [[r, 100]];
   if (mj === 1) return [[r, 100 - p1 - p2], [r + 1, p1 + p2]];
   return [[r, 100 - p1 - p2], [r + 1, p1], [r + 2, p2]];
@@ -117,13 +123,24 @@ export function dist(ore: number, lvl: number, rel = 0, ver = JUMP_V): [number, 
 export const legStage = (fame: number) => (fame >= LEGEND[3].at ? 3 : fame >= LEGEND[2].at ? 2 : fame >= LEGEND[1].at ? 1 : 0);
 
 export function mainVal(it: Item): number {
-  return Math.round(SLOTS[it.slot].base * lvlFactor(it.lvl) * RAR[it.r].m * (1 + LEGEND[it.ls || 0].b));
+  return Math.round(SLOTS[it.slot].base * lvlFactor(it.lvl) * RAR[it.r].m * (ORES[it.ore]?.q ?? 1) * (1 + LEGEND[it.ls || 0].b));
+}
+
+/** Boskie przedmioty mają własne imię — zawsze to samo dla danego przedmiotu (z numeru wytopu, rodzaju i kowala). */
+const DIV_A = ['Gniew', 'Łza', 'Serce', 'Pieśń', 'Oddech', 'Tchnienie', 'Szept', 'Blask', 'Furia', 'Duma', 'Wola', 'Gromowładztwo', 'Przysięga', 'Iskra', 'Korona', 'Sąd'];
+const DIV_B = ['Peruna', 'Świtu', 'Gwiazd', 'Burzy', 'Smoka', 'Bogów', 'Wieczności', 'Jutrzenki', 'Swarożyca', 'Tytanów', 'Niebios', 'Welesa', 'Słońca', 'Otchłani', 'Świętowita', 'Zorzy'];
+export function divineName(it: Item): string {
+  const key = `${it.sx ?? it.id}|${it.kind}|${it.smith}|${it.slot}`;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  h >>>= 0;
+  return `${DIV_A[h % DIV_A.length]} ${DIV_B[(h >>> 8) % DIV_B.length]}`;
 }
 export function baseName(it: Item): string {
   const adj = ORES[it.ore].adj[it.g === 'm' ? 0 : it.g === 'f' ? 1 : 2];
   return adj + ' ' + it.kind;
 }
-export const itemName = (it: Item) => (it.aw ? it.aw.name : baseName(it));
+export const itemName = (it: Item) => (it.aw ? it.aw.name : it.r >= 6 ? divineName(it) : baseName(it));
 
 export function smithTitle(fame: number) {
   let t: (typeof SMITH_TITLES)[number] = SMITH_TITLES[0];

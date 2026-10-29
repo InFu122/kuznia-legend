@@ -1,4 +1,4 @@
-import { LANDS, SETS, SLOTS, SLOT_ORDER } from '../../data';
+import { B, LANDS, SETS, SLOTS, SLOT_ORDER } from '../../data';
 import { itemName, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { FoeType, Item } from '../../engine/types';
@@ -60,6 +60,12 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
           {st.map(([k, v]) => <div class="stat" key={k}><small>{k}</small><b>{v}</b></div>)}
         </div>
         {extra.length > 0 && <p class="sub" style={{ marginTop: '8px' }}>{extra.join(' · ')}</p>}
+        {c.aura > 0 && (
+          <div class="iaura" style={{ marginTop: '8px' }}>
+            <span aria-hidden="true">✦</span>
+            <span><b>Boska aura ×{c.aura}:</b> +{c.aura * B.DIVINE_AURA}% obrażeń i zdrowia (po {B.DIVINE_AURA}% za każdy założony Boski przedmiot).</span>
+          </div>
+        )}
       </section>
       {c.sets.length > 0 && (
         <section class="card">

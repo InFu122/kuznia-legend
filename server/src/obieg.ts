@@ -1,7 +1,7 @@
 // Wielki Obieg na serwerze: sprzedane przedmioty graczy trafiają do wspólnej puli, a skrzynie bossów
 // i Zbrojownia innych graczy dostają je z powrotem — podpisane przez serwer. Kowal dostaje wieść, gdy ktoś
 // znajdzie jego przedmiot. Gdy w puli brakuje przedmiotów innych graczy, serwer dokłada przedmioty kowali-widm.
-import { B, LANDS, ORES } from '../../src/data';
+import { B, LANDS, oreCap, oreRank } from '../../src/data';
 import type { Ctx } from '../../src/engine/context';
 import { itemLevelFor, itemName } from '../../src/engine/formulas';
 import { newBattle } from '../../src/engine/state';
@@ -22,9 +22,7 @@ interface Pool { items: PoolEntry[] }
 
 /** Najlepsza ruda, której przedmioty gracz może dostać z Obiegu: z jego krainy i taka, którą sam umie wytopić. */
 export function maxOreFor(s: GameState): number {
-  let ore = LANDS[s.maxLand].rare;
-  while (ore > 0 && ORES[ore].lvl > s.forge.lvl) ore--;
-  return ore;
+  return oreCap(LANDS[s.maxLand].rare, s.forge.lvl);
 }
 
 /** Przedmiot z puli przygotowany dla znalazcy: poziom na miarę jego kuźni i podpis serwera. */
@@ -91,7 +89,7 @@ export function rpcObiegSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
   if (fresh.length || want) {
     updateObject<Pool>(nk, 'obieg', 'pool', SYSTEM_USER, cur => {
       const items = (cur ? cur.items : []).concat(fresh);
-      const fits = items.map((e, i) => [e, i] as const).filter(([e]) => e.uid !== userId && e.it.ore <= maxOre);
+      const fits = items.map((e, i) => [e, i] as const).filter(([e]) => e.uid !== userId && oreRank(e.it.ore) <= oreRank(maxOre) && e.it.r <= 5);
       const pickIdx = new Set<number>();
       while (pickIdx.size < Math.min(want, fits.length)) pickIdx.add(fits[Math.floor(rng.next() * fits.length)][1]);
       taken = items.filter((_, i) => pickIdx.has(i));

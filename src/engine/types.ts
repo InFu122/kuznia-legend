@@ -219,6 +219,7 @@ export interface Stats {
   boss: number; eldmg: number; slow: number; holy: number; pog: number;
   vs: Partial<Record<FoeType, number>>;
   sets: { id: SetId; count: number }[];
+  aura: number;        // Boska aura: ile założonych przedmiotów Boskich (każdy daje B.DIVINE_AURA % obrażeń i zdrowia)
   petAtk: number;      // obrażenia chowańca na trafienie (wartość)
   petInt: number;      // odstęp ataków chowańca (ms), 0 = brak
   power: number;

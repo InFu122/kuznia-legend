@@ -1,15 +1,37 @@
 import type { ElemKey, Gender, SlotId, SubId } from '../engine/types';
 
-/** Siedem rud bazowych. `floor` = minimalna rzadkość, `lvl` = od którego poziomu kuźni da się ją wytopić. */
-export const ORES = [
+/**
+ * Rudy. `floor` = minimalna rzadkość, `lvl` = od którego poziomu kuźni da się ją wytopić,
+ * `q` = jakość (mnożnik statystyki głównej), `mj` = najwyższy przeskok (domyślnie 2),
+ * `div` = mnożnik szansy na przeskok, który kończy się Boskim (domyślnie DIVINE_JUMP).
+ * Indeksy są stałe (zapisują je przedmioty i zapisy gry) — kolejność w grze wyznacza ORE_ORDER.
+ */
+export interface OreDef { n: string; floor: number; lvl: number; col: string; adj: readonly [string, string, string]; q?: number; mj?: number; div?: number; d?: string }
+export const ORES: readonly OreDef[] = [
   { n: 'Miedź', floor: 0, lvl: 1, col: '#c47a4b', adj: ['Miedziany', 'Miedziana', 'Miedziane'] },
   { n: 'Żelazo', floor: 1, lvl: 1, col: '#9ba3ab', adj: ['Żelazny', 'Żelazna', 'Żelazne'] },
   { n: 'Srebro', floor: 2, lvl: 5, col: '#dfe5ec', adj: ['Srebrny', 'Srebrna', 'Srebrne'] },
   { n: 'Mithril', floor: 3, lvl: 10, col: '#7cd3df', adj: ['Mithrilowy', 'Mithrilowa', 'Mithrilowe'] },
   { n: 'Adamantyt', floor: 4, lvl: 15, col: '#86b874', adj: ['Adamantytowy', 'Adamantytowa', 'Adamantytowe'] },
-  { n: 'Smocza Stal', floor: 5, lvl: 20, col: '#d6493f', adj: ['Smoczostalowy', 'Smoczostalowa', 'Smoczostalowe'] },
-  { n: 'Gwiezdny Kruszec', floor: 6, lvl: 25, col: '#f3e3a1', adj: ['Gwiezdny', 'Gwiezdna', 'Gwiezdne'] },
-] as const;
+  { n: 'Smocza Stal', floor: 5, lvl: 20, col: '#d6493f', adj: ['Smoczostalowy', 'Smoczostalowa', 'Smoczostalowe'], mj: 1 },
+  { n: 'Gwiezdny Kruszec', floor: 5, lvl: 25, col: '#f3e3a1', adj: ['Gwiezdny', 'Gwiezdna', 'Gwiezdne'], q: 1.15, mj: 1, div: 0.12, d: 'najwięcej szans na Boski poza Boską Rudą' },
+  { n: 'Obsydian', floor: 4, lvl: 17, col: '#6a5a8a', adj: ['Obsydianowy', 'Obsydianowa', 'Obsydianowe'], q: 1.1, mj: 1, d: 'Legendarny z lepszą jakością' },
+  { n: 'Eteryt', floor: 5, lvl: 23, col: '#8fd8f0', adj: ['Eterytowy', 'Eterytowa', 'Eterytowe'], q: 1.08, mj: 1, div: 0.07, d: 'Mityczny z lepszą jakością' },
+  { n: 'Boska Ruda', floor: 5, lvl: 25, col: '#ffd76a', adj: ['Niebiański', 'Niebiańska', 'Niebiańskie'], q: 1.25, mj: 1, div: 0.6, d: 'bardzo rzadka: największa szansa na Boski' },
+];
+/** Kolejność rud w grze (od najprostszej). Boska Ruda jest osobno: nie wypada w krainach i nie da się jej rafinować. */
+export const ORE_ORDER = [0, 1, 2, 3, 4, 7, 5, 8, 6, 9];
+export const DIVINE_ORE = 9;
+/** Miejsce rudy w kolejności jakości (indeksy nie rosną z jakością — nowe rudy dopisano na końcu). */
+export const oreRank = (ore: number) => ORE_ORDER.indexOf(ore);
+/** Najlepsza ruda nie lepsza od `ore`, którą kuźnia na poziomie `lvl` umie wytopić (nigdy Boska Ruda). */
+export function oreCap(ore: number, lvl: number): number {
+  let k = Math.min(oreRank(ore), oreRank(DIVINE_ORE) - 1);
+  while (k > 0 && ORES[ORE_ORDER[k]].lvl > lvl) k--;
+  return ORE_ORDER[Math.max(0, k)];
+}
+/** Mnożnik szansy na przeskok kończący się Boskim dla rud bez własnego `div` (zasady przeskoku w wersji 3). */
+export const DIVINE_JUMP = 0.04;
 
 /** Rzadkości: mnożnik statystyki głównej i liczba substatów. */
 export const RAR = [
@@ -78,4 +100,7 @@ export const BATCH_OPTIONS: [number, number][] = [[1, 1], [2, 12], [3, 20]];
  * Rafinacja: ile sztuk rudy (indeks) daje 1 sztukę następnej. Im szlachetniejsza ruda, tym drożej —
  * rafinacja zużywa nadmiar, ale wytapianie rudy wprost zawsze opłaca się bardziej niż jej uszlachetnianie.
  */
-export const REFINE_RATIO = [8, 10, 12, 15, 20, 25];
+export const REFINE: Record<number, { to: number; k: number }> = {
+  0: { to: 1, k: 8 }, 1: { to: 2, k: 10 }, 2: { to: 3, k: 12 }, 3: { to: 4, k: 15 },
+  4: { to: 7, k: 18 }, 7: { to: 5, k: 20 }, 5: { to: 8, k: 25 }, 8: { to: 6, k: 30 },
+};
