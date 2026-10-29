@@ -1,17 +1,18 @@
-import { ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue } from '../data';
+import { B, ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue } from '../data';
 import type { Ctx } from './context';
 import { mainVal } from './formulas';
 import { allMods } from './mods';
 import type { FoeType, GameState, Item, Mods, SetId, SkillId, Stats } from './types';
 
 /** Chowaniec i umiejętności — liczą się do Mocy, ale nie są częścią ekwipunku. */
-export interface Extra { pet?: { atk: number; int: number } | null; skills?: { id: SkillId; lvl: number }[] }
+export interface Extra { pet?: { atk: number; int: number } | null; skills?: { id: SkillId; lvl: number }[]; heir?: Item | null }
 
 export function extraOf(s: GameState): Extra {
   const p = s.petSel ? s.pets[s.petSel] : null;
   return {
     pet: s.petSel && p ? { atk: petAtkPct(s.petSel, p.lvl, p.stars), int: PETS[s.petSel].int } : null,
     skills: s.skills.eq.filter((x): x is SkillId => !!x).map(id => ({ id, lvl: s.skills.lv[id] ?? 1 })),
+    heir: s.legacy?.item ?? null,
   };
 }
 
@@ -48,21 +49,22 @@ export function setCounts(eq: GameState['eq']): { id: SetId; count: number }[] {
 export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {}): Stats {
   let dmg = 10, hp = 100, crit = 5, critd = 50, spd = 0, ls = 0, dodge = 0, regen = 0.5, boss = 0, eldmg = 0, slow = 0, holy = 0, pog = 0;
   const vs: Partial<Record<FoeType, number>> = {};
+  const addSub = (id: string, v: number) => {
+    switch (id) {
+      case 'crit': crit += v; break;
+      case 'critd': critd += v; break;
+      case 'spd': spd += v; break;
+      case 'ls': ls += v; break;
+      case 'dodge': dodge += v; break;
+      case 'regen': regen += v; break;
+      case 'boss': boss += v; break;
+    }
+  };
   for (const it of Object.values(eq)) {
     if (!it) continue;
     const m = mainVal(it);
     if (SLOTS[it.slot].stat === 'dmg') dmg += m; else hp += m;
-    for (const s of it.subs) {
-      switch (s.id) {
-        case 'crit': crit += s.v; break;
-        case 'critd': critd += s.v; break;
-        case 'spd': spd += s.v; break;
-        case 'ls': ls += s.v; break;
-        case 'dodge': dodge += s.v; break;
-        case 'regen': regen += s.v; break;
-        case 'boss': boss += s.v; break;
-      }
-    }
+    for (const s of it.subs) addSub(s.id, s.v);
     if (it.el) {
       const E = ELEM[it.el];
       if (E.eff === 'dmg') eldmg += E.v; else if (E.eff === 'slow') slow += E.v; else if (E.eff === 'ls') ls += E.v; else holy += E.v;
@@ -71,6 +73,13 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
       if (it.aw.kind === 'boss') pog += it.aw.v;
       else if (it.aw.t) vs[it.aw.t] = (vs[it.aw.t] ?? 0) + it.aw.v;
     }
+  }
+  // Pamiątka Rodu (Dziedzictwo): część głównej statystyki i statystyk dodatkowych przedmiotu z poprzedniego pokolenia
+  if (extra.heir) {
+    const k = B.LEGACY_HEIR_PCT / 100;
+    const m = mainVal(extra.heir) * k;
+    if (SLOTS[extra.heir.slot].stat === 'dmg') dmg += m; else hp += m;
+    for (const s of extra.heir.subs) addSub(s.id, s.v * k);
   }
   // zestawy: bonus za 2 i za 4 części
   let dmgPct = mods.dmgPct, hpPct = mods.hpPct;

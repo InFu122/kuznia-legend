@@ -225,6 +225,12 @@ export class ServerLink {
   clanHelp(up: number, uid?: string): Promise<ClanLife> { return this.rpc('clan_help', uid ? { up, uid } : { up }); }
   clanOreAsk(up: number, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { up, ore }); }
   clanOreGive(up: number, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { up, id, n }); }
+  /** Dziedzictwo: serwer zaczyna nowe pokolenie i zwraca nowy stan gry (od teraz to jest aktualny zapis). */
+  async legacy(slot: SlotId | null): Promise<GameState> {
+    const r = await this.rpc<{ state: GameState; version: string }>('legacy', { slot });
+    this.version = r.version;
+    return r.state;
+  }
   shopState(): Promise<ShopResp> { return this.rpc('shop_state', {}); }
   shopBuy(id: GemItemId): Promise<ShopResp> { return this.rpc('shop_buy', { id }); }
   shopGift(): Promise<ShopResp> { return this.rpc('shop_gift', {}); }

@@ -27,7 +27,7 @@ export const FORGE_UNLOCKS: Record<number, string> = {
   15: 'wytop Adamantytu',
   20: 'wytop Smoczej Stali, wytop seryjny ×3',
   25: 'wytop Gwiezdnego Kruszcu',
-  30: 'pełna szansa na przeskok',
+  30: 'pełna szansa na przeskok, Dziedzictwo (nowe pokolenie)',
 };
 
 /**
@@ -78,7 +78,11 @@ export const B = {
   UPGRADE_COST_BASE: 100,       // koszt(n) = 100 × 1,5^(n−1)
   UPGRADE_COST_MULT: 1.5,
   AUTO_FORGE_LVL: 5,
-  REFINE_FORGE_LVL: 5,          // rafinacja rud (słabsza ruda → lepsza)
+  REFINE_FORGE_LVL: 5,
+  LEGACY_FORGE: 30,             // Dziedzictwo (nowe pokolenie) od tego poziomu kuźni
+  LEGACY_STAR_PCT: 5,           // Gwiazda Mistrza: +5% obrażeń i złota
+  LEGACY_LANDS_PER_STAR: 4,     // gwiazdy za pokolenie: 1 za kuźnię 30 i 1 za każde 4 pokonane krainy
+  LEGACY_HEIR_PCT: 50,          // Pamiątka Rodu działa w 50% (główna statystyka i dodatkowe)          // rafinacja rud (słabsza ruda → lepsza)
   ELEM_FORGE_LVL: 10,
   AUTO_INTERVAL_MS: 900,
   WAVES_PER_STAGE: 5,

@@ -129,6 +129,10 @@ W klanie zakładka **Klan** ma siedem części:
 
 Dzienne limity i dni wojny liczą się od północy czasu UTC (w Polsce o 1:00 zimą, o 2:00 latem). Nagrody klanu (Monety, skrzynie, ruda od klanowiczów) czekają na serwerze, aż gra je odbierze i zapisze — żadna nie przepada ani nie przychodzi dwa razy.
 
+### Dziedzictwo
+
+Od 30. poziomu kuźni bohater może przejść na emeryturę (zakładka Bohater albo przycisk przy kuźni na najwyższym poziomie). Kuźnia, kampania, ekwipunek, złoto i rudy zaczynają się od nowa, a zostaje Nauka, umiejętności, chowańce, wierzchowce, zasoby rzadkie, Klejnoty, przepustka i klan. W zamian: Gwiazdy Mistrza (1 za kuźnię 30. poziomu i 1 za każde 4 pokonane krainy; każda +5% obrażeń i złota na zawsze) i Pamiątka Rodu — wybrany przedmiot w dodatkowym slocie, działający w 50%. Z serwerem nowe pokolenie zaczyna serwer, więc gwiazd nie da się dopisać.
+
 ### Sklep i Przepustka Kowala
 
 Przycisk z Klejnotem na górze ekranu (obok czatu i zadań) otwiera **Sklep** z trzema zakładkami:

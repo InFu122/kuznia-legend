@@ -10,9 +10,10 @@ import type { Battle, DungId, Fx, GameState } from './types';
  * 6 — ziarna wytopu z serwera, prawdziwy Wielki Obieg,
  * 7 — życie klanu: poziom klanu, Monety i sklep klanowy, pomoc w ulepszeniach,
  * 8 — auto-wytop do wybranej rzadkości, nowe tempo gry (dłuższe ulepszenia kuźni, mniej złota, rozkłady rud krain),
- * 9 — Klejnoty, sklep, Przepustka Kowala, wzmocnienia z reklam, przyspieszenia kuźni.
+ * 9 — Klejnoty, sklep, Przepustka Kowala, wzmocnienia z reklam, przyspieszenia kuźni,
+ * 10 — Dziedzictwo (pokolenie, Gwiazdy Mistrza, Pamiątka Rodu).
  */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];
@@ -37,6 +38,7 @@ export function newState(now: number): GameState {
     sx: 0, seeds: [], obIn: [], obOut: [],
     clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
     gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, boost: { lvl: 0, ms: 0 },
+    legacy: { gen: 0, stars: 0, item: null },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
 }
@@ -115,8 +117,10 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!isObj(out.buffs)) out.buffs = {};
   if (!isObj(out.pass) || !isObj(out.pass.base) || typeof out.pass.season !== 'number') out.pass = null;
   if (!isObj(out.boost) || typeof out.boost.lvl !== 'number' || typeof out.boost.ms !== 'number') out.boost = fresh.boost;
+  if (!isObj(out.legacy) || typeof out.legacy.gen !== 'number' || typeof out.legacy.stars !== 'number') out.legacy = fresh.legacy;
+  if (!isObj(out.legacy.item)) out.legacy.item = null;
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
-  for (const it of [...Object.values(out.eq), out.pending, ...out.found, ...out.obIn, ...out.obOut]) {
+  for (const it of [...Object.values(out.eq), out.pending, ...out.found, ...out.obIn, ...out.obOut, out.legacy.item]) {
     if (!it) continue;
     it.flvl ??= 0; it.forced ??= ''; it.kills ??= {}; it.bosses ??= 0; it.owners ??= [it.smith]; it.obieg ??= false; it.ls ??= 0; it.aw ??= null;
     it.set ??= null;

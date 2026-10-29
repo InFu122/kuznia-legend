@@ -17,6 +17,13 @@ export function coins(n: number): string {
   return `${fmt(n)} ${w}`;
 }
 
+/** 1 Gwiazda Mistrza, 2–4 Gwiazdy, 5+ Gwiazd. */
+export function starsText(n: number): string {
+  const m10 = n % 10, m100 = n % 100;
+  const w = n === 1 ? 'Gwiazda' : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 'Gwiazdy' : 'Gwiazd';
+  return `${fmt(n)} ${w} Mistrza`;
+}
+
 /** 1 Klejnot, 2–4 Klejnoty, 5+ Klejnotów. */
 export function gemsText(n: number): string {
   const m10 = n % 10, m100 = n % 100;

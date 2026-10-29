@@ -13,7 +13,8 @@ import { startResearch, tickResearch } from './tech';
 import { applyFound, obiegEvent } from './obieg';
 import { applyOffline } from './offline';
 import { mulberry32, rnd, type Rng } from './rng';
-import { newBattle, newState } from './state';
+import { migrate, newBattle, newState } from './state';
+import { legacyBlock, legacyReset } from './legacy';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
 import {
@@ -116,6 +117,24 @@ export class Game {
     this.adOffer = { kind, until: now + AD.OFFER_SHOW_MS };
     this.changed();
   }
+  /* ---------- Dziedzictwo ---------- */
+
+  /** Nowe pokolenie bez serwera. `slot` — przedmiot na Pamiątkę Rodu (null = zostaje dotychczasowa). */
+  legacy(slot: SlotId | null): boolean {
+    if (legacyBlock(this.s)) return false;
+    this.legacyStart(legacyReset(this.s, slot, this.ctx.now()));
+    return true;
+  }
+  /** Stan nowego pokolenia (z serwera albo z `legacy`). */
+  legacyStart(state: GameState): void {
+    this.load(migrate(state, this.ctx.now()));
+    this.adOffer = null;
+    this.ctx.dirty = true;
+    const L = this.s.legacy;
+    const w = L.stars === 1 ? 'Gwiazda' : L.stars % 10 >= 2 && L.stars % 10 <= 4 && (L.stars % 100 < 12 || L.stars % 100 > 14) ? 'Gwiazdy' : 'Gwiazd';
+    toast(this.ctx, `Pokolenie ${L.gen + 1}: ${L.stars} ${w} Mistrza (+${L.stars * B.LEGACY_STAR_PCT}% obrażeń i złota).`, 'good');
+  }
+
   /** Komplet kluczy ze sklepu (z serwerem — po potwierdzeniu zakupu). */
   refillKeys(): void { refillKeys(this.s, this.ctx.now()); this.ctx.dirty = true; this.changed(); }
   /** Otwiera okno gry (np. sklep z przycisku przyspieszenia). */

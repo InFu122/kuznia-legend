@@ -951,3 +951,12 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .passlist .pr.ready{border-color:var(--good); box-shadow:inset 0 0 0 1px var(--good)}
 .passlist .pr.got{opacity:.5; text-decoration:line-through}
 .passlist .pr.lock{opacity:.55}
+
+/* Dziedzictwo */
+.card.legacy{background:linear-gradient(140deg, rgba(242,193,78,.10), var(--plate) 60%)}
+.heir{--rc:var(--rivet); display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; padding:8px 10px; text-align:left; font-size:13px; line-height:1.35; color:var(--frost); background:var(--plate-2); border:1px solid var(--rc); border-left-width:4px; border-radius:10px}
+.heir b{color:var(--rc)}
+.heir.hr0{--rc:var(--r0)} .heir.hr1{--rc:var(--r1)} .heir.hr2{--rc:var(--r2)} .heir.hr3{--rc:var(--r3)} .heir.hr4{--rc:var(--r4)} .heir.hr5{--rc:var(--r5)} .heir.hr6{--rc:var(--r6)}
+.heirpick li{cursor:pointer; border-radius:10px; padding-inline:8px}
+.heirpick li.on{outline:2px solid var(--straw); outline-offset:-2px; background:rgba(242,193,78,.08)}
+.btn.danger{background:var(--blood); color:#fff; border-color:#7a1e1a}

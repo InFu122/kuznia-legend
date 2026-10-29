@@ -164,7 +164,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
 
       <section class="card">
         {f.lvl >= B.FORGE_MAX ? (
-          <div class="row"><div><LevelEyebrow text="Kuźnia" onInfo={onInfo} /><div class="h">Poziom {B.FORGE_MAX}</div></div><span class="muted">Maksymalny poziom</span></div>
+          <div class="row"><div><LevelEyebrow text="Kuźnia" onInfo={onInfo} /><div class="h">Poziom {B.FORGE_MAX}</div></div><button class="btn small primary" onClick={() => game.openModal({ kind: 'legacy' })}>Dziedzictwo…</button></div>
         ) : f.up ? (
           <>
             <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>

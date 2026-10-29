@@ -1,4 +1,4 @@
-import { MOUNTS, PETS, TECH, TECH_IDS, clanBonus, companionMult, petTraitValue } from '../data';
+import { B, MOUNTS, PETS, TECH, TECH_IDS, clanBonus, companionMult, petTraitValue } from '../data';
 import type { GameState, Mods } from './types';
 
 export const techLvl = (s: GameState, id: keyof GameState['tech']['lv']) => s.tech.lv[id] ?? 0;
@@ -41,5 +41,9 @@ export function allMods(s: GameState): Mods {
   m.dmgPct += mb.dmg;
   m.hpPct += mb.hp;
   for (const [k, v] of Object.entries(clanBonus(s.clanLvl || 0))) m[k as keyof Mods] += v ?? 0;
+  // Dziedzictwo: Gwiazdy Mistrza
+  const stars = Math.max(0, s.legacy?.stars || 0);
+  m.dmgPct += stars * B.LEGACY_STAR_PCT;
+  m.goldPct += stars * B.LEGACY_STAR_PCT;
   return m;
 }

@@ -16,6 +16,7 @@ import { ackRewards, clanLevelFor, readHelped } from './clanlife';
 import { ensureName } from './names';
 import { submitBoards } from './ranking';
 import { cleanName, validateSave } from './validate';
+import { readLegacy } from './legacy';
 import { passOnSave, readBoost, shopIntoSave } from './shop';
 import { warOnSave } from './war';
 
@@ -169,6 +170,7 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   // Klejnoty, limity sklepu, wzmocnienia i przepustkę ustala serwer (punkty przepustki z różnicy liczników od poprzedniego zapisu).
   const pass = passOnSave(nk, logger, userId, cur ? cur.value.state : null, s, now);
   shopIntoSave(nk, userId, s, now, pass);
+  s.legacy = readLegacy(nk, userId); // Dziedzictwo prowadzi serwer
 
   const proof = proofFor(nk, userId, s, meta);
   const ver = verifiedEq(proof, s, meta.pity || []);
@@ -196,7 +198,7 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   warOnSave(nk, logger, ctx, userId, clan, cur ? cur.value.state : null, s);
   return JSON.stringify({
     version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, testSpeed: maxSpeed, serverTime: now,
-    gems: s.gems, shop: s.shop, pass: s.pass, buffs: s.buffs,
+    gems: s.gems, shop: s.shop, pass: s.pass, buffs: s.buffs, legacy: s.legacy,
   });
 }
 
