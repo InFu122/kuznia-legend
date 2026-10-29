@@ -136,7 +136,7 @@ export interface GameState {
   login: { last: string; idx: number };                // kalendarz logowania: ostatni odbiór, następny dzień 0–6
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
   opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean };
-  stats: { smelted: number; jumps: number; kills: number; bosses: number };
+  stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów)
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
   obIn: Item[];                                        // przedmioty z Obiegu od serwera, czekające na skrzynię bossa lub Zbrojownię

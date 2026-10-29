@@ -12,13 +12,15 @@ import { CLAN, CLAN_LEVELS, ORES, ORE_WANT, clanBossHp, clanBossOf, clanLevelOf 
 import { clanAttackReward, clanBossChest, type ServerReward } from '../../src/engine/clan';
 import type { Reward } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
+import { raidBrief } from './raid';
+import { warBrief, warOnBossAttack } from './war';
 import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, parse, readSave, serverDay, serverRng, updateObject, userOf } from './common';
 import { nameOf } from './names';
 
 interface HelpReq { uid: string; n: string; lvl: number; got: string[]; t: number }
 interface OreReq { id: string; uid: string; n: string; ore: number; want: number; got: number; t: number }
 interface Boss { lvl: number; hp: number; max: number; dmg: Record<string, number>; who: Record<string, string>; t: number }
-export interface ClanState { xp: number; boss: Boss; kills: number; helps: HelpReq[]; ores: OreReq[]; log: { t: number; m: string; n?: number }[] }
+export interface ClanState { xp: number; boss: Boss; kills: number; helps: HelpReq[]; ores: OreReq[]; log: { t: number; m: string; n?: number }[]; raidLvl?: number }
 interface Daily { day: string; don: number; atk: number; deed: number; oreT: number }
 type Helped = Record<string, number>;
 interface Pending { list: ServerReward[] }
@@ -29,12 +31,12 @@ const perm = { read: 0 as nkruntime.ReadPermissionValues, write: 0 as nkruntime.
 
 const myName = (nk: nkruntime.Nakama, userId: string) => nameOf(nk, userId) || 'Kowal';
 
-function memberIds(nk: nkruntime.Nakama, groupId: string): string[] {
+export function memberIds(nk: nkruntime.Nakama, groupId: string): string[] {
   return (nk.groupUsersList(groupId, 100).groupUsers || []).filter(u => u.user && typeof u.state === 'number' && u.state <= 2).map(u => u.user.userId);
 }
 
 /** Łączna Moc członków (z rankingu Mocy, liczonej przez serwer). */
-function clanPower(nk: nkruntime.Nakama, ids: string[]): number {
+export function clanPower(nk: nkruntime.Nakama, ids: string[]): number {
   if (!ids.length) return 0;
   let sum = 0;
   for (const r of nk.leaderboardRecordsList('moc', ids, ids.length).ownerRecords || []) sum += r.score;
@@ -46,13 +48,13 @@ function newBoss(lvl: number, power: number, now: number): Boss {
   return { lvl, hp: max, max, dmg: {}, who: {}, t: now };
 }
 
-function readState(nk: nkruntime.Nakama, groupId: string): ClanState | null {
+export function readState(nk: nkruntime.Nakama, groupId: string): ClanState | null {
   const o = nk.storageRead([{ collection: STATE, key: groupId, userId: SYSTEM_USER }]);
   return o.length ? (o[0].value as unknown as ClanState) : null;
 }
 
 /** Stan klanu; przy pierwszym użyciu powstaje z pierwszym bossem. */
-function ensureState(nk: nkruntime.Nakama, groupId: string, ids: string[]): ClanState {
+export function ensureState(nk: nkruntime.Nakama, groupId: string, ids: string[]): ClanState {
   const cur = readState(nk, groupId);
   if (cur) return cur;
   const power = clanPower(nk, ids);
@@ -62,7 +64,7 @@ function ensureState(nk: nkruntime.Nakama, groupId: string, ids: string[]): Clan
 }
 
 /** Wpis w kronice; ten sam wpis w ciągu godziny tylko zwiększa licznik (np. „wspiera Wspólną Kuźnię ×3”). */
-const addLog = (st: ClanState, m: string, now: number) => {
+export const addLog = (st: ClanState, m: string, now: number) => {
   const last = st.log[st.log.length - 1];
   if (last && last.m === m && now - last.t < 3600000) {
     st.log[st.log.length - 1] = { t: now, m, n: (last.n || 1) + 1 };
@@ -73,8 +75,8 @@ const addLog = (st: ClanState, m: string, now: number) => {
 };
 
 /** Poziom klanu gracza (0 bez klanu) — serwer wpisuje go do zapisu, bo od niego zależą premie. */
-export function clanLevelFor(nk: nkruntime.Nakama, userId: string): number {
-  const c = clanOf(nk, userId);
+export function clanLevelFor(nk: nkruntime.Nakama, userId: string, known?: { g: nkruntime.Group } | null): number {
+  const c = known === undefined ? clanOf(nk, userId) : known;
   if (!c) return 0;
   const st = readState(nk, c.g.id);
   return st ? clanLevelOf(st.xp) : 0;
@@ -110,13 +112,13 @@ export function readHelped(nk: nkruntime.Nakama, userId: string): Helped {
   return o.length ? (o[0].value as unknown as Helped) : {};
 }
 
-function readPending(nk: nkruntime.Nakama, userId: string): ServerReward[] {
+export function readPending(nk: nkruntime.Nakama, userId: string): ServerReward[] {
   const o = nk.storageRead([{ collection: 'clan', key: 'rewards', userId }]);
   return o.length ? ((o[0].value as unknown as Pending).list || []) : [];
 }
 
 /** Dodaje nagrody do kolejki gracza. */
-function pushRewards(nk: nkruntime.Nakama, userId: string, items: { why: string; r: Reward }[]): void {
+export function pushRewards(nk: nkruntime.Nakama, userId: string, items: { why: string; r: Reward }[]): void {
   if (!items.length) return;
   const add = items.map(x => ({ id: nk.uuidv4().slice(0, 18), why: x.why, r: x.r }));
   updateObject<Pending>(nk, 'clan', 'rewards', userId, cur => {
@@ -239,7 +241,9 @@ export function rpcClanSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   }
   const x = clanCtx(nk, userId);
   x.st = tidy(nk, x, up);
-  return JSON.stringify(view(nk, x, up));
+  const extra: Record<string, unknown> = {};
+  try { extra.war = warBrief(nk, ctx, userId, x.g); extra.raid = raidBrief(nk, ctx, userId, x.g); } catch { /* skrót nie jest konieczny */ }
+  return JSON.stringify(view(nk, x, up, extra));
 }
 
 /** Datek do Wspólnej Kuźni: Doświadczenie dla klanu, Monety dla gracza. Złoto płaci gra. */
@@ -297,6 +301,7 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
     return st;
   }, perm) as ClanState;
   pushRewards(nk, userId, [{ why: 'Atak na bossa klanowego', r: clanAttackReward(bestG) }]);
+  try { warOnBossAttack(nk, ctx, userId, x.g, x.now); } catch { /* wojna nie blokuje ataku na bossa */ }
 
   const k = killed as Boss | null;
   if (k) {
@@ -425,6 +430,22 @@ export function rpcClanOreGive(ctx: nkruntime.Context, _logger: nkruntime.Logger
   const paid = deedReward(nk, userId, x.now, 1, 'Dar rudy dla klanu');
   if (r.got >= r.want) logEvent(nk, x, `${r.n} dostaje komplet rudy (${ORES[r.ore].n} × ${r.want})`);
   return JSON.stringify(view(nk, x, up, { given, paid }));
+}
+
+/** Doświadczenie dla klanu (wojna, smok) z wpisem w kronice; nowy poziom ogłasza na czacie. */
+export function addClanXp(nk: nkruntime.Nakama, groupId: string, xp: number, m: string, extra: (st: ClanState) => void = () => {}): void {
+  const now = Date.now();
+  const st0 = ensureState(nk, groupId, memberIds(nk, groupId));
+  const before = clanLevelOf(st0.xp);
+  const st = updateObject<ClanState>(nk, STATE, groupId, SYSTEM_USER, cur => {
+    if (!cur) return null;
+    const next: ClanState = { ...cur, xp: cur.xp + Math.max(0, Math.round(xp)), log: cur.log.slice() };
+    addLog(next, m, now);
+    extra(next);
+    return next;
+  }, perm) as ClanState;
+  const after = clanLevelOf(st.xp);
+  if (after > before) postClan(nk, groupId, { k: 'sys', t: `Wspólna Kuźnia osiąga ${after}. poziom! Nowa premia: ${CLAN_LEVELS[after - 1].d}.` });
 }
 
 function logEvent(nk: nkruntime.Nakama, x: Ctx, m: string): void {

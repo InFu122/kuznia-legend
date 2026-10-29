@@ -1,7 +1,7 @@
 // Połączenie z serwerem gry (Nakama) przez REST. Gra potrzebuje tylko logowania urządzeniem i wywołań RPC,
 // więc obywa się bez biblioteki klienta. Bez skonfigurowanego serwera (np. w artefakcie) gra działa lokalnie.
 import type { ServerReward } from '../engine/clan';
-import type { FoundEvent, GameState, Item, SlotId } from '../engine/types';
+import type { ElemKey, FoundEvent, GameState, Item, SlotId } from '../engine/types';
 
 const DEVICE_KEY = 'kuznia-legend-device';
 const TIMEOUT_MS = 10000;
@@ -29,10 +29,32 @@ export interface ArenaState {
   rating: number; rank: number; left: number; max: number; wins: number; losses: number; power: number;
   opp: ArenaOpp[]; log: { who: string; won: boolean; d: number; t: number }[];
 }
-export interface ArenaFight extends ArenaState {
+/** Pojedynek rozegrany przez serwer (arena, bitwa wojny klanów) — do odtworzenia w grze. */
+export interface DuelShow {
   win: boolean; ms: number; frames: [number, number][]; crits: [number, number]; skills: [number, number];
   me: { name: string; power: number; look?: Record<string, { kind: string; ore: number }> };
-  foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }> }; d: number; gold: number;
+  foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }> };
+}
+export interface ArenaFight extends ArenaState, DuelShow { d: number; gold: number }
+
+export interface WarSide { n: string; tag: string; power: number; total: number; days: number[]; ghost?: boolean }
+export interface WarState {
+  week: string; day: number; ends: number; test: boolean;
+  us: WarSide; them: WarSide | null;
+  me: { in: boolean; pts: number; today: number; cap: number; atkLeft: number };
+  members: { n: string; pts: number; atk: number; me: boolean }[];
+  def: { id: string; n: string; power: number; ghost: boolean; beaten: number }[];
+  log: { t: number; a: string; d: string; w: boolean; p: number; us: boolean }[];
+  res: { r: 'win' | 'draw' | 'loss'; us: number; them: number; vs: string } | null;
+  rewards: ServerReward[]; serverTime: number;
+  fight?: DuelShow & { pts: number };
+}
+export interface RaidState {
+  week: string; ends: number; lvl: number; ph: number; hp: number; max: number; done: boolean;
+  mine: number; phase: number; rank: number; fighters: number; top: { n: string; d: number; me: boolean }[];
+  left: number; weak: { el: ElemKey; n: number; bonus: number }; log: { t: number; m: string }[];
+  rewards: ServerReward[]; serverTime: number;
+  hit?: { dmg: number; bonus: number; phase: number; killed: boolean };
 }
 
 const newDeviceId = () => 'kl-' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
@@ -63,6 +85,7 @@ export interface ClanLife {
   myOre?: { id: string; ore: number; want: number; got: number } | null;
   log?: { t: number; m: string; n?: number }[];
   rewards: ServerReward[];
+  war?: { day: number; atk: number }; raid?: { left: number; done: boolean };
   hit?: { dmg: number; killed: boolean }; levelUp?: number; helpedNow?: number; paid?: number; given?: number;
 }
 
@@ -197,6 +220,10 @@ export class ServerLink {
   clanHelp(up: number, uid?: string): Promise<ClanLife> { return this.rpc('clan_help', uid ? { up, uid } : { up }); }
   clanOreAsk(up: number, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { up, ore }); }
   clanOreGive(up: number, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { up, id, n }); }
+  warState(): Promise<WarState> { return this.rpc('war_state', {}); }
+  warAttack(id: string): Promise<WarState> { return this.rpc('war_attack', { id }); }
+  raidState(): Promise<RaidState> { return this.rpc('raid_state', {}); }
+  raidAttack(): Promise<RaidState> { return this.rpc('raid_attack', {}); }
   /** Karta przedmiotu Mitycznego lub Boskiego na czacie klanu albo globalnym. */
   chatDrop(item: Item, global: boolean): Promise<{ ok: boolean }> { return this.rpc('chat_drop', { item, global }); }
   chatReport(r: { channel: string; message: string; sender: string; name: string; text: string }): Promise<{ ok: boolean }> { return this.rpc('chat_report', r); }

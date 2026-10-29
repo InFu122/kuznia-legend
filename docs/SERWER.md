@@ -63,6 +63,15 @@ Jeśli port 8080 jest zajęty (np. przez inną aplikację CasaOS), zmień `WEB_P
 Na czas testów serwer pozwala przyspieszyć grę: **Kodeks → Ustawienia → Tempo testowe ×1 / ×10 / ×50 / ×100** (walka, kuźnia, badania, wykluwanie i inne timery). Gdy tempo jest włączone, obok nazwy gry widać plakietkę „×10” itp. Limit ustawia zmienna `TEST_SPEED` w `.env` (bez niej: do ×100):
 
 - `TEST_SPEED=100` — do ×100, `TEST_SPEED=10` — do ×10, `TEST_SPEED=1` — tempo testowe wyłączone.
+
+W trybie testowym można też przestawić dzień wojny klanów i smoka (np. żeby sprawdzić sobotnią bitwę we wtorek). Adres otwierasz w przeglądarce albo `curl` z klucza `NAKAMA_HTTP_KEY` z `.env` (dni: 0 = poniedziałek … 6 = niedziela; `w` to numer tygodnia z odpowiedzi `war_state`, np. `w2965`):
+
+```
+curl -X POST "https://ADRES/v2/rpc/war_test_clock?http_key=KLUCZ&unwrap" -d '{"w":"w2965","d":5}'
+curl -X POST "https://ADRES/v2/rpc/war_test_clock?http_key=KLUCZ&unwrap" -d '{"clear":true}'
+```
+
+Przy `TEST_SPEED=1` serwer odrzuca zmianę zegara.
 - Po zmianie: `docker compose up -d` (w logach Nakamy: „tempo testowe: do ×100” albo „wyłączone”).
 
 W trybie testowym serwer nie pilnuje tempa rozwoju kuźni. Po wyłączeniu pilnuje go od ostatniego zapisu, więc konta z testów grają dalej. Dzienne limity (arena, klan, klucze lochów) liczą się w prawdziwym czasie także przy przyspieszeniu. **Przed udostępnieniem gry innym graczom ustaw `TEST_SPEED=1`.**
@@ -109,14 +118,16 @@ Zakładka **Klan** (po pokonaniu pierwszego bossa): wyszukiwanie, dołączanie, 
 
 ### Życie klanu
 
-W klanie zakładka **Klan** ma pięć części:
+W klanie zakładka **Klan** ma siedem części:
 
+- **Wojna** — co tydzień klan walczy z klanem o podobnej Mocy (gdy takiego nie ma — z klanem-widmem). Poniedziałek: dobór i skład. Wtorek: każdy wytop to punkt. Środa: 5 pokonanych wrogów (także w nagrodach za nieobecność) to punkt. Czwartek: klucz w lochu 25 punktów, piętro Wieży 5. Piątek: atak na bossa klanowego 60 punktów. W te dni jedna osoba zdobywa najwyżej 300 punktów. Sobota: 3 ataki na obrońców wroga (pojedynki bohaterów jak na arenie). Niedziela: wynik, skrzynie dla wszystkich z punktami (zwycięzcy więcej, trzy najlepsze osoby w klanie — premia) i Doświadczenie klanu.
+- **Smok** — Smocze Leże: co tydzień smok o czterech fazach, każda ze słabością na inny żywioł (przedmioty z tą domieszką: +10% obrażeń każdy, do +40%). 2 ataki dziennie. Przełamana faza daje skrzynię z rudą żywiołu na następną fazę, pokonany smok — wielką skrzynię ze Smoczą Stalą, Doświadczenie klanu i silniejszego smoka za tydzień.
 - **Kuźnia** — Wspólna Kuźnia Klanu. 3 datki złota dziennie (koszt rośnie z postępem w kampanii); każdy datek daje klanowi 10 Doświadczenia, a tobie 5 Monet klanowych. Pokonany boss klanowy też daje Doświadczenie. Klan ma 10 poziomów, każdy z premią dla wszystkich członków (złoto, obrażenia, zdrowie, ruda, czas ulepszeń kuźni, nagrody offline). Poziom klanu wpisuje do zapisu serwer.
 - **Boss** — wspólny boss klanu. 3 ataki dziennie, obrażenia = twoja Moc w rankingu (±15%), za atak Monety i złoto. Pokonany boss zostawia skrzynię każdemu, kto go atakował (pierwsze miejsce więcej i jajo), a następny jest silniejszy.
 - **Pomoc** — prośba o pomoc przy ulepszeniu kuźni (każda pomoc −3% czasu, do 10 pomocy) i prośby o rudę (raz na 8 godzin). Pomoc i dary rudy dają Monety (10 nagradzanych dziennie). O pomoc poprosisz też w zakładce Kuźnia, w trakcie ulepszania.
 - **Sklep** — towary za Monety klanowe z limitem tygodniowym (od poniedziałku); lepsze towary odblokowuje poziom klanu.
 
-Dzienne limity liczą się od północy czasu UTC. Nagrody klanu (Monety, skrzynie, ruda od klanowiczów) czekają na serwerze, aż gra je odbierze i zapisze — żadna nie przepada ani nie przychodzi dwa razy.
+Dzienne limity i dni wojny liczą się od północy czasu UTC (w Polsce o 1:00 zimą, o 2:00 latem). Nagrody klanu (Monety, skrzynie, ruda od klanowiczów) czekają na serwerze, aż gra je odbierze i zapisze — żadna nie przepada ani nie przychodzi dwa razy.
 
 ### Czat
 

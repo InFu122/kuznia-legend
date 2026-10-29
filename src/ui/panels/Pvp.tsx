@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { DUEL_FRAME_MS } from '../../engine/duel';
 import type { Game } from '../../engine/game';
-import { getLink, ServerError, type ArenaFight, type ArenaState } from '../../save/server';
+import { getLink, ServerError, type ArenaFight, type ArenaState, type DuelShow } from '../../save/server';
 import { fmt } from '../format';
 import { HeroSprite } from '../Arena';
 
@@ -12,7 +12,8 @@ const REPLAY_SPEED = 3;
 const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
 const signed = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n);
 
-function Replay({ f, onDone }: { f: ArenaFight; onDone: () => void }) {
+/** Odtworzenie pojedynku rozegranego przez serwer (arena, bitwa wojny klanów). */
+export function DuelReplay({ f, summary, title = 'Pojedynek', onDone }: { f: DuelShow; summary: string; title?: string; onDone: () => void }) {
   const [i, setI] = useState(0);
   const done = i >= f.frames.length - 1;
   useEffect(() => {
@@ -23,7 +24,7 @@ function Replay({ f, onDone }: { f: ArenaFight; onDone: () => void }) {
   const [a, b] = f.frames[Math.min(i, f.frames.length - 1)];
   return (
     <>
-      <div class="eyebrow">Pojedynek</div>
+      <div class="eyebrow">{title}</div>
       <div class="duel-box">
         <div class="stage duel">
           <div class="st-tag">{done ? (f.win ? 'Wygrana' : 'Porażka') : `${Math.round((i * DUEL_FRAME_MS) / 1000)} s`}</div>
@@ -46,7 +47,7 @@ function Replay({ f, onDone }: { f: ArenaFight; onDone: () => void }) {
       {done ? (
         <div class={`duel-result ${f.win ? 'win' : 'lose'}`} role="status">
           <b>{f.win ? 'Zwycięstwo!' : 'Porażka'}</b>
-          <span>Ocena {signed(f.d)} (teraz {fmt(f.rating)}) · +{fmt(f.gold)} złota</span>
+          <span>{summary}</span>
           <small>Walka trwała {Math.round(f.ms / 1000)} s · trafienia krytyczne {f.crits[0]}:{f.crits[1]} · umiejętności {f.skills[0]}:{f.skills[1]}</small>
         </div>
       ) : <button class="linkbtn" onClick={() => setI(f.frames.length - 1)}>Pomiń</button>}
@@ -87,7 +88,7 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
       .finally(() => { if (live.current) setBusy(false); });
   };
 
-  if (fight) return <Replay f={fight} onDone={() => setFight(null)} />;
+  if (fight) return <DuelReplay f={fight} summary={`Ocena ${signed(fight.d)} (teraz ${fmt(fight.rating)}) · +${fmt(fight.gold)} złota`} onDone={() => setFight(null)} />;
   const gamePower = game.stats.power;
   return (
     <>

@@ -1,6 +1,6 @@
 // Życie klanu po stronie gry: nagrody od serwera (każda raz), pomoc klanu w ulepszeniu kuźni i sklep klanowy.
 // Wspólną Kuźnię, bossa klanowego, prośby o pomoc i rudę prowadzi serwer (server/src/clanlife.ts).
-import { CLAN, CLAN_SHOP, SHOP_GOLD_WAVES, type ClanShopId } from '../data';
+import { CLAN, CLAN_SHOP, ELEM_KEYS, RAID_PHASES, SHOP_GOLD_WAVES, type ClanShopId } from '../data';
 import { toast, type Ctx } from './context';
 import { upgradeTime } from './forge';
 import { goldWave } from './formulas';
@@ -25,6 +25,7 @@ export function cleanReward(r: Reward): Reward {
   return {
     gold: num(r.gold), books: num(r.books), scrolls: num(r.scrolls), saddles: num(r.saddles), stones: num(r.stones), seals: num(r.seals), coins: num(r.coins),
     ores: cleanMap(r.ores), eggs: cleanMap(r.eggs),
+    els: Object.fromEntries(Object.entries(cleanMap(r.els)).filter(([k]) => (ELEM_KEYS as string[]).includes(k))),
   };
 }
 
@@ -125,5 +126,54 @@ export function clanBossChest(lvl: number, rank: number, bestG: number): Reward 
   };
   if (L >= 2) r.scrolls = 1 + Math.floor(L / 6);
   if (rank === 0) r.eggs = { [Math.min(4, 1 + Math.floor(L / 4))]: 1 };
+  return r;
+}
+
+/* ---------- wojna klanów i Smocze Leże ---------- */
+
+export type WarResult = 'win' | 'draw' | 'loss';
+
+/**
+ * Skrzynia za wojnę klanów. Zwycięzcy dostają najwięcej, trzy osoby z największą liczbą punktów w klanie
+ * dostają premię (+30% / +15%), a wielkość skrzyni rośnie z udziałem (pełna od 600 punktów).
+ */
+export function warChest(result: WarResult, rank: number, pts: number, bestG: number): Reward {
+  const share = 0.5 + 0.5 * Math.min(1, Math.max(0, pts) / 600);
+  const k = (result === 'win' ? 1 : result === 'draw' ? 0.7 : 0.45) * (rank === 0 ? 1.3 : rank < 3 ? 1.15 : 1) * share;
+  const r: Reward = {
+    coins: Math.round(60 * k),
+    gold: Math.round(goldWave(bestG) * 60 * k),
+    books: Math.max(1, Math.round(3 * k)),
+    stones: Math.round(20 * k),
+  };
+  if (result === 'win') r.scrolls = 1;
+  if (result === 'win' && rank === 0) r.eggs = { 2: 1 };
+  return r;
+}
+
+/** Nagroda za każdy atak na smoka. */
+export function raidAttackReward(bestG: number): Reward {
+  return { coins: 3, gold: goldWave(bestG) * 4 };
+}
+
+/** Skrzynia za fazę smoka (dla każdego, kto zadał obrażenia w tej fazie): ruda żywiołu słabości następnej fazy. */
+export function raidPhaseChest(phase: number, lvl: number, bestG: number): Reward {
+  const L = Math.max(0, Math.min(30, Math.floor(lvl)));
+  const next = RAID_PHASES[(phase + 1) % RAID_PHASES.length].weak;
+  return { coins: 10 + 2 * L, gold: goldWave(bestG) * (15 + 3 * L), books: 1, els: { [next]: 2 + Math.floor(L / 2) } };
+}
+
+/** Skrzynia za pokonanie smoka: Smocza Stal, księgi i zwoje; podium według obrażeń dostaje więcej, pierwsze miejsce także jajo. */
+export function raidFinalChest(lvl: number, rank: number, bestG: number): Reward {
+  const L = Math.max(0, Math.min(30, Math.floor(lvl)));
+  const k = rank === 0 ? 1.5 : rank < 3 ? 1.25 : 1;
+  const r: Reward = {
+    coins: Math.round((40 + 6 * L) * k),
+    gold: Math.round(goldWave(bestG) * (60 + 8 * L) * k),
+    books: 2 + Math.floor(L / 2),
+    scrolls: 1 + Math.floor(L / 4),
+    ores: { 5: Math.round((6 + 2 * L) * k) },
+  };
+  if (rank === 0) r.eggs = { [Math.min(4, 2 + Math.floor(L / 3))]: 1 };
   return r;
 }

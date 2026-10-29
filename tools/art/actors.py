@@ -546,6 +546,8 @@ FOES = {
     'Smoczy kultysta': ('mag', P(RED, BLACK, FIRE, WOOD, SKIN, e='#ffae3a')),
     'Młody smok': ('smok', P(RED, R('#e8a070', '#c07848', '#8e522e', '#5e341c'), CREAM, DARK, BONE, e='#ffe03a')),
     'Czerwony Smok': ('smok', P(R('#e05a4a', '#b0362e', '#7c1e1a', '#4e100e'), R('#ffb070', '#e07a3a', '#a84c1e', '#6a2a10'), GOLD, BLACK, BONE, e='#fff07a')),
+    # Smocze Leże (rajd klanowy): druga faza
+    'Lodowy Smok': ('smok', P(ICE, R('#ffffff', '#d8f0ff', '#9cc8e6', '#6a94b8'), R('#c6f6ff', '#8ad8f0', '#5aa8cc', '#3a7498'), R('#4a6a8a', '#34506c', '#22384e', '#142434'), BONE, e='#5ac8ff')),
     'Morski wąż': ('waz', P(TEAL, R('#c8f0d8', '#98d0b0', '#68a080', '#407058'), RED, R('#3a6a8a', '#28506a', '#1a364a', '#10222e'), e='#ffe08a')),
     'Burzowa wywerna': ('smok', P(R('#7a8ab8', '#56648e', '#3a4666', '#232c42'), R('#c8d8f0', '#9cb0d0', '#7084a8', '#465a7c'), CREAM, BLACK, BONE, e='#9ff0ff')),
     'Smok błyskawic': ('smok', P(R('#5a7ad8', '#3a56b0', '#26388a', '#16225a'), R('#fff6a8', '#ffd84a', '#d8a020', '#8e6610'), CREAM, BLACK, BONE, e='#fff6a8')),

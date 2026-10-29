@@ -35,6 +35,7 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   ores.forEach((n, o) => { s.ores[o] += n; });
   if (L.el && el) s.els[L.el] = (s.els[L.el] ?? 0) + el;
   const fame = Math.floor(waves * 4.5);
+  s.stats.kills += fame; // średnio 4,5 wroga na falę
   for (const it of Object.values(s.eq)) {
     if (!it) continue;
     it.fame += fame;

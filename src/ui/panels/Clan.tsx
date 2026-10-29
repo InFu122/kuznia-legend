@@ -8,6 +8,7 @@ import { clanLife } from '../../save/clanlife';
 import { getLink, type ClanInfo, type ClanMember, type ClanMode, type ClanRole, type ClanSummary } from '../../save/server';
 import { fmt } from '../format';
 import { ClanBossTab, ClanForgeTab, ClanHelpTab, ClanShopTab, errText, useClanLife, type ClanTab } from './ClanLife';
+import { ClanRaidTab, ClanWarTab } from './ClanWar';
 
 const ROLE: Record<ClanRole, string> = { lider: 'Przywódca', zastepca: 'Zastępca', starszy: 'Starszy', czlonek: 'Członek', prosba: 'Prośba' };
 const MODE: Record<ClanMode, string> = { open: 'otwarty', request: 'na prośbę', closed: 'zamknięty' };
@@ -292,16 +293,17 @@ function MyClan({ info, reload, openChat }: { info: ClanInfo; reload: (msg?: str
   );
 }
 
-const SUB: [ClanTab, string][] = [['klan', 'Klan'], ['kuznia', 'Kuźnia'], ['boss', 'Boss'], ['pomoc', 'Pomoc'], ['sklep', 'Sklep']];
+const SUB: [ClanTab, string][] = [['klan', 'Klan'], ['wojna', 'Wojna'], ['smok', 'Smok'], ['boss', 'Boss'], ['kuznia', 'Kuźnia'], ['pomoc', 'Pomoc'], ['sklep', 'Sklep']];
 
 /** Zakładki klanu z kropką, gdy coś czeka (datek, atak, komuś można pomóc). */
 function ClanSeg({ tab, setTab }: { tab: ClanTab; setTab: (t: ClanTab) => void }) {
   const d = useClanLife();
   const dot: Partial<Record<ClanTab, boolean>> = d?.left ? {
     kuznia: d.left.don > 0, boss: d.left.atk > 0, pomoc: (d.helps ?? []).some(h => !h.done) || (d.ores ?? []).length > 0,
+    wojna: (d.war?.atk ?? 0) > 0, smok: (d.raid?.left ?? 0) > 0,
   } : {};
   return (
-    <div class="seg seg5" role="tablist" aria-label="Klan">
+    <div class="seg seg7" role="tablist" aria-label="Klan">
       {SUB.map(([id, n]) => (
         <button key={id} role="tab" aria-selected={tab === id} class={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
           {n}{dot[id] && <i class="dot" aria-label="coś czeka" />}
@@ -354,6 +356,8 @@ export function ClanPanel({ game, online, openChat }: { game: Game; online: bool
           <ClanSeg tab={tab} setTab={pick} />
           {tab === 'klan' && <MyClan key={info.clan.id} info={info} reload={reload} openChat={openChat} />}
           {tab === 'kuznia' && <ClanForgeTab game={game} />}
+          {tab === 'wojna' && <ClanWarTab game={game} />}
+          {tab === 'smok' && <ClanRaidTab game={game} />}
           {tab === 'boss' && <ClanBossTab game={game} />}
           {tab === 'pomoc' && <ClanHelpTab game={game} />}
           {tab === 'sklep' && <ClanShopTab game={game} />}

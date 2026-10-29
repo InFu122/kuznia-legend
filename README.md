@@ -69,5 +69,5 @@ Tempo gry: ulepszenia kuźni z tabeli `UPGRADE_MIN` — pierwsze poziomy minuty,
 4. **Społeczność**
    - 4a: unikalne nicki (nadawane nowym graczom, zmiana w Kodeksie), klany do 30 osób z rolami (Przywódca, Zastępcy, Starsi), ogłoszenia, czat na żywo — globalny i klanowy — z filtrem wulgaryzmów, trybem wolnym, wyciszaniem i zgłaszaniem, karty Mitycznych i Boskich dropów na czacie. *(gotowe)*
    - 4b: Wspólna Kuźnia Klanu z 10 poziomami premii, boss klanowy ze skrzyniami dla atakujących, pomoc w ulepszeniach kuźni, prośby o rudę, Monety i sklep klanowy. *(gotowe)*
-   - 4c: wojny klanów i ranking klanów.
+   - 4c: cotygodniowa wojna klanów (dni kucia, walki, lochów i bossa, sobotnia bitwa, klan-widmo gdy brak przeciwnika) i rajd Smocze Leże (smok o 4 fazach ze słabościami na żywioły); wytop seryjny ×2–×10 i rafinacja nadmiaru rud. *(gotowe)*
 5. **Sklep** — aplikacja Capacitor na Androida i iOS, płatności, reklamy z nagrodą, soft launch (przed nim: `TEST_SPEED=1` — wyłączenie tempa testowego na serwerze).

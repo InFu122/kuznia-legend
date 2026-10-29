@@ -11,7 +11,7 @@ import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 import { coins, rewardText } from '../texts';
 
-export type ClanTab = 'klan' | 'kuznia' | 'boss' | 'pomoc' | 'sklep';
+export type ClanTab = 'klan' | 'wojna' | 'smok' | 'boss' | 'kuznia' | 'pomoc' | 'sklep';
 export const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
 
 /** Aktualny stan klanu z serwera (odświeża widok po każdej zmianie). */
@@ -22,7 +22,7 @@ export function useClanLife(): ClanLife | null {
 }
 
 /** Akcja na serwerze z blokadą przycisków i komunikatem. */
-function useAction() {
+export function useAction() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const run = async (fn: () => Promise<string | void>) => {
@@ -33,7 +33,7 @@ function useAction() {
   return { busy, msg, setMsg, run };
 }
 
-const Note = ({ msg }: { msg: string }) => (msg ? <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p> : null);
+export const Note = ({ msg }: { msg: string }) => (msg ? <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p> : null);
 const CoinIco = ({ size = 16 }: { size?: number }) => <Px src={resUrl('moneta')} size={size} />;
 
 function Loading({ d }: { d: ClanLife | null }) {

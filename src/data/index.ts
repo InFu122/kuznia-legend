@@ -7,3 +7,4 @@ export * from './dungeons';
 export * from './companions';
 export * from './missions';
 export * from './clan';
+export * from './war';

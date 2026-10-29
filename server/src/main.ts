@@ -11,9 +11,11 @@ import { SYSTEM_USER, signSecret, testSpeed } from './common';
 import { rpcFeedback, rpcFeedbackList } from './feedback';
 import { rpcNameSet } from './names';
 import { rpcObiegSync } from './obieg';
+import { rpcRaidAttack, rpcRaidState } from './raid';
 import { createBoards, rpcRanking } from './ranking';
 import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
+import { rpcWarAttack, rpcWarState, rpcWarTestClock } from './war';
 
 /** Gracz nie zmienia nazwy konta bezpośrednio — nick nadaje serwer (name_set). */
 function blockAccountApi(_ctx: nkruntime.Context, _logger: nkruntime.Logger, _nk: nkruntime.Nakama, _data: nkruntime.UserUpdateAccount): nkruntime.UserUpdateAccount {
@@ -52,6 +54,11 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('clan_help', rpcClanHelp);
   initializer.registerRpc('clan_ore_ask', rpcClanOreAsk);
   initializer.registerRpc('clan_ore_give', rpcClanOreGive);
+  initializer.registerRpc('war_state', rpcWarState);
+  initializer.registerRpc('war_attack', rpcWarAttack);
+  initializer.registerRpc('war_test_clock', rpcWarTestClock);
+  initializer.registerRpc('raid_state', rpcRaidState);
+  initializer.registerRpc('raid_attack', rpcRaidAttack);
   initializer.registerRpc('chat_drop', rpcChatDrop);
   initializer.registerRpc('chat_report', rpcChatReport);
   initializer.registerRpc('feedback', rpcFeedback);

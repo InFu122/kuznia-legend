@@ -11,10 +11,12 @@ import {
   INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, testSpeed, userOf,
   type SaveMeta, type SaveValue,
 } from './common';
+import { clanOf } from './clan';
 import { ackRewards, clanLevelFor, readHelped } from './clanlife';
 import { ensureName } from './names';
 import { submitBoards } from './ranking';
 import { cleanName, validateSave } from './validate';
+import { warOnSave } from './war';
 
 const MAX_SAVE_BYTES = 300_000;
 /** Ile ziaren wytopu naprzód (od ostatniego zapisu) serwer wydaje. */
@@ -139,7 +141,8 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
     if (s.sx < (cur.value.state.sx || 0)) return conflict(cur, now, true);
   }
   // Poziom klanu (premie) ustala serwer.
-  s.clanLvl = clanLevelFor(nk, userId);
+  const clan = clanOf(nk, userId);
+  s.clanLvl = clanLevelFor(nk, userId, clan);
   const target = s.forge.up || s.forge.lvl;
   let meta: SaveMeta = cur && cur.value.meta ? cur.value.meta : { t0: now, f0: target, pity: [] };
   if (target < meta.f0) meta = { t0: now, f0: target, pity: meta.pity, clMax: meta.clMax }; // nowa gra od zera
@@ -183,6 +186,8 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   updateArenaHero(nk, logger, userId, ctx.username ?? '', s, ver.eq, power);
   // Nagrody klanu zapisane w grze (numery w clanGot) znikają z kolejki do odebrania.
   try { ackRewards(nk, userId, s.clanGot); } catch (e) { logger.warn('Kolejka nagród klanu gracza %s: %s', userId, String(e)); }
+  // Wojna klanów: punkty za aktywność dnia (kucie, walka, lochy) z różnicy liczników.
+  warOnSave(nk, logger, ctx, userId, clan, cur ? cur.value.state : null, s);
   return JSON.stringify({ version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, testSpeed: maxSpeed, serverTime: now });
 }
 

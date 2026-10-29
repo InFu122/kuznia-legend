@@ -19,8 +19,8 @@ const OPPONENTS = 3;
 export const NOTE_DEFENSE = 101;
 
 /** Wygląd bohatera na arenie: rodzaj i ruda widocznego ekwipunku. */
-type Look = Record<string, { kind: string; ore: number }>;
-interface Hero { f: Fighter; power: number; land: string; t: number; look?: Look }
+export type Look = Record<string, { kind: string; ore: number }>;
+export interface Hero { f: Fighter; power: number; land: string; t: number; look?: Look }
 
 const LOOK_SLOTS = ['bron', 'helm', 'zbroja', 'rekawice', 'buty', 'pas', 'amulet'];
 function lookOf(eq: GameState['eq']): Look {
@@ -57,9 +57,17 @@ export function updateArenaHero(
   }
 }
 
-function readHero(nk: nkruntime.Nakama, userId: string): Hero | null {
+export function readHero(nk: nkruntime.Nakama, userId: string): Hero | null {
   const o = nk.storageRead([{ ...HERO, userId }]);
   return o.length ? (o[0].value as Hero) : null;
+}
+
+/** Bohaterowie areny wielu graczy naraz (wojna klanów: obrońcy). */
+export function readHeroes(nk: nkruntime.Nakama, ids: string[]): Record<string, Hero> {
+  const out: Record<string, Hero> = {};
+  if (!ids.length) return out;
+  for (const o of nk.storageRead(ids.map(userId => ({ ...HERO, userId })))) out[o.userId] = o.value as Hero;
+  return out;
 }
 
 const rating = (nk: nkruntime.Nakama, userId: string) => ownRecord(nk, 'arena', userId)?.score ?? START_RATING;

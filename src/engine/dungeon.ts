@@ -66,7 +66,7 @@ export function startDungeon(ctx: Ctx, id: DungId, land = -1): boolean {
   const { s, b } = ctx;
   if (b.mode === 'dung' || !dungUnlocked(ctx, id) || dungKeys(ctx, id) < 1) return false;
   if (id === 'leza' && !lezaBosses(ctx).includes(land)) return false;
-  if (DUNGEONS[id].keys > 0) s.dungeons[id].keys--;
+  if (DUNGEONS[id].keys > 0) { s.dungeons[id].keys--; s.stats.keys++; }
   b.mode = 'dung';
   b.dung = {
     id, floor: id === 'wieza' ? s.dungeons.wieza.best + 1 : 1, loot: {}, tier: dungTier(ctx),
