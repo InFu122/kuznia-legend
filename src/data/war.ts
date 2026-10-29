@@ -27,6 +27,17 @@ export const WAR = {
   GHOST_PER_MEMBER: 150,   // ile punktów dziennie zdobywa średnio „członek” klanu-widma
 } as const;
 
+/** Sezon wojen (28 dni, jak Przepustka Kowala i ligi areny): Puchary za każdą wojnę i ranking klanów sezonu. */
+export const WAR_TROPHIES = { win: 30, draw: 15, loss: 5, perPts: 1000, bonusMax: 20 } as const;
+/** Nagroda dla każdego, kto zdobył punkty w wojnie sezonu — według miejsca klanu (od najlepszych progów). */
+export const CLAN_SEASON_REWARDS: { top: number; gems: number; coins: number }[] = [
+  { top: 1, gems: 150, coins: 800 },
+  { top: 3, gems: 100, coins: 500 },
+  { top: 10, gems: 60, coins: 300 },
+  { top: 25, gems: 35, coins: 200 },
+  { top: 0, gems: 15, coins: 100 },   // każdy klan z Pucharami
+];
+
 /** Klany-widma: przeciwnicy, gdy na serwerze brakuje klanu o podobnej sile (albo jest ich nieparzyście). */
 export const GHOST_CLANS: { n: string; tag: string }[] = [
   { n: 'Bractwo Popiołu', tag: 'POPÓŁ' },

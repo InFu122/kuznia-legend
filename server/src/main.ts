@@ -16,6 +16,7 @@ import { rpcReforge } from './runes';
 import { rpcObiegSync } from './obieg';
 import { rpcRaidAttack, rpcRaidState } from './raid';
 import { createBoards, rpcRanking } from './ranking';
+import { createClanBoards, rpcClanRanking } from './clanrank';
 import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
 import { rpcAdReward, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
@@ -28,6 +29,7 @@ function blockAccountApi(_ctx: nkruntime.Context, _logger: nkruntime.Logger, _nk
 
 function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, initializer: nkruntime.Initializer): void {
   createBoards(nk, logger);
+  createClanBoards(nk, logger);
   signSecret(nk); // sekret podpisów powstaje przy pierwszym starcie
   // Pusta lista blokad czatu — do edycji w konsoli Nakamy (Storage → chat / bans).
   if (!nk.storageRead([{ collection: 'chat', key: 'bans', userId: SYSTEM_USER }]).length) {
@@ -38,6 +40,7 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('seeds', rpcSeeds);
   initializer.registerRpc('time', rpcTime);
   initializer.registerRpc('ranking', rpcRanking);
+  initializer.registerRpc('clan_ranking', rpcClanRanking);
   initializer.registerRpc('transfer_code', rpcTransferCode);
   initializer.registerRpc('transfer_redeem', rpcTransferRedeem);
   initializer.registerRpc('obieg_sync', rpcObiegSync);

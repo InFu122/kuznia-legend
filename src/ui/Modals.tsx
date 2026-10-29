@@ -196,7 +196,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
     case 'missions':
       return <MissionsView game={game} initial={m.tab} close={close} />;
     case 'ranking':
-      return <RankingView close={close} />;
+      return <RankingView initial={m.board} close={close} />;
     case 'arena':
       return <ArenaView game={game} close={close} />;
     case 'shop':

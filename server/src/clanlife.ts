@@ -15,6 +15,7 @@ import { clanOf, postClan } from './clan';
 import { raidBrief } from './raid';
 import { warBrief, warOnBossAttack } from './war';
 import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, parse, readSave, serverDay, serverRng, updateObject, userOf } from './common';
+import { clanSeasonSettle, updateClanPower } from './clanrank';
 import { nameOf } from './names';
 
 interface HelpReq { uid: string; n: string; lvl: number; got: string[]; t: number }
@@ -231,6 +232,7 @@ function upOf(nk: nkruntime.Nakama, userId: string, raw: unknown): number | null
 export function rpcClanSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
   const up = upOf(nk, userId, parse(payload).up);
+  try { clanSeasonSettle(nk, ctx, userId, Date.now()); } catch { /* rozliczy następne wejście */ }
   const c = clanOf(nk, userId);
   if (!c) {
     const helped = readHelped(nk, userId);
@@ -241,6 +243,7 @@ export function rpcClanSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   }
   const x = clanCtx(nk, userId);
   x.st = tidy(nk, x, up);
+  try { updateClanPower(nk, x.g, x.ids, clanLevelOf(x.st.xp)); } catch { /* ranking nie jest konieczny */ }
   const extra: Record<string, unknown> = {};
   try { extra.war = warBrief(nk, ctx, userId, x.g); extra.raid = raidBrief(nk, ctx, userId, x.g); } catch { /* skrót nie jest konieczny */ }
   return JSON.stringify(view(nk, x, up, extra));

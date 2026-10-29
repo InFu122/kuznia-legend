@@ -19,6 +19,7 @@ import { readHero, readHeroes } from './arena';
 import { clanOf, postClan } from './clan';
 import { addClanXp, clanPower, pushRewards, readPending } from './clanlife';
 import { INVALID, PRECONDITION, SYSTEM_USER, UNAUTH, err, parse, serverRng, testSpeed, updateObject, userOf } from './common';
+import { clanSeasonSettle, warSeason, warSeasonResult } from './clanrank';
 import { nameOf } from './names';
 
 const DAY_MS = 86400000;
@@ -345,6 +346,7 @@ function finalize(nk: nkruntime.Nakama, week: string, gid: string, now: number):
   });
   const xp = r === 'win' ? WAR.WIN_XP : r === 'draw' ? Math.round((WAR.WIN_XP + WAR.LOSS_XP) / 2) : WAR.LOSS_XP;
   try { addClanXp(nk, gid, xp, `Wojna klanów z klanem ${vs}: ${RESULT_N[r]} ${us}:${them}`); } catch { /* klan mógł zniknąć */ }
+  try { warSeasonResult(nk, week, gid, rec.n, rec.tag, r, us, ranked.map(([u]) => u)); } catch { /* Puchary nie są konieczne */ }
   const podium = ranked.slice(0, 3).map(([u], i) => `${i + 1}. ${rec?.roster[u] || 'Kowal'}`).join(', ');
   postClan(nk, gid, { k: 'sys', t: `Wojna klanów z klanem ${vs}: ${RESULT_N[r]} ${us}:${them}! Najwięcej punktów: ${podium}. Skrzynie czekają w zakładce Klan.` });
   return out;
@@ -416,7 +418,10 @@ export function rpcWarState(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const t = touchUser(nk, clock, userId, g, now);
   let rec = t.rec;
   if (clock.day === 6 && !rec.done) rec = finalize(nk, clock.week, g.id, now) || rec;
-  return JSON.stringify(view(nk, clock, rec, userId, t.me, now));
+  try { clanSeasonSettle(nk, ctx, userId, now); } catch { /* rozliczy następne wejście */ }
+  let season = null;
+  try { season = warSeason(nk, ctx, g.id, now); } catch { /* skrót sezonu nie jest konieczny */ }
+  return JSON.stringify(view(nk, clock, rec, userId, t.me, now, { season }));
 }
 
 /** Atak w sobotę na obrońcę `id` wrogiego klanu. Walkę rozgrywa serwer (jak na arenie). */

@@ -2,7 +2,7 @@
 // i rajd klanowy Smocze Leże (smok o czterech fazach ze słabościami na żywioły). Wszystko liczy serwer.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { B, ELEM, RAID, RAID_PHASES, WAR, WAR_DAYS } from '../../data';
-import { elemUrl, foeUrl } from '../../art/render';
+import { elemUrl, foeUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
 import { clanLife } from '../../save/clanlife';
 import { getLink, type RaidState, type WarState } from '../../save/server';
@@ -106,6 +106,13 @@ export function ClanWarTab({ game }: { game: Game }) {
             <div class="eyebrow">Przeciwnik</div>
             <p class="sub">Dobór trwa do końca poniedziałku: klany o podobnej Mocy dostają się nawzajem. Klan bez pary zmierzy się z klanem-widmem.</p>
           </>
+        )}
+        {w.season && (
+          <p class="tech-cost wseason">
+            <Px src={resUrl('puchar')} size={14} /> Sezon wojen {w.season.n}: <b>{fmt(w.season.trophies)}</b> Pucharów
+            {w.season.rank ? ` · ${w.season.rank}. miejsce` : ''} · koniec za {tfmt(Math.max(0, w.season.end - Date.now()))}
+            {' '}<button class="linkbtn" onClick={() => game.openModal({ kind: 'ranking', board: 'klany' })}>Ranking klanów</button>
+          </p>
         )}
         {w.res && (
           <div class={`duel-result ${w.res.r === 'loss' ? 'lose' : 'win'}`} role="status" style={{ marginTop: '10px' }}>

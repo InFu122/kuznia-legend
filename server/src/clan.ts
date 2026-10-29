@@ -4,6 +4,7 @@
 import { B } from '../../src/data';
 import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, parse, readSave, userOf } from './common';
 import { censor, nameClean } from './filter';
+import { dropClanPower } from './clanrank';
 import { nameKey, nameOf } from './names';
 
 export type ClanMode = 'open' | 'request' | 'closed';
@@ -164,6 +165,7 @@ export function leaveClan(nk: nkruntime.Nakama, userId: string, username: string
   const who = displayName(nk, userId);
   if (!all.length) {
     nk.groupDelete(g.id);
+    dropClanPower(nk, g.id);
     nk.storageDelete([
       { collection: 'clan_names', key: 'n_' + nameKey(g.name), userId: SYSTEM_USER },
       { collection: 'clan_names', key: 't_' + m.tag.toLowerCase(), userId: SYSTEM_USER },

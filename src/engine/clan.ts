@@ -1,6 +1,6 @@
 // Życie klanu po stronie gry: nagrody od serwera (każda raz), pomoc klanu w ulepszeniu kuźni i sklep klanowy.
 // Wspólną Kuźnię, bossa klanowego, prośby o pomoc i rudę prowadzi serwer (server/src/clanlife.ts).
-import { CLAN, CLAN_SHOP, ELEM_KEYS, RAID_PHASES, SHOP_GOLD_WAVES, type ClanShopId } from '../data';
+import { CLAN, CLAN_SEASON_REWARDS, CLAN_SHOP, ELEM_KEYS, RAID_PHASES, SHOP_GOLD_WAVES, WAR_TROPHIES, type ClanShopId } from '../data';
 import { toast, type Ctx } from './context';
 import { upgradeTime } from './forge';
 import { goldWave } from './formulas';
@@ -149,6 +149,19 @@ export function warChest(result: WarResult, rank: number, pts: number, bestG: nu
   if (result === 'win') r.scrolls = 1;
   if (result === 'win' && rank === 0) r.eggs = { 2: 1 };
   return r;
+}
+
+/** Puchary sezonu za wojnę: za wynik i 1 za każde 1000 punktów klanu (najwyżej 20). Klan bez punktów nie dostaje nic. */
+export function warTrophies(result: WarResult, pts: number): number {
+  if (!(pts > 0)) return 0;
+  return WAR_TROPHIES[result] + Math.min(WAR_TROPHIES.bonusMax, Math.floor(pts / WAR_TROPHIES.perPts));
+}
+
+/** Nagroda za sezon wojen według miejsca klanu (null — klan bez miejsca). */
+export function clanSeasonReward(rank: number): { gems: number; coins: number } | null {
+  if (!(rank >= 1)) return null;
+  const t = CLAN_SEASON_REWARDS.find(x => x.top === 0 || rank <= x.top)!;
+  return { gems: t.gems, coins: t.coins };
 }
 
 /** Nagroda za każdy atak na smoka. */

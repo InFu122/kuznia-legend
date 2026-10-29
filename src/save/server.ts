@@ -25,6 +25,13 @@ export class ServerError extends Error {
 export interface RankRow { rank: number; name: string; score: number; sub: number; land: string; me: boolean }
 export interface Ranking { board: string; title: string; records: RankRow[]; mine: RankRow | null }
 export type BoardId = 'moc' | 'wieza' | 'postep' | 'arena';
+/** Ranking klanów: Moc klanów albo Puchary w sezonie wojen. */
+export interface ClanRankRow { rank: number; n: string; tag: string; score: number; sub: number; m: number; me: boolean }
+export interface WarSeason { n: number; name: string; end: number; trophies: number; wins: number; rank: number }
+export interface ClanRanking {
+  board: 'moc' | 'sezon'; records: ClanRankRow[]; mine: ClanRankRow | null; clan: { n: string; tag: string } | null;
+  season: WarSeason & { rewards: { top: number; gems: number; coins: number }[] }; serverTime: number;
+}
 
 export interface ArenaOpp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean }
 export interface ArenaState {
@@ -66,6 +73,7 @@ export interface WarState {
   res: { r: 'win' | 'draw' | 'loss'; us: number; them: number; vs: string } | null;
   rewards: ServerReward[]; serverTime: number;
   fight?: DuelShow & { pts: number };
+  season?: WarSeason | null;
 }
 export interface RaidState {
   week: string; ends: number; lvl: number; ph: number; hp: number; max: number; done: boolean;
@@ -265,6 +273,7 @@ export class ServerLink {
   /** Uwaga albo błąd od testera (kind: uwaga, blad) lub automatyczny raport błędu skryptu (auto). */
   feedback(kind: 'uwaga' | 'blad' | 'auto', text: string, meta: Record<string, string | number>): Promise<{ ok: boolean }> { return this.rpc('feedback', { kind, text, meta }); }
 
+  clanRanking(board: 'moc' | 'sezon'): Promise<ClanRanking> { return this.rpc('clan_ranking', { board }); }
   ranking(board: BoardId): Promise<Ranking> {
     return this.rpc<Ranking>('ranking', { board, limit: 30 });
   }

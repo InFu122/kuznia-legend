@@ -244,7 +244,7 @@ export type ModalData =
   | { kind: 'dunginfo'; id: DungId }
   | { kind: 'feedback' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' | 'ach' }
-  | { kind: 'ranking' }
+  | { kind: 'ranking'; board?: 'moc' | 'wieza' | 'postep' | 'arena' | 'klany' }
   | { kind: 'arena' }
   | { kind: 'chat'; ch?: 'global' | 'clan' }
   | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean; from?: number; to?: number; cards?: number; need?: number; stones?: number }

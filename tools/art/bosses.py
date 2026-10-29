@@ -286,3 +286,27 @@ def arena_token():
     pal = {**K, **ramp('p', ['#a993ec', '#7c60cc', '#5c42a8', '#3c2a7c']), **ramp('q', ['#d9c8ff', '#b9a2f4', '#9a80e0', '#7458c0']),
            'Y': '#ffffff', 'k': '#2a1c58', 'h': '#f2c14e', 'r': '#8a5a22'}
     return rows, pal
+
+def trophy_icon():
+    # Puchar 16×16 (sezon wojen klanów): złoty kielich z uszami na kamiennej podstawie.
+    rows = [
+        "................",
+        "..aaaaaaaaaaaa..",
+        ".hbwbbbbbbbbch..",
+        "h.bwbbbbbbbbc.h.",
+        "h.bwbbbbbbbbc.h.",
+        ".hbbbbbbbbbbch..",
+        "...bbbbbbbbc....",
+        "....bbbbbbc.....",
+        ".....bbbbc......",
+        "......bbc.......",
+        "......bbc.......",
+        ".....bbbbc......",
+        "....ssssssss....",
+        "...ssssssssss...",
+        "...tttttttttt...",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#fff1b8', 'b': '#f2c14e', 'c': '#b07a1c', 'w': '#fff8dc', 'h': '#d9a43a', 's': '#8a6a4a', 't': '#5a4030'}
+    return rows, pal

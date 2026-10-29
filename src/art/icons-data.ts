@@ -717,6 +717,24 @@ export const RES_ICONS: Record<string, IconData> = {
     '....kADEFBBk....',
     '.....kkkkkk.....',
   ], pal: {"k": "#2a1c58", "A": "#a993ec", "B": "#7c60cc", "C": "#5c42a8", "D": "#3c2a7c", "E": "#d9c8ff", "F": "#b9a2f4", "Y": "#ffffff", "h": "#f2c14e", "r": "#8a5a22"} },
+  'puchar': { rows: [
+    '..kkkkkkkkkkkk..',
+    '.kaaaaaaaaaaaak.',
+    'khbwbbbbbbbbchk.',
+    'hkbwbbbbbbbbckhk',
+    'hkbwbbbbbbbbckhk',
+    'khbbbbbbbbbbchk.',
+    '.kkbbbbbbbbckk..',
+    '...kbbbbbbck....',
+    '....kbbbbck.....',
+    '.....kbbck......',
+    '.....kbbck......',
+    '....kbbbbckk....',
+    '...kssssssssk...',
+    '..kssssssssssk..',
+    '..kttttttttttk..',
+    '...kkkkkkkkkk...',
+  ], pal: {"k": "#120d16", "a": "#fff1b8", "b": "#f2c14e", "c": "#b07a1c", "w": "#fff8dc", "h": "#d9a43a", "s": "#8a6a4a", "t": "#5a4030"} },
 };
 
 /** Umiejętności 24×24. */

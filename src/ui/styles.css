@@ -1020,3 +1020,11 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .lgseason li{display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:6px 8px; border-radius:10px; background:var(--plate-2); border:1px solid transparent; font-size:12px}
 .lgseason li span{display:inline-flex; align-items:center; gap:3px; color:#ffb3cf}
 .lgseason li.on{border-color:var(--straw)}
+
+/* ---------- ranking klanów i sezon wojen ---------- */
+.wseason{margin-top:8px; line-height:1.5}
+.wseason img{vertical-align:-2px; margin-right:4px}
+.wseason .linkbtn{padding:0; margin-left:2px}
+.cseason{list-style:none; margin:6px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px}
+.cseason li{display:flex; flex-direction:column; gap:2px; padding:6px 8px; border-radius:10px; background:var(--plate-2); font-size:12px}
+.cseason li span{display:inline-flex; align-items:center; gap:3px; color:var(--ash)}
