@@ -1,8 +1,9 @@
 // Kontrola zapisu wysłanego przez klienta. Odrzuca wartości, których uczciwa gra nie może wytworzyć.
 // Pochodzenie przedmiotów (ziarno wytopu, podpis Obiegu) i tempo rozwoju kuźni sprawdza save.ts.
 import {
-  ACHIEVEMENTS, B, CLAN, COMPANION_MAX, LANDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
+  ACHIEVEMENTS, B, CLAN, COMPANION_MAX, EVENT, EVENT_MILESTONES, LANDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
 } from '../../src/data';
+import { eventOf, eventPtsMax, eventReached } from '../../src/engine/events';
 import { maxJump } from '../../src/engine/formulas';
 import type { GameState, Item, SubId } from '../../src/engine/types';
 
@@ -56,6 +57,15 @@ export function validateSave(s: GameState): string[] {
   for (const [id, n] of Object.entries(s.ach || {})) if (!ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS] || !fin(n) || n < 0 || n > ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS].tiers.length) bad(`osiągnięcie ${id}`);
   for (const [sl, l] of Object.entries(s.runes || {})) if (!SLOTS[sl as keyof typeof SLOTS] || !fin(l) || l < 0 || l > B.RUNE_MAX || Math.floor(l) !== l) bad(`runa ${sl}`);
   if (!s.clanHelp || !fin(s.clanHelp.n) || s.clanHelp.n < 0 || s.clanHelp.n > CLAN.HELP_MAX) bad('pomoc klanu');
+  const e = s.event;
+  if (e) {
+    const now = Date.now();
+    if (!fin(e.ev) || !nonNeg(e.pts) || !nonNeg(e.dpts) || e.dpts > EVENT.DAY_CAP || !fin(e.got) || e.got < 0 || e.got > EVENT_MILESTONES.length
+      || !fin(e.best) || e.best < 0 || e.best > EVENT.FLOORS) bad('wydarzenie');
+    else if (e.ev > eventOf(now).i + 1) bad('wydarzenie z przyszłości');
+    else if (e.pts + e.dpts > eventPtsMax(e, now)) bad(`punkty wydarzenia ${e.pts + e.dpts}`);
+    else if (e.got > eventReached(e)) bad('nagrody wydarzenia');
+  }
   return out;
 }
 

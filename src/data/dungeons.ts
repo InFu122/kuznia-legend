@@ -18,10 +18,11 @@ export const DUNGEONS: Record<DungId, DungeonInfo> = {
   labirynt: { n: 'Labirynt Minotaura', short: 'Rzadkie rudy i Księgi', reward: 'Rzadkie rudy, Księgi Wiedzy, Zwoje', how: '10 komnat. Przed każdą wybierasz jedne z dwojga drzwi: walka, elita, skarb, źródło albo ołtarz z błogosławieństwem na resztę biegu. Na końcu czeka Minotaur.', keys: 1, unlock: 'w akcie II' },
   zbrojownia: { n: 'Zapomniana Zbrojownia', short: 'Przedmioty z historią', reward: 'Przedmioty z Wielkiego Obiegu', how: 'Trzy skrzynie strzeżone przez duchy dawnych właścicieli. Każdy pokonany duch oddaje przedmiot z jego historią.', keys: 1, unlock: 'w akcie II' },
   krypta: { n: 'Krypta Bohaterów', short: 'Pieczęcie Legendy', reward: 'Pieczęcie Legendy (+1000 Sławy Czynów)', how: 'Walczysz tylko przedmiotami z legendą — reszta zostaje przed wejściem. 5 strażników, a zasady zmieniają się co tydzień.', keys: 1, unlock: 'gdy pierwszy przedmiot zostanie Zahartowany' },
+  sezon: { n: 'Loch sezonowy', short: 'Punkty wydarzenia', reward: 'Punkty wydarzenia, na końcu skrzynia', how: '10 pięter wrogów wydarzenia, coraz silniejszych; na ostatnim czeka boss. Każde piętro daje punkty wydarzenia — także gdy przegrasz dalej. Loch zmienia się z każdym wydarzeniem.', keys: 2, unlock: 'po pokonaniu 1. bossa' },
   oltarze: { n: 'Ołtarze Żywiołów', short: 'Domieszki', reward: 'Domieszki żywiołu dnia', how: '5 strażników żywiołu. Każdego dnia tygodnia inny żywioł; porażka zabiera połowę nagrody.', keys: 2, unlock: 'od 10. poziomu kuźni' },
 };
-export const DUNG_ORDER: DungId[] = ['skarbiec', 'sztolnia', 'wieza', 'leza', 'oltarze', 'kopalnia', 'labirynt', 'zbrojownia', 'krypta'];
-export const DUNG_SOON = ['Smocze Leże (rajd klanowy)', 'Lochy sezonowe (eventy)'];
+export const DUNG_ORDER: DungId[] = ['sezon', 'skarbiec', 'sztolnia', 'wieza', 'leza', 'oltarze', 'kopalnia', 'labirynt', 'zbrojownia', 'krypta'];
+export const DUNG_SOON: string[] = [];
 
 /* ---------- Labirynt Minotaura ---------- */
 

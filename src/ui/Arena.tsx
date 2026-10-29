@@ -1,3 +1,4 @@
+import { dungScene } from '../engine/events';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { AD_BUFFS, BUFF_IDS, LANDS, ROMAN, SKILLS, SLOT_ORDER, type BuffId } from '../data';
 import { dungeonBgUrl, foeUrl, heroUrl, itemUrl, landBgUrl, skillUrl } from '../art/render';
@@ -96,7 +97,7 @@ export function Arena({ game, onTab, onInfo, onAd }: { game: Game; onTab: (t: Ta
   const hp = Math.max(0, b.heroHp);
   const label = dung ? runLabel(dung) : e?.boss ? 'Boss' : waiting ? 'Farma' : `Fala ${s.cur.wave}/5`;
 
-  const bg = dung ? dungeonBgUrl(dung.id) : landBgUrl(s.cur.land);
+  const bg = dung ? dungeonBgUrl(dungScene(dung.id, game.ctx.now())) : landBgUrl(s.cur.land);
   // Po śmierci wroga przez chwilę nie ma nowego — wtedy ostatni pada i znika.
   if (e && lastFoe.current?.e !== e) {
     lastFoe.current = { e, id: (lastFoe.current?.id ?? 0) + 1 };

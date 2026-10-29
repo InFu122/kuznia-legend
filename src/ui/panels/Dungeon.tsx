@@ -1,8 +1,9 @@
 // Zakładka Lochy: na górze Arena (z serwerem), potem dostępne lochy jako kafelki z kluczami
 // i nagrodą, a na końcu te, które dopiero się odblokują. Szczegóły lochu — w oknie „i” (DungInfoView).
-import { B, DUNGEONS, DUNG_ORDER, DUNG_SOON, ELEM, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
+import { B, DUNGEONS, DUNG_ORDER, ELEM, EVENT, EVENT_MILESTONES, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
 import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
 import { elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
+import { dungName, dungScene, eventFloorPts, eventIcon, eventOf, eventPts, eventReached, evText } from '../../engine/events';
 import type { Game } from '../../engine/game';
 import type { DungId } from '../../engine/types';
 import { fmt, tfmt } from '../format';
@@ -36,6 +37,7 @@ function reward(game: Game, id: DungId): [string, string] {
     case 'labirynt': return ['Rudy i Księgi', resUrl('zwoj')];
     case 'zbrojownia': return ['Przedmioty', itemUrl('Miecz', 3, 3)];
     case 'krypta': return ['Pieczęcie', resUrl('pieczec')];
+    case 'sezon': { const ev = eventOf(now); return [ev.def.cur, resUrl(eventIcon(ev.kind))]; }
   }
 }
 
@@ -52,6 +54,13 @@ export function rewardList(game: Game, id: DungId): [string, string][] {
     case 'labirynt': return [[oreUrl(Math.min(6, game.dungTier())), 'Rzadkie rudy'], [resUrl('ksiega'), 'Księgi Wiedzy'], [resUrl('zwoj'), 'Zwoje zaklęć']];
     case 'zbrojownia': return [[itemUrl('Miecz', 3, 3), 'Przedmioty z historią z Wielkiego Obiegu (do decyzji)']];
     case 'krypta': return [[resUrl('pieczec'), 'Pieczęcie Legendy (+1000 Sławy Czynów)']];
+    case 'sezon': {
+      const ev = eventOf(now);
+      return [
+        [resUrl(eventIcon(ev.kind)), `${ev.def.cur} za każde piętro (od ${eventFloorPts(1)} do ${eventFloorPts(EVENT.FLOORS)}) — od razu, także gdy bohater padnie`],
+        [resUrl('ksiega'), `Skrzynia za ${ev.def.boss}: Księgi, Kamienie, złoto i Zwój`],
+      ];
+    }
   }
 }
 
@@ -71,7 +80,7 @@ export function Keys({ game, id }: { game: Game; id: DungId }) {
 export const untilMidnight = (now: number) => { const d = new Date(now); d.setHours(24, 0, 0, 0); return d.getTime() - now; };
 
 function DungTile({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: DungId) => void }) {
-  const D = DUNGEONS[id];
+  const D = { ...DUNGEONS[id], n: dungName(id, game.ctx.now()) };
   const keys = game.dungKeys(id);
   const unlimited = !Number.isFinite(keys);
   const run = game.b.mode === 'dung' ? game.b.dung : null;
@@ -80,7 +89,7 @@ function DungTile({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: D
   const [rn, ric] = reward(game, id);
   const enter = () => { if (game.startDung(id)) window.scrollTo?.({ top: 0, behavior: 'smooth' }); };
   return (
-    <section class={`card dung tile${here ? ' here' : ''}${blocked ? ' spent' : ''}`} aria-label={D.n} style={{ '--bg': `url(${dungeonBgUrl(id)})` } as Record<string, string>}>
+    <section class={`card dung tile${here ? ' here' : ''}${blocked ? ' spent' : ''}${id === 'sezon' ? ' event' : ''}`} aria-label={D.n} style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>}>
       <div class="dt-top">
         <span class="dt-reward"><Px src={ric} size={20} />{rn}</span>
         <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${D.n}`}>i</button>
@@ -114,13 +123,14 @@ function ArenaBanner({ game, online, onArena }: { game: Game; online: boolean; o
   );
 }
 
-export function DungeonPanel({ game, online = false, onArena, onInfo }: { game: Game; online?: boolean; onArena?: () => void; onInfo: (id: DungId) => void }) {
+export function DungeonPanel({ game, online = false, onArena, onInfo, onEvent }: { game: Game; online?: boolean; onArena?: () => void; onInfo: (id: DungId) => void; onEvent: () => void }) {
   const arena = game.net && !!onArena;
   const open = DUNG_ORDER.filter(id => game.dungUnlocked(id));
   const locked = DUNG_ORDER.filter(id => !game.dungUnlocked(id));
   return (
     <>
       {arena && <ArenaBanner game={game} online={online} onArena={onArena!} />}
+      <EventBanner game={game} onOpen={onEvent} />
       <div class="dung-head">
         <div><div class="eyebrow">Lochy</div><div class="h">Wyprawy po łupy</div></div>
         <span class="dh-reset"><Px src={resUrl('klucz')} size={18} />nowe klucze za {tfmt(untilMidnight(game.ctx.now()))}</span>
@@ -137,22 +147,21 @@ export function DungeonPanel({ game, online = false, onArena, onInfo }: { game: 
               return (
                 <li key={id}>
                   <Px src={ric} size={24} />
-                  <div><b>{DUNGEONS[id].n}</b><small>{rn} · {DUNGEONS[id].unlock}</small></div>
-                  <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${DUNGEONS[id].n}`}>i</button>
+                  <div><b>{dungName(id, game.ctx.now())}</b><small>{rn} · {DUNGEONS[id].unlock}</small></div>
+                  <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${dungName(id, game.ctx.now())}`}>i</button>
                 </li>
               );
             })}
           </ul>
         </section>
       )}
-      <p class="sub dung-soon">Wkrótce: {DUNG_SOON.join(', ')}.</p>
     </>
   );
 }
 
 /** Okno „i” lochu: opis, nagrody z ikonami, klucze, rekord i wejście (w Leżu — wybór bossa). */
 export function DungInfoView({ game, id, close }: { game: Game; id: DungId; close: () => void }) {
-  const D = DUNGEONS[id];
+  const D = { ...DUNGEONS[id], n: dungName(id, game.ctx.now()) };
   const unlocked = game.dungUnlocked(id);
   const keys = game.dungKeys(id);
   const unlimited = !Number.isFinite(keys);
@@ -161,11 +170,12 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
   const enter = (land?: number) => { if (game.startDung(id, land)) { close(); window.scrollTo?.({ top: 0, behavior: 'smooth' }); } };
   return (
     <>
-      <div class="li-head" style={{ '--bg': `url(${dungeonBgUrl(id)})` } as Record<string, string>}>
+      <div class="li-head" style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>}>
         <div class="eyebrow">Loch{unlocked ? '' : ' · zablokowany'}</div>
         <div class="h">{D.n}</div>
       </div>
       <p class="sub">{D.how}</p>
+      {id === 'sezon' && <p class="sub"><b>{eventOf(game.ctx.now()).def.n}:</b> wrogowie to {eventOf(game.ctx.now()).def.foes.join(', ')}; na 10. piętrze — {eventOf(game.ctx.now()).def.boss}.</p>}
       {id === 'krypta' && unlocked && <p class="sub"><b>W tym tygodniu:</b> {KRYPTA_RULES[kryptaRule(game.ctx.now())].d}.</p>}
       <div class="eyebrow">Nagrody</div>
       <ul class="droplist">
@@ -194,5 +204,30 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
           ) : <button class="btn primary" onClick={() => enter()}>{unlimited ? `Wejdź na piętro ${game.s.dungeons.wieza.best + 1}` : 'Wejdź'}</button>}
       <button class="btn" onClick={close}>Zamknij</button>
     </>
+  );
+}
+
+/** Wydarzenie na górze zakładki Lochy: nazwa, czas do końca, punkty i postęp do następnej nagrody. */
+function EventBanner({ game, onOpen }: { game: Game; onOpen: () => void }) {
+  const now = game.ctx.now();
+  const ev = eventOf(now);
+  const e = game.event();
+  const pts = eventPts(e);
+  const reached = eventReached(e);
+  const todo = game.eventTodo();
+  const next = EVENT_MILESTONES[reached];
+  const prev = reached ? EVENT_MILESTONES[reached - 1].pts : 0;
+  const pct = next ? Math.min(100, ((pts - prev) / (next.pts - prev)) * 100) : 100;
+  return (
+    <section class={`card arena-banner ev-banner ev-${ev.kind}${todo ? ' ready' : ''}`} aria-label={`Wydarzenie: ${ev.def.n}`} style={{ '--bg': `url(${dungeonBgUrl('ev_' + ev.kind)})` } as Record<string, string>}>
+      <div class="ab-ic"><Px src={resUrl(eventIcon(ev.kind))} size={36} /></div>
+      <div class="ab-main">
+        <div class="eyebrow">Wydarzenie · jeszcze {tfmt(ev.end - now)}</div>
+        <div class="ab-name">{ev.def.n}</div>
+        <div class="ab-sub"><b class="num">{evText(pts, ev.def)}</b>{next ? ` · następna nagroda: ${fmt(next.pts)}` : ' · wszystkie nagrody zdobyte'}</div>
+        <div class="bar ev-bar"><i style={{ width: pct + '%' }} /></div>
+      </div>
+      <button class={`btn${todo ? ' primary' : ''}`} onClick={onOpen}>{todo ? `Odbierz (${todo})` : 'Nagrody'}</button>
+    </section>
   );
 }

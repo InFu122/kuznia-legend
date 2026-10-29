@@ -310,3 +310,75 @@ def trophy_icon():
     rows = outline(rows)
     pal = {**K, 'a': '#fff1b8', 'b': '#f2c14e', 'c': '#b07a1c', 'w': '#fff8dc', 'h': '#d9a43a', 's': '#8a6a4a', 't': '#5a4030'}
     return rows, pal
+
+def spark_icon():
+    # Iskra 16×16 (Festiwal Kuźni): płomyk z jasnym środkiem i drobnymi iskrami.
+    rows = [
+        "................",
+        ".......a........",
+        "......aa....y...",
+        "......aba.......",
+        ".....abba.......",
+        "....abbbba..y...",
+        "...abbcbbba.....",
+        "...abccccba.....",
+        "..abbcwwcbba....",
+        "..abccwwccba....",
+        "..abccwwccba.y..",
+        "..abbcccccba....",
+        "...abbcccbba....",
+        "....abbbbba.....",
+        ".....aaaaa......",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#c8381a', 'b': '#ff7a1a', 'c': '#ffc040', 'w': '#fff4c0', 'y': '#ffd060'}
+    return rows, pal
+
+def horn_icon():
+    # Trofeum 16×16 (Wielkie Łowy): zakrzywiony róg myśliwski z mosiężnym okuciem.
+    rows = [
+        "................",
+        ".a..............",
+        ".ab.............",
+        ".abb............",
+        "..abb...........",
+        "..abbb..........",
+        "...abbb.........",
+        "...abbbb........",
+        "....abbbbc......",
+        ".....abbbbcc....",
+        "......abbbbbcmm.",
+        ".......aabbbbmmm",
+        ".........aabbmmm",
+        "...........aamm.",
+        "................",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#fffbe8', 'b': '#e6d6ae', 'c': '#b09a70', 'm': '#d9a43a'}
+    return rows, pal
+
+def candle_icon():
+    # Świeca 16×16 (Noc Upiorów): biała świeca z niebieskawym, upiornym płomieniem.
+    rows = [
+        "................",
+        ".......g........",
+        "......ggg.......",
+        "......gwg.......",
+        "......gwg.......",
+        ".......k........",
+        ".....aaaaa......",
+        ".....abbbc......",
+        ".....abbbc......",
+        ".....abbbca.....",
+        ".....abbbc......",
+        ".....abbbc......",
+        ".....abbbc......",
+        "...ddddddddd....",
+        "....eeeeeee.....",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'g': '#7ad8ff', 'w': '#e8faff', 'k': '#2a2a2a', 'a': '#fffaf0', 'b': '#ece4d4', 'c': '#b8ac98', 'd': '#8a8a9a', 'e': '#5a5a6a'}
+    return rows, pal

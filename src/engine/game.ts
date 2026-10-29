@@ -23,7 +23,8 @@ import {
   adRewardLocal, applyBoost, buyGemItemLocal, buyPackLocal, buyPassLocal, claimGiftLocal, claimPassLocal, refillKeys, shopToday, speedupLocal, tickPassLocal,
   type PassTrack, type ShopState,
 } from './shop';
-import type { DungId, ElemKey, FoundEvent, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
+import { claimEvent, eventUnclaimed, tickEvent } from './events';
+import type { DungId, ElemKey, EventTrack, FoundEvent, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
 
 /** Stan sklepu od serwera (odpowiedzi RPC sklepu i zapisu). */
 export interface ShopSync { gems?: number; shop?: ShopState; pass?: PassTrack | null; buffs?: Partial<Record<BuffId, number>>; boost?: { lvl: number; ms: number } | null; techDone?: boolean }
@@ -48,6 +49,7 @@ export class Game {
   private offerT = 60000;
   private lastOffer: BuffId = 'zloto';
   private passT = 0;
+  private eventT = 0;
 
   constructor(state: GameState, opts: { rng?: Rng; now?: () => number; net?: boolean } = {}) {
     const now = opts.now ?? (() => Date.now());
@@ -98,6 +100,13 @@ export class Game {
     const ctx = this.ctx;
     const s = ctx.s;
     const now = ctx.now();
+    this.eventT -= realMs;
+    if (this.eventT <= 0) {
+      this.eventT = 5000;
+      const before = this.s.event?.dpts ?? -1;
+      const e = tickEvent(ctx);
+      if (e.dpts !== before) this.changed();
+    }
     if (!ctx.net) {
       this.passT -= realMs;
       if (this.passT <= 0) {
@@ -346,6 +355,11 @@ export class Game {
   claimLogin() { const r = claimLogin(this.ctx); this.changed(); return r; }
   claimable(): number { return claimable(this.ctx) + achCount(this.s); }
   claimAch(id: AchId): Reward | null { return this.done(claimAch(this.ctx, id)); }
+  /** Wydarzenie: aktualny stan (liczy punkty z gry). */
+  event(): EventTrack { return tickEvent(this.ctx); }
+  claimEvent(): Reward | null { return this.done(claimEvent(this.ctx)); }
+  /** Nieodebrane nagrody wydarzenia (kropka na zakładce Lochy). */
+  eventTodo(): number { return this.s.event ? eventUnclaimed(this.s.event, this.s).n : 0; }
   canClaimLogin(): boolean { return canClaimLogin(this.ctx); }
   missions() { ensureMissions(this.ctx); return this.s.missions; }
   setSound(on: boolean, vol = this.s.opts.vol) { this.s.opts = { ...this.s.opts, sound: on, vol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
@@ -512,6 +526,7 @@ export class Game {
   offline(ms: number): void {
     // Przepustka bez serwera: przełom dnia przed nagrodami za nieobecność, żeby wrogowie z nocy liczyli się do nowego dnia.
     if (!this.ctx.net) tickPassLocal(this.ctx);
+    tickEvent(this.ctx);
     const report = applyOffline(this.ctx, ms);
     if (report) {
       this.dispatch({ t: 'modal', m: { kind: 'offline', report } });

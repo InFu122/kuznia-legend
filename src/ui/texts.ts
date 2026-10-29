@@ -1,4 +1,5 @@
-import { DUNGEONS, ELEM, KRYPTA_FLOORS, KRYPTA_RULES, LAB_ROOMS, LANDS, ORES, RAR, SETS, ZBROJOWNIA_CHESTS, KOPALNIA_WAVES, setOfLand } from '../data';
+import { ELEM, EVENT, KRYPTA_FLOORS, KRYPTA_RULES, LAB_ROOMS, LANDS, ORES, RAR, SETS, ZBROJOWNIA_CHESTS, KOPALNIA_WAVES, setOfLand } from '../data';
+import { dungName, eventOf, evText } from '../engine/events';
 import type { DungRun, ElemKey, Reward, SetId } from '../engine/types';
 import { fmt } from './format';
 
@@ -58,7 +59,7 @@ export function rewardText(r: Reward): string {
 
 /** Nazwa i stan biegu lochu do nagłówka areny. */
 export function runTitle(d: DungRun): string {
-  return d.id === 'leza' ? `Leże: ${LANDS[d.bossLand].boss}` : DUNGEONS[d.id].n;
+  return d.id === 'leza' ? `Leże: ${LANDS[d.bossLand].boss}` : dungName(d.id, Date.now());
 }
 export function runMeta(d: DungRun): string {
   switch (d.id) {
@@ -74,6 +75,7 @@ export function runMeta(d: DungRun): string {
     }
     case 'zbrojownia': return `Skrzynia ${d.floor}/${ZBROJOWNIA_CHESTS} · zdobyte przedmioty: ${d.items.length}`;
     case 'krypta': return `Strażnik ${d.floor}/${KRYPTA_FLOORS} · ${d.rule ? KRYPTA_RULES[d.rule].n : ''}`;
+    case 'sezon': return `Piętro ${d.floor}/${EVENT.FLOORS} · zdobyte: ${evText(d.evp ?? 0, eventOf(Date.now()).def)}`;
   }
 }
 export function runLabel(d: DungRun): string {
@@ -83,6 +85,7 @@ export function runLabel(d: DungRun): string {
     case 'oltarze': case 'krypta': return `${d.floor}/5`;
     case 'kopalnia': return `Fala ${d.floor}`;
     case 'labirynt': return d.floor >= LAB_ROOMS ? 'Boss' : `Komnata ${d.floor}`;
+    case 'sezon': return d.floor >= EVENT.FLOORS ? 'Boss' : `Piętro ${d.floor}`;
     case 'zbrojownia': return `Skrzynia ${d.floor}`;
     default: return `Piętro ${d.floor}`;
   }
@@ -98,5 +101,6 @@ export function runHint(d: DungRun): string {
     case 'labirynt': return d.floor >= LAB_ROOMS ? 'Minotaur! Pokonaj go, żeby zabrać największy łup.' : 'Po każdej komnacie wybierasz kolejne drzwi.';
     case 'zbrojownia': return 'Pokonany duch oddaje przedmiot ze swoją historią.';
     case 'krypta': return d.rule ? `Walczą tylko przedmioty z legendą · ${KRYPTA_RULES[d.rule].d}.` : 'Walczą tylko przedmioty z legendą.';
+    case 'sezon': { const ev = eventOf(Date.now()).def; return d.floor >= EVENT.FLOORS ? `${ev.boss}! Pokonaj go, żeby otworzyć skrzynię.` : `Każde piętro daje ${ev.cur} od razu — nawet jeśli bohater padnie dalej.`; }
   }
 }

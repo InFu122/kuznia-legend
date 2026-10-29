@@ -172,7 +172,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} onInfo={land => open({ kind: 'landinfo', land })} />}
           {tab === 'klan' && <ClanPanel game={game} online={save.mode === 'server'} openChat={() => open({ kind: 'chat', ch: 'clan' })} />}
-          {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} onInfo={id => open({ kind: 'dunginfo', id })} />}
+          {tab === 'lochy' && <DungeonPanel game={game} online={save.mode === 'server'} onArena={() => open({ kind: 'arena' })} onInfo={id => open({ kind: 'dunginfo', id })} onEvent={() => open({ kind: 'event' })} />}
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} onFeedback={() => open({ kind: 'feedback' })} />}
         </main>
       </div>
@@ -182,6 +182,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             <button key={id} data-tab={id} class={`tab${tab === id ? ' on' : ''}`} aria-current={tab === id ? 'page' : undefined} onClick={() => goTab(id)}>
               <TabIcon tab={id} /><span>{n}</span>
               {id === 'klan' && tab !== 'klan' && clanLife.todo() > 0 && <i class="tab-dot" aria-label="w klanie coś czeka" />}
+              {id === 'lochy' && tab !== 'lochy' && game.eventTodo() > 0 && <i class="tab-dot" aria-label="nagrody wydarzenia do odebrania" />}
             </button>
           ))}
         </div>

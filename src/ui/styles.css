@@ -1028,3 +1028,20 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .cseason{list-style:none; margin:6px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px}
 .cseason li{display:flex; flex-direction:column; gap:2px; padding:6px 8px; border-radius:10px; background:var(--plate-2); font-size:12px}
 .cseason li span{display:inline-flex; align-items:center; gap:3px; color:var(--ash)}
+
+/* ---------- wydarzenia ---------- */
+.ev-banner{border-color:color-mix(in srgb, var(--straw) 45%, var(--rivet))}
+.ev-banner.ready{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw) inset}
+.ev-banner .ab-sub b{color:var(--straw)}
+.ev-bar{margin-top:6px; height:6px}
+.dung.tile.event{border-color:color-mix(in srgb, var(--straw) 55%, var(--rivet))}
+.ev-total{display:flex; align-items:center; gap:8px; margin:8px 0 2px}
+.ev-total b{font-size:26px; color:var(--straw); font-family:var(--f-display)}
+.ev-total span{color:var(--ash)}
+.ev-list{list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:3px}
+.ev-list li{display:grid; grid-template-columns:52px minmax(0,1fr) auto; align-items:center; gap:8px; padding:6px 10px; border-radius:9px; background:var(--plate-2); font-size:13px}
+.ev-list li .num{color:var(--ash); text-align:right}
+.ev-list li small{color:var(--ash); font-size:11px; white-space:nowrap}
+.ev-list li.ready{outline:1px solid var(--straw); outline-offset:-1px}
+.ev-list li.ready small{color:var(--straw)}
+.ev-list li.got{opacity:.55}

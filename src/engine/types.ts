@@ -14,7 +14,7 @@ export type TechId =
   | 'w_ostrze' | 'w_pancerz' | 'w_precyzja' | 'w_pogromca'
   | 'e_kupiec' | 'e_gornik' | 'e_noc' | 'e_poszuk'
   | 't_hodowca' | 't_wylegarnia' | 't_wiez' | 't_stajnia';
-export type DungId = 'skarbiec' | 'sztolnia' | 'wieza' | 'leza' | 'oltarze' | 'kopalnia' | 'labirynt' | 'zbrojownia' | 'krypta';
+export type DungId = 'skarbiec' | 'sztolnia' | 'wieza' | 'leza' | 'oltarze' | 'kopalnia' | 'labirynt' | 'zbrojownia' | 'krypta' | 'sezon';
 export type SetId = 'lowca' | 'straz' | 'wicher' | 'nekro' | 'smok' | 'gwiazda';
 export type SkillId = 'deszcz' | 'tarcza' | 'okrzyk' | 'eliksir' | 'kula' | 'nova' | 'krwawe' | 'burza' | 'oddech';
 export type PetId = 'wilczek' | 'kruk' | 'zolw' | 'salamandra' | 'sowa' | 'gryfiatko' | 'wilkor' | 'feniks' | 'smoczek';
@@ -58,6 +58,7 @@ export interface DungRun {
   items: Item[];                                    // Zbrojownia: zdobyte przedmioty
   rule: KryptaRuleId | null;                        // Krypta: zasada tygodnia
   ghost?: string;                                   // Zbrojownia: duch, który strzeże skrzyni
+  evp?: number;                                     // loch sezonowy: zdobyte punkty wydarzenia
 }
 
 export interface Sub { id: SubId; v: number }
@@ -102,6 +103,8 @@ export interface Companion { lvl: number; stars: number }
 export interface PassBase { sm: number; k: number; b: number; keys: number; tw: number }
 /** Przepustka Kowala: sezon, punkty sprzed dzisiaj (`xp`) i z dzisiaj (`dxp`), złota ścieżka, odebrane poziomy. */
 export interface PassTrack { season: number; xp: number; d: string; base: PassBase; dxp: number; prem: boolean; cf: number; cp: number }
+/** Wydarzenie: numer, punkty sprzed dzisiaj i z lochu (`pts`), z dzisiejszej gry (`dpts`), odebrane progi, rekord lochu sezonowego. */
+export interface EventTrack { ev: number; pts: number; d: string; base: PassBase; dpts: number; got: number; best: number }
 
 export interface GameState {
   v: number;
@@ -159,6 +162,7 @@ export interface GameState {
   shop: { day: string; n: Partial<Record<GemItemId, number>>; ads: Partial<Record<BuffId | 'gems', number>>; gift: string; once: string[] }; // dzienne limity sklepu (UTC)
   buffs: Partial<Record<BuffId, number>>;              // wzmocnienia z reklam: do kiedy działają (ms)
   pass: PassTrack | null;                              // Przepustka Kowala (z serwerem: kopia stanu serwera)
+  event: EventTrack | null;                            // wydarzenie co 2 tygodnie (liczy gra)
   boost: { lvl: number; ms: number };                  // przyspieszenie Klejnotami już wliczone do ulepszenia kuźni na poziom `lvl`
   runes: Partial<Record<SlotId, number>>;              // poziomy run slotów (0–30)
   codex: string[];                                     // Kolekcja Kowala: odkryte modele „rodzaj|ruda”
@@ -235,7 +239,7 @@ export type ModalData =
   | { kind: 'boss'; land: number; gold: number; n: number; found: boolean; books: number; uniq: number; extra: Reward }
   | { kind: 'awaken'; item: Item }
   | { kind: 'dungChoice'; floor: number; loot: Reward }
-  | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward; items: number }
+  | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward; items: number; evp?: number }
   | { kind: 'labChoice'; room: number; doors: LabDoorOpt[]; loot: Reward }
   | { kind: 'found' }
   | { kind: 'decide' }
@@ -244,6 +248,7 @@ export type ModalData =
   | { kind: 'dunginfo'; id: DungId }
   | { kind: 'feedback' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' | 'ach' }
+  | { kind: 'event' }
   | { kind: 'ranking'; board?: 'moc' | 'wieza' | 'postep' | 'arena' | 'klany' }
   | { kind: 'arena' }
   | { kind: 'chat'; ch?: 'global' | 'clan' }

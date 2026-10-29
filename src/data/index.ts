@@ -11,3 +11,4 @@ export * from './war';
 export * from './shop';
 export * from './achievements';
 export * from './arena';
+export * from './events';

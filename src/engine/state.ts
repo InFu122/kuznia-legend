@@ -15,7 +15,7 @@ import type { Battle, DungId, Fx, GameState } from './types';
  * 11 — runy slotów,
  * 12 — osiągnięcia i Kolekcja Kowala.
  */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 function newDungeons(): GameState['dungeons'] {
   const d = {} as GameState['dungeons'];
@@ -39,7 +39,7 @@ export function newState(now: number): GameState {
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0, bestR: -1 },
     sx: 0, seeds: [], obIn: [], obOut: [],
     clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
-    gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, boost: { lvl: 0, ms: 0 },
+    gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, event: null, boost: { lvl: 0, ms: 0 },
     runes: {}, codex: [], ach: {}, legacy: { gen: 0, stars: 0, item: null },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
   };
@@ -118,6 +118,7 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!Array.isArray(out.shop.once)) out.shop.once = [];
   if (!isObj(out.buffs)) out.buffs = {};
   if (!isObj(out.pass) || !isObj(out.pass.base) || typeof out.pass.season !== 'number') out.pass = null;
+  if (!isObj(out.event) || !isObj(out.event.base) || typeof out.event.ev !== 'number' || typeof out.event.pts !== 'number') out.event = null;
   if (!isObj(out.boost) || typeof out.boost.lvl !== 'number' || typeof out.boost.ms !== 'number') out.boost = fresh.boost;
   if (!isObj(out.runes)) out.runes = {};
   if (!isObj(out.ach)) out.ach = {};

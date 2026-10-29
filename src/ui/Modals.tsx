@@ -1,6 +1,6 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
-  B, DUNGEONS, ELEM, ELEM_KEYS, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
+  B, ELEM, ELEM_KEYS, EVENT, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
   MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, oreShares, setOfLand, skillValue,
 } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
@@ -10,6 +10,7 @@ import { upgradeCost, upgradeTime } from '../engine/forge';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
 import type { ModalData } from '../engine/types';
+import { dungName, eventOf, evText } from '../engine/events';
 import { ItemCard } from './ItemCard';
 import { DecisionView } from './Decision';
 import { Px } from './Px';
@@ -24,6 +25,7 @@ import { LegacyView } from './panels/Legacy';
 import { Reforge } from './panels/Runes';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
+import { EventView } from './panels/Event';
 import { DungInfoView } from './panels/Dungeon';
 import { FeedbackView } from './panels/Feedback';
 import { ChatView } from './panels/Chat';
@@ -108,17 +110,19 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       const where: Partial<Record<typeof m.id, string>> = {
         skarbiec: `pokonane gobliny: ${m.floor}`, wieza: `najwyżej: piętro ${m.floor}`, oltarze: `strażnicy: ${m.floor}/5`,
         sztolnia: `piętro ${m.floor}`, kopalnia: `fale: ${m.floor}/10`, labirynt: `komnaty: ${m.floor}/${LAB_ROOMS}`,
-        zbrojownia: `skrzynie: ${m.floor}/3`, krypta: `strażnicy: ${m.floor}/5`,
+        zbrojownia: `skrzynie: ${m.floor}/3`, krypta: `strażnicy: ${m.floor}/5`, sezon: `piętra: ${m.floor}/${EVENT.FLOORS}`,
       };
+      const ev = eventOf(game.ctx.now()).def;
       const w = where[m.id];
       return (
         <>
-          <div class="eyebrow">{DUNGEONS[m.id].n}{w ? ' · ' + w : ''}</div>
+          <div class="eyebrow">{dungName(m.id, game.ctx.now())}{w ? ' · ' + w : ''}</div>
           <div class="h">{head}</div>
           <p class="sub">
             {m.lost && halves ? 'Uciekasz z połową łupu. ' : ''}
             {m.id === 'leza' && m.lost ? 'Boss był za silny. Klucz przepadł — spróbuj jutro albo wzmocnij ekwipunek.' : <>Zdobyto: <b>{rewardText(m.reward)}</b>.</>}
             {m.items > 0 ? ` Przedmioty ze skrzyń: ${m.items} — zdecyduj, które założyć.` : ''}
+            {m.id === 'sezon' ? <> Wydarzenie {ev.n}: <b>+{evText(m.evp ?? 0, ev)}</b>.</> : null}
           </p>
           <Close onClose={close} label="Wróć do krainy" />
         </>
@@ -199,6 +203,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <RankingView initial={m.board} close={close} />;
     case 'arena':
       return <ArenaView game={game} close={close} />;
+    case 'event':
+      return <EventView game={game} close={close} onDung={() => { close(); goTab?.('lochy'); }} />;
     case 'shop':
       return <ShopView game={game} initial={m.tab} close={close} />;
     case 'adOffer':

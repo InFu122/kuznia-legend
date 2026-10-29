@@ -37,7 +37,7 @@ export function legacyReset(s: GameState, slot: SlotId | null, now: number): Gam
     codex: s.codex, ach: s.ach,
     // klan, sklep, przepustka, konto
     clanLvl: s.clanLvl, clanCoins: s.clanCoins, clanShop: s.clanShop, clanGot: s.clanGot,
-    gems: s.gems, shop: s.shop, buffs: s.buffs, pass: s.pass,
+    gems: s.gems, shop: s.shop, buffs: s.buffs, pass: s.pass, event: s.event,
     missions: s.missions, login: s.login, tut: s.tut, opts: s.opts, stats: s.stats, smith: s.smith,
     speed: s.speed, auto: s.auto, autoStop: s.autoStop, nid: s.nid,
     legacy: { gen: (s.legacy?.gen || 0) + 1, stars: (s.legacy?.stars || 0) + legacyStars(s), item: heir },

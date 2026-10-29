@@ -116,6 +116,10 @@ Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiam
 
 **Żetony Areny** (portfel serwera, klucz `tokens`): 5 za wygraną, 1 za porażkę i nagroda za miejsce w lidze na koniec tygodnia. **Sklep areny** (zakładka w oknie areny) sprzedaje za Żetony bilety na dodatkowe walki (3 dziennie), Księgi, Kamienie, Zwoje, Siodła, Rzadkie jaja i Pieczęcie Legendy, z dziennymi limitami.
 
+### Wydarzenia i lochy sezonowe
+
+Co 2 tygodnie nowe wydarzenie (na zmianę: Festiwal Kuźni, Wielkie Łowy, Noc Upiorów) z własnymi punktami (Iskry, Trofea, Świece) i lochem sezonowym (Ognista Otchłań, Lodowa Grota, Nawiedzone Katakumby). Punkty za codzienną grę według wydarzenia (wytopy, wrogowie, klucze w lochach) — najwyżej 400 dziennie — i bez limitu za piętra lochu sezonowego (2 klucze dziennie, 10 pięter, na końcu boss i skrzynia). 12 progów nagród; nieodebrane trafiają do gracza same po końcu wydarzenia. Baner wydarzenia jest na górze zakładki **Lochy**. Punkty liczy gra; serwer w zapisie odrzuca więcej punktów, niż da się zdobyć w czasie wydarzenia.
+
 ### Klany
 
 Zakładka **Klan** (po pokonaniu pierwszego bossa): wyszukiwanie, dołączanie, zakładanie klanu. Klan ma do 30 członków. Przywódca ustawia opis, tryb wstępu (otwarty, na prośbę, zamknięty), minimalną Moc i język, awansuje i degraduje (do 2 Zastępców i 5 Starszych) oraz może przekazać przywództwo. Zastępcy piszą ogłoszenia i wyrzucają, Starsi przyjmują prośby. Gdy Przywódca odchodzi, władzę przejmuje Zastępca, Starszy albo najdawniejszy członek; ostatni członek rozwiązuje klan.
