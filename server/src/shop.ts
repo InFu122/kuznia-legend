@@ -7,12 +7,13 @@
 // Magazyn gracza (tylko serwer): shop/daily — dzienne limity (UTC), shop/iap — jednorazowe zakupy,
 // shop/buffs — wzmocnienia z reklam, shop/boost — przyspieszenia ulepszeń kuźni (kontrola tempa kuźni je odejmuje),
 // pass/state — Przepustka Kowala (punkty liczy save_put z różnicy liczników, jak punkty wojny klanów).
-import { AD, AD_BUFFS, GEM_PACKS, GEM_SHOP, PASS, speedupGems, type BuffId, type GemItemId } from '../../src/data';
+import { AD, AD_BUFFS, GEM_PACKS, GEM_SHOP, PASS, adMax, speedupGems, type AdKind, type BuffId, type GemItemId } from '../../src/data';
 import {
   buffUntil, gemItemBlock, gemItemReward, giftReward, newShop, packReward, passUnclaimed, passUpdate, shopToday,
   type PassTrack, type ShopState,
 } from '../../src/engine/shop';
 import type { GameState, Reward } from '../../src/engine/types';
+import { addArenaFight, readHero } from './arena';
 import { pushRewards, readPending } from './clanlife';
 import { INVALID, NOT_FOUND, PRECONDITION, UNAUTH, err, parse, readSave, testSpeed, updateObject, userOf } from './common';
 
@@ -171,14 +172,18 @@ export function rpcShopGift(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
  */
 export function rpcAdReward(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const kind = String(parse(payload).kind || '') as BuffId | 'gems';
-  if (kind !== 'gems' && !AD_BUFFS[kind]) throw err('Nieznana nagroda.', INVALID);
+  const kind = String(parse(payload).kind || '') as AdKind;
+  if (kind !== 'gems' && kind !== 'arena' && kind !== 'offline' && !AD_BUFFS[kind]) throw err('Nieznana nagroda.', INVALID);
   const now = Date.now();
-  const max = kind === 'gems' ? AD.GEMS_DAY : AD_BUFFS[kind].day;
+  if (kind === 'arena' && !readHero(nk, userId)) throw err('Arena otwiera się po pokonaniu pierwszego bossa i zapisie gry.', PRECONDITION);
+  const max = adMax(kind);
   bumpShop(nk, userId, now, sh => ((sh.ads[kind] ?? 0) < max ? (sh.ads[kind] = (sh.ads[kind] ?? 0) + 1, true) : false), 'Na dziś koniec tych reklam — wróć jutro.');
+  // `offline` (×2 nagrody za nieobecność) przyznaje gra — serwer tylko liczy reklamę w dziennym limicie.
+  let left: number | undefined;
   if (kind === 'gems') addGems(nk, userId, AD.GEMS, 'reklama');
-  else updateObject<Buffs>(nk, 'shop', 'buffs', userId, cur => ({ ...(cur || {}), [kind]: buffUntil((cur || {})[kind], now, kind) }), perm);
-  return JSON.stringify(view(nk, userId, now));
+  else if (kind === 'arena') left = addArenaFight(nk, userId, now);
+  else if (kind !== 'offline') updateObject<Buffs>(nk, 'shop', 'buffs', userId, cur => ({ ...(cur || {}), [kind]: buffUntil((cur || {})[kind], now, kind) }), perm);
+  return JSON.stringify(view(nk, userId, now, { left }));
 }
 
 /** Złota ścieżka przepustki za Klejnoty. */

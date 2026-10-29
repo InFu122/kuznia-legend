@@ -172,6 +172,8 @@ Na polu walki co kilka minut pojawia się ikonka rudy albo złota z „×2” �
 
 Płatności w Google Play (przy wydaniu w sklepie): w Google Play Console trzeba utworzyć produkty o identyfikatorach z `src/data/shop.ts` (`starter`, `gems_100` …) i konto usługi z dostępem do API, a jego adres i klucz podać Nakamie (`--iap.google.client_email`, `--iap.google.private_key`). Gra wyśle potwierdzenie zakupu do serwera (`iap_google`), a serwer sprawdzi je u Google i doda Klejnoty raz na zakup.
 
+
+**Drobne nagrody za reklamy:** w oknie areny +1 walka za reklamę (2 dziennie), a w oknie powrotu po co najmniej 30 minutach nieobecności — ×2 złoto, ruda, domieszki i Księgi z nieobecności (3 dziennie). Limity liczy serwer (`ad_reward`, rodzaje `arena` i `offline`).
 ### Czat
 
 Przycisk **Czat** na górze ekranu: kanał globalny i kanał klanu. Na globalnym piszesz od 5. poziomu kuźni (wcześniej tylko w klanie). Tryb wolny: 3 sekundy między wiadomościami na globalnym, 1 sekunda w klanie. Serwer zamienia wulgaryzmy na gwiazdki. Wiadomość innego gracza możesz wyciszyć (tylko na swoim urządzeniu) albo zgłosić. Gdy wykujesz przedmiot Mityczny lub Boski, na czacie klanu pojawia się jego karta, a przyciskiem pod przedmiotem możesz pochwalić się na czacie globalnym (raz na 10 minut).

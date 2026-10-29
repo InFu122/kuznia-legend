@@ -54,7 +54,7 @@ export function shopTodo(game: Game): boolean {
 
 /* ---------- reklama testowa ---------- */
 
-function TestAd({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+export function TestAd({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
   const [t, setT] = useState(0);
   useEffect(() => {
     const t0 = Date.now();
@@ -343,3 +343,44 @@ function GemsTabView({ game }: { game: Game }) {
 }
 
 export { errText };
+
+/* ---------- ×2 nagrody za nieobecność ---------- */
+
+/** Przycisk w oknie powrotu: reklama podwaja złoto, rudę, domieszki i Księgi z nieobecności. */
+export function OfflineDouble({ game }: { game: Game }) {
+  const [watch, setWatch] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  if (watch) {
+    const done = async () => {
+      setWatch(false);
+      setBusy(true);
+      try {
+        if (game.net) {
+          const l = getLink();
+          if (!l?.online) { setMsg('Reklamy z nagrodą działają po połączeniu z serwerem.'); return; }
+          const r = await l.adReward('offline');
+          game.applyShop(r);
+          const rw = game.doubleOffline(true);
+          setMsg(rw ? `Podwojone: ${rewardText(rw)}.` : 'Nie udało się.');
+        } else {
+          const rw = game.doubleOffline();
+          setMsg(rw ? `Podwojone: ${rewardText(rw)}.` : 'Na dziś koniec tych reklam.');
+        }
+      } catch (e) {
+        setMsg(errText(e));
+      } finally {
+        setBusy(false);
+      }
+    };
+    return <TestAd onDone={() => void done()} onCancel={() => setWatch(false)} />;
+  }
+  if (msg) return <p class="sub" role="status">{msg}</p>;
+  if (!game.canDoubleOffline()) return null;
+  const left = Math.max(0, AD.OFFLINE_DAY - (game.shopNow.ads.offline ?? 0));
+  return (
+    <button class="btn adbtn" disabled={busy} onClick={() => setWatch(true)}>
+      <Px src={resUrl('reklama')} size={18} /> ×2 złoto, ruda i Księgi za reklamę <small>(dziś zostało {left})</small>
+    </button>
+  );
+}

@@ -3,14 +3,14 @@
 // Bez serwera (artefakt, gra w przeglądarce) wszystko dzieje się tutaj.
 import {
   AD, AD_BUFFS, DAILY_GIFT, DUNGEONS, DUNG_ORDER, GEM_PACKS, GEM_SHOP, ORES, PASS, PASS_LEVELS, SEASON_NAMES, STARTER_EXTRA, speedupGems,
-  type FrameId, type SkinId,
+  LANDS, adMax, type AdKind, type FrameId, type SkinId,
   type BuffId, type GemItemId, type PassItem,
 } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { toast, type Ctx } from './context';
 import { goldWave, todayStr } from './formulas';
 import { grant } from './reward';
-import type { GameState, PassBase, PassTrack, Reward } from './types';
+import type { GameState, OfflineReport, PassBase, PassTrack, Reward } from './types';
 
 export type { PassBase, PassTrack };
 
@@ -219,13 +219,33 @@ export function claimGiftLocal(ctx: Ctx): Reward | null {
 }
 
 /** Nagroda za reklamę: wzmocnienie albo Klejnoty (dzienne limity). */
+/** Reklamy danego rodzaju, które zostały na dziś. */
+export const adsLeft = (sh: ShopState, kind: AdKind) => Math.max(0, adMax(kind) - (sh.ads[kind] ?? 0));
+
+/** Liczy obejrzaną reklamę w dziennym limicie (bez serwera). */
+export function adCountLocal(ctx: Ctx, kind: AdKind): boolean {
+  const s = ctx.s;
+  s.shop = shopToday(s.shop, ctx.now());
+  if (adsLeft(s.shop, kind) <= 0) return false;
+  s.shop.ads[kind] = (s.shop.ads[kind] ?? 0) + 1;
+  ctx.dirty = true;
+  return true;
+}
+
+/** Druga taka sama nagroda za nieobecność (złoto, ruda, domieszki, Księgi) — za reklamę. */
+export function offlineDouble(r: OfflineReport): Reward {
+  const el = LANDS[r.land]?.el;
+  const ores: Record<number, number> = {};
+  (r.ores ?? []).forEach((n, o) => { if (n > 0) ores[o] = n; });
+  const out: Reward = { gold: r.gold, books: r.books, ores };
+  if (el && r.el > 0) out.els = { [el]: r.el };
+  return out;
+}
+
 export function adRewardLocal(ctx: Ctx, kind: BuffId | 'gems'): boolean {
   const s = ctx.s;
   const now = ctx.now();
-  s.shop = shopToday(s.shop, now);
-  const max = kind === 'gems' ? AD.GEMS_DAY : AD_BUFFS[kind].day;
-  if ((s.shop.ads[kind] ?? 0) >= max) return false;
-  s.shop.ads[kind] = (s.shop.ads[kind] ?? 0) + 1;
+  if (!adCountLocal(ctx, kind)) return false;
   if (kind === 'gems') s.gems += AD.GEMS;
   else s.buffs = { ...s.buffs, [kind]: buffUntil(s.buffs?.[kind], now, kind) };
   ctx.dirty = true;

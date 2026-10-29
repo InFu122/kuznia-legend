@@ -2,7 +2,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { DUEL_FRAME_MS } from '../../engine/duel';
 import type { Game } from '../../engine/game';
-import { ARENA_SHOP, LEAGUES, type ArenaShopId } from '../../data';
+import { AD, ARENA_SHOP, LEAGUES, type ArenaShopId } from '../../data';
+import { resUrl } from '../../art/render';
+import { Px } from '../Px';
+import { TestAd } from './Shop';
 import { clanLife } from '../../save/clanlife';
 import { getLink, ServerError, type ArenaFight, type ArenaState, type DuelShow, type LeagueState } from '../../save/server';
 import { fmt } from '../format';
@@ -72,6 +75,7 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [adWatch, setAdWatch] = useState(false);
   const live = useRef(true);
   useEffect(() => () => { live.current = false; }, []);
 
@@ -109,6 +113,16 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
     setNote(`Kupiono: ${ARENA_SHOP[id].n}.`);
   });
 
+  const adLeft = Math.max(0, AD.ARENA_DAY - (game.shopNow.ads.arena ?? 0));
+  const adFight = () => {
+    setAdWatch(false);
+    call(l => l.adReward('arena'), r => {
+      game.applyShop(r);
+      setSt(x => (x ? { ...x, left: typeof r.left === 'number' ? r.left : x.left + 1, max: x.max + 1 } : x));
+      setNote('+1 walka na arenie.');
+    });
+  };
+  if (adWatch) return <TestAd onDone={adFight} onCancel={() => setAdWatch(false)} />;
   if (fight) {
     const extra = fight.tk ? ` · +${fight.lp} pkt ligi · +${tokensText(fight.tk)}` : '';
     return <DuelReplay f={fight} summary={`Ocena ${signed(fight.d)} (teraz ${fmt(fight.rating)}) · +${fmt(fight.gold)} złota${extra}`} onDone={() => setFight(null)} />;
@@ -164,6 +178,12 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
             <button class="linkbtn" disabled={busy} onClick={() => load(true)}>Inni przeciwnicy</button>
             {st.left < 1 && <button class="linkbtn" onClick={() => setTab('sklep')}>Bilet na arenę</button>}
           </div>
+          {adLeft > 0 && (
+            <button class="btn small adbtn" disabled={busy} onClick={() => setAdWatch(true)}>
+              <Px src={resUrl('reklama')} size={16} /> +1 walka za reklamę <small>(dziś zostało {adLeft})</small>
+            </button>
+          )}
+          {note && tab === 'walki' && <p class="sub" role="status">{note}</p>}
           <div class="eyebrow" style={{ marginTop: '4px' }}>Obrona</div>
           {st.log.length ? (
             <ul class="log">

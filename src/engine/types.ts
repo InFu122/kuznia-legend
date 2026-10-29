@@ -1,7 +1,7 @@
 // Typy stanu gry. Silnik nie używa DOM ani zegara przeglądarki, więc da się go
 // później uruchomić także na serwerze (Nakama, środowisko TypeScript).
 import type { ClanShopId } from '../data/clan';
-import type { BuffId, GemItemId } from '../data/shop';
+import type { AdKind, BuffId, GemItemId } from '../data/shop';
 import type { AchId } from '../data/achievements';
 import type { FrameId, SkinId } from '../data/cosmetics';
 
@@ -162,7 +162,7 @@ export interface GameState {
   clanHelp: { lvl: number; n: number };                // pomoc klanu już wliczona do ulepszenia kuźni na poziom `lvl`
   clanGot: string[];                                   // numery odebranych nagród od serwera (żeby żadnej nie wziąć dwa razy)
   gems: number;                                        // Klejnoty (z serwerem: kopia portfela serwera)
-  shop: { day: string; n: Partial<Record<GemItemId, number>>; ads: Partial<Record<BuffId | 'gems', number>>; gift: string; once: string[] }; // dzienne limity sklepu (UTC)
+  shop: { day: string; n: Partial<Record<GemItemId, number>>; ads: Partial<Record<AdKind, number>>; gift: string; once: string[] }; // dzienne limity sklepu (UTC)
   buffs: Partial<Record<BuffId, number>>;              // wzmocnienia z reklam: do kiedy działają (ms)
   pass: PassTrack | null;                              // Przepustka Kowala (z serwerem: kopia stanu serwera)
   event: EventTrack | null;                            // wydarzenie co 2 tygodnie (liczy gra)

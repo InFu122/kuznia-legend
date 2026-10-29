@@ -1,6 +1,6 @@
 // Połączenie z serwerem gry (Nakama) przez REST. Gra potrzebuje tylko logowania urządzeniem i wywołań RPC,
 // więc obywa się bez biblioteki klienta. Bez skonfigurowanego serwera (np. w artefakcie) gra działa lokalnie.
-import type { ArenaShopId, BuffId, GemItemId } from '../data';
+import type { AdKind, ArenaShopId, GemItemId } from '../data';
 import type { ServerReward } from '../engine/clan';
 import type { ShopSync } from '../engine/game';
 import type { ElemKey, FoundEvent, GameState, Item, SlotId } from '../engine/types';
@@ -257,7 +257,7 @@ export class ServerLink {
   shopState(): Promise<ShopResp> { return this.rpc('shop_state', {}); }
   shopBuy(id: GemItemId): Promise<ShopResp> { return this.rpc('shop_buy', { id }); }
   shopGift(): Promise<ShopResp> { return this.rpc('shop_gift', {}); }
-  adReward(kind: BuffId | 'gems'): Promise<ShopResp> { return this.rpc('ad_reward', { kind }); }
+  adReward(kind: AdKind): Promise<ShopResp & { left?: number }> { return this.rpc('ad_reward', { kind }); }
   passBuy(): Promise<ShopResp> { return this.rpc('pass_buy', {}); }
   passClaim(): Promise<ShopResp> { return this.rpc('pass_claim', {}); }
   speedup(what: 'forge' | 'tech'): Promise<ShopResp> { return this.rpc('speedup', { what }); }

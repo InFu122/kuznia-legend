@@ -54,7 +54,14 @@ export const AD = {
   OFFER_EVERY_MS: 4 * 60000,  // co tyle minut gry na polu walki pojawia się ikonka reklamy
   OFFER_SHOW_MS: 90000,       // ikonka znika po 1,5 minuty
   TEST_AD_MS: 5000,           // reklama testowa (zanim gra dostanie prawdziwe reklamy)
+  ARENA_DAY: 2,               // +1 walka na arenie za reklamę — tyle razy dziennie
+  OFFLINE_DAY: 3,             // ×2 nagrody za nieobecność za reklamę — tyle razy dziennie
+  OFFLINE_MIN_MS: 30 * 60000, // od tylu minut nieobecności
 } as const;
+/** Rodzaje reklam z nagrodą (dzienne liczniki w sklepie). */
+export type AdKind = BuffId | 'gems' | 'arena' | 'offline';
+/** Ile reklam danego rodzaju dziennie. */
+export const adMax = (k: AdKind): number => (k === 'gems' ? AD.GEMS_DAY : k === 'arena' ? AD.ARENA_DAY : k === 'offline' ? AD.OFFLINE_DAY : AD_BUFFS[k]?.day ?? 0);
 
 /* ---------- Przepustka Kowala ---------- */
 

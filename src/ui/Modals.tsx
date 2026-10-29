@@ -20,7 +20,7 @@ import { f1, fmt, pct, pctS, tfmt } from './format';
 import { OddsBar } from './panels/Forge';
 import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
-import { AdOfferView, ShopView } from './panels/Shop';
+import { AdOfferView, OfflineDouble, ShopView } from './panels/Shop';
 import { LegacyView } from './panels/Legacy';
 import { Reforge } from './panels/Runes';
 import { RankingView } from './panels/Ranking';
@@ -152,6 +152,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
               <ul class="list">{r.chest.map(x => <li key={x.item.id} class={`rt${x.item.r}`}>{itemName(x.item)} · {RAR[x.item.r].n} — {x.stop ? 'wybrana rzadkość! czeka na twoją decyzję' : x.equipped ? 'założony' : 'sprzedany'}</li>)}</ul>
             </>
           )}
+          <OfflineDouble game={game} />
           <Close onClose={close} label="Do kuźni" />
         </>
       );
