@@ -6,22 +6,37 @@ export interface DungeonInfo {
   reward: string;
   how: string;
   keys: number;       // klucze dziennie; 0 = bez limitu
-  unlock: string;     // opis warunku
 }
 
 export const DUNGEONS: Record<DungId, DungeonInfo> = {
-  skarbiec: { n: 'Skarbiec Złota', short: 'Złoto', reward: 'Złoto', how: '30 sekund walki z goblinami niosącymi worki; każdy kolejny daje więcej złota.', keys: 2, unlock: 'po pokonaniu 1. bossa' },
-  sztolnia: { n: 'Głęboka Sztolnia', short: 'Lepsza ruda', reward: 'Ruda o poziom lepsza niż w twojej krainie', how: 'Schodzisz piętro po piętrze. Co 5 pięter wybierasz: wyjść z łupem albo ryzykować; porażka zabiera połowę worka.', keys: 2, unlock: 'po pokonaniu 2. bossa' },
-  wieza: { n: 'Wieża Wyzwań', short: 'Księgi Wiedzy', reward: 'Księgi Wiedzy co 5 pięter, złoto z każdego piętra', how: 'Nieskończone piętra coraz silniejszych strażników. Postęp zostaje — zaczynasz od pierwszego niepokonanego piętra.', keys: 0, unlock: 'od 3. poziomu kuźni' },
-  leza: { n: 'Leża Bossów', short: 'Rudy unikalne', reward: 'Rudy unikalne do zestawów', how: 'Walka z silniejszą wersją pokonanego bossa. Każdy boss z rudą unikalną daje własną rudę.', keys: 3, unlock: 'po pokonaniu Wilkołaka Alfy' },
-  kopalnia: { n: 'Kopalnia Kryształów', short: 'Kamienie', reward: 'Kamienie do chowańców i wierzchowców', how: '10 fal kryształowych golemów, coraz silniejszych. Każda fala daje Kamienie; po 10. fali — Siodło (od aktu III).', keys: 2, unlock: 'w akcie II' },
-  labirynt: { n: 'Labirynt Minotaura', short: 'Rzadkie rudy i Księgi', reward: 'Rzadkie rudy, Księgi Wiedzy, Zwoje', how: '10 komnat. Przed każdą wybierasz jedne z dwojga drzwi: walka, elita, skarb, źródło albo ołtarz z błogosławieństwem na resztę biegu. Na końcu czeka Minotaur.', keys: 1, unlock: 'w akcie II' },
-  zbrojownia: { n: 'Zapomniana Zbrojownia', short: 'Przedmioty z historią', reward: 'Przedmioty z Wielkiego Obiegu', how: 'Trzy skrzynie strzeżone przez duchy dawnych właścicieli. Każdy pokonany duch oddaje przedmiot z jego historią.', keys: 1, unlock: 'w akcie II' },
-  krypta: { n: 'Krypta Bohaterów', short: 'Pieczęcie Legendy', reward: 'Pieczęcie Legendy (+1000 Sławy Czynów)', how: 'Walczysz tylko przedmiotami z legendą — reszta zostaje przed wejściem. 5 strażników, a zasady zmieniają się co tydzień.', keys: 1, unlock: 'gdy pierwszy przedmiot zostanie Zahartowany' },
-  sezon: { n: 'Loch sezonowy', short: 'Punkty wydarzenia', reward: 'Punkty wydarzenia, na końcu skrzynia', how: '10 pięter wrogów wydarzenia, coraz silniejszych; na ostatnim czeka boss. Każde piętro daje punkty wydarzenia — także gdy przegrasz dalej. Loch zmienia się z każdym wydarzeniem.', keys: 2, unlock: 'po pokonaniu 1. bossa' },
-  oltarze: { n: 'Ołtarze Żywiołów', short: 'Domieszki', reward: 'Domieszki żywiołu dnia', how: '5 strażników żywiołu. Każdego dnia tygodnia inny żywioł; porażka zabiera połowę nagrody.', keys: 2, unlock: 'od 10. poziomu kuźni' },
+  skarbiec: { n: 'Skarbiec Złota', short: 'Złoto', reward: 'Złoto', how: '30 sekund walki z goblinami niosącymi worki; każdy kolejny daje więcej złota.', keys: 2 },
+  sztolnia: { n: 'Głęboka Sztolnia', short: 'Lepsza ruda', reward: 'Ruda o poziom lepsza niż w twojej krainie', how: 'Schodzisz piętro po piętrze. Co 5 pięter wybierasz: wyjść z łupem albo ryzykować; porażka zabiera połowę worka.', keys: 2 },
+  wieza: { n: 'Wieża Wyzwań', short: 'Księgi Wiedzy', reward: 'Księgi Wiedzy co 5 pięter, złoto z każdego piętra', how: 'Nieskończone piętra coraz silniejszych strażników. Postęp zostaje — zaczynasz od pierwszego niepokonanego piętra.', keys: 0 },
+  leza: { n: 'Leża Bossów', short: 'Rudy unikalne', reward: 'Rudy unikalne do zestawów', how: 'Walka z silniejszą wersją pokonanego bossa. Każdy boss z rudą unikalną daje własną rudę.', keys: 3 },
+  kopalnia: { n: 'Kopalnia Kryształów', short: 'Kamienie', reward: 'Kamienie do chowańców i wierzchowców', how: '10 fal kryształowych golemów, coraz silniejszych. Każda fala daje Kamienie; po 10. fali — Siodło (od aktu III).', keys: 2 },
+  labirynt: { n: 'Labirynt Minotaura', short: 'Rzadkie rudy i Księgi', reward: 'Rzadkie rudy, Księgi Wiedzy, Zwoje', how: '10 komnat. Przed każdą wybierasz jedne z dwojga drzwi: walka, elita, skarb, źródło albo ołtarz z błogosławieństwem na resztę biegu. Na końcu czeka Minotaur.', keys: 1 },
+  zbrojownia: { n: 'Zapomniana Zbrojownia', short: 'Przedmioty z historią', reward: 'Przedmioty z Wielkiego Obiegu', how: 'Trzy skrzynie strzeżone przez duchy dawnych właścicieli. Każdy pokonany duch oddaje przedmiot z jego historią.', keys: 1 },
+  krypta: { n: 'Krypta Bohaterów', short: 'Pieczęcie Legendy', reward: 'Pieczęcie Legendy (+1000 Sławy Czynów)', how: 'Walczysz tylko przedmiotami z legendą — reszta zostaje przed wejściem. 5 strażników, a zasady zmieniają się co tydzień.', keys: 1 },
+  sezon: { n: 'Loch sezonowy', short: 'Punkty wydarzenia', reward: 'Punkty wydarzenia, na końcu skrzynia', how: '10 pięter wrogów wydarzenia, coraz silniejszych; na ostatnim czeka boss. Każde piętro daje punkty wydarzenia — także gdy przegrasz dalej. Loch zmienia się z każdym wydarzeniem.', keys: 2 },
+  oltarze: { n: 'Ołtarze Żywiołów', short: 'Domieszki', reward: 'Domieszki żywiołu dnia', how: '5 strażników żywiołu. Każdego dnia tygodnia inny żywioł; porażka zabiera połowę nagrody.', keys: 2 },
 };
-export const DUNG_ORDER: DungId[] = ['sezon', 'skarbiec', 'sztolnia', 'wieza', 'leza', 'oltarze', 'kopalnia', 'labirynt', 'zbrojownia', 'krypta'];
+export const DUNG_ORDER: DungId[] = ['skarbiec', 'sezon', 'sztolnia', 'wieza', 'oltarze', 'leza', 'kopalnia', 'labirynt', 'zbrojownia', 'krypta'];
+/**
+ * Kiedy loch się otwiera: po pokonaniu bossa krainy numer `boss` (od 1) i/lub od poziomu kuźni `forge`.
+ * Lochy otwierają się po kolei przez cztery akty, a nie prawie wszystkie naraz.
+ */
+export const DUNG_UNLOCK: Record<DungId, { boss?: number; forge?: number }> = {
+  skarbiec: { boss: 1 },
+  sezon: { boss: 2 },
+  sztolnia: { boss: 3 },
+  wieza: { forge: 6 },
+  oltarze: { forge: 10 },
+  leza: { boss: 5 },
+  kopalnia: { boss: 6 },
+  labirynt: { boss: 8 },
+  zbrojownia: { boss: 10 },
+  krypta: { boss: 11 },
+};
 export const DUNG_SOON: string[] = [];
 
 /* ---------- Labirynt Minotaura ---------- */

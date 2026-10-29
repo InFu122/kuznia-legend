@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { FRAME_IDS, LANDS, SKIN_IDS } from '../../data';
 import { Avatar } from '../Avatar';
+import { showProfile } from '../profile';
 import { nextSmithTitle, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { GameState } from '../../engine/types';
@@ -165,7 +166,10 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
           <div>
             <div class="eyebrow">Piętno Kowala</div>
             <div class="h">{t.n} {s.name}</div>
-            <button class="linkbtn" onClick={() => game.openModal({ kind: 'look' })}>Wygląd · stroje {s.look.skins.length}/{SKIN_IDS.length}, ramki {s.look.frames.length}/{FRAME_IDS.length}</button>
+            <div class="pf-links">
+              <button class="linkbtn" onClick={() => game.openModal({ kind: 'look' })}>Wygląd · stroje {s.look.skins.length}/{SKIN_IDS.length}, ramki {s.look.frames.length}/{FRAME_IDS.length}</button>
+              <button class="linkbtn" onClick={() => showProfile(null)}>Mój profil</button>
+            </div>
           </div>
         </div>
         <p class="sub">Sława kowala: <b class="num">{fmt(sm.fame)}</b>{next ? ` · do tytułu ${next.n}: ${fmt(next.at - sm.fame)}` : ''}</p>

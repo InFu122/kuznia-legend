@@ -1,4 +1,5 @@
 // Okno czatu: pokój globalny i kanał klanu, ogłoszenie klanu, karty dropów, wyciszanie i zgłaszanie.
+import { showProfile } from '../profile';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { B, RAR, SUBS } from '../../data';
 import type { Game } from '../../engine/game';
@@ -31,6 +32,7 @@ function Message({ m, open, onMenu, onMute, onReport }: { m: ChatMsg; open: bool
       <div class="cm-t">{m.t}</div>
       {open && (
         <div class="btnrow cm-menu">
+          <button class="btn small" onClick={() => showProfile(m.uid)}>Profil</button>
           <button class="btn small" onClick={onMute}>Wycisz: {m.n}</button>
           <button class="btn small danger" onClick={onReport}>Zgłoś wiadomość</button>
         </div>

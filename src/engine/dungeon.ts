@@ -1,7 +1,7 @@
 // Lochy. Każdy loch to osobny tryb walki w arenie; nagrody zbierają się w `loot` i trafiają do gracza na końcu.
 import {
-  B, DUNGEONS, DUNGEON_FOES, EVENT, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS,
-  LAB_DOORS, LAB_ROOMS, LANDS, PETS_UNLOCK_LAND, TECH_UNLOCK_FORGE, ZBROJOWNIA_CHESTS, setOfLand,
+  B, DUNGEONS, DUNGEON_FOES, DUNG_UNLOCK, EVENT, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS,
+  LAB_DOORS, LAB_ROOMS, LANDS, ZBROJOWNIA_CHESTS, setOfLand,
   type LabDoor,
 } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
@@ -21,21 +21,28 @@ export { grant };
 import type { DungId, ElemKey, FoeType, KryptaRuleId, LabDoorOpt, Reward } from './types';
 
 const { SKARBIEC_MS, OLTARZE_FLOORS } = B;
-const ACT2 = PETS_UNLOCK_LAND;
 
-/** Czy loch jest dostępny dla gracza. */
+/** Czy loch jest dostępny dla gracza (harmonogram DUNG_UNLOCK; loch, w którym gracz już był, zostaje otwarty). */
 export function dungUnlocked(ctx: Ctx, id: DungId): boolean {
   const s = ctx.s;
+  const u = DUNG_UNLOCK[id];
+  const been = (s.dungeons[id]?.best ?? 0) > 0;
+  const step = (!u.boss || !!s.cleared[u.boss - 1]) && (!u.forge || s.forge.lvl >= u.forge);
   switch (id) {
-    case 'skarbiec': return s.cleared[0];
-    case 'sztolnia': return s.cleared[1];
-    case 'wieza': return s.forge.lvl >= TECH_UNLOCK_FORGE;
-    case 'leza': return lezaBosses(ctx).length > 0;
-    case 'oltarze': return s.forge.lvl >= B.ELEM_FORGE_LVL;
-    case 'kopalnia': case 'labirynt': case 'zbrojownia': return s.maxLand >= ACT2;
-    case 'krypta': return s.dungeons.krypta.best > 0 || Object.values(s.eq).some(it => it && it.ls >= 1);
-    case 'sezon': return s.cleared[0];
+    case 'leza': return (step || been) && lezaBosses(ctx).length > 0;
+    case 'krypta': return been || (step && Object.values(s.eq).some(it => it && it.ls >= 1));
+    default: return step || been;
   }
+}
+
+/** Warunek otwarcia lochu słowami, np. „po pokonaniu bossa Kamienny Golem (5. kraina)”. */
+export function dungUnlockText(id: DungId): string {
+  const u = DUNG_UNLOCK[id];
+  const parts: string[] = [];
+  if (u.boss) parts.push(`po pokonaniu bossa ${LANDS[u.boss - 1].boss} (${u.boss}. kraina)`);
+  if (u.forge) parts.push(`od ${u.forge}. poziomu kuźni`);
+  if (id === 'krypta') parts.push('gdy pierwszy przedmiot zostanie Zahartowany');
+  return parts.join(', ');
 }
 
 /** Klucze na dziś (odnawiają się o północy). Wieża Wyzwań nie ma limitu. */

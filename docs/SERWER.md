@@ -116,6 +116,14 @@ Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiam
 
 **Żetony Areny** (portfel serwera, klucz `tokens`): 5 za wygraną, 1 za porażkę i nagroda za miejsce w lidze na koniec tygodnia. **Sklep areny** (zakładka w oknie areny) sprzedaje za Żetony bilety na dodatkowe walki (3 dziennie), Księgi, Kamienie, Zwoje, Siodła, Rzadkie jaja i Pieczęcie Legendy, z dziennymi limitami.
 
+### Profile graczy
+
+Dotknięcie gracza w rankingu, na liście przeciwników areny, w tabeli ligi, na liście członków klanu albo „Profil” w menu wiadomości czatu otwiera jego profil: awatar w ramce, strój, tytuł kowala, klan, Moc, poziom kuźni, ligę i ocenę areny, Dziedzictwo oraz cały ekwipunek (dotknięcie przedmiotu pokazuje jego kartę) i statystyki bohatera. Statystyki liczy serwer z uznanych przedmiotów (jak na arenie). Własny profil: **Bohater → Podgląd bohatera** albo **Kodeks → Mój profil** (działa też bez serwera).
+
+### Lochy po kolei
+
+Lochy otwierają się stopniowo przez cztery akty: Skarbiec Złota po 1. bossie, loch sezonowy po 2., Głęboka Sztolnia po 3., Wieża Wyzwań od 6. poziomu kuźni, Ołtarze Żywiołów od 10., Leża Bossów po 5. bossie, Kopalnia Kryształów po 6., Labirynt Minotaura po 8., Zapomniana Zbrojownia po 10., Krypta Bohaterów po 11. bossie i pierwszym Zahartowanym przedmiocie. Gra ogłasza każdy nowy loch. Loch, w którym gracz już był, zostaje otwarty.
+
 ### Wydarzenia i lochy sezonowe
 
 Co 2 tygodnie nowe wydarzenie (na zmianę: Festiwal Kuźni, Wielkie Łowy, Noc Upiorów) z własnymi punktami (Iskry, Trofea, Świece) i lochem sezonowym (Ognista Otchłań, Lodowa Grota, Nawiedzone Katakumby). Punkty za codzienną grę według wydarzenia (wytopy, wrogowie, klucze w lochach) — najwyżej 400 dziennie — i bez limitu za piętra lochu sezonowego (2 klucze dziennie, 10 pięter, na końcu boss i skrzynia). 12 progów nagród; nieodebrane trafiają do gracza same po końcu wydarzenia. Baner wydarzenia jest na górze zakładki **Lochy**. Punkty liczy gra; serwer w zapisie odrzuca więcej punktów, niż da się zdobyć w czasie wydarzenia.

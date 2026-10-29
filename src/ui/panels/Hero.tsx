@@ -8,6 +8,7 @@ import { SlotIcon } from '../icons';
 import { itemUrl } from '../../art/render';
 import { Px } from '../Px';
 import { MountsView, PetsView, SkillsView } from './Companions';
+import { showProfile } from '../profile';
 import { HeroSprite, bestRarity } from '../Arena';
 import { LegacyCard } from './Legacy';
 import { RunesCard } from './Runes';
@@ -52,6 +53,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
             <div class="eyebrow">Bohater</div>
             <div class="h">{s.name}</div>
             <p class="sub">{smithTitle(s.smith.fame).n} · najdalej: {LANDS[s.maxLand].n}</p>
+            <button class="btn small" style={{ marginTop: '6px' }} onClick={() => showProfile(null)}>Podgląd bohatera</button>
           </div>
         </div>
         <div class="stats" style={{ marginTop: '10px' }}>

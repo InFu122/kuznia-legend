@@ -10,8 +10,10 @@ import { clanLife } from '../../save/clanlife';
 import { getLink, ServerError, type ArenaFight, type ArenaState, type DuelShow, type LeagueState } from '../../save/server';
 import { fmt } from '../format';
 import { HeroSprite } from '../Arena';
-import { tokensText } from '../texts';
+import { Res, Tokens } from '../RewardIcons';
+import type { ComponentChildren } from 'preact';
 import { Avatar } from '../Avatar';
+import { showProfile } from '../profile';
 import { ArenaShopTab, LeagueBadge, LeagueTab, TokenIco } from './League';
 
 /** Odtworzenie walki jest 3× szybsze niż sama walka. */
@@ -21,7 +23,7 @@ const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak po
 const signed = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n);
 
 /** Odtworzenie pojedynku rozegranego przez serwer (arena, bitwa wojny klanów). */
-export function DuelReplay({ f, summary, title = 'Pojedynek', onDone }: { f: DuelShow; summary: string; title?: string; onDone: () => void }) {
+export function DuelReplay({ f, summary, title = 'Pojedynek', onDone }: { f: DuelShow; summary: ComponentChildren; title?: string; onDone: () => void }) {
   const [i, setI] = useState(0);
   const done = i >= f.frames.length - 1;
   useEffect(() => {
@@ -124,8 +126,13 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
   };
   if (adWatch) return <TestAd onDone={adFight} onCancel={() => setAdWatch(false)} />;
   if (fight) {
-    const extra = fight.tk ? ` · +${fight.lp} pkt ligi · +${tokensText(fight.tk)}` : '';
-    return <DuelReplay f={fight} summary={`Ocena ${signed(fight.d)} (teraz ${fmt(fight.rating)}) · +${fmt(fight.gold)} złota${extra}`} onDone={() => setFight(null)} />;
+    const summary = (
+      <>
+        Ocena {signed(fight.d)} (teraz {fmt(fight.rating)}) · +<Res r={{ gold: fight.gold }} />
+        {fight.tk ? <> · +{fight.lp} pkt ligi · +<Tokens n={fight.tk} /></> : null}
+      </>
+    );
+    return <DuelReplay f={fight} summary={summary} onDone={() => setFight(null)} />;
   }
   const gamePower = game.stats.power;
   const brief = lg ? { tier: lg.tier, rank: lg.rank, tokens: lg.tokens } : st?.league ?? null;
@@ -164,7 +171,7 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
           <ul class="clist">
             {st.opp.map((o, i) => (
               <li key={o.id}>
-                <Avatar skin={o.ghost ? game.s.look.skin : o.sk} frame={o.ghost ? 'prosta' : o.fr} size={36} />
+                <button class="avbtn" disabled={o.ghost} onClick={() => showProfile(o.id)} aria-label={`Profil: ${o.name}`}><Avatar skin={o.ghost ? game.s.look.skin : o.sk} frame={o.ghost ? 'prosta' : o.fr} size={36} /></button>
                 <div class="cmain">
                   <div class="cname">{o.name}{o.ghost && <span class="tag">Duch areny</span>}</div>
                   <div class="tech-cost">Moc {fmt(o.power)} · ocena {fmt(o.rating)}{o.land ? ` · ${o.land}` : ''}</div>

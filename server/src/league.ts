@@ -170,7 +170,7 @@ function view(nk: nkruntime.Nakama, ctx: nkruntime.Context, userId: string, now:
   const vnow = weekStart(clock.week) + clock.day * DAY_MS + (now % DAY_MS);
   return {
     tier: me.tier, week: clock.week, ends: now + weekStart(clock.week) + 7 * DAY_MS - vnow,
-    rows: rows ? rows.map(r => ({ n: r.n, pts: r.pts, ghost: r.ghost, me: r.id === userId })) : null,
+    rows: rows ? rows.map(r => ({ id: r.ghost ? undefined : r.id, n: r.n, pts: r.pts, ghost: r.ghost, me: r.id === userId })) : null,
     rank: rows ? rows.findIndex(r => r.id === userId) + 1 : 0,
     season: { n: se.n, name: se.name, end: now + se.end - vnow, best: me.best, gems: me.best >= 0 ? LEAGUE_SEASON_GEMS[me.best] ?? 0 : 0 },
     last: me.last ?? null, lastSeason: me.lastSeason ?? null,

@@ -3,10 +3,10 @@ import { useState } from 'preact/hooks';
 import { ACHIEVEMENTS, ACH_IDS, CODEX_PCT, ORES, SLOTS, SLOT_ORDER } from '../../data';
 import { itemUrl, oreUrl } from '../../art/render';
 import { ALL_KINDS, CODEX_TOTAL, achClaimed, achGoalText, achReached, achReward, achValue, codexOre } from '../../engine/achievements';
+import { RewardIcons } from '../RewardIcons';
 import type { Game } from '../../engine/game';
 import { f1, fmt } from '../format';
 import { Px } from '../Px';
-import { rewardText } from '../texts';
 
 export function AchievementsView({ game }: { game: Game }) {
   const s = game.s;
@@ -30,7 +30,7 @@ export function AchievementsView({ game }: { game: Game }) {
                 <div class="cname">{A.n} <span class="achpips" aria-label={`${got} z ${A.tiers.length}`}>{A.tiers.map((_, i) => <i key={i} class={i < got ? 'on' : i < reached ? 'ready' : ''} />)}</span></div>
                 <div class="tech-cost">{max ? 'Wszystkie progi zdobyte' : `${achGoalText(id, t)} · ${id === 'rzadkosc' ? (v >= goal ? 'gotowe' : 'jeszcze nie') : `${fmt(Math.min(v, goal))}/${fmt(goal)}`}`}</div>
                 {!max && id !== 'rzadkosc' && <div class="bar thin"><i style={{ width: Math.min(100, (v / goal) * 100) + '%' }} /></div>}
-                {!max && <div class="tech-cost">Nagroda: {rewardText(achReward(s, t))}</div>}
+                {!max && <div class="tech-cost">Nagroda: <RewardIcons r={achReward(s, t)} size={16} /></div>}
               </div>
               {ready && <button class="btn small primary" onClick={() => game.claimAch(id)}>Odbierz</button>}
             </li>

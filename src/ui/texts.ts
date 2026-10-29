@@ -3,6 +3,12 @@ import { dungName, eventOf, evText } from '../engine/events';
 import type { DungRun, ElemKey, Reward, SetId } from '../engine/types';
 import { fmt } from './format';
 
+/** Polska odmiana rzeczownika po liczbie: 1 → `one`, 2–4 (bez 12–14) → `few`, reszta → `many`. */
+export function pl(n: number, one: string, few: string, many: string): string {
+  const a = Math.abs(Math.round(n)), m10 = a % 10, m100 = a % 100;
+  return a === 1 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+}
+
 /** Polska odmiana: 1 Księga, 2–4 Księgi, 5+ Ksiąg. */
 export function booksShort(n: number): string {
   const m10 = n % 10, m100 = n % 100;

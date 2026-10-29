@@ -3,6 +3,8 @@ import type { Game } from '../engine/game';
 import type { ModalData } from '../engine/types';
 import { Arena } from './Arena';
 import { ModalShell, ModalView } from './Modals';
+import { ProfileView } from './panels/Profile';
+import { onProfile } from './profile';
 import { Toasts } from './Toasts';
 import { fmt } from './format';
 import { TabIcon, type Tab } from './icons';
@@ -50,6 +52,9 @@ const SAVE_LABEL: Record<SaveInfo['mode'], string> = {
 export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onReady?: () => void }) {
   const [tab, setTab] = useState<Tab>('kuznia');
   const [, force] = useState(0);
+  /** Otwarty profil gracza: `undefined` — zamknięty, `null` — własny. */
+  const [profile, setProfile] = useState<string | null | undefined>(undefined);
+  useEffect(() => onProfile(id => setProfile(id)), []);
   const queue = useRef<ModalData[]>([]);
   const panelRef = useRef<HTMLElement>(null);
 
@@ -190,6 +195,11 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       {modal && (
         <ModalShell locked={LOCKED.has(modal.kind)} onClose={close}>
           <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} />
+        </ModalShell>
+      )}
+      {profile !== undefined && (
+        <ModalShell locked={false} onClose={() => setProfile(undefined)}>
+          <ProfileView game={game} id={profile} close={() => setProfile(undefined)} />
         </ModalShell>
       )}
       <Toasts game={game} />

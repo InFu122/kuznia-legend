@@ -28,7 +28,7 @@ describe('wojna klanów — zasady wspólne gry i serwera', () => {
 
   it('dzień kucia, walki i lochów: gra liczy wytopy, wrogów (także offline) i klucze', () => {
     const { g, ctx, s } = makeGame(3);
-    s.maxLand = 2; s.cleared = s.cleared.map((_, i) => i < 2);
+    s.maxLand = 2; s.cleared = s.cleared.map((_, i) => i < 3);
     const k0 = s.stats.kills;
     applyOffline(ctx, 4 * 3600 * 1000);
     expect(s.stats.kills).toBeGreaterThan(k0 + 100);

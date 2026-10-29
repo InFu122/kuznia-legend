@@ -5,6 +5,7 @@ import { B, LANDS } from '../../data';
 import type { Game } from '../../engine/game';
 import { getChat } from '../../save/chat';
 import { clanLife } from '../../save/clanlife';
+import { showProfile } from '../profile';
 import { getLink, type ClanInfo, type ClanMember, type ClanMode, type ClanRole, type ClanSummary } from '../../save/server';
 import { fmt } from '../format';
 import { ClanBossTab, ClanForgeTab, ClanHelpTab, ClanShopTab, errText, useClanLife, type ClanTab } from './ClanLife';
@@ -214,7 +215,7 @@ function MyClan({ info, reload, openChat }: { info: ClanInfo; reload: (msg?: str
         return (
           <li key={m.id} class="member">
             <div class="cmain">
-              <div class="cname">{m.name}{m.me ? ' (ty)' : ''} <span class={`role r-${m.role}`}>{ROLE[m.role]}</span>{m.online && <span class="online" title="w grze" />}</div>
+              <div class="cname"><button class="linkbtn pname" onClick={() => showProfile(m.me ? null : m.id)}>{m.name}</button>{m.me ? ' (ty)' : ''} <span class={`role r-${m.role}`}>{ROLE[m.role]}</span>{m.online && <span class="online" title="w grze" />}</div>
               <div class="tech-cost">Moc {fmt(m.power)}</div>
               {menu === m.id && (
                 <div class="btnrow" style={{ marginTop: '6px' }}>

@@ -5,6 +5,7 @@ import { getLink, type BoardId, type ClanRanking, type Ranking } from '../../sav
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 import { Avatar } from '../Avatar';
+import { showProfile } from '../profile';
 
 type Tab = BoardId | 'klany';
 const BOARDS: [Tab, string, string][] = [
@@ -61,7 +62,7 @@ function PlayerBoard({ board }: { board: BoardId }) {
               {data.records.map(r => (
                 <tr key={r.rank} class={r.me ? 'sel' : ''}>
                   <td class="num">{r.rank}</td>
-                  <td class="oname"><span class="rk-who"><Avatar skin={r.sk} frame={r.fr} size={28} /><span>{r.name}<small>{r.land}</small></span></span></td>
+                  <td class="oname"><button class="rk-who" disabled={!r.id} onClick={() => r.id && showProfile(r.me ? null : r.id)} aria-label={`Profil: ${r.name}`}><Avatar skin={r.sk} frame={r.fr} size={28} /><span>{r.name}<small>{r.land}</small></span></button></td>
                   <td class="num">{val(r.score)}</td>
                 </tr>
               ))}

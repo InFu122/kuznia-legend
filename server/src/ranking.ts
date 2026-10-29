@@ -63,7 +63,7 @@ export function rpcRanking(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
   // Strój i ramka z bohatera areny (zapisywany przy każdym zapisie gry) — metadanych rankingu Nakama nie zmienia bez zmiany wyniku.
   const heroes = readHeroes(nk, [...new Set([...(top.records || []).map(r => r.ownerId), userId])]);
   const row = (r: nkruntime.LeaderboardRecord) => ({
-    rank: r.rank, name: (r.metadata && r.metadata.name) || r.username, score: r.score, sub: r.subscore,
+    id: r.ownerId, rank: r.rank, name: (r.metadata && r.metadata.name) || r.username, score: r.score, sub: r.subscore,
     land: r.metadata ? r.metadata.land : '', me: r.ownerId === userId,
     sk: skinOr(heroes[r.ownerId]?.sk), fr: frameOr(heroes[r.ownerId]?.fr),
   });

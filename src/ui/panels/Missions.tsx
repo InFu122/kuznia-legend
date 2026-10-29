@@ -2,23 +2,25 @@ import { useState } from 'preact/hooks';
 import { LOGIN_DAYS, missionText } from '../../data';
 import type { Game } from '../../engine/game';
 import { canClaimLogin, chestReady, chestReward, loginReward, missionReward } from '../../engine/missions';
-import type { Mission } from '../../engine/types';
+import type { Mission, Reward } from '../../engine/types';
 import { fmt } from '../format';
-import { rewardText } from '../texts';
+import { RewardIcons } from '../RewardIcons';
+import { Px } from '../Px';
+import { resUrl } from '../../art/render';
 import { achCount } from '../../engine/achievements';
 import { AchievementsView } from './Achievements';
 
 type Tab = 'daily' | 'weekly' | 'login' | 'ach';
 const TABS: [Tab, string][] = [['daily', 'Dzienne'], ['weekly', 'Tygodniowe'], ['login', 'Logowanie'], ['ach', 'Osiągnięcia']];
 
-function MissionRow({ m, reward, onClaim }: { m: Mission; reward: string; onClaim: () => void }) {
+function MissionRow({ m, reward, onClaim }: { m: Mission; reward: Reward; onClaim: () => void }) {
   const done = m.n >= m.goal;
   return (
     <li class={m.claimed ? 'claimed' : ''}>
       <div class="cmain">
         <div class="cname">{missionText(m.kind, m.goal)}</div>
         <div class="bar" style={{ marginTop: '5px' }}><i style={{ width: Math.min(100, (m.n / m.goal) * 100) + '%' }} /></div>
-        <div class="tech-cost">{fmt(m.n)}/{fmt(m.goal)} · {reward}</div>
+        <div class="tech-cost mrow"><span>{fmt(m.n)}/{fmt(m.goal)}</span><RewardIcons r={reward} size={16} /></div>
       </div>
       {m.claimed ? <span class="tech-busy">Odebrano</span>
         : <button class={`btn small${done ? ' primary' : ''}`} disabled={!done} onClick={onClaim}>{done ? 'Odbierz' : 'W toku'}</button>}
@@ -47,12 +49,12 @@ export function MissionsView({ game, initial, close }: { game: Game; initial?: T
       {tab === 'daily' && (
         <>
           <ul class="clist">
-            {ms.daily.map((m, i) => <MissionRow key={m.kind} m={m} reward={rewardText(missionReward(s, 'daily'))} onClaim={() => game.claimMission('daily', i)} />)}
+            {ms.daily.map((m, i) => <MissionRow key={m.kind} m={m} reward={missionReward(s, 'daily')} onClaim={() => game.claimMission('daily', i)} />)}
           </ul>
           <div class={`chest${chestReady(s) ? ' ready' : ''}`}>
             <div>
               <b>Skrzynia za komplet</b>
-              <div class="sub">{rewardText(chestReward(s))}</div>
+              <div class="sub"><RewardIcons r={chestReward(s)} size={16} /></div>
             </div>
             {ms.chest ? <span class="tech-busy">Odebrano</span>
               : <button class={`btn small${chestReady(s) ? ' primary' : ''}`} disabled={!chestReady(s)} onClick={() => game.claimChest()}>Otwórz</button>}
@@ -63,7 +65,7 @@ export function MissionsView({ game, initial, close }: { game: Game; initial?: T
       {tab === 'weekly' && (
         <>
           <ul class="clist">
-            {ms.weekly.map((m, i) => <MissionRow key={m.kind} m={m} reward={rewardText(missionReward(s, 'weekly'))} onClaim={() => game.claimMission('weekly', i)} />)}
+            {ms.weekly.map((m, i) => <MissionRow key={m.kind} m={m} reward={missionReward(s, 'weekly')} onClaim={() => game.claimMission('weekly', i)} />)}
           </ul>
           <p class="sub">Nowe misje tygodniowe w poniedziałek.</p>
         </>
@@ -89,7 +91,7 @@ function LoginView({ game }: { game: Game }) {
             <div key={i} class={`calday ${state}${i === 6 ? ' big' : ''}`}>
               <small>Dzień {i + 1}</small>
               <b>{d.n}</b>
-              <span>{i === 6 && !Object.keys(r).length ? 'Epicki lub lepszy' : rewardText(r)}</span>
+              <span>{i === 6 && !Object.keys(r).length ? <span class="rwi"><span class="rwc"><Px src={resUrl('zwoj')} size={16} /><span>Zwój zaklęć — epicki lub lepszy</span></span></span> : <RewardIcons r={r} size={16} />}</span>
             </div>
           );
         })}

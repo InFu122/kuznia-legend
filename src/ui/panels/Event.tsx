@@ -7,6 +7,7 @@ import type { Game } from '../../engine/game';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 import { rewardText } from '../texts';
+import { RewardIcons } from '../RewardIcons';
 
 export function EventView({ game, close, onDung }: { game: Game; close: () => void; onDung: () => void }) {
   const [msg, setMsg] = useState('');
@@ -49,7 +50,7 @@ export function EventView({ game, close, onDung }: { game: Game; close: () => vo
           return (
             <li key={i} class={st}>
               <span class="num">{fmt(m.pts)}</span>
-              <span>{rewardText(milestoneReward(e.ev, i, game.s))}</span>
+              <span><RewardIcons r={milestoneReward(e.ev, i, game.s)} size={16} /></span>
               <small>{st === 'got' ? 'odebrane' : st === 'ready' ? 'do odebrania' : `brakuje ${fmt(m.pts - pts)}`}</small>
             </li>
           );

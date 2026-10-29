@@ -8,7 +8,7 @@ import { clanLife } from '../../save/clanlife';
 import { getLink, type RaidState, type WarState } from '../../save/server';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
-import { coins } from '../texts';
+import { Res } from '../RewardIcons';
 import { Note, errText, useAction } from './ClanLife';
 import { DuelReplay } from './Pvp';
 
@@ -278,7 +278,7 @@ export function ClanRaidTab({ game }: { game: Game }) {
         )}
         <Note msg={a.msg} />
         <p class="sub" style={{ marginTop: '8px' }}>
-          Atak zadaje obrażenia z twojej Mocy (×{RAID.DMG_MULT}, ±15%) i daje {coins(3)} oraz złoto. Przełamana faza daje skrzynię każdemu, kto w niej walczył —
+          Atak zadaje obrażenia z twojej Mocy (×{RAID.DMG_MULT}, ±15%) i daje <Res r={{ coins: 3 }} /> oraz złoto. Przełamana faza daje skrzynię każdemu, kto w niej walczył —
           z rudą żywiołu na następną fazę. Pokonany smok: wielka skrzynia ze Smoczą Stalą (podium więcej, pierwsze miejsce także jajo),
           {' '}{RAID.KILL_XP} Doświadczenia klanu i silniejszy smok za tydzień.
         </p>

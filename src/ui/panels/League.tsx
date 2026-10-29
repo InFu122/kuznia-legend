@@ -4,9 +4,10 @@ import { resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
 import { arenaShopBlock, arenaShopOpen, arenaShopReward, zoneOf } from '../../engine/league';
 import type { LeagueState } from '../../save/server';
+import { showProfile } from '../profile';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
-import { gemsText, rewardText, tokensText } from '../texts';
+import { Res, RewardIcons, Tokens } from '../RewardIcons';
 
 export const TokenIco = ({ size = 16 }: { size?: number }) => <Px src={resUrl('zeton')} size={size} />;
 const GemIco = ({ size = 16 }: { size?: number }) => <Px src={resUrl('klejnot')} size={size} />;
@@ -35,11 +36,11 @@ export function LeagueTab({ lg, now }: { lg: LeagueState; now: number }) {
         <p class={`lgnote ${last.move > 0 ? 'up' : last.move < 0 ? 'down' : ''}`} role="status">
           Zeszły tydzień: <b>{last.rank}. miejsce</b> w lidze {LEAGUES[last.tier].n}
           {last.move > 0 ? ` — awans do ligi ${LEAGUES[last.tier + 1].n}!` : last.move < 0 ? ` — spadek do ligi ${LEAGUES[last.tier - 1].n}.` : ' — utrzymanie ligi.'}
-          {' '}+{tokensText(last.tokens)}.
+          {' '}+<Tokens n={last.tokens} />.
         </p>
       )}
       {lg.lastSeason && lg.lastSeason.gems > 0 && (
-        <p class="lgnote up">Sezon {lg.lastSeason.n}: najwyższa liga {LEAGUES[lg.lastSeason.best].n} — +{gemsText(lg.lastSeason.gems)}.</p>
+        <p class="lgnote up">Sezon {lg.lastSeason.n}: najwyższa liga {LEAGUES[lg.lastSeason.best].n} — +<Res r={{ gems: lg.lastSeason.gems }} />.</p>
       )}
       {lg.rows ? (
         <ol class="lgtable">
@@ -48,7 +49,7 @@ export function LeagueTab({ lg, now }: { lg: LeagueState; now: number }) {
             return (
               <li key={i} class={`${z}${r.me ? ' me' : ''}${i === LEAGUE.PROMO - 1 && z === 'up' ? ' cut' : ''}${i === LEAGUE.GROUP - LEAGUE.DEMO - 1 && lg.tier > 0 ? ' cut' : ''}`}>
                 <span class="pos num">{i + 1}</span>
-                <span class="nm">{r.me ? 'Ty' : r.n}{r.ghost && <small class="muted"> duch</small>}</span>
+                <span class="nm">{r.id && !r.me ? <button class="linkbtn" onClick={() => showProfile(r.id!)}>{r.n}</button> : r.me ? 'Ty' : r.n}{r.ghost && <small class="muted"> duch</small>}</span>
                 <span class="num">{fmt(r.pts)}</span>
               </li>
             );
@@ -62,7 +63,7 @@ export function LeagueTab({ lg, now }: { lg: LeagueState; now: number }) {
       <div class="eyebrow" style={{ marginTop: '6px' }}>Sezon {lg.season.n} · {lg.season.name}</div>
       <p class="sub">
         Kończy się za <b>{tfmt(Math.max(0, lg.season.end - now))}</b>. Na koniec sezonu Klejnoty za najwyższą ligę sezonu
-        {lg.season.gems > 0 ? <> — na razie <b>{gemsText(lg.season.gems)}</b> ({LEAGUES[lg.season.best].n})</> : <> — od ligi {LEAGUES[1].n} wzwyż</>}.
+        {lg.season.gems > 0 ? <> — na razie <Res r={{ gems: lg.season.gems }} /> ({LEAGUES[lg.season.best].n})</> : <> — od ligi {LEAGUES[1].n} wzwyż</>}.
         Nowy sezon zaczyna się o jedną ligę niżej.
       </p>
       <ul class="lgseason">
@@ -89,7 +90,7 @@ export function ArenaShopTab({ game, lg, busy, buy }: { game: Game; lg: LeagueSt
             <li key={id} class={left <= 0 ? 'out' : ''}>
               <Px src={resUrl(ICON[id])} size={28} />
               <b>{it.n}</b>
-              <small>{id === 'bilet' ? it.d : rewardText(arenaShopReward(id))}</small>
+              <small>{id === 'bilet' ? it.d : <RewardIcons r={arenaShopReward(id)} size={14} />}</small>
               <small class="muted">{left > 0 ? `zostało dziś: ${left}` : 'na dziś wyprzedane'}</small>
               <button class="btn small primary" disabled={busy || !!block} onClick={() => buy(id)}><TokenIco size={14} /> {it.cost}</button>
             </li>

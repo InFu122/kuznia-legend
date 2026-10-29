@@ -3,7 +3,8 @@
 import type { AdKind, ArenaShopId, GemItemId } from '../data';
 import type { ServerReward } from '../engine/clan';
 import type { ShopSync } from '../engine/game';
-import type { ElemKey, FoundEvent, GameState, Item, SlotId } from '../engine/types';
+import type { ElemKey, FoundEvent, GameState, Item, MountId, PetId, SkillId, SlotId } from '../engine/types';
+import type { FighterStats } from '../engine/duel';
 
 const DEVICE_KEY = 'kuznia-legend-device';
 const TIMEOUT_MS = 10000;
@@ -22,7 +23,7 @@ export class ServerError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 
-export interface RankRow { rank: number; name: string; score: number; sub: number; land: string; me: boolean; sk?: string; fr?: string }
+export interface RankRow { id?: string; rank: number; name: string; score: number; sub: number; land: string; me: boolean; sk?: string; fr?: string }
 export interface Ranking { board: string; title: string; records: RankRow[]; mine: RankRow | null }
 export type BoardId = 'moc' | 'wieza' | 'postep' | 'arena';
 /** Ranking klanów: Moc klanów albo Puchary w sezonie wojen. */
@@ -46,12 +47,20 @@ export interface DuelShow {
   foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }>; sk?: string; fr?: string };
 }
 export interface ArenaFight extends ArenaState, DuelShow { d: number; gold: number; lp: number; tk: number }
+/** Profil gracza (okno profilu): wygląd, Moc, ekwipunek, statystyki, klan, liga i arena. */
+export interface Profile {
+  id: string; me: boolean; name: string; title: string; sk?: string; fr?: string;
+  power: number; forge: number; land: string; maxLand: number;
+  eq: GameState['eq']; st: FighterStats; skills: SkillId[]; pet: PetId | null; mount: MountId | null;
+  clan: { n: string; tag: string } | null; arena: { rating: number; rank: number } | null; league: number | null;
+  legacy: { gen: number; stars: number } | null; codex: number; ach: number; savedAt?: number;
+}
 /** Skrót ligi w odpowiedziach areny. */
 export interface LeagueBrief { tier: number; rank: number; pts: number; tokens: number }
 /** Liga areny: grupa tygodnia, sezon, wynik zeszłego tygodnia, Żetony i dzisiejsze zakupy w sklepie areny. */
 export interface LeagueState {
   tier: number; week: string; ends: number; rank: number;
-  rows: { n: string; pts: number; ghost: boolean; me: boolean }[] | null;
+  rows: { id?: string; n: string; pts: number; ghost: boolean; me: boolean }[] | null;
   season: { n: number; name: string; end: number; best: number; gems: number };
   last: { week: string; tier: number; rank: number; move: number; tokens: number } | null;
   lastSeason: { n: number; best: number; gems: number } | null;
@@ -291,6 +300,7 @@ export class ServerLink {
   arenaList(refresh = false): Promise<ArenaState> { return this.rpc('arena_list', { refresh }); }
   arenaFight(i: number, id: string): Promise<ArenaFight> { return this.rpc('arena_fight', { i, id }); }
   arenaLeague(): Promise<LeagueState> { return this.rpc('arena_league', {}); }
+  playerProfile(id: string): Promise<Profile> { return this.rpc('player_profile', { id }); }
   arenaShopBuy(id: ArenaShopId): Promise<LeagueState> { return this.rpc('arena_shop_buy', { id }); }
 
   /** Kod do przeniesienia tego konta na inne urządzenie (ważny 10 minut). */

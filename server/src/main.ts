@@ -17,6 +17,7 @@ import { rpcObiegSync } from './obieg';
 import { rpcRaidAttack, rpcRaidState } from './raid';
 import { createBoards, rpcRanking } from './ranking';
 import { createClanBoards, rpcClanRanking } from './clanrank';
+import { rpcPlayerProfile } from './profile';
 import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
 import { rpcAdReward, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
@@ -41,6 +42,7 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('time', rpcTime);
   initializer.registerRpc('ranking', rpcRanking);
   initializer.registerRpc('clan_ranking', rpcClanRanking);
+  initializer.registerRpc('player_profile', rpcPlayerProfile);
   initializer.registerRpc('transfer_code', rpcTransferCode);
   initializer.registerRpc('transfer_redeem', rpcTransferRedeem);
   initializer.registerRpc('obieg_sync', rpcObiegSync);

@@ -1,4 +1,4 @@
-import { AD, AD_BUFFS, B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type AchId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
+import { AD, AD_BUFFS, B, DUNG_ORDER, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type AchId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
@@ -23,7 +23,7 @@ import {
   adRewardLocal, applyBoost, buyGemItemLocal, buyPackLocal, buyPassLocal, claimGiftLocal, claimPassLocal, refillKeys, shopToday, speedupLocal, tickPassLocal,
   type PassTrack, type ShopState,
 } from './shop';
-import { claimEvent, eventUnclaimed, tickEvent } from './events';
+import { claimEvent, dungName, eventUnclaimed, tickEvent } from './events';
 import { setFrame, setSkin } from './cosmetics';
 import type { DungId, ElemKey, EventTrack, FoundEvent, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
 
@@ -51,6 +51,8 @@ export class Game {
   private lastOffer: BuffId = 'zloto';
   private passT = 0;
   private eventT = 0;
+  /** Lochy otwarte przy ostatnim sprawdzeniu — nowy loch dostaje komunikat. */
+  private dungOpen: Set<DungId> | null = null;
 
   constructor(state: GameState, opts: { rng?: Rng; now?: () => number; net?: boolean } = {}) {
     const now = opts.now ?? (() => Date.now());
@@ -107,6 +109,9 @@ export class Game {
       const before = this.s.event?.dpts ?? -1;
       const e = tickEvent(ctx);
       if (e.dpts !== before) this.changed();
+      const open = DUNG_ORDER.filter(id => dungUnlocked(ctx, id));
+      if (this.dungOpen) for (const id of open) if (!this.dungOpen.has(id)) toast(ctx, `Nowy loch: ${dungName(id, now)}! Zajrzyj do zakładki Lochy.`, 'good');
+      this.dungOpen = new Set(open);
     }
     if (!ctx.net) {
       this.passT -= realMs;
@@ -540,6 +545,7 @@ export class Game {
   }
   /** Podmiana stanu (np. nowszy zapis z chmury). */
   load(state: GameState): void {
+    this.dungOpen = null; // inny zapis — bez komunikatów o „nowych” lochach
     state.speed = this.allowedSpeed(this.wantSpeed); // tempo testowe to ustawienie tego urządzenia
     this.ctx.s = state;
     this.ctx.b = newBattle();

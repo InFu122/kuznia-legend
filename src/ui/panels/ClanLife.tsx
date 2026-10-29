@@ -9,7 +9,8 @@ import { clanLife } from '../../save/clanlife';
 import { ServerError, type ClanLife, type ClanOreReq } from '../../save/server';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
-import { coins, rewardText } from '../texts';
+import { coins } from '../texts';
+import { Res, RewardIcons } from '../RewardIcons';
 
 export type ClanTab = 'klan' | 'wojna' | 'smok' | 'boss' | 'kuznia' | 'pomoc' | 'sklep';
 export const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
@@ -69,7 +70,7 @@ export function ClanForgeTab({ game }: { game: Game }) {
         <div class="row" style={{ marginTop: '10px' }}>
           <div class="cmain">
             <b class="inl">Datek: <Px src={resUrl('zloto')} size={16} />{fmt(cost)} złota</b>
-            <div class="tech-cost">+{CLAN.DONATE_XP} Doświadczenia klanu · +{coins(CLAN.DONATE_COINS)} · dziś zostało {d.left.don}/{CLAN.DONATE_PER_DAY}</div>
+            <div class="tech-cost">+{CLAN.DONATE_XP} Doświadczenia klanu · +<Res r={{ coins: CLAN.DONATE_COINS }} size={14} /> · dziś zostało {d.left.don}/{CLAN.DONATE_PER_DAY}</div>
           </div>
           <button class="btn primary small" disabled={a.busy || d.left.don <= 0 || s.gold < cost} onClick={donate}>Wpłać</button>
         </div>
@@ -137,7 +138,7 @@ export function ClanBossTab({ game }: { game: Game }) {
         </button>
         <Note msg={a.msg} />
         <p class="sub" style={{ marginTop: '8px' }}>
-          Atak zadaje obrażenia równe twojej Mocy w rankingu (±15%) i daje {coins(CLAN.BOSS_ATTACK_COINS)} oraz złoto.
+          Atak zadaje obrażenia równe twojej Mocy w rankingu (±15%) i daje <Res r={{ coins: CLAN.BOSS_ATTACK_COINS }} /> oraz złoto.
           Pokonany boss zostawia skrzynię każdemu, kto go atakował — pierwsze miejsce dostaje więcej i jajo. Potem przychodzi silniejszy.
         </p>
       </section>
@@ -259,7 +260,7 @@ export function ClanHelpTab({ game }: { game: Game }) {
           <div class="eyebrow">Prośby o pomoc · {d.helps?.length ?? 0}</div>
           {toHelp.length > 1 && <button class="btn small primary" disabled={h2.busy} onClick={() => help()}>Pomóż wszystkim</button>}
         </div>
-        <p class="sub">Za pomoc: {coins(CLAN.DEED_COINS)} (nagradzane dziś jeszcze: {d.left.deed}/{CLAN.DEEDS_PER_DAY}).</p>
+        <p class="sub">Za pomoc: <Res r={{ coins: CLAN.DEED_COINS }} /> (nagradzane dziś jeszcze: {d.left.deed}/{CLAN.DEEDS_PER_DAY}).</p>
         {(d.helps ?? []).length === 0 ? <p class="sub" style={{ marginTop: '6px' }}>Nikt teraz nie prosi o pomoc.</p> : (
           <ul class="clist">
             {(d.helps ?? []).map(h => (
@@ -281,7 +282,7 @@ export function ClanHelpTab({ game }: { game: Game }) {
             <ul class="clist">{(d.ores ?? []).map(o => <OreGive key={o.id} game={game} o={o} />)}</ul>
           </>
         )}
-        <p class="sub" style={{ marginTop: '8px' }}>Dar to najwyżej {CLAN.ORE_GIVE_MAX} sztuk naraz. Za dar: {coins(CLAN.DEED_COINS)} (w puli dziennych pomocy).</p>
+        <p class="sub" style={{ marginTop: '8px' }}>Dar to najwyżej {CLAN.ORE_GIVE_MAX} sztuk naraz. Za dar: <Res r={{ coins: CLAN.DEED_COINS }} /> (w puli dziennych pomocy).</p>
       </section>
     </>
   );
@@ -313,7 +314,7 @@ export function ClanShopTab({ game }: { game: Game }) {
               <Px src={shopIcon(id)} size={32} />
               <div class="cmain">
                 <div class="cname">{it.n}</div>
-                <div class="tech-cost">{locked ? `Od ${it.lvl}. poziomu klanu` : `${rewardText(shopReward(s, id))} · w tym tygodniu ${shopLeft(s, id, now)}/${it.week}`}</div>
+                <div class="tech-cost">{locked ? `Od ${it.lvl}. poziomu klanu` : <><RewardIcons r={shopReward(s, id)} size={14} /> · w tym tygodniu {shopLeft(s, id, now)}/{it.week}</>}</div>
               </div>
               <button class="btn small primary price" disabled={!!block} title={block ?? ''} onClick={() => { if (game.buyClan(id)) setMsg(`Kupiono: ${it.n}.`); }}>
                 <CoinIco />{it.cost}

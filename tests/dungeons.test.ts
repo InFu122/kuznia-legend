@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { B, DUNGEONS, DUNG_ORDER } from '../src/data';
 import { equip, smelt } from '../src/engine/forge';
 import type { DungId } from '../src/engine/types';
+import { dungUnlockText } from '../src/engine/dungeon';
 import { makeGame, simulate } from './helpers';
 
 /** Bohater z bardzo mocnym ekwipunkiem (do testów nagród, nie balansu). */
@@ -10,7 +11,7 @@ function strongGame(seed = 2) {
   const { ctx, s } = h;
   s.forge.lvl = 30; s.ores[4] = 200; s.stats.smelted = 10;
   for (let i = 0; i < 200 && Object.keys(s.eq).length < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true); // wszystkie 8 slotów
-  s.cleared = s.cleared.map((_, i) => i < 2);
+  s.cleared = s.cleared.map((_, i) => i < 5); // lochy otwierają się po kolei (Sztolnia — 3. boss, Leża — 5. boss)
   s.maxLand = 2;
   return h;
 }
@@ -85,7 +86,7 @@ describe('lochy', () => {
 
   it('porażka w Sztolni zabiera połowę łupu', () => {
     const { g, ctx, s } = makeGame();
-    s.cleared[0] = s.cleared[1] = true;
+    s.cleared[0] = s.cleared[1] = s.cleared[2] = true;
     s.maxLand = 2;
     s.bestG = 60; // słaby bohater w trudnej sztolni
     const tier = g.dungTier();
@@ -99,5 +100,31 @@ describe('lochy', () => {
 
   it('każdy loch ma opis', () => {
     for (const id of DUNG_ORDER as DungId[]) expect(DUNGEONS[id].how.length).toBeGreaterThan(10);
+  });
+});
+
+describe('lochy otwierają się po kolei', () => {
+  it('harmonogram: bossowie krain i poziom kuźni', () => {
+    const { g, s } = makeGame();
+    const open = () => DUNG_ORDER.filter(id => g.dungUnlocked(id));
+    s.cleared[0] = true; s.maxLand = 1;
+    expect(open()).toEqual(['skarbiec']);
+    s.cleared[1] = true; s.maxLand = 2;
+    expect(open()).toEqual(['skarbiec', 'sezon']);
+    s.cleared[2] = true; s.maxLand = 3; s.forge.lvl = 6;
+    expect(open()).toEqual(['skarbiec', 'sezon', 'sztolnia', 'wieza']);
+    s.cleared[3] = true; s.cleared[4] = true; s.maxLand = 5; s.forge.lvl = 10;
+    expect(open()).toEqual(['skarbiec', 'sezon', 'sztolnia', 'wieza', 'oltarze', 'leza']);
+    for (let i = 5; i < 10; i++) s.cleared[i] = true;
+    expect(open()).toContain('zbrojownia');
+    expect(open()).not.toContain('krypta');
+  });
+
+  it('loch, w którym gracz już był, zostaje otwarty; opis warunku', () => {
+    const { g, s } = makeGame();
+    s.dungeons.labirynt.best = 4;
+    expect(g.dungUnlocked('labirynt')).toBe(true);
+    expect(dungUnlockText('sztolnia')).toContain('3. kraina');
+    expect(dungUnlockText('wieza')).toBe('od 6. poziomu kuźni');
   });
 });

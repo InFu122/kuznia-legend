@@ -2,7 +2,7 @@
 // i nagrodą, a na końcu te, które dopiero się odblokują. Szczegóły lochu — w oknie „i” (DungInfoView).
 import { B, DUNGEONS, DUNG_ORDER, ELEM, EVENT, EVENT_MILESTONES, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
 import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
-import { elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
+import { dungUnlockText, elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
 import { dungName, dungScene, eventFloorPts, eventIcon, eventOf, eventPts, eventReached, evText } from '../../engine/events';
 import type { Game } from '../../engine/game';
 import type { DungId } from '../../engine/types';
@@ -147,7 +147,7 @@ export function DungeonPanel({ game, online = false, onArena, onInfo, onEvent }:
               return (
                 <li key={id}>
                   <Px src={ric} size={24} />
-                  <div><b>{dungName(id, game.ctx.now())}</b><small>{rn} · {DUNGEONS[id].unlock}</small></div>
+                  <div><b>{dungName(id, game.ctx.now())}</b><small>{rn} · {dungUnlockText(id)}</small></div>
                   <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${dungName(id, game.ctx.now())}`}>i</button>
                 </li>
               );
@@ -185,7 +185,7 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
         <div class="stat"><small>Klucze</small><b>{unlocked ? <Keys game={game} id={id} /> : `${D.keys || '∞'} dziennie`}</b></div>
         <div class="stat"><small>{id === 'leza' ? 'Zwycięstwa' : 'Rekord'}</small><b>{best(game, id)}</b></div>
       </div>
-      {!unlocked ? <div class="lockline">Odblokujesz {D.unlock}.</div>
+      {!unlocked ? <div class="lockline">Odblokujesz {dungUnlockText(id)}.</div>
         : blocked ? <div class="lockline">{blocked}</div>
           : id === 'leza' ? (
             <>

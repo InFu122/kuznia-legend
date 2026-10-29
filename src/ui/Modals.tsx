@@ -16,11 +16,10 @@ import { DecisionView } from './Decision';
 import { Px } from './Px';
 import { elemUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl, techUrl } from '../art/render';
 import { HeroSprite } from './Arena';
-import { RewardTiles } from './RewardIcons';
+import { RewardIcons, RewardTiles } from './RewardIcons';
 import { hasProof } from '../engine/verify';
 import { f1, fmt, pct, pctS, tfmt } from './format';
 import { OddsBar } from './panels/Forge';
-import { books, rewardText } from './texts';
 import { MissionsView } from './panels/Missions';
 import { AdOfferView, ShopView } from './panels/Shop';
 import { LegacyView } from './panels/Legacy';
@@ -69,12 +68,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         <>
           <div class="eyebrow">Boss pokonany</div>
           <div class="h">{L.boss}</div>
-          <p class="sub">
-            Łup: {fmt(m.gold)} złota, {m.n} × {ORES[L.rare].n}, {books(m.books)}
-            {set && m.uniq ? <>, {m.uniq} × <b style={{ color: SETS[set].col }}>{SETS[set].ore}</b></> : null}.
-            {m.found ? ' Ze skrzyni bossa wypadł przedmiot z Wielkiego Obiegu — sprawdź go w Kuźni.' : ''}
-          </p>
-          {Object.keys(m.extra).length > 0 && <p class="sub">Do tego: <b>{rewardText(m.extra)}</b>.</p>}
+          <RewardTiles r={{ gold: m.gold, ores: { [L.rare]: m.n }, books: m.books, uniq: set && m.uniq ? { [set]: m.uniq } : undefined, ...m.extra }} />
+          {m.found && <p class="sub">Ze skrzyni bossa wypadł przedmiot z Wielkiego Obiegu — sprawdź go w Kuźni.</p>}
           {set && m.uniq > 0 && (
             <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej część zestawu <b>{SETS[set].n}</b>. Więcej dają Leża Bossów.</p>
           )}
@@ -100,7 +95,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         <>
           <div class="eyebrow">Głęboka Sztolnia · piętro {m.floor}</div>
           <div class="h">Wyjść czy kopać dalej?</div>
-          <p class="sub">W worku: <b>{rewardText(m.loot)}</b>. Jeśli zginiesz niżej, stracisz połowę łupu.</p>
+          <p class="sub">W worku: <RewardIcons r={m.loot} size={16} />. Jeśli zginiesz niżej, stracisz połowę łupu.</p>
           <div class="result-actions">
             <button class="btn" onClick={() => { close(); game.dungExit(); }}>Wyjdź z łupem</button>
             <button class="btn primary" onClick={() => { close(); game.dungGo(); }}>Schodź dalej</button>
@@ -123,10 +118,12 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
           <div class="h">{head}</div>
           <p class="sub">
             {m.lost && halves ? 'Uciekasz z połową łupu. ' : ''}
-            {m.id === 'leza' && m.lost ? 'Boss był za silny. Klucz przepadł — spróbuj jutro albo wzmocnij ekwipunek.' : <>Zdobyto: <b>{rewardText(m.reward)}</b>.</>}
+            {m.id === 'leza' && m.lost ? 'Boss był za silny. Klucz przepadł — spróbuj jutro albo wzmocnij ekwipunek.' : null}
             {m.items > 0 ? ` Przedmioty ze skrzyń: ${m.items} — zdecyduj, które założyć.` : ''}
             {m.id === 'sezon' ? <> Wydarzenie {ev.n}: <b>+{evText(m.evp ?? 0, ev)}</b>.</> : null}
           </p>
+          {!(m.id === 'leza' && m.lost) && (Object.keys(m.reward).some(k => { const v = (m.reward as Record<string, unknown>)[k]; return typeof v === 'number' ? v > 0 : !!v && Object.values(v as object).some(x => x); })
+            ? <RewardTiles r={m.reward} /> : <p class="sub">Tym razem bez łupu.</p>)}
           <Close onClose={close} label="Wróć do krainy" />
         </>
       );
@@ -192,7 +189,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         <>
           <div class="eyebrow">Labirynt Minotaura · komnata {m.room}/{LAB_ROOMS}</div>
           <div class="h">Które drzwi?</div>
-          {Object.keys(m.loot).length > 0 && <p class="sub">Zebrane: {rewardText(m.loot)}</p>}
+          {Object.keys(m.loot).length > 0 && <p class="sub">Zebrane: <RewardIcons r={m.loot} size={16} /></p>}
           <div class="doors">
             {m.doors.map((d, i) => (
               <button key={i} class={`door d-${d.kind}`} onClick={() => { close(); game.labChoose(i); }}>

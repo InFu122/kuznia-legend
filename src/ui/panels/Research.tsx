@@ -6,7 +6,8 @@ import type { Game } from '../../engine/game';
 import { techBlock, techCost, techLvl, techText, techValue, type TechBlock } from '../../engine/tech';
 import type { TechId } from '../../engine/types';
 import { fmt, tfmt } from '../format';
-import { books, booksShort } from '../texts';
+import { booksShort } from '../texts';
+import { Res } from '../RewardIcons';
 import { SpeedupButton } from './Shop';
 
 const BLOCK: Record<Exclude<TechBlock, null>, string> = {
@@ -84,7 +85,7 @@ export function ResearchPanel({ game }: { game: Game }) {
         <div class="eyebrow">Nauka</div>
         <div class="h">Akademia Kowalska</div>
         <p class="sub">Akademia otwiera się na {TECH_UNLOCK_FORGE}. poziomie kuźni. Badania kosztują Księgi Wiedzy i złoto, a dają stałe premie do kucia, walki i zarobku.</p>
-        <p class="sub">Księgi Wiedzy masz już teraz: {books(s.books)}. Wypadają z bossów, z fal wrogów (rzadko) i z Wieży Wyzwań.</p>
+        <p class="sub">Księgi Wiedzy masz już teraz: <Res r={{ books: s.books }} />. Wypadają z bossów, z fal wrogów (rzadko) i z Wieży Wyzwań.</p>
       </section>
     );
   }

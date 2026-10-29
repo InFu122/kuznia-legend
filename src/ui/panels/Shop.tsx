@@ -6,16 +6,16 @@ import { AD, AD_BUFFS, GEM_ITEM_IDS, GEM_PACKS, GEM_SHOP, PASS, PASS_LEVELS, typ
 import { oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
 import {
-  bestOre, gemItemBlock, gemItemLeft, gemItemOpen, gemItemReward, giftReward, passItemsReward, passLevel, passUnclaimed, passXp, seasonOf, speedupCost,
+  bestOre, gemItemBlock, gemItemLeft, gemItemOpen, gemItemReward, giftReward, passItemsReward, passLevel, passUnclaimed, packReward, passXp, seasonOf, speedupCost,
 } from '../../engine/shop';
 import { clanLife } from '../../save/clanlife';
 import { getLink, type ServerLink, type ShopResp } from '../../save/server';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
-import { gemsText, rewardText } from '../texts';
+import { gemsText } from '../texts';
 import { buffIcon } from '../buffs';
 import { Note, errText, useAction } from './ClanLife';
-import { RewardIcons } from '../RewardIcons';
+import { Res, RewardIcons } from '../RewardIcons';
 
 export type ShopTab = 'sklep' | 'przepustka' | 'klejnoty';
 const TABS: [ShopTab, string][] = [['sklep', 'Sklep'], ['przepustka', 'Przepustka'], ['klejnoty', 'Klejnoty']];
@@ -195,7 +195,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
       <li key={k}>
         <span class="adoffer small" aria-hidden="true">{k === 'gems' ? <GemIco size={22} /> : <><Px src={buffIcon(game, k)} size={22} /><b>×{AD_BUFFS[k].mult}</b></>}</span>
         <div class="cmain">
-          <div class="cname">{k === 'gems' ? gemsText(AD.GEMS) : AD_BUFFS[k].n}</div>
+          <div class="cname">{k === 'gems' ? <Res r={{ gems: AD.GEMS }} /> : AD_BUFFS[k].n}</div>
           <div class="tech-cost">{k === 'gems' ? 'raz dziennie' : AD_BUFFS[k].d}{until > now ? ` · trwa jeszcze ${tfmt(until - now)}` : ''} · dziś {used}/{max}</div>
         </div>
         <button class="btn small" disabled={a.busy || used >= max} onClick={() => setWatch(k)}><Px src={resUrl('reklama')} size={16} /> Obejrzyj</button>
@@ -207,7 +207,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
       <section class={`chest${giftDone ? '' : ' ready'}`}>
         <div>
           <b>Prezent dnia</b>
-          <div class="sub">{rewardText(giftReward(s))}</div>
+          <div class="sub"><RewardIcons r={giftReward(s)} size={16} /></div>
         </div>
         {giftDone ? <span class="tech-busy">za {tfmt(msUntilReset)}</span>
           : <button class="btn small primary" disabled={a.busy} onClick={() => void a.act(() => !!game.claimGift(), l => l.shopGift(), 'Prezent odebrany!')}>Odbierz</button>}
@@ -225,7 +225,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
             <li key={id} class={left <= 0 ? 'out' : ''}>
               <Px src={id === 'ruda' ? oreUrl(bestOre(s)) : resUrl(ITEM_ICON[id])} size={28} />
               <b>{it.n}</b>
-              <small>{id === 'klucze' || id === 'ksiegi' || id === 'kamienie' ? it.d : rewardText(r)}</small>
+              <small>{id === 'klucze' ? it.d : <RewardIcons r={r} size={14} />}</small>
               <small class="muted">{left > 0 ? `zostało dziś: ${left}` : 'na dziś wyprzedane'}</small>
               <button class="btn small primary" disabled={a.busy || (!!block && block !== 'za mało Klejnotów')}
                 onClick={() => (block === 'za mało Klejnotów' ? goGems() : void a.act(() => game.buyGemItem(id), l => l.shopBuy(id), `Kupiono: ${it.n}.`))}>
@@ -333,7 +333,7 @@ function GemsTabView({ game }: { game: Game }) {
               <GemIco size={28} />
               <div class="cmain">
                 <div class="cname">{p.n}{p.bonus > 0 && <span class="tag">+{fmt(p.bonus)} gratis</span>}</div>
-                <div class="tech-cost">{p.d ?? gemsText(p.gems + p.bonus)}</div>
+                <div class="tech-cost">{packReward(p.id) ? <RewardIcons r={packReward(p.id)!} size={14} /> : <Res r={{ gems: p.gems + p.bonus }} />}</div>
               </div>
               <button class="btn small primary" disabled={a.busy || done || !free}
                 onClick={() => void a.act(() => game.buyPack(p.id), lk => lk.iapTest(p.id), `${p.n}: +${gemsText(p.gems + p.bonus)}.`)}>
