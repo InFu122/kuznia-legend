@@ -1,4 +1,5 @@
 import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, REFINE_RATIO, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
+import { discover } from './achievements';
 import { toast, type Ctx } from './context';
 import { JUMP_V, itemLevelFor, itemName, jumpChances, maxJump, pityAllowed, sellPrice, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
@@ -86,6 +87,8 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
     smith: s.name, land: LANDS[s.cur.land].n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
   if (sx !== undefined) it.sx = sx;
+  if (it.r > (s.stats.bestR ?? -1)) s.stats.bestR = it.r;
+  discover(ctx, it);
   return it;
 }
 

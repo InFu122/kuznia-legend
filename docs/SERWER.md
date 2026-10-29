@@ -129,6 +129,11 @@ W klanie zakładka **Klan** ma siedem części:
 
 Dzienne limity i dni wojny liczą się od północy czasu UTC (w Polsce o 1:00 zimą, o 2:00 latem). Nagrody klanu (Monety, skrzynie, ruda od klanowiczów) czekają na serwerze, aż gra je odbierze i zapisze — żadna nie przepada ani nie przychodzi dwa razy.
 
+### Osiągnięcia i Kolekcja Kowala
+
+- **Osiągnięcia** — czwarta zakładka w oknie Zadań: 13 długich celów po kilka progów (np. wykuj 100 / 1000 / 10 000 przedmiotów), za każdy próg Księgi, Kamienie i złoto, wyżej także Zwoje i jaja.
+- **Kolekcja Kowala** — karta w Kodeksie: każdy nowy model przedmiotu (rodzaj × ruda, razem 217) daje na zawsze +0,05% obrażeń i zdrowia. Po dotknięciu rudy widać, których modeli jeszcze brakuje.
+
 ### Runy i przekuwanie
 
 - **Runy slotów** (zakładka Bohater, od 10. poziomu kuźni): każdy slot ma runę do 30. poziomu, +1% głównej statystyki założonego tam przedmiotu za poziom. Runa zostaje przy zmianie przedmiotu i w nowym pokoleniu. Kosztuje złoto i rudę: poziomy 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal — tu przydaje się nadmiar starych rud.

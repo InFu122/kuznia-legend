@@ -33,6 +33,8 @@ export function legacyReset(s: GameState, slot: SlotId | null, now: number): Gam
     dungeons: s.dungeons,
     // runy slotów zostają (to wzmocnienie kuźni, nie przedmiotów)
     runes: s.runes,
+    // kolekcja i osiągnięcia należą do konta
+    codex: s.codex, ach: s.ach,
     // klan, sklep, przepustka, konto
     clanLvl: s.clanLvl, clanCoins: s.clanCoins, clanShop: s.clanShop, clanGot: s.clanGot,
     gems: s.gems, shop: s.shop, buffs: s.buffs, pass: s.pass,

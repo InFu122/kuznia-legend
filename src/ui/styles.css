@@ -977,3 +977,21 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .rf-pair .btn{display:flex; flex-direction:column; gap:2px; padding:10px 8px; height:auto; line-height:1.25}
 .rf-pair small{font-size:11px; opacity:.8}
 .rf-pair b{font-size:13px}
+
+/* Osiągnięcia i Kolekcja Kowala */
+.seg.seg4 button{font-size:11.5px}
+.achlist li{align-items:flex-start}
+.achlist li.ready{background:linear-gradient(90deg, rgba(91,227,122,.10), transparent 70%); border-radius:10px; padding-inline:8px}
+.achlist li.max .cname{color:var(--straw)}
+.achpips{display:inline-flex; gap:3px; margin-left:6px; vertical-align:middle}
+.achpips i{width:7px; height:7px; border-radius:50%; background:var(--plate-2); border:1px solid var(--rivet)}
+.achpips i.on{background:var(--straw); border-color:var(--straw)}
+.achpips i.ready{background:var(--good); border-color:var(--good)}
+.bar.thin{height:5px; margin:4px 0 2px}
+.codexores{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:4px}
+.codexore{display:grid; grid-template-columns:24px 92px minmax(0,1fr) 44px; align-items:center; gap:8px; width:100%; padding:6px 8px; border-radius:10px; background:var(--plate-2); border:1px solid transparent; text-align:left; color:var(--frost)}
+.codexore.on{border-color:var(--straw)}
+.codexore .bar{margin:0}
+.codexgrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(32px, 1fr)); gap:4px; padding:8px 4px}
+.cx{display:grid; place-items:center; height:32px; border-radius:8px; background:var(--plate-2); filter:grayscale(1) brightness(.35)}
+.cx.have{filter:none; outline:1px solid var(--rivet)}

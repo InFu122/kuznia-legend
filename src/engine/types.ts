@@ -2,6 +2,7 @@
 // później uruchomić także na serwerze (Nakama, środowisko TypeScript).
 import type { ClanShopId } from '../data/clan';
 import type { BuffId, GemItemId } from '../data/shop';
+import type { AchId } from '../data/achievements';
 
 export type SlotId = 'bron' | 'helm' | 'zbroja' | 'rekawice' | 'buty' | 'pas' | 'pierscien' | 'amulet';
 export type ElemKey = 'zar' | 'szron' | 'burz' | 'jad' | 'cien' | 'jasn';
@@ -143,7 +144,7 @@ export interface GameState {
   login: { last: string; idx: number };                // kalendarz logowania: ostatni odbiór, następny dzień 0–6
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
   opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean };
-  stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów)
+  stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number; bestR: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów)
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
   obIn: Item[];                                        // przedmioty z Obiegu od serwera, czekające na skrzynię bossa lub Zbrojownię
@@ -159,6 +160,8 @@ export interface GameState {
   pass: PassTrack | null;                              // Przepustka Kowala (z serwerem: kopia stanu serwera)
   boost: { lvl: number; ms: number };                  // przyspieszenie Klejnotami już wliczone do ulepszenia kuźni na poziom `lvl`
   runes: Partial<Record<SlotId, number>>;              // poziomy run slotów (0–30)
+  codex: string[];                                     // Kolekcja Kowala: odkryte modele „rodzaj|ruda”
+  ach: Partial<Record<AchId, number>>;                 // osiągnięcia: odebrane progi
   legacy: { gen: number; stars: number; item: Item | null }; // Dziedzictwo: pokolenie, Gwiazdy Mistrza, Pamiątka Rodu (z serwerem — kopia serwera)
   speed: number;
   savedAt: number;
@@ -238,7 +241,7 @@ export type ModalData =
   | { kind: 'landinfo'; land: number }
   | { kind: 'dunginfo'; id: DungId }
   | { kind: 'feedback' }
-  | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' }
+  | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' | 'ach' }
   | { kind: 'ranking' }
   | { kind: 'arena' }
   | { kind: 'chat'; ch?: 'global' | 'clan' }

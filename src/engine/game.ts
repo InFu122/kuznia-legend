@@ -1,4 +1,4 @@
-import { AD, AD_BUFFS, B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type BuffId, type GemItemId } from '../data';
+import { AD, AD_BUFFS, B, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type AchId, type BuffId, type GemItemId } from '../data';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
@@ -16,6 +16,7 @@ import { mulberry32, rnd, type Rng } from './rng';
 import { migrate, newBattle, newState } from './state';
 import { legacyBlock, legacyReset } from './legacy';
 import { acceptReforge, payReforge, refundReforge, rerollSub, upgradeRune } from './runes';
+import { achCount, claimAch, discover } from './achievements';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
 import {
@@ -343,7 +344,8 @@ export class Game {
   claimMission(scope: 'daily' | 'weekly', i: number) { const r = claimMission(this.ctx, scope, i); this.changed(); return r; }
   claimChest() { const r = claimChest(this.ctx); this.changed(); return r; }
   claimLogin() { const r = claimLogin(this.ctx); this.changed(); return r; }
-  claimable(): number { return claimable(this.ctx); }
+  claimable(): number { return claimable(this.ctx) + achCount(this.s); }
+  claimAch(id: AchId): Reward | null { return this.done(claimAch(this.ctx, id)); }
   canClaimLogin(): boolean { return canClaimLogin(this.ctx); }
   missions() { ensureMissions(this.ctx); return this.s.missions; }
   setSound(on: boolean, vol = this.s.opts.vol) { this.s.opts = { ...this.s.opts, sound: on, vol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
@@ -355,6 +357,7 @@ export class Game {
     const it = this.s.found[i];
     if (!it) return;
     this.s.found.splice(i, 1);
+    discover(this.ctx, it);
     if (wear) { equip(this.ctx, it, false); toast(this.ctx, 'Założono: ' + itemName(it)); }
     else { const p = sellFor(this.s, it); sell(this.ctx, it, true); toast(this.ctx, `Sprzedano za ${p.toLocaleString('pl-PL')} złota`); }
     this.ctx.dirty = true;

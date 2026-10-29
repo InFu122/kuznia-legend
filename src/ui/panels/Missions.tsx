@@ -5,9 +5,11 @@ import { canClaimLogin, chestReady, chestReward, loginReward, missionReward } fr
 import type { Mission } from '../../engine/types';
 import { fmt } from '../format';
 import { rewardText } from '../texts';
+import { achCount } from '../../engine/achievements';
+import { AchievementsView } from './Achievements';
 
-type Tab = 'daily' | 'weekly' | 'login';
-const TABS: [Tab, string][] = [['daily', 'Dzienne'], ['weekly', 'Tygodniowe'], ['login', 'Logowanie']];
+type Tab = 'daily' | 'weekly' | 'login' | 'ach';
+const TABS: [Tab, string][] = [['daily', 'Dzienne'], ['weekly', 'Tygodniowe'], ['login', 'Logowanie'], ['ach', 'Osiągnięcia']];
 
 function MissionRow({ m, reward, onClaim }: { m: Mission; reward: string; onClaim: () => void }) {
   const done = m.n >= m.goal;
@@ -30,12 +32,12 @@ export function MissionsView({ game, initial, close }: { game: Game; initial?: T
   const s = game.s;
   const dot = (t: Tab) => {
     const ready = (l: Mission[]) => l.some(m => m.n >= m.goal && !m.claimed);
-    return t === 'daily' ? ready(ms.daily) || chestReady(s) : t === 'weekly' ? ready(ms.weekly) : canClaimLogin(game.ctx);
+    return t === 'daily' ? ready(ms.daily) || chestReady(s) : t === 'weekly' ? ready(ms.weekly) : t === 'ach' ? achCount(s) > 0 : canClaimLogin(game.ctx);
   };
   return (
     <>
       <div class="eyebrow">Zadania</div>
-      <div class="seg seg3" role="tablist">
+      <div class="seg seg4" role="tablist">
         {TABS.map(([id, n]) => (
           <button key={id} role="tab" aria-selected={tab === id} class={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
             {n}{dot(id) && <span class="dot" aria-label="do odebrania" />}
@@ -67,6 +69,7 @@ export function MissionsView({ game, initial, close }: { game: Game; initial?: T
         </>
       )}
       {tab === 'login' && <LoginView game={game} />}
+      {tab === 'ach' && <AchievementsView game={game} />}
       <button class="btn" onClick={close}>Zamknij</button>
     </>
   );

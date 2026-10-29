@@ -9,3 +9,4 @@ export * from './missions';
 export * from './clan';
 export * from './war';
 export * from './shop';
+export * from './achievements';

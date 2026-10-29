@@ -7,6 +7,7 @@ import { ServerError, getLink } from '../../save/server';
 import { fmt } from '../format';
 import type { SaveInfo } from '../App';
 import { APP_VERSION, canInstall, install, isIOS, isNative, isStandalone, onPwa } from '../pwa';
+import { CodexCard } from './Achievements';
 
 /** Adres gry do zaproszeń: z ustawień builda (aplikacja) albo adres tej strony. */
 const publicUrl = () => {
@@ -190,6 +191,7 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
           {save.error && <div class="lockline">Serwer odrzucił zapis: {save.error}</div>}
         </section>
       )}
+      <CodexCard game={game} />
       <AppCard game={game} onFeedback={onFeedback} />
       {game.net && <AccountCard game={game} save={save} />}
       <ObiegNews log={sm.log} />

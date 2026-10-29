@@ -1,7 +1,7 @@
 // Kontrola zapisu wysłanego przez klienta. Odrzuca wartości, których uczciwa gra nie może wytworzyć.
 // Pochodzenie przedmiotów (ziarno wytopu, podpis Obiegu) i tempo rozwoju kuźni sprawdza save.ts.
 import {
-  B, CLAN, COMPANION_MAX, LANDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
+  ACHIEVEMENTS, B, CLAN, COMPANION_MAX, LANDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
 } from '../../src/data';
 import { maxJump } from '../../src/engine/formulas';
 import type { GameState, Item, SubId } from '../../src/engine/types';
@@ -52,6 +52,8 @@ export function validateSave(s: GameState): string[] {
   if (typeof s.name !== 'string' || s.name.length > 16) bad('imię');
   if (!nonNeg(s.clanCoins)) bad('Monety klanowe');
   if (!Array.isArray(s.clanGot) || s.clanGot.length > 200 || !s.clanGot.every(x => typeof x === 'string' && x.length <= 40)) bad('nagrody klanu');
+  if (!Array.isArray(s.codex) || s.codex.length > 400 || !s.codex.every(k => typeof k === 'string' && k.length <= 40)) bad('kolekcja');
+  for (const [id, n] of Object.entries(s.ach || {})) if (!ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS] || !fin(n) || n < 0 || n > ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS].tiers.length) bad(`osiągnięcie ${id}`);
   for (const [sl, l] of Object.entries(s.runes || {})) if (!SLOTS[sl as keyof typeof SLOTS] || !fin(l) || l < 0 || l > B.RUNE_MAX || Math.floor(l) !== l) bad(`runa ${sl}`);
   if (!s.clanHelp || !fin(s.clanHelp.n) || s.clanHelp.n < 0 || s.clanHelp.n > CLAN.HELP_MAX) bad('pomoc klanu');
   return out;
