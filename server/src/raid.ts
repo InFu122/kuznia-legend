@@ -9,7 +9,7 @@ import { raidAttackReward, raidFinalChest, raidPhaseChest } from '../../src/engi
 import type { GameState } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { addClanXp, clanPower, memberIds, pushRewards, readPending, readState } from './clanlife';
-import { PRECONDITION, SYSTEM_USER, err, readSave, serverRng, updateObject, userOf } from './common';
+import { PRECONDITION, SYSTEM_USER, err, goldStage, readSave, serverRng, updateObject, userOf } from './common';
 import { nameOf } from './names';
 import { warClock, type WarClock } from './war';
 
@@ -95,7 +95,7 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   if (r.done) throw err('Smok pokonany — następny pojawi się w poniedziałek.', PRECONDITION);
   const save = readSave(nk, userId);
   const power = Math.max(1, save ? save.value.power || 0 : 0);
-  const bestG = save ? save.value.state.bestG || 0 : 0;
+  const bestG = goldStage(save && save.value.state);
   if (usedToday(r, userId, clock) >= RAID.ATTACKS) throw err('Na dziś ataki na smoka wykorzystane — wróć jutro.', PRECONDITION);
   const w = weakOf(save ? save.value.state : null, r.ph);
   const roll = Math.round(power * RAID.DMG_MULT * (1 - RAID.SPREAD + 2 * RAID.SPREAD * serverRng(nk).next()) * (1 + w.bonus));
@@ -134,7 +134,7 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   const best = (ids: string[]) => {
     const m: Record<string, number> = {};
     for (const o of nk.storageRead(ids.map(u => ({ collection: 'save', key: 'state', userId: u })))) {
-      m[o.userId] = ((o.value as { state?: { bestG?: number } }).state || {}).bestG || 0;
+      m[o.userId] = goldStage((o.value as { state?: object }).state);
     }
     return m;
   };

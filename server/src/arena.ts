@@ -7,7 +7,7 @@ import { allMods } from '../../src/engine/mods';
 import { shuffle } from '../../src/engine/rng';
 import { computeStats, extraOf } from '../../src/engine/stats';
 import type { GameState } from '../../src/engine/types';
-import { INVALID, NOT_FOUND, PRECONDITION, err, parse, readSave, serverDay, serverRng, userOf } from './common';
+import { INVALID, NOT_FOUND, PRECONDITION, err, goldStage, parse, readSave, serverDay, serverRng, userOf } from './common';
 import { leagueBrief, leagueOnFight } from './league';
 import { boardMeta, ownRecord } from './ranking';
 import { frameOr, skinOr } from '../../src/engine/cosmetics';
@@ -210,8 +210,7 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   }
 
   // Nagroda w złocie: jak za kilkadziesiąt fal na najdalszym etapie kampanii.
-  const bestG = save ? save.value.state.bestG : 0;
-  const gold = goldWave(bestG) * (res.win ? 30 : 8);
+  const gold = goldWave(goldStage(save && save.value.state)) * (res.win ? 30 : 8);
   me.left--;
   me.opp = pickOpponents(nk, userId, next, hero);
   saveMe(nk, userId, me, version);

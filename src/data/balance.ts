@@ -85,12 +85,17 @@ export const UPGRADE_MIN: number[] = Array.from({ length: 201 }, (_, n) =>
 
 /**
  * Złoto: ile fal walki „kosztuje” następne ulepszenie kuźni przy kuźni na poziomie f — więcej z dwóch:
- * GOLD_WAVES × GOLD_WAVES_GROWTH^(f−1) (na starcie 50 fal) albo GOLD_TIME_K fal na minutę czasu następnego ulepszenia.
- * Gracz grający ok. 3 h dziennie (plus nagrody offline) zbiera na ulepszenie przez ok. 60% jego czasu, reszta złota idzie na badania.
+ * GOLD_WAVES × GOLD_WAVES_GROWTH^(f−1) (na starcie 50 fal) albo K fal na minutę czasu następnego ulepszenia,
+ * gdzie K rośnie od GOLD_TIME_K (do poziomu GOLD_CUT_FROM — pierwsze godziny gry są hojne) do GOLD_TIME_K × GOLD_CUT
+ * (od poziomu GOLD_CUT_TO). Gracz grający ok. 3 h dziennie (plus nagrody offline z Nocną zmianą) zarabia niewiele
+ * więcej, niż kosztują ulepszenia — zapas złota to kilka kolejnych ulepszeń, a nie kilkadziesiąt.
  */
 export const GOLD_WAVES = 50;
 export const GOLD_WAVES_GROWTH = 1.2;
 export const GOLD_TIME_K = 4.5;
+export const GOLD_CUT = 2.5;
+export const GOLD_CUT_FROM = 10;
+export const GOLD_CUT_TO = 20;
 
 export const B = {
   PITY_MAX: 30,                 // po tylu wytopach bez przeskoku następny przeskakuje na pewno
@@ -133,7 +138,7 @@ export const B = {
   CHAT_SLOW_CLAN_MS: 1000,
   FAME_BOSS: 50,
   FAME_DUNGEON: 30,
-  OFFLINE_CAP_MS: 8 * 3600 * 1000,
+  OFFLINE_CAP_MS: 1 * 3600 * 1000, // łupy za nieobecność: 1 h, dłużej z badaniem Nocna zmiana (do 8 h) i premią klanu
   OFFLINE_EFFICIENCY: 0.5,
   OFFLINE_ORE: 0.35,            // ruda za nieobecność: 35% tego, co dałyby fale offline (złoto bez zmian)
   OFFLINE_WAVE_MS: 3500,
@@ -152,6 +157,7 @@ export const B = {
   UNIQ_BOSS_CHANCE: 0.05,       // szansa na rudę unikalną przy kolejnych pokonaniach
   RAMP_DROP: 50,                // nowa ruda wchodzi stopniowo: tyle % wytopów o rzadkość niżej na poziomie kuźni, na którym się odblokowuje…
   RAMP_LEVELS: 5,               // …i mniej z każdym poziomem — po tylu poziomach już zawsze pełne minimum
+  GOLD_FORGE_AHEAD: 2,          // złoto liczone najwyżej jak dla kuźni o 2 poziomy wyższej niż gracza (choćby był dalej w kampanii)
   DIVINE_AURA: 3,               // Boska aura: +% obrażeń i zdrowia bohatera za każdy założony Boski przedmiot
   DIVINE_ORE_BOSS: 0.01,        // szansa na Boską Rudę z bossa krainy w akcie IV
   DIVINE_ORE_EVENT_BOSS: 0.05,  // szansa na Boską Rudę ze skrzyni bossa lochu sezonowego

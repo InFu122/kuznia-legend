@@ -40,10 +40,10 @@ const BOSS_RETRY = 120000; // bot próbuje bossa co 2 min, gdy ma ≥ 90% zaleca
 const TOWER_RETRY = 30 * 60000;
 const SAMPLE = 6 * 60000;  // próbka Mocy co 6 min (do kalibracji)
 /** Kolejność badań bota: pierwsze niezablokowane z listy. */
-const TECH_PRIORITY: TechId[] = ['w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 'e_noc', 't_wiez', 't_hodowca', 't_wylegarnia', 't_stajnia'];
+const TECH_PRIORITY: TechId[] = ['e_noc', 'w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 't_wiez', 't_hodowca', 't_wylegarnia', 't_stajnia'];
 
 interface HourRow {
-  run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; smelted: number; jumps: number; best: string; ore: number; pass: number;
+  run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; earned: number; smelted: number; jumps: number; best: string; ore: number; pass: number;
   books: number; tech: number; sets: string; tower: number; skills: string; pet: string; mount: string;
 }
 interface BossRow { run: number; land: string; boss: string; h: number; forge: number; power: number }
@@ -104,6 +104,13 @@ function runOnce(run: number, seed: number) {
   let t = Date.UTC(2026, 0, 1);
   const g = new Game(newState(t), { rng: mulberry32(seed), now: () => t });
   g.s.auto = false;
+  // licznik zarobionego złota (wszystkie źródła): każdy przyrost s.gold
+  let earned = 0;
+  {
+    const st = g.s as { gold: number };
+    let v = st.gold;
+    Object.defineProperty(st, 'gold', { enumerable: true, configurable: true, get: () => v, set: (x: number) => { if (x > v) earned += x - v; v = x; } });
+  }
   const hours: HourRow[] = [];
   const bosses: BossRow[] = [];
   const samples: number[] = [];
@@ -181,7 +188,7 @@ function runOnce(run: number, seed: number) {
       const bestR = Math.max(-1, ...Object.values(g.s.eq).map(it => it?.r ?? -1));
       hours.push({
         run, h: ms / 3600000, land: landDef(g.s.cur.land).n, stage: g.s.cur.stage, forge: g.s.forge.lvl, power: g.stats.power,
-        rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, ore: g.s.ores.reduce((x, y) => x + y, 0), pass: g.s.pass ? passXp(g.s.pass) : 0, best: bestR >= 0 ? RAR[bestR].n : '—',
+        rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), earned: Math.round(earned), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, ore: g.s.ores.reduce((x, y) => x + y, 0), pass: g.s.pass ? passXp(g.s.pass) : 0, best: bestR >= 0 ? RAR[bestR].n : '—',
         books: g.s.books, tech: TECH_IDS.reduce((a, id) => a + (g.s.tech.lv[id] ?? 0), 0),
         sets: g.stats.sets.map(x => `${x.id}:${x.count}`).join(' '), tower: g.s.dungeons.wieza.best,
         skills: g.s.skills.eq.filter(Boolean).map(id => `${id}${g.s.skills.lv[id!]}`).join(' '),
@@ -227,7 +234,7 @@ async function main() {
     { header: 'Przebieg', key: 'run', width: 10 }, { header: 'Godzina gry', key: 'h', width: 12 },
     { header: 'Kraina', key: 'land', width: 24 }, { header: 'Etap', key: 'stage', width: 7 }, { header: 'Poziom kuźni', key: 'forge', width: 13 },
     { header: 'Moc bohatera', key: 'power', width: 14, fmt: '#,##0' }, { header: 'Zalecana Moc krainy', key: 'rec', width: 18, fmt: '#,##0' },
-    { header: 'Moc / zalecana', key: 'ratio', width: 14, fmt: '0%' }, { header: 'Złoto', key: 'gold', width: 14, fmt: '#,##0' },
+    { header: 'Moc / zalecana', key: 'ratio', width: 14, fmt: '0%' }, { header: 'Złoto', key: 'gold', width: 14, fmt: '#,##0' }, { header: 'Złoto zarobione (łącznie)', key: 'earned', width: 16, fmt: '#,##0' },
     { header: 'Wytopy', key: 'smelted', width: 10, fmt: '#,##0' }, { header: 'Przeskoki', key: 'jumps', width: 10, fmt: '#,##0' },
     { header: 'Ruda w zapasie', key: 'ore', width: 14, fmt: '#,##0' }, { header: 'Punkty przepustki', key: 'pass', width: 16, fmt: '#,##0' },
     { header: 'Najlepsza rzadkość', key: 'best', width: 18 },

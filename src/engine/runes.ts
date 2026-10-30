@@ -6,7 +6,7 @@
 // Z serwerem przekuwa serwer (server/src/runes.ts) i podpisuje przedmiot, żeby dalej liczył się do rankingów.
 import { B, DIVINE_ORE, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, oreRank } from '../data';
 import { toast, type Ctx } from './context';
-import { goldWave } from './formulas';
+import { goldWaveOf } from './formulas';
 import { rnd, type Rng } from './rng';
 import { invalidate } from './stats';
 import type { GameState, Item, SlotId } from './types';
@@ -20,7 +20,7 @@ export const runeLvl = (s: GameState, slot: SlotId) => Math.max(0, Math.min(B.RU
 /** Koszt wzmocnienia runy na poziom `lvl` (1–30). */
 export function runeCost(s: GameState, lvl: number): Cost {
   const tier = Math.min(5, Math.floor((lvl - 1) / 5)); // Miedź … Smocza Stal (indeksy 0–5)
-  return { ore: tier, n: 20 + 10 * ((lvl - 1) % 5), gold: goldWave(s.bestG) * 5 * lvl };
+  return { ore: tier, n: 20 + 10 * ((lvl - 1) % 5), gold: goldWaveOf(s) * 5 * lvl };
 }
 
 /**
@@ -64,7 +64,7 @@ export function upgradeRune(ctx: Ctx, slot: SlotId): boolean {
 
 /** Koszt przekucia jednej statystyki: ruda przedmiotu (z Boskiej Rudy — Gwiezdny Kruszec) i złoto, więcej dla wyższej rzadkości. */
 export function reforgeCost(s: GameState, it: Item): Cost {
-  return { ore: it.ore === DIVINE_ORE ? 6 : it.ore, n: 15 * (it.r + 1), gold: goldWave(s.bestG) * 10 * (it.r + 1) };
+  return { ore: it.ore === DIVINE_ORE ? 6 : it.ore, n: 15 * (it.r + 1), gold: goldWaveOf(s) * 10 * (it.r + 1) };
 }
 
 export function reforgeBlock(s: GameState, it: Item): string | null {

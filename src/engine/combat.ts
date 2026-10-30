@@ -3,7 +3,7 @@ import { buffMult } from './shop';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
 import { allMods } from './mods';
-import { Dstar, Hstar, curG, early, gOf, goldWave } from './formulas';
+import { Dstar, Hstar, curG, early, gOf, goldWaveOf } from './formulas';
 import { addFame } from './legend';
 import { takeObieg } from './obieg';
 import { addFound } from './forge';
@@ -189,7 +189,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   const L = landDef(s.cur.land);
   const mods = allMods(s);
   // Złoto wypada z każdej fali; ruda tylko czasem — wtedy interfejs pokazuje animację dropu.
-  const gold = Math.round(goldWave(curG(s)) * (1 + mods.goldPct / 100) * buffMult(s, 'zloto', ctx.now()));
+  const gold = Math.round(goldWaveOf(s, curG(s)) * (1 + mods.goldPct / 100) * buffMult(s, 'zloto', ctx.now()));
   s.gold += gold;
   let loot = `+${fmtN(gold)} zł.`;
   // Ruda: z części fal, według rozkładu krainy (główna 1–3 sztuki, rzadsze po 1).
@@ -245,7 +245,7 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   track(ctx, 'boss');
   ctx.emit({ t: 'sfx', k: 'boss' });
   const first = !s.cleared[land];
-  const gold = Math.round(goldWave(gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + allMods(s).goldPct / 100));
+  const gold = Math.round(goldWaveOf(s, gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + allMods(s).goldPct / 100));
   const n = ri(ctx.rng, 2, 4);
   const books = first ? B.BOOKS_BOSS_FIRST + land : ctx.rng.next() < B.BOOKS_BOSS_CHANCE ? 1 : 0;
   const set = setOfLand(land);

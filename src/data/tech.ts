@@ -38,7 +38,7 @@ export const TECH: Record<TechId, TechDef> = {
   w_pogromca: { n: 'Łowca bossów', branch: 'walka', eff: 'bossPct', per: 3, max: 10, req: 10, b0: 2, d: '+{v}% obrażeń wobec bossów' },
   e_kupiec: { n: 'Kupiec', branch: 'ekonomia', eff: 'goldPct', per: 5, max: 10, req: 4, b0: 1, d: '+{v}% złota z walki i sprzedaży' },
   e_gornik: { n: 'Górnik', branch: 'ekonomia', eff: 'extraOre', per: 2, max: 10, req: 4, b0: 1, d: '{v}% szansy na dodatkową rudę z fali' },
-  e_noc: { n: 'Nocna zmiana', branch: 'ekonomia', eff: 'offlineMin', per: 30, max: 8, req: 7, b0: 2, d: '+{v} min limitu nagród offline' },
+  e_noc: { n: 'Nocna zmiana', branch: 'ekonomia', eff: 'offlineMin', per: 30, max: 14, req: 5, b0: 1, d: '+{v} limitu nagród offline (bazowo 1 h)' },
   e_poszuk: { n: 'Poszukiwacz', branch: 'ekonomia', eff: 'rarePct', per: 5, max: 10, req: 9, b0: 2, d: '+{v}% szansy na rzadką rudę (względnie)' },
   t_hodowca: { n: 'Hodowca', branch: 'towarzysze', eff: 'eggPct', per: 10, max: 10, req: 8, b0: 2, d: '+{v}% szansy na jajo z bossów i lochów (względnie)' },
   t_wylegarnia: { n: 'Wylęgarnia', branch: 'towarzysze', eff: 'hatchTime', per: 5, max: 10, req: 9, b0: 2, d: '−{v}% czasu wykluwania jaj' },

@@ -1,4 +1,5 @@
 // Wspólne drobiazgi modułu serwera: błędy RPC, odczyt zapisu, sekrety i podpisy.
+import { goldG } from '../../src/engine/formulas';
 import { mulberry32, type Rng } from '../../src/engine/rng';
 import type { GameState, Item } from '../../src/engine/types';
 import { itemCore } from '../../src/engine/verify';
@@ -110,3 +111,6 @@ export function testSpeed(ctx: nkruntime.Context): number {
 
 /** Dzień według zegara serwera (UTC). */
 export const serverDay = (now: number) => new Date(now).toISOString().slice(0, 10);
+
+/** Etap, od którego liczą się nagrody w złocie: najdalszy etap kampanii, ale najwyżej 2 poziomy kuźni ponad gracza. */
+export const goldStage = (st?: object | null): number => (st ? goldG(st as Pick<GameState, 'bestG' | 'forge'>) : 0);

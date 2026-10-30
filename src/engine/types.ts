@@ -235,7 +235,8 @@ export interface Mods {
 }
 
 export interface OfflineReport {
-  ms: number; capped: boolean; land: number; gold: number; ores: number[]; el: number; books: number;
+  /** ms — czas, za który naliczono łupy (najwyżej limit); away — cały czas nieobecności. */
+  ms: number; away?: number; capped: boolean; land: number; gold: number; ores: number[]; el: number; books: number;
   fame: number; forgeUp: number; tech: TechId | null; hatched: PetId | null; chest: { item: Item; equipped: boolean; stop?: boolean }[]; chestCount: number;
 }
 

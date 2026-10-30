@@ -14,7 +14,7 @@ import type { Reward } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { raidBrief } from './raid';
 import { warBrief, warOnBossAttack } from './war';
-import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, parse, readSave, serverDay, serverRng, updateObject, userOf } from './common';
+import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, goldStage, parse, readSave, serverDay, serverRng, updateObject, userOf } from './common';
 import { clanSeasonSettle, updateClanPower } from './clanrank';
 import { nameOf } from './names';
 
@@ -276,7 +276,7 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
   const up = upOf(nk, userId, parse(payload).up);
   const save = readSave(nk, userId);
   const power = Math.max(1, save ? save.value.power || 0 : 0);
-  const bestG = save ? save.value.state.bestG || 0 : 0;
+  const bestG = goldStage(save && save.value.state);
   bumpDaily(nk, userId, x.now, d => (d.atk < CLAN.BOSS_ATTACKS ? (d.atk++, true) : false));
   const rng = serverRng(nk);
   const roll = Math.round(power * (1 - CLAN.BOSS_SPREAD + 2 * CLAN.BOSS_SPREAD * rng.next()));
@@ -311,7 +311,7 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
     const ranked = Object.entries(k.dmg).sort((a, b) => b[1] - a[1]);
     const saves = nk.storageRead(ranked.map(([u]) => ({ collection: 'save', key: 'state', userId: u })));
     const best: Record<string, number> = {};
-    for (const o of saves) best[o.userId] = ((o.value as { state?: { bestG?: number } }).state || {}).bestG || 0;
+    for (const o of saves) best[o.userId] = goldStage((o.value as { state?: object }).state);
     const name = clanBossOf(k.lvl).n;
     ranked.forEach(([u], i) => {
       try { pushRewards(nk, u, [{ why: `Skrzynia: ${name} (poz. ${k.lvl + 1})${i < 3 ? `, ${i + 1}. miejsce` : ''}`, r: clanBossChest(k.lvl, i, best[u] || 0) }]); } catch { /* następna osoba */ }

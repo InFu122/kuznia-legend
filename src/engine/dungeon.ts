@@ -6,7 +6,7 @@ import {
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { addEventPts, eventFloorPts, eventOf, evText } from './events';
 import type { Ctx } from './context';
-import { Dstar, Hstar, early, goldWave, legStage, todayStr } from './formulas';
+import { Dstar, Hstar, early, goldWaveOf, legStage, todayStr } from './formulas';
 import { addFound, rollSubs } from './forge';
 import { addFame } from './legend';
 import { allMods } from './mods';
@@ -188,7 +188,7 @@ export function dungFloor(ctx: Ctx): void {
     }
     case 'skarbiec': {
       d.kills++;
-      const g = Math.round(goldWave(s.bestG) * (3 + d.kills * 0.5) * gold);
+      const g = Math.round(goldWaveOf(s) * (3 + d.kills * 0.5) * gold);
       add(d.loot, 'gold', g);
       ctx.emit({ t: 'float', side: 'foe', text: `+${g.toLocaleString('pl-PL')} zł.`, cls: 'loot', force: true });
       s.dungeons.skarbiec.best = Math.max(s.dungeons.skarbiec.best, d.kills);
@@ -197,7 +197,7 @@ export function dungFloor(ctx: Ctx): void {
     }
     case 'wieza': {
       const [g] = dungDifficulty(ctx);
-      add(d.loot, 'gold', Math.round(goldWave(g) * 3 * gold));
+      add(d.loot, 'gold', Math.round(goldWaveOf(s, g) * 3 * gold));
       let text = `Piętro ${d.floor} zdobyte`;
       if (d.floor % 5 === 0) { const bk = towerBooks(d.floor); add(d.loot, 'books', bk); text += ` · +${bk} Ks.`; }
       if (d.floor % 10 === 0 && skillsUnlocked(s)) { add(d.loot, 'scrolls', 1); text += ' · Zwój'; }
@@ -305,7 +305,7 @@ export function dungFloor(ctx: Ctx): void {
         // skrzynia za pokonanie bossa wydarzenia
         add(d.loot, 'books', 2);
         add(d.loot, 'stones', 10 + Math.floor(s.maxLand / 2));
-        add(d.loot, 'gold', Math.round(goldWave(s.bestG) * 20 * gold));
+        add(d.loot, 'gold', Math.round(goldWaveOf(s) * 20 * gold));
         if (skillsUnlocked(s)) add(d.loot, 'scrolls', 1);
         if (ctx.rng.next() < B.DIVINE_ORE_EVENT_BOSS) addOre(d.loot, DIVINE_ORE, 1);
         addFame(ctx, 0, ev.type, true);
@@ -372,7 +372,7 @@ export function labChoose(ctx: Ctx, i: number): boolean {
       b.pause = 300;
       return true;
     case 'skarb':
-      add(d.loot, 'gold', Math.round(goldWave(s.bestG) * 8 * (1 + allMods(s).goldPct / 100)));
+      add(d.loot, 'gold', Math.round(goldWaveOf(s) * 8 * (1 + allMods(s).goldPct / 100)));
       addOre(d.loot, landDef(s.maxLand).rare, 1);
       break;
     case 'zrodlo':

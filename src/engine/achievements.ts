@@ -1,7 +1,7 @@
 // Osiągnięcia i Kolekcja Kowala. Postęp liczy się z liczników gry; nagrody to zasoby (bez Klejnotów).
 import { ABYSS_FROM, ACHIEVEMENTS, ACH_IDS, ORES, RAR, SLOTS, SLOT_ORDER, type AchId } from '../data';
 import { toast, type Ctx } from './context';
-import { goldWave } from './formulas';
+import { goldWaveOf } from './formulas';
 import { grant } from './reward';
 import type { GameState, Item, Reward } from './types';
 
@@ -69,7 +69,7 @@ export function achReward(s: GameState, t: number): Reward {
   const r: Reward = {
     books: [3, 6, 12, 25, 50, 80][t] ?? 80,
     stones: [10, 25, 50, 100, 200, 300][t] ?? 300,
-    gold: goldWave(s.bestG) * 50 * (t + 1),
+    gold: goldWaveOf(s) * 50 * (t + 1),
   };
   if (t >= 2) r.scrolls = t - 1;
   if (t >= 3) r.eggs = { [Math.min(4, t - 1)]: 1 };

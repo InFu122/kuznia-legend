@@ -65,7 +65,11 @@ export function tickResearch(ctx: Ctx, ms: number, quiet = false): boolean {
 }
 
 /** Łączna wartość efektu na danym poziomie, z przecinkiem dziesiętnym. */
-export const techValue = (id: TechId, lvl: number) => String(Math.round(lvl * TECH[id].per * 10) / 10).replace('.', ',');
+export const techValue = (id: TechId, lvl: number) => {
+  const v = Math.round(lvl * TECH[id].per * 10) / 10;
+  if (TECH[id].eff === 'offlineMin') { const h = Math.floor(v / 60), m = Math.round(v % 60); return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`; }
+  return String(v).replace('.', ',');
+};
 export function techText(id: TechId, lvl: number): string {
   return TECH[id].d.replace('{v}', techValue(id, lvl));
 }

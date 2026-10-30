@@ -3,7 +3,7 @@
 import { CLAN, CLAN_SEASON_REWARDS, CLAN_SHOP, ELEM_KEYS, FRAMES, SKINS, RAID_PHASES, SHOP_GOLD_WAVES, WAR_TROPHIES, type ClanShopId } from '../data';
 import { toast, type Ctx } from './context';
 import { upgradeTime } from './forge';
-import { goldWave } from './formulas';
+import { goldWave, goldWaveOf } from './formulas';
 import { weekStr } from './missions';
 import { grant } from './reward';
 import type { GameState, Reward } from './types';
@@ -64,7 +64,7 @@ export function applyClanHelp(ctx: Ctx, lvl: number, n: number): number {
 }
 
 /** Datek do Wspólnej Kuźni kosztuje złoto z najdalszego etapu. */
-export const donateCost = (s: GameState) => goldWave(s.bestG) * CLAN.DONATE_GOLD_WAVES;
+export const donateCost = (s: GameState) => goldWaveOf(s) * CLAN.DONATE_GOLD_WAVES;
 
 /** Ile sztuk towaru można jeszcze kupić w tym tygodniu. */
 export function shopLeft(s: GameState, id: ClanShopId, now: number): number {
@@ -75,7 +75,7 @@ export function shopLeft(s: GameState, id: ClanShopId, now: number): number {
 /** Co daje towar ze sklepu klanowego. */
 export function shopReward(s: GameState, id: ClanShopId): Reward {
   switch (id) {
-    case 'zloto': return { gold: goldWave(s.bestG) * SHOP_GOLD_WAVES };
+    case 'zloto': return { gold: goldWaveOf(s) * SHOP_GOLD_WAVES };
     case 'ksiega': return { books: 1 };
     case 'zwoj': return { scrolls: 1 };
     case 'kamienie': return { stones: 10 };

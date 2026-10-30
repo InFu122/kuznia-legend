@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { B, LANDS } from '../src/data';
+import { B, LANDS, TECH } from '../src/data';
+import { forgeExp, gAtForge, goldG, goldWave, goldWaveOf } from '../src/engine/formulas';
 import { equip, smelt } from '../src/engine/forge';
-import { applyOffline } from '../src/engine/offline';
+import { applyOffline, offlineCapMs } from '../src/engine/offline';
+import { techText } from '../src/engine/tech';
 import { migrate, newState } from '../src/engine/state';
 import { makeGame, simulate, T0 } from './helpers';
 
@@ -85,12 +87,14 @@ describe('walka i postęp', () => {
 
 
 describe('nagrody offline', () => {
-  it('ignorują krótkie przerwy i mają limit 8 godzin', () => {
+  it('ignorują krótkie przerwy i mają limit 1 godziny', () => {
     const { ctx } = makeGame();
     expect(applyOffline(ctx, 30000)).toBeNull();
     const r = applyOffline(ctx, 24 * 3600 * 1000)!;
+    expect(B.OFFLINE_CAP_MS).toBe(3600 * 1000);
     expect(r.capped).toBe(true);
     expect(r.ms).toBe(B.OFFLINE_CAP_MS);
+    expect(r.away).toBe(24 * 3600 * 1000);
     expect(r.gold).toBeGreaterThan(0);
     expect(r.ores.reduce((a, n) => a + n, 0)).toBeGreaterThan(0);
   });
@@ -123,6 +127,48 @@ describe('nagrody offline i technologie', () => {
     expect(r.tech).toBe('w_ostrze');
     expect(s.tech.lv.w_ostrze).toBe(1);
     expect(s.tech.cur).toBeNull();
+  });
+
+  it('limit dotyczy tylko łupów: kuźnia i badanie liczą cały czas nieobecności', () => {
+    const { ctx, s } = makeGame();
+    s.forge.lvl = 10; s.forge.up = 11; s.forge.left = 10 * 3600000;
+    s.tech.cur = { id: 'w_ostrze', left: 11 * 3600000, total: 11 * 3600000 };
+    const short = applyOffline(ctx, 9 * 3600000)!;
+    expect(short.ms).toBe(B.OFFLINE_CAP_MS);
+    expect(s.forge.left).toBe(3600000);
+    expect(s.tech.cur!.left).toBe(2 * 3600000);
+    const r = applyOffline(ctx, 3 * 3600000)!;
+    expect(r.forgeUp).toBe(11);
+    expect(r.tech).toBe('w_ostrze');
+  });
+
+  it('Nocna zmiana na najwyższym poziomie daje 8 h łupów', () => {
+    const { ctx, s } = makeGame();
+    s.tech.lv.e_noc = TECH.e_noc.max;
+    const r = applyOffline(ctx, 24 * 3600 * 1000)!;
+    expect(r.ms).toBe(8 * 3600 * 1000);
+    expect(offlineCapMs(s)).toBe(8 * 3600 * 1000);
+    expect(techText('e_noc', 3)).toBe('+1 h 30 min limitu nagród offline (bazowo 1 h)');
+    expect(techText('e_noc', TECH.e_noc.max)).toMatch(/^\+7 h limitu/);
+  });
+});
+
+describe('złoto według kuźni gracza', () => {
+  it('etap złota: najdalszy etap, ale najwyżej 2 poziomy kuźni ponad gracza', () => {
+    const s = newState(T0);
+    s.bestG = 150;
+    s.forge.lvl = 5;
+    expect(goldG(s)).toBe(gAtForge(5 + B.GOLD_FORGE_AHEAD));
+    expect(Math.ceil(forgeExp(goldG(s)))).toBeLessThanOrEqual(5 + B.GOLD_FORGE_AHEAD);
+    expect(goldWaveOf(s)).toBeLessThan(goldWave(150) / 10);
+    // gracz z kuźnią na miarę etapu: bez zmian
+    s.forge.lvl = 200;
+    expect(goldG(s)).toBe(150);
+    expect(goldWaveOf(s)).toBe(goldWave(150));
+    // wcześniejszy etap (np. loch) też nie przekracza granicy
+    s.forge.lvl = 5;
+    expect(goldG(s, 3)).toBe(Math.min(3, gAtForge(7)));
+    expect(goldG({ bestG: 40 } as never)).toBe(Math.min(40, gAtForge(1 + B.GOLD_FORGE_AHEAD)));
   });
 });
 

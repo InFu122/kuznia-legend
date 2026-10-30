@@ -8,7 +8,7 @@ import {
 } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { toast, type Ctx } from './context';
-import { goldWave, todayStr } from './formulas';
+import { goldWaveOf, todayStr } from './formulas';
 import { grant } from './reward';
 import type { GameState, PassBase, PassTrack, Reward } from './types';
 
@@ -44,7 +44,7 @@ export function passItemsReward(items: PassItem[], s: GameState): Reward {
   let r: Reward = {};
   for (const it of items) {
     switch (it.k) {
-      case 'gold': r = addReward(r, { gold: goldWave(s.bestG) * it.n }); break;
+      case 'gold': r = addReward(r, { gold: goldWaveOf(s) * it.n }); break;
       case 'ore': r = addReward(r, { ores: { [bestOre(s)]: it.n } }); break;
       case 'divine': r = addReward(r, { ores: { [DIVINE_ORE]: it.n } }); break;
       case 'egg': r = addReward(r, { eggs: { [it.n]: 1 } }); break;
@@ -147,7 +147,7 @@ export function gemItemBlock(s: GameState, sh: ShopState, id: GemItemId, gems: n
 /** Co daje towar (komplet kluczy nie ma nagrody — odnawia klucze: `refillKeys`). */
 export function gemItemReward(s: GameState, id: GemItemId): Reward {
   switch (id) {
-    case 'zloto': return { gold: goldWave(s.bestG) * 300 };
+    case 'zloto': return { gold: goldWaveOf(s) * 300 };
     case 'ruda': return { ores: { [bestOre(s)]: 200 } };
     case 'ksiegi': return { books: 5 };
     case 'kamienie': return { stones: 30 };
@@ -165,7 +165,7 @@ export function refillKeys(s: GameState, now: number): void {
 }
 
 /** Prezent dnia w sklepie. */
-export const giftReward = (s: GameState): Reward => ({ gold: goldWave(s.bestG) * DAILY_GIFT.goldWaves, ores: { [bestOre(s)]: DAILY_GIFT.ore } });
+export const giftReward = (s: GameState): Reward => ({ gold: goldWaveOf(s) * DAILY_GIFT.goldWaves, ores: { [bestOre(s)]: DAILY_GIFT.ore } });
 
 /** Nagroda pakietu Klejnotów (Pakiet Nowicjusza ma dodatki). */
 export function packReward(id: string): Reward | null {

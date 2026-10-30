@@ -2,7 +2,7 @@
 import { DAILY_COUNT, LOGIN_DAYS, MISSIONS, SKILLS, TECH_UNLOCK_FORGE, WEEKLY_BOOKS, WEEKLY_COUNT, missionText, landDef } from '../data';
 import { drawSkill, petsUnlocked, skillsUnlocked } from './companions';
 import { toast, type Ctx } from './context';
-import { goldWave, todayStr } from './formulas';
+import { goldWaveOf, todayStr } from './formulas';
 import { grant } from './reward';
 import { shuffle } from './rng';
 import type { GameState, Mission, MissionKind, Reward, SkillId } from './types';
@@ -63,7 +63,7 @@ export function track(ctx: Ctx, kind: MissionKind, n = 1): void {
 }
 
 export const missionReward = (s: GameState, scope: 'daily' | 'weekly'): Reward =>
-  scope === 'daily' ? { gold: goldWave(s.bestG) * 25 } : { books: WEEKLY_BOOKS };
+  scope === 'daily' ? { gold: goldWaveOf(s) * 25 } : { books: WEEKLY_BOOKS };
 
 /** Skrzynia za komplet misji dziennych. */
 export function chestReward(s: GameState): Reward {
@@ -111,7 +111,7 @@ export const canClaimLogin = (ctx: Ctx) => ctx.s.login.last !== todayStr(ctx.now
 /** Nagroda za dzień kalendarza (0–6). Dzień 7 losuje Zwój od rzadkości Epicki wzwyż. */
 export function loginReward(s: GameState, idx: number): Reward {
   const L = landDef(s.maxLand);
-  const g = goldWave(s.bestG);
+  const g = goldWaveOf(s);
   switch (idx) {
     case 0: return { gold: g * 60 };
     case 1: return { ores: { [L.main]: 10 } };

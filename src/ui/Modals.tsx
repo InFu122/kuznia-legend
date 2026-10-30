@@ -1,15 +1,15 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
   B, DIVINE_JUMP, DIVINE_ORE, ELEM, ELEM_KEYS, EVENT, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, MOUNTS, ORES, PETS, RAR, SEAL_FAME, SETS, SET_FORGE_LVL,
-  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, ORE_ORDER, isRareOre, oreShares, setOfLand, skillValue, landDef, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, FORGE_UNLOCKS, ORE_ORDER, isRareOre, oreShares, setOfLand, skillValue, landDef, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
 import { ForgeLevelInfo, MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { onBack } from './back';
-import { JUMP_TO_MULT, baseName, dist, gOf, goldWave, itemName, recPower } from '../engine/formulas';
+import { JUMP_TO_MULT, baseName, dist, gOf, goldWaveOf, itemName, recPower } from '../engine/formulas';
 import { allMods } from '../engine/mods';
 import type { Game } from '../engine/game';
-import { techMods } from '../engine/mods';
+import { techLvl, techMods } from '../engine/mods';
 import type { ModalData, Reward } from '../engine/types';
 import { dungName, eventOf, evText } from '../engine/events';
 import { ItemCard } from './ItemCard';
@@ -20,6 +20,7 @@ import { HeroSprite } from './Arena';
 import { RewardIcons, RewardTiles } from './RewardIcons';
 import { hasProof } from '../engine/verify';
 import { f1, fmt, pct, pctS, tfmt } from './format';
+import { pl } from './texts';
 import { OddsBar } from './panels/Forge';
 import { MissionsView } from './panels/Missions';
 import { AdOfferView, ShopView } from './panels/Shop';
@@ -154,7 +155,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
           <div class="wb-head" style={{ '--bg': `url(${landBgUrl(r.land)})` } as Record<string, string>}>
             <div class="wb-hero" aria-hidden="true"><HeroSprite eq={s.eq} skin={s.look.skin} /></div>
             <div class="wb-txt">
-              <div class="eyebrow"><Px src={resUrl('czas')} size={14} /> Poza grą {tfmt(r.ms)}{r.capped ? ` · limit ${tfmt(B.OFFLINE_CAP_MS + techMods(s).offlineMin * 60000)}` : ''}</div>
+              <div class="eyebrow"><Px src={resUrl('czas')} size={14} /> Poza grą {tfmt(r.away ?? r.ms)}{r.capped ? ` · łupy za ${tfmt(r.ms)}` : ''}</div>
               <div class="h">Witaj z powrotem!</div>
               <p class="sub">Bohater walczył w krainie <b>{L.n}</b> (wydajność {Math.round(B.OFFLINE_EFFICIENCY * 100)}%, ruda {Math.round(B.OFFLINE_EFFICIENCY * B.OFFLINE_ORE * 100)}% zwykłego dropu).</p>
             </div>
@@ -166,6 +167,10 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
             {r.forgeUp > 0 && <li class="hl"><Px src={resUrl('kowadlo')} size={22} /><span>Kuźnia osiągnęła <b>poziom {r.forgeUp}</b>!</span></li>}
             {r.tech && <li class="hl"><Px src={techUrl(r.tech)} size={22} /><span>Zbadano: <b>{TECH[r.tech].n}</b> (poziom {s.tech.lv[r.tech] ?? 1})</span></li>}
             {r.hatched && <li class="hl"><Px src={resUrl('jajo2')} size={22} /><span>Z jaja wykluł się chowaniec: <b>{PETS[r.hatched].n}</b></span></li>}
+            {r.capped && (
+              <li><Px src={resUrl('czas')} size={22} /><span>Łupy liczą się najwyżej za <b>{tfmt(r.ms)}</b> nieobecności (kuźnia i badania biegną cały czas).
+                {techLvl(s, 'e_noc') < TECH.e_noc.max ? <> Wydłużysz limit badaniem <b>{TECH.e_noc.n}</b> w Akademii — do {tfmt(B.OFFLINE_CAP_MS + TECH.e_noc.per * TECH.e_noc.max * 60000)}.</> : null}</span></li>
+            )}
           </ul>
           {r.chestCount > 0 && (
             <>
@@ -275,6 +280,15 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
   const s = game.s;
   const rel = techMods(s).jumpRel;
   const sel = s.oreSel;
+  const cur = s.forge.lvl;
+  const [lv, setLv] = useState(cur);
+  const unlock = FORGE_UNLOCKS[lv];
+  /** Szanse (%) na rzadkość wyższą niż minimum rudy (przeskok) i niższą (nowa ruda wchodzi stopniowo). */
+  const split = (ore: number, d: [number, number][]) => ({
+    up: d.reduce((a, [r, p]) => a + (r > ORES[ore].floor ? p : 0), 0),
+    down: d.reduce((a, [r, p]) => a + (r < ORES[ore].floor ? p : 0), 0),
+  });
+  const moved = (a: number, b: number) => Math.abs(a - b) >= 0.05;
   const tips: [string, string, JSX.Element][] = [
     [resUrl('czas'), 'Gwarancja przeskoku', <>Po {B.PITY_MAX} wytopach bez przeskoku następny przeskakuje na pewno o 1 (ale nie na Boski). Twój licznik: <b>{s.pity}/{B.PITY_MAX}</b>.</>],
     [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy bazowej, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski {divMults}. Paski wyżej już to uwzględniają.</>],
@@ -294,22 +308,50 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
         <div class="fi-step"><Px src={resUrl('kowadlo')} size={32} /><b>2. Kuźnia</b><small>szansa na przeskok o 1–2 wyżej</small></div>
         <div class="fi-step"><Px src={resUrl('zloto')} size={32} /><b>3. Decyzja</b><small>załóż albo sprzedaj</small></div>
       </div>
-      <div class="fi-sec">Szanse na twoim poziomie kuźni</div>
+      <div class="fi-sec">Szanse według poziomu kuźni</div>
+      <div class="fi-lv" role="group" aria-label="Poziom kuźni do podglądu szans">
+        <button class="fi-lv-b" disabled={lv <= cur} onClick={() => setLv(lv - 1)} aria-label="Poziom niżej">‹</button>
+        <div class="fi-lv-t" aria-live="polite">
+          <b>{lv}. poziom</b>
+          <small>{lv === cur ? 'twój poziom' : lv === cur + 1 ? 'następny poziom' : `${lv - cur} ${pl(lv - cur, 'poziom', 'poziomy', 'poziomów')} ponad twój`}</small>
+        </div>
+        <button class="fi-lv-b" disabled={lv >= B.FORGE_MAX} onClick={() => setLv(lv + 1)} aria-label="Poziom wyżej">›</button>
+      </div>
+      <div class="fi-lv-q">
+        <button class={lv === cur ? 'on' : ''} onClick={() => setLv(cur)}>Twój ({cur})</button>
+        {cur < B.FORGE_MAX && <button class={lv === cur + 1 ? 'on' : ''} onClick={() => setLv(cur + 1)}>Następny ({cur + 1})</button>}
+        {cur + 5 <= B.FORGE_MAX && <button class={lv === cur + 5 ? 'on' : ''} onClick={() => setLv(cur + 5)}>+5 ({cur + 5})</button>}
+      </div>
+      {lv > cur && unlock && <p class="fi-lv-u"><Px src={resUrl('kowadlo')} size={16} /> Na {lv}. poziomie: {unlock}</p>}
       <ul class="fi-odds">
         {ORE_ORDER.map(i => {
           const o = ORES[i];
-          const off = s.forge.lvl < o.lvl;
+          const off = lv < o.lvl;
+          const fresh = !off && cur < o.lvl;
+          const d = dist(i, Math.max(lv, o.lvl), rel);
+          const now = !off && !fresh && lv !== cur ? split(i, dist(i, Math.max(cur, o.lvl), rel)) : null;
+          const then = split(i, d);
           return (
             <li key={o.n} class={`${i === sel ? 'sel' : ''}${off ? ' off' : ''}`}>
               <Px src={oreUrl(i)} size={28} />
               <div class="fi-o">
-                <div class="fi-on"><b>{o.n}</b><small>min. <span class={`rt${o.floor}`}>{RAR[o.floor].n}</span>{off ? ` · od ${o.lvl}. poziomu` : ''}</small></div>
-                <OddsBar d={dist(i, Math.max(s.forge.lvl, o.lvl), rel)} cls="compact" />
+                <div class="fi-on">
+                  <b>{o.n}{fresh && <em class="fi-new">nowa</em>}</b>
+                  <small>min. <span class={`rt${o.floor}`}>{RAR[o.floor].n}</span>{off ? ` · od ${o.lvl}. poziomu` : ''}</small>
+                </div>
+                <OddsBar d={d} cls="compact" />
+                {now && (moved(now.up, then.up) || moved(now.down, then.down)) && (
+                  <div class="fi-delta">
+                    {moved(now.up, then.up) && <span>przeskok {pct(now.up)} → <b>{pct(then.up)}</b></span>}
+                    {moved(now.down, then.down) && <span>niżej {pct(now.down)} → <b>{pct(then.down)}</b></span>}
+                  </div>
+                )}
               </div>
             </li>
           );
         })}
       </ul>
+      {lv !== cur && <p class="fi-lv-n">Strzałki: zmiana względem twojego poziomu. Przeskok — szansa na rzadkość wyższą niż minimum rudy; niżej — szansa na rzadkość poniżej minimum, gdy ruda dopiero wchodzi.</p>}
       <div class="fi-sec">Warto wiedzieć</div>
       <div class="fi-tips">
         {tips.map(([ic, h, d]) => (
@@ -373,7 +415,7 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
   const mods = techMods(s);
   const shares = oreShares(L, allMods(s).rarePct);
   const set = setOfLand(land);
-  const wave = goldWave(gOf(land, 5));
+  const wave = goldWaveOf(game.s, gOf(land, 5));
   const first = !s.cleared[land];
   const act = L.act;
   return (
@@ -397,7 +439,7 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
       </ul>
       <div class="eyebrow">Boss: {L.boss}{first ? ' · pierwsze pokonanie' : ''}</div>
       <ul class="droplist">
-        <li><Px src={resUrl('zloto')} size={24} /><span>Złoto</span><b>ok. {fmt(goldWave(gOf(land, B.STAGES_PER_LAND)) * 10)}</b></li>
+        <li><Px src={resUrl('zloto')} size={24} /><span>Złoto</span><b>ok. {fmt(goldWaveOf(game.s, gOf(land, B.STAGES_PER_LAND)) * 10)}</b></li>
         <li><Px src={oreUrl(L.rare)} size={24} /><span>{ORES[L.rare].n}</span><b>2–4 sztuki</b></li>
         <li><Px src={resUrl('ksiega')} size={24} /><span>Księgi Wiedzy</span><b>{first ? `${B.BOOKS_BOSS_FIRST + land} (pierwsze)` : `1 · ${pct(B.BOOKS_BOSS_CHANCE * 100)}`}</b></li>
         <li><Px src={resUrl('zwoj')} size={24} /><span>Zwoje zaklęć</span><b>{first ? `${B.SCROLLS_BOSS_FIRST + act} (pierwsze)` : `1 · ${pct(B.SCROLL_BOSS_CHANCE * 100)}`}</b></li>

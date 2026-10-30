@@ -19,7 +19,7 @@ import type { GameState } from '../../src/engine/types';
 import { readHero, readHeroes } from './arena';
 import { clanOf, postClan } from './clan';
 import { addClanXp, clanPower, pushRewards, readPending } from './clanlife';
-import { INVALID, PRECONDITION, SYSTEM_USER, UNAUTH, err, parse, serverRng, testSpeed, updateObject, userOf } from './common';
+import { INVALID, PRECONDITION, SYSTEM_USER, UNAUTH, err, goldStage, parse, serverRng, testSpeed, updateObject, userOf } from './common';
 import { clanSeasonSettle, warSeason, warSeasonResult } from './clanrank';
 import { nameOf } from './names';
 
@@ -338,7 +338,7 @@ function finalize(nk: nkruntime.Nakama, week: string, gid: string, now: number):
   const ranked = Object.entries(rec.pts).filter(([, p]) => p > 0).sort((a, b) => b[1] - a[1]);
   const best: Record<string, number> = {};
   for (const o of nk.storageRead(ranked.map(([u]) => ({ collection: 'save', key: 'state', userId: u })))) {
-    best[o.userId] = ((o.value as { state?: { bestG?: number } }).state || {}).bestG || 0;
+    best[o.userId] = goldStage((o.value as { state?: object }).state);
   }
   ranked.forEach(([u, p], i) => {
     try {

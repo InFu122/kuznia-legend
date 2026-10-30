@@ -1,9 +1,9 @@
 // Tylko w aplikacji na telefon (Capacitor): lokalne powiadomienia i przycisk „wstecz” Androida.
 // Powiadomienia planuje sam telefon, gdy gra schodzi w tło — serwer nie jest do tego potrzebny:
 // koniec ulepszenia kuźni, koniec badania, wyklucie jaja i limit nagród za nieobecność.
-import { B, TECH, landDef } from '../data';
+import { TECH, landDef } from '../data';
 import type { Game } from '../engine/game';
-import { allMods } from '../engine/mods';
+import { offlineCapMs } from '../engine/offline';
 import { isNative, isStandalone } from './pwa';
 import { EXIT_WINDOW_MS } from './back';
 import { toast } from '../engine/context';
@@ -21,7 +21,7 @@ export function upcoming(game: Game): { id: number; at: number; title: string; b
   if (s.forge.up && s.forge.left > 0) out.push({ id: 1, at: s.forge.left / sp, title: 'Kuźnia gotowa!', body: `Ulepszenie do ${s.forge.up}. poziomu się skończyło — wracaj kuć lepszy ekwipunek.` });
   if (s.tech.cur && s.tech.cur.left > 0) out.push({ id: 2, at: s.tech.cur.left / sp, title: 'Badanie zakończone', body: `${TECH[s.tech.cur.id].n} — nowy poziom czeka. Wybierz następne badanie.` });
   if (s.hatch && s.hatch.left > 0) out.push({ id: 3, at: s.hatch.left / sp, title: 'Jajo się wykluwa!', body: 'Nowy chowaniec czeka w zakładce Bohater.' });
-  const cap = B.OFFLINE_CAP_MS + allMods(s).offlineMin * 60000;
+  const cap = offlineCapMs(s);
   out.push({ id: 4, at: cap, title: 'Bohater czeka na rozkazy', body: `Łupy z ${landDef(s.cur.land).n} doszły do limitu nagród za nieobecność. Zajrzyj do kuźni!` });
   return out.filter(n => n.at > 30000);
 }

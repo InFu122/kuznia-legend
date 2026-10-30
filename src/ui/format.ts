@@ -16,7 +16,7 @@ export function tfmt(ms: number): string {
   const s = Math.max(0, Math.ceil(ms / 1000));
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   if (h >= 48) return `${Math.floor(h / 24)} dni${h % 24 ? ` ${h % 24} h` : ''}`;
-  if (h) return `${h} h ${m} min`;
+  if (h) return m ? `${h} h ${m} min` : `${h} h`;
   if (m) return x ? `${m} min ${x} s` : `${m} min`;
   return `${x} s`;
 }

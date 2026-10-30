@@ -1,5 +1,5 @@
 import {
-  B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
+  B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
   JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank,
 } from '../data';
 import type { GameState, Item } from './types';
@@ -64,14 +64,41 @@ export const upCost = (n: number) =>
   Math.round(B.UPGRADE_COST_BASE * Math.pow(B.UPGRADE_COST_MULT, Math.min(n, B.UPGRADE_COST_SOFT) - 1) * Math.pow(B.UPGRADE_COST_MULT_HI, Math.max(0, n - B.UPGRADE_COST_SOFT)));
 /** Czas ulepszenia kuźni do poziomu n (tabela UPGRADE_MIN). Pierwsze ulepszenie trwa 30 s (samouczek). */
 export const upTime = (n: number) => (UPGRADE_MIN[Math.max(2, Math.min(B.FORGE_MAX, n))] ?? 0) * 60000;
+/** Fale złota na minutę czasu ulepszenia: GOLD_TIME_K do poziomu GOLD_CUT_FROM, potem płynnie do GOLD_TIME_K × GOLD_CUT. */
+export const goldTimeK = (f: number) =>
+  GOLD_TIME_K * (1 + (GOLD_CUT - 1) * Math.min(1, Math.max(0, (f - GOLD_CUT_FROM) / (GOLD_CUT_TO - GOLD_CUT_FROM))));
 /** Ile fal walki „kosztuje” następne ulepszenie przy kuźni na poziomie f. */
 export const goldWaves = (f: number) =>
-  Math.max(GOLD_WAVES * Math.pow(GOLD_WAVES_GROWTH, Math.max(0, Math.min(f, B.UPGRADE_COST_SOFT) - 1)), GOLD_TIME_K * (UPGRADE_MIN[Math.min(B.FORGE_MAX, f + 1)] ?? 0));
+  Math.max(GOLD_WAVES * Math.pow(GOLD_WAVES_GROWTH, Math.max(0, Math.min(f, B.UPGRADE_COST_SOFT) - 1)), goldTimeK(f) * (UPGRADE_MIN[Math.min(B.FORGE_MAX, f + 1)] ?? 0));
 /** Złoto z fali na etapie g: koszt następnego ulepszenia oczekiwanej kuźni podzielony przez liczbę fal (rośnie z poziomem). */
 export const goldWave = (g: number) => {
   const f = Math.min(B.FORGE_MAX, Math.ceil(forgeExp(g)));
   return Math.max(1, Math.round(upCost(Math.min(B.FORGE_MAX, f + 1)) / goldWaves(f)));
 };
+/** Najmniejszy etap g, na którym gra oczekuje kuźni co najmniej f (powyżej najwyższego poziomu — bez granicy). */
+const gAtForgeCache = new Map<number, number>();
+export function gAtForge(f: number): number {
+  if (f > B.FORGE_MAX) return Number.POSITIVE_INFINITY;
+  let g = gAtForgeCache.get(f);
+  if (g === undefined) {
+    let lo = 0, hi = 10;
+    while (forgeExp(hi) < f && hi < 1e6) hi *= 2;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (forgeExp(m) >= f) hi = m; else lo = m + 1; }
+    g = lo;
+    gAtForgeCache.set(f, g);
+  }
+  return g;
+}
+/**
+ * Etap, od którego liczy się złoto gracza (fale, nagrody w „falach złota”, koszty run i przekuwania):
+ * etap `g` (domyślnie najdalszy), ale nie dalej, niż przewiduje kuźnia gracza + B.GOLD_FORGE_AHEAD poziomy.
+ * Dzięki temu gracz, który zaszedł daleko w kampanii z niską kuźnią, nie dostaje złota skrojonego na wyższy poziom.
+ */
+export const goldG = (s: Pick<GameState, 'bestG' | 'forge'>, g = s.bestG) =>
+  Math.min(Math.max(0, g || 0), gAtForge(Math.max(1, (s.forge?.lvl || 1) + B.GOLD_FORGE_AHEAD)));
+/** Złoto z fali dla gracza na etapie `g` (domyślnie najdalszym). */
+export const goldWaveOf = (s: Pick<GameState, 'bestG' | 'forge'>, g = s.bestG) => goldWave(goldG(s, g));
+
 /** Cena sprzedaży: mniej więcej pół fali złota za przedmiot Zwykły, więcej za rzadsze. */
 export const sellPrice = (it: Item) => {
   const f = Math.min(B.FORGE_MAX, Math.floor(it.lvl / 2));
