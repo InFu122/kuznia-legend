@@ -32,10 +32,10 @@ export const GEM_SHOP: Record<GemItemId, GemItem> = {
 export const GEM_ITEM_IDS = Object.keys(GEM_SHOP) as GemItemId[];
 
 /**
- * Przyspieszenie Klejnotami: kuźnia — 1 Klejnot za każdą rozpoczętą minutę (poziom kuźni to główne źródło siły),
- * badania w Nauce — 1 Klejnot za każde rozpoczęte 4 minuty. Zawsze co najmniej 1.
+ * Przyspieszenie Klejnotami: kuźnia i badania w Nauce — 1 Klejnot za każdą rozpoczętą minutę (kuźnia i Nauka
+ * to główne źródła siły, więc pieniądze nie mogą ich tanio zastąpić). Zawsze co najmniej 1.
  */
-export const SPEEDUP_MIN_PER_GEM = { forge: 1, tech: 4 } as const;
+export const SPEEDUP_MIN_PER_GEM = { forge: 1, tech: 1 } as const;
 export const speedupGems = (ms: number, what: 'forge' | 'tech' = 'forge') =>
   (ms > 0 ? Math.max(1, Math.ceil(ms / 60000 / SPEEDUP_MIN_PER_GEM[what])) : 0);
 

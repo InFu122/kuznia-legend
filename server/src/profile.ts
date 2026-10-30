@@ -1,6 +1,6 @@
 // Profil gracza: awatar i ramka, tytuł kowala, Moc, ekwipunek, statystyki bohatera, klan, liga i ocena areny, Dziedzictwo.
 // Statystyki pochodzą z bohatera areny (liczone z uznanych przedmiotów), a gdy go nie ma — z zapisu.
-import { LANDS } from '../../src/data';
+import { landDef } from '../../src/data';
 import { frameOr, skinOr } from '../../src/engine/cosmetics';
 import { fighterStats } from '../../src/engine/duel';
 import { smithTitle } from '../../src/engine/formulas';
@@ -33,7 +33,7 @@ export function rpcPlayerProfile(ctx: nkruntime.Context, _logger: nkruntime.Logg
   return JSON.stringify({
     id, me: id === me, name: cleanName(s.name), title: smithTitle(s.smith?.fame ?? 0).n,
     sk: skinOr(s.look?.skin), fr: frameOr(s.look?.frame),
-    power: save.value.power, forge: s.forge.lvl, land: LANDS[s.maxLand]?.n ?? '', maxLand: s.maxLand,
+    power: save.value.power, forge: s.forge.lvl, land: landDef(s.maxLand)?.n ?? '', maxLand: s.maxLand,
     eq: s.eq, st, skills: (s.skills?.eq ?? []).filter(Boolean), pet: s.petSel ?? null, mount: s.mountSel ?? null,
     clan: c ? { n: c.g.name, tag: ((c.g.metadata || {}) as { tag?: string }).tag || '' } : null,
     arena: arena ? { rating: arena.score, rank: arena.rank } : null, league,

@@ -161,9 +161,9 @@ Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo 
 
 ### Rudy i Boskie przedmioty
 
-- **Nowa ruda wchodzi stopniowo:** Srebro (od 5. poziomu kuźni), Mithril (od 10.), Adamantyt (od 15.) i Smocza Stal (od 20.) tuż po odblokowaniu dają połowę wytopów o rzadkość niżej; z każdym poziomem kuźni mniej, a po 5 poziomach już zawsze pełne minimum. Kuźnia i karta ulepszenia pokazują, ile jeszcze zostało.
+- **Nowa ruda wchodzi stopniowo:** Srebro (od 5. poziomu kuźni), Mithril (od 12.), Adamantyt (od 25.) i Smocza Stal (od 60.) tuż po odblokowaniu dają połowę wytopów o rzadkość niżej; z każdym poziomem kuźni mniej, a po 5 poziomach już zawsze pełne minimum. Kuźnia i karta ulepszenia pokazują, ile jeszcze zostało.
 
-- **Nowe rudy:** Obsydian (od 17. poziomu kuźni, minimum Legendarny z lepszą jakością), Eteryt (od 23., minimum Mityczny) i bardzo rzadka **Boska Ruda** (od 25.). Obsydian i Eteryt wypadają w aktach III i IV i da się je rafinować (Adamantyt → Obsydian → Smocza Stal → Eteryt → Gwiezdny Kruszec).
+- **Nowe rudy:** Obsydian (od 40. poziomu kuźni, minimum Legendarny z lepszą jakością), Eteryt (od 85., minimum Mityczny) i bardzo rzadka **Boska Ruda** (od 120.; Gwiezdny Kruszec od 100.). Obsydian i Eteryt wypadają w aktach III i IV i da się je rafinować (Adamantyt → Obsydian → Smocza Stal → Eteryt → Gwiezdny Kruszec).
 - **Boski tylko z przeskoku:** żadna ruda nie daje Boskiego na pewno. Gwiezdny Kruszec daje najmniej Mityczny i kilka % szansy na Boski, Boska Ruda — kilkanaście %. Gwarancja przeskoku i ruda unikalna nie prowadzą do Boskiego.
 - **Skąd Boska Ruda:** bossowie krain aktu IV (rzadko), skrzynia bossa lochu sezonowego (5%), ostatni próg każdego wydarzenia i 30. poziom złotej ścieżki Przepustki. Nie wypada z fal, nie da się jej rafinować ani poprosić o nią klanu.
 - **Boski przedmiot** ma własne imię, złotą ramkę i Boską aurę: +3% obrażeń i zdrowia całego bohatera za każdy założony. Serwer sam ogłasza nowy Boski przedmiot na czacie globalnym, a inni gracze widzą komunikat w grze.
@@ -174,15 +174,19 @@ Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo 
 - **Runy slotów** (zakładka Bohater, od 10. poziomu kuźni): każdy slot ma runę do 30. poziomu, +1% głównej statystyki założonego tam przedmiotu za poziom. Runa zostaje przy zmianie przedmiotu i w nowym pokoleniu. Kosztuje złoto i rudę: poziomy 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal — tu przydaje się nadmiar starych rud. Gdy danej rudy brakuje, gra płaci tą samą liczbą sztuk następnej lepszej rudy. Przycisk „i” przy runach wyjaśnia wszystko krok po kroku (tak samo przy chowańcach i wierzchowcach).
 - **Przekuwanie** (okno założonego przedmiotu, od 15. poziomu kuźni): jedna statystyka dodatkowa losowana od nowa za rudę przedmiotu i złoto; potem wybierasz starą albo nową wersję. Z serwerem losuje i podpisuje serwer, więc przedmiot dalej liczy się do rankingów.
 
-### Dziedzictwo
+### Kuźnia do 200. poziomu i Otchłań
 
-Od 30. poziomu kuźni bohater może przejść na emeryturę (zakładka Bohater albo przycisk przy kuźni na najwyższym poziomie). Kuźnia, kampania, ekwipunek, złoto i rudy zaczynają się od nowa, a zostaje Nauka, umiejętności, chowańce, wierzchowce, zasoby rzadkie, Klejnoty, przepustka i klan. W zamian: Gwiazdy Mistrza (1 za kuźnię 30. poziomu i 1 za każde 4 pokonane krainy; każda +5% obrażeń i złota na zawsze) i Pamiątka Rodu — wybrany przedmiot w dodatkowym slocie, działający w 50%. Z serwerem nowe pokolenie zaczyna serwer, więc gwiazd nie da się dopisać.
+- **Gra jest długoterminowa:** kuźnia rośnie do 200. poziomu (mniej więcej rok gry). Pierwsze 20 poziomów mija w kilka dni, dalej każdy poziom to od półtora do prawie trzech dni. Rudy otwierają się stopniowo: Srebro 5., Mithril 12., Adamantyt 25., Obsydian 40., Smocza Stal 60., Eteryt 85., Gwiezdny Kruszec 100., Boska Ruda 120. poziom — najlepszy sprzęt to cel na wiele miesięcy, a nie na 40 dni.
+- **Kampania** (16 krain) kończy się mniej więcej przy kuźni 120. Potem **Otchłań**: kręgi bez końca — znane krainy w mroczniejszej wersji, coraz silniejsi wrogowie i bossowie „z Otchłani”, rudy z końca gry; gdy kuźnia osiągnie 200. poziom, każdy kolejny krąg jest jeszcze trudniejszy. Ranking Postępu liczy także kręgi Otchłani.
+- **Dziedzictwa (nowego pokolenia) już nie ma.** Kto je przeszedł, zachowuje na zawsze Gwiazdy Mistrza i Pamiątkę Rodu (karta w zakładce Bohater). Strój „Złoty Kowal” jest teraz za 100. poziom kuźni.
+- Okno „i” przy poziomie kuźni pokazuje kamienie milowe (co otwiera który poziom i ile jeszcze czasu), najbliższe ulepszenia i jak skrócić czekanie.
+- Gracze testowi z kuźnią powyżej 12. poziomu mogą stracić dostęp do części rud do czasu, aż kuźnia dogoni nowe progi — wykute przedmioty zostają i dalej liczą się do rankingów.
 
 ### Sklep i Przepustka Kowala
 
 Przycisk z Klejnotem na górze ekranu (obok czatu i zadań) otwiera **Sklep** z trzema zakładkami:
 
-- **Sklep** — darmowy prezent dnia, nagrody za reklamy (×2 ruda albo ×2 złoto na godzinę, 5 Klejnotów raz dziennie), towary za Klejnoty z dziennym limitem (złoto, ruda, Księgi, Kamienie, Zwój, Siodło, jajo, komplet kluczy) i przyspieszenia (dokończenie ulepszenia kuźni: 1 Klejnot za minutę; badania: 1 Klejnot za 4 minuty).
+- **Sklep** — darmowy prezent dnia, nagrody za reklamy (×2 ruda albo ×2 złoto na godzinę, 5 Klejnotów raz dziennie), towary za Klejnoty z dziennym limitem (złoto, ruda, Księgi, Kamienie, Zwój, Siodło, jajo, komplet kluczy) i przyspieszenia (dokończenie ulepszenia kuźni albo badania: 1 Klejnot za każdą minutę).
 - **Przepustka** — sezon 28 dni, 30 poziomów. Punkty za wytopy, wrogów, bossów, klucze w lochach i piętra Wieży (najwyżej 1500 dziennie). Darmowa ścieżka dla wszystkich, złota za 500 Klejnotów.
 - **Klejnoty** — pakiety. Dopóki serwer ma tryb testowy (`TEST_SPEED` większe niż 1), pakiety są bez płatności — do sprawdzenia sklepu. Przy `TEST_SPEED=1` zakup testowy jest wyłączony, a płatności ruszą w aplikacji z Google Play.
 

@@ -1,7 +1,7 @@
 // Profil gracza: wygląd, tytuł, Moc, ekwipunek (z kartą przedmiotu), statystyki, umiejętności, klan, liga i arena.
 // Własny bohater liczy się z gry (także bez serwera), cudzy — z serwera (player_profile).
 import { useEffect, useState } from 'preact/hooks';
-import { LANDS, MOUNTS, PETS, RAR, SKILLS, SLOT_ORDER, SLOTS } from '../../data';
+import { MOUNTS, PETS, RAR, SKILLS, SLOT_ORDER, SLOTS, landDef } from '../../data';
 import { itemUrl, landBgUrl, resUrl, skillUrl } from '../../art/render';
 import { fighterStats } from '../../engine/duel';
 import { itemName, smithTitle } from '../../engine/formulas';
@@ -22,7 +22,7 @@ function ownProfile(game: Game): Profile {
   const c = clanLife.data?.clan;
   return {
     id: '', me: true, name: s.name, title: smithTitle(s.smith.fame).n, sk: s.look.skin, fr: s.look.frame,
-    power: game.stats.power, forge: s.forge.lvl, land: LANDS[s.maxLand].n, maxLand: s.maxLand,
+    power: game.stats.power, forge: s.forge.lvl, land: landDef(s.maxLand).n, maxLand: s.maxLand,
     eq: s.eq, st: fighterStats(game.stats), skills: s.skills.eq.filter((x): x is NonNullable<typeof x> => !!x), pet: s.petSel, mount: s.mountSel,
     clan: c ? { n: c.name, tag: c.tag } : null, arena: null, league: null,
     legacy: s.legacy?.gen ? { gen: s.legacy.gen, stars: s.legacy.stars } : null,
@@ -77,7 +77,7 @@ export function ProfileView({ game, id, close }: { game: Game; id: string | null
         <li><span>Najdalej: <b>{p.land}</b></span></li>
         {p.league !== null && <li><LeagueBadge tier={p.league} small /></li>}
         {p.arena && <li><Px src={resUrl('zeton')} size={18} /><span>Arena <b>{fmt(p.arena.rating)}</b>{p.arena.rank ? ` · #${p.arena.rank}` : ''}</span></li>}
-        {p.legacy && <li><span>Pokolenie <b>{p.legacy.gen + 1}</b> · {starsText(p.legacy.stars)}</span></li>}
+        {p.legacy && p.legacy.stars > 0 && <li><span>Dziedzictwo: <b>{starsText(p.legacy.stars)}</b></span></li>}
         <li><span>Kodeks <b>{p.codex}</b> · osiągnięcia <b>{p.ach}</b></span></li>
       </ul>
       <div class="eyebrow">Ekwipunek</div>

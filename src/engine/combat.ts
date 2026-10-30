@@ -1,4 +1,4 @@
-import { B, DIVINE_ORE, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isRareOre, oreShares, setOfLand, skillValue } from '../data';
+import { ABYSS_FROM, B, DIVINE_ORE, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isRareOre, oreShares, setOfLand, skillValue, landDef } from '../data';
 import { buffMult } from './shop';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
@@ -19,7 +19,7 @@ export function spawnNext(ctx: Ctx): void {
   const { s, b } = ctx;
   if (b.mode === 'dung') { spawnDung(ctx); return; }
   if (s.cur.stage === B.STAGES_PER_LAND && s.cleared[s.cur.land]) { spawnBoss(ctx); return; }
-  const L = LANDS[s.cur.land];
+  const L = landDef(s.cur.land);
   let g = curG(s);
   if (s.cur.stage === B.STAGES_PER_LAND) g -= 1; // przed bossem farmisz poziom 9. etapu
   const e = early(g);
@@ -29,7 +29,7 @@ export function spawnNext(ctx: Ctx): void {
 }
 
 export function spawnBoss(ctx: Ctx): void {
-  const L = LANDS[ctx.s.cur.land];
+  const L = landDef(ctx.s.cur.land);
   const g = gOf(ctx.s.cur.land, B.STAGES_PER_LAND);
   const e = early(g);
   const max = B.BOSS_HP_MULT * Dstar(g) * e;
@@ -46,7 +46,7 @@ export function challengeBoss(ctx: Ctx): boolean {
   ctx.b.heroHp = ctx.b.heroMax;
   spawnBoss(ctx);
   ctx.b.pause = 0;
-  toast(ctx, LANDS[ctx.s.cur.land].boss + ' wychodzi do walki!');
+  toast(ctx, landDef(ctx.s.cur.land).boss + ' wychodzi do walki!');
   return true;
 }
 
@@ -186,7 +186,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   if (!e.boss) ctx.emit({ t: 'sfx', k: 'kill' });
   if (b.mode === 'dung') { dungFloor(ctx); return; }
   if (e.boss) { bossWon(ctx, e); return; }
-  const L = LANDS[s.cur.land];
+  const L = landDef(s.cur.land);
   const mods = allMods(s);
   // Złoto wypada z każdej fali; ruda tylko czasem — wtedy interfejs pokazuje animację dropu.
   const gold = Math.round(goldWave(curG(s)) * (1 + mods.goldPct / 100) * buffMult(s, 'zloto', ctx.now()));
@@ -239,7 +239,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
 function bossWon(ctx: Ctx, e: Enemy): void {
   const { s, b } = ctx;
   const land = s.cur.land;
-  const L = LANDS[land];
+  const L = landDef(land);
   s.stats.bosses++;
   addFame(ctx, 0, e.type, true);
   track(ctx, 'boss');
@@ -265,12 +265,13 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   ctx.dirty = true;
   if (first) {
     s.cleared[land] = true;
-    if (land < LANDS.length - 1) {
-      s.maxLand = Math.max(s.maxLand, land + 1);
-      s.cur = { land: land + 1, stage: 1, wave: 1 };
-      s.frontStage = 1;
-      s.bestG = Math.max(s.bestG, gOf(land + 1, 1));
-    } else s.cur = { land, stage: 1, wave: 1 };
+    // Po ostatniej krainie kampanii — kolejne kręgi Otchłani (bez końca).
+    while (s.cleared.length <= land + 1) s.cleared.push(false);
+    s.maxLand = Math.max(s.maxLand, land + 1);
+    s.cur = { land: land + 1, stage: 1, wave: 1 };
+    s.frontStage = 1;
+    s.bestG = Math.max(s.bestG, gOf(land + 1, 1));
+    if (land + 1 === ABYSS_FROM) toast(ctx, 'Kampania ukończona! Przed bohaterem Otchłań — kręgi bez dna, coraz silniejsi wrogowie i lepsze łupy.', 'good');
     ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, found: !!found, books, uniq, extra } });
     if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });
   } else {
@@ -300,7 +301,7 @@ export const eggRarity = (land: number) => Math.max(0, Math.min(4, Math.floor((l
 /** Zwoje, Jaja, Siodła i Kamienie z bossa. Za pierwsze pokonanie pewne, potem z niewielką szansą. */
 function bossExtras(ctx: Ctx, land: number, first: boolean): Reward {
   const r: Reward = {};
-  const act = LANDS[land].act;
+  const act = landDef(land).act;
   if (first) r.scrolls = B.SCROLLS_BOSS_FIRST + act;
   else if (ctx.rng.next() < B.SCROLL_BOSS_CHANCE) r.scrolls = 1;
   if (land >= PETS_UNLOCK_LAND - 1) {
@@ -311,7 +312,7 @@ function bossExtras(ctx: Ctx, land: number, first: boolean): Reward {
     if (first) r.saddles = B.SADDLES_BOSS_FIRST;
     else if (ctx.rng.next() < B.SADDLE_BOSS_CHANCE) r.saddles = 1;
   }
-  if (act === 4 && ctx.rng.next() < B.DIVINE_ORE_BOSS) r.ores = { [DIVINE_ORE]: 1 };
+  if (act >= 4 && ctx.rng.next() < B.DIVINE_ORE_BOSS) r.ores = { [DIVINE_ORE]: 1 };
   return r;
 }
 
@@ -344,6 +345,6 @@ export function goLand(ctx: Ctx, i: number): boolean {
   b.pause = 200;
   b.heroHp = b.heroMax;
   ctx.dirty = true;
-  toast(ctx, 'Bohater rusza do krainy: ' + LANDS[i].n);
+  toast(ctx, 'Bohater rusza do krainy: ' + landDef(i).n);
   return true;
 }

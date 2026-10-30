@@ -18,18 +18,24 @@ export const SMITH_TITLES = [
 /** Szansa na przeskok o 1 i o 2 rzadkości (w %) na wybranych poziomach kuźni; pomiędzy liniowo. */
 export const JUMP_TABLE: [number, number, number][] = [
   [1, 10, 1], [5, 12, 1.4], [10, 14, 1.9], [15, 16.5, 2.4], [20, 19, 2.9], [25, 22, 3.4], [30, 25, 4],
+  // kuźnia do 200. poziomu: dalej wolniej, ale z każdym poziomem trochę więcej
+  [50, 27.5, 4.5], [80, 30, 5], [120, 33, 5.6], [160, 36, 6.2], [200, 39, 6.8],
 ];
 
+/** Co odblokowuje poziom kuźni (kuźnia rośnie do 200. poziomu — ok. roku gry). */
 export const FORGE_UNLOCKS: Record<number, string> = {
   5: 'wytop Srebra, auto-wytop, rafinacja rud',
-  12: 'wytop seryjny ×2',
-  10: 'wytop Mithrilu, domieszki żywiołów, runy slotów',
-  15: 'wytop Adamantytu, przekuwanie przedmiotów',
-  17: 'wytop Obsydianu',
-  20: 'wytop Smoczej Stali, wytop seryjny ×3',
-  23: 'wytop Eterytu',
-  25: 'wytop Gwiezdnego Kruszcu i Boskiej Rudy',
-  30: 'pełna szansa na przeskok, Dziedzictwo (nowe pokolenie)',
+  10: 'domieszki żywiołów, runy slotów',
+  12: 'wytop Mithrilu, wytop seryjny ×2',
+  15: 'przekuwanie przedmiotów, rudy unikalne (zestawy)',
+  20: 'wytop seryjny ×3',
+  25: 'wytop Adamantytu',
+  40: 'wytop Obsydianu',
+  60: 'wytop Smoczej Stali',
+  85: 'wytop Eterytu',
+  100: 'wytop Gwiezdnego Kruszcu',
+  120: 'wytop Boskiej Rudy',
+  200: 'najwyższy poziom kuźni',
 };
 
 /**
@@ -37,33 +43,45 @@ export const FORGE_UNLOCKS: Record<number, string> = {
  * a nie od postępu w kampanii — dzięki temu krainy stawiają ściany, które pokonuje się kuźnią i farmieniem.
  * FORGE_AT_BOSS[L] = poziom kuźni, jakiego gra oczekuje przy bossie krainy L.
  * RARITY_AT_BOSS[L] = oczekiwany średni mnożnik rzadkości ekwipunku przy bossie krainy L.
- * Czas ulepszeń kuźni: UPGRADE_MIN (pierwsze poziomy minuty, potem godziny i dni; łącznie do 30. poziomu ok. 55 dni).
+ * Czas ulepszeń kuźni: UPGRADE_MIN (pierwsze poziomy minuty, potem godziny i dni; łącznie do 200. poziomu ok. roku).
+ * Kampania kończy się przy kuźni ok. 120 (pół roku); dalej Otchłań — kręgi bez końca (`abyssForge` itd. w formulas.ts).
  */
-export const FORGE_AT_BOSS = [2, 4, 7, 10, 13, 15, 18, 20, 21, 22, 24, 25, 26, 27, 29, 30];
-export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0, 3.2, 3.4, 3.8, 4.2, 4.6, 5.0, 5.6, 6.2];
+export const FORGE_AT_BOSS = [2, 4, 7, 10, 13, 16, 20, 25, 30, 38, 46, 55, 66, 80, 98, 120];
+export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.75, 1.95, 2.15, 2.3, 2.5, 2.85, 3.15, 3.45, 3.65, 4.1, 4.45, 4.85, 5.35];
 /**
  * Dodatkowy mnożnik siły wrogów przy bossie krainy L (zdrowie i obrażenia). Skalibrowany symulatorem:
  * gracz zbiera substaty, legendy i rzadkie rudy szybciej niż zakłada sama krzywa rzadkości.
  */
-export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.9, 2.5, 3.1, 4.2, 4.6, 4.6, 4.45, 4.2, 3.85, 3.6, 3.55, 3.8, 2.9];
-/** Siła przedmiotu rośnie o 8% na poziom przedmiotu; poziom przedmiotu = 2 × poziom kuźni (+0–2). */
+export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.9, 2.5, 3.1, 4.2, 4.6, 4.6, 5.6, 6.0, 6.5, 9.9, 13.8, 22, 30];
+/**
+ * Siła przedmiotu rośnie o 8% na poziom przedmiotu do ITEM_LVL_SOFT (kuźnia 30), dalej o ITEM_LVL_GROWTH_HI na poziom —
+ * kuźnia rośnie do 200, więc liczby nie mogą wybuchnąć. Poziom przedmiotu = 2 × poziom kuźni (+0–2).
+ */
 export const ITEM_LVL_GROWTH = 1.08;
+export const ITEM_LVL_GROWTH_HI = 1.04;
+export const ITEM_LVL_SOFT = 60;
 
 /** Tempa testowe (przyspieszenie walki, kuźni i timerów). Z serwerem — tylko gdy serwer ma włączony tryb testowy. */
 export const TEST_SPEEDS = [1, 10, 50, 100] as const;
 
 /**
  * Czas ulepszenia kuźni DO poziomu n (w minutach; indeks = poziom). Pierwsze poziomy szybkie (samouczek: 30 s),
- * potem coraz dłużej: poz. 10 ≈ 2 h łącznie, 15 ≈ 18 h, 20 ≈ 5 dni, 25 ≈ 20 dni, 30 ≈ 55 dni.
+ * potem coraz dłużej: poz. 10 ≈ 2 h łącznie, 15 ≈ 18 h, 20 ≈ 5 dni, 30 ≈ 19 dni, 60 ≈ 2,3 mies., 100 ≈ 4,7 mies., 200 ≈ rok.
  */
-export const UPGRADE_MIN = [
+const UPGRADE_MIN_20 = [
   0, 0,
   0.5, 1, 2, 4, 7, 12, 20, 30, 45,          // 2–10
   60, 90, 150, 240, 420,                    // 11–15: 1 h … 7 h
   720, 960, 1200, 1560, 1920,               // 16–20: 12 h … 32 h
-  2880, 3600, 4320, 5040, 5760,             // 21–25: 2 … 4 dni
-  7200, 8640, 10080, 11520, 12960,          // 26–30: 5 … 9 dni
 ];
+/**
+ * Czasy ulepszeń kuźni sprzed kuźni do 200 (do 30. poziomu: 2…9 dni na poziom). Z nich liczą się dalej czasy badań
+ * w Nauce (40% czasu „poziomu” badania) — badania zachowują dawne tempo.
+ */
+export const TECH_TIME_MIN = [...UPGRADE_MIN_20, 2880, 3600, 4320, 5040, 5760, 7200, 8640, 10080, 11520, 12960];
+/** Od 21. poziomu: ok. 32 h, potem coraz dłużej — do ok. 2,8 dnia na 200. poziomie (łącznie ok. roku). */
+export const UPGRADE_MIN: number[] = Array.from({ length: 201 }, (_, n) =>
+  (n <= 20 ? UPGRADE_MIN_20[n] : Math.round((1920 * (1 + (1.1 * (n - 20)) / 180)) / 10) * 10));
 
 /**
  * Złoto: ile fal walki „kosztuje” następne ulepszenie kuźni przy kuźni na poziomie f — więcej z dwóch:
@@ -76,19 +94,20 @@ export const GOLD_TIME_K = 4.5;
 
 export const B = {
   PITY_MAX: 30,                 // po tylu wytopach bez przeskoku następny przeskakuje na pewno
-  FORGE_MAX: 30,
-  UPGRADE_COST_BASE: 100,       // koszt(n) = 100 × 1,5^(n−1)
+  FORGE_MAX: 200,
+  UPGRADE_COST_BASE: 100,       // koszt(n) = 100 × 1,5^(n−1) do 30. poziomu…
   UPGRADE_COST_MULT: 1.5,
+  UPGRADE_COST_MULT_HI: 1.04,   // …dalej ×1,04 na poziom
+  UPGRADE_COST_SOFT: 30,
   AUTO_FORGE_LVL: 5,
   REFINE_FORGE_LVL: 5,
   RUNE_FORGE_LVL: 10,           // runy slotów
   RUNE_MAX: 30,
   RUNE_PCT: 1,                  // +1% głównej statystyki przedmiotu w slocie za poziom runy
   REFORGE_FORGE_LVL: 15,        // przekuwanie statystyk dodatkowych
-  LEGACY_FORGE: 30,             // Dziedzictwo (nowe pokolenie) od tego poziomu kuźni
+  // Dziedzictwo (nowe pokolenie) wycofane — kuźnia rośnie do 200. Kto je przeszedł, zachowuje premie:
   LEGACY_STAR_PCT: 5,           // Gwiazda Mistrza: +5% obrażeń i złota
-  LEGACY_LANDS_PER_STAR: 4,     // gwiazdy za pokolenie: 1 za kuźnię 30 i 1 za każde 4 pokonane krainy
-  LEGACY_HEIR_PCT: 50,          // Pamiątka Rodu działa w 50% (główna statystyka i dodatkowe)          // rafinacja rud (słabsza ruda → lepsza)
+  LEGACY_HEIR_PCT: 50,          // Pamiątka Rodu działa w 50% (główna statystyka i dodatkowe)
   ELEM_FORGE_LVL: 10,
   AUTO_INTERVAL_MS: 900,
   WAVES_PER_STAGE: 5,

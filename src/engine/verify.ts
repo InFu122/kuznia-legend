@@ -2,7 +2,7 @@
 // (numer wytopu `sx`), więc serwer może odtworzyć losowanie i sprawdzić, czy przedmiot jest prawdziwy.
 import { B, KIND_POOL_SIZES, ORES, SET_FORGE_LVL, SLOTS, SLOT_ORDER } from '../data';
 import { rollSubs, smeltDraws } from './forge';
-import { JUMP_V, dropChance, itemLevelFor, jumpChances, maxJump, oreFloor, pityAllowed } from './formulas';
+import { JUMP_V, dropChance, itemLevelFor, jumpChances, maxJump, oreFloor, oreLvl, pityAllowed } from './formulas';
 import { mulberry32 } from './rng';
 import type { Item } from './types';
 
@@ -18,7 +18,6 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
   const O = ORES[it.ore];
   if (!O || !SLOTS[it.slot]) return 'nieznana ruda lub miejsce';
   if (!(it.flvl >= 1 && it.flvl <= forgeLvl)) return 'poziom kuźni w chwili wytopu';
-  if (O.lvl > it.flvl) return 'ruda niedostępna na tym poziomie kuźni';
   if (it.set && it.flvl < SET_FORGE_LVL) return 'zestaw przed odblokowaniem';
   if (it.el && it.flvl < B.ELEM_FORGE_LVL) return 'domieszka przed odblokowaniem';
   let ver: number;
@@ -28,6 +27,7 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
   } else if (Number.isInteger(it.jv) && it.jv >= Math.max(2, minVer) && it.jv <= JUMP_V) ver = it.jv;
   else return 'wersja zasad przeskoku';
   if (ver < 3 && it.ore > 6) return 'ruda z nowszej wersji gry';
+  if (oreLvl(it.ore, ver) > it.flvl) return 'ruda niedostępna na tym poziomie kuźni';
   const mj = maxJump(it.ore, ver);
   const pd = dropChance(it.ore, it.flvl, ver);
   if (!(it.jump >= (pd > 0 ? -1 : 0) && it.jump <= mj) || it.r !== Math.min(6, oreFloor(it.ore, ver) + it.jump)) return 'rzadkość';

@@ -5,7 +5,8 @@ import { cleanReward } from '../src/engine/clan';
 import { unlockLook } from '../src/engine/cosmetics';
 import { milestoneReward } from '../src/engine/events';
 import { grant } from '../src/engine/reward';
-import { legacyReset } from '../src/engine/legacy';
+import { tickForge } from '../src/engine/forge';
+import { GOLD_SKIN_FORGE } from '../src/data';
 import { passItemsReward } from '../src/engine/shop';
 import { migrate, newState } from '../src/engine/state';
 import { T0, makeGame } from './helpers';
@@ -28,8 +29,8 @@ describe('wygląd: stroje i ramki', () => {
     expect(s.look.frame).toBe('iskra');
   });
 
-  it('nagrody: przepustka, wydarzenie, Dziedzictwo, serwer', () => {
-    const { ctx, s } = makeGame();
+  it('nagrody: przepustka, wydarzenie, kuźnia 100, serwer', () => {
+    const { g, ctx, s } = makeGame();
     const r30 = passItemsReward(PASS_LEVELS[29].prem, s);
     expect(r30.skins).toEqual(['szkarlat']);
     expect(passItemsReward(PASS_LEVELS[9].prem, s).frames).toEqual(['przepustka']);
@@ -41,10 +42,14 @@ describe('wygląd: stroje i ramki', () => {
     grant(ctx, last);
     expect(s.look.skins).toContain('ognisty');
     expect(s.look.frames).toContain('iskra');
-    s.forge.lvl = 30;
-    const n = legacyReset(s, null, T0);
-    expect(n.look.skins).toContain('zloty');
-    expect(n.look.skin).toBe(s.look.skin);
+    // strój „Złoty Kowal” za 100. poziom kuźni (dawniej za Dziedzictwo)
+    const skin = s.look.skin;
+    expect(s.look.skins).not.toContain('zloty');
+    s.forge = { lvl: GOLD_SKIN_FORGE - 1, up: GOLD_SKIN_FORGE, left: 1000 };
+    tickForge(g.ctx, 2000);
+    expect(s.forge.lvl).toBe(GOLD_SKIN_FORGE);
+    expect(s.look.skins).toContain('zloty');
+    expect(s.look.skin).toBe(skin);
     const c = cleanReward({ skins: ['mistrz', 'zly' as never], frames: ['diament', 'x' as never] });
     expect(c.skins).toEqual(['mistrz']);
     expect(c.frames).toEqual(['diament']);

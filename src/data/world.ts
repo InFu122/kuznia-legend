@@ -3,7 +3,7 @@ import { oreRank } from './items';
 
 export interface LandDef {
   n: string;
-  act: 1 | 2 | 3 | 4;
+  act: 1 | 2 | 3 | 4 | 5;  // 5 — Otchłań (kręgi po ostatniej krainie)
   main: number;            // główna ruda (najczęstsza; indeks ORES)
   rare: number;            // rzadka ruda krainy (następna po głównej) — z niej nagrody bossa i misji
   drops: [number, number][]; // rozkład rud, gdy fala zostawia rudę: [ruda, % dropów]; nowe rudy pojawiają się z małą szansą
@@ -33,6 +33,32 @@ export const LANDS: LandDef[] = [
   { n: 'Gwiezdny Krater', act: 4, main: 4, rare: 5, drops: [[3, 10], [4, 37], [7, 8], [5, 32], [8, 4], [6, 9]], el: 'jasn', boss: 'Gwiezdny Pożeracz', type: 'Demony', foes: ['Gwiezdny pomiot', 'Pustkowiec', 'Strażnik krateru'] },
 ];
 
+/**
+ * Otchłań: po ostatniej krainie kampanii kolejne kręgi bez końca (indeks krainy ≥ LANDS.length). Krąg powtarza
+ * motyw krainy z aktów III i IV, ma silniejszych wrogów i bossa „z Otchłani” oraz rudy z końca gry.
+ * Krainy zawsze bierzemy przez `landDef(i)` — działa dla kampanii i dla Otchłani.
+ */
+export const ABYSS_FROM = LANDS.length;
+export const isAbyss = (i: number) => i >= ABYSS_FROM;
+/** Numer kręgu Otchłani (1, 2, …) dla krainy `i`. */
+export const abyssCircle = (i: number) => i - ABYSS_FROM + 1;
+/** Kraina kampanii, której motyw (tło, wrogowie, boss) powtarza krąg — akty III i IV po kolei. */
+export const abyssBase = (i: number) => (i < ABYSS_FROM ? i : 8 + ((i - ABYSS_FROM) % 8));
+const ABYSS_DROPS: [number, number][] = [[4, 14], [7, 26], [5, 32], [8, 18], [6, 10]];
+const abyssLands = new Map<number, LandDef>();
+export function landDef(i: number): LandDef {
+  if (!(i >= 0)) return LANDS[0];
+  if (i < ABYSS_FROM) return LANDS[i];
+  let L = abyssLands.get(i);
+  if (!L) {
+    const b = LANDS[abyssBase(i)];
+    L = { ...b, n: `Otchłań ${abyssCircle(i)} · ${b.n}`, act: 5, main: 5, rare: 8, drops: ABYSS_DROPS, boss: `${b.boss} z Otchłani` };
+    if (abyssLands.size > 500) abyssLands.clear();
+    abyssLands.set(i, L);
+  }
+  return L;
+}
+
 /** Ruda rzadsza niż główna ruda krainy. */
 export const isRareOre = (L: LandDef, ore: number) => oreRank(ore) > oreRank(L.main);
 
@@ -43,7 +69,9 @@ export function oreShares(L: LandDef, rarePct = 0): [number, number][] {
   return w.map(([o, p]) => [o, (p / sum) * 100]);
 }
 
-export const ROMAN = ['', 'I', 'II', 'III', 'IV'];
+export const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+/** Nazwa aktu do wyświetlenia (akt 5 to Otchłań). */
+export const actName = (act: number) => (act >= 5 ? 'Otchłań' : `Akt ${ROMAN[act]}`);
 export const FOE_GENITIVE: Record<FoeType, string> = { Bestie: 'Bestii', Nieumarli: 'Umarłych', Demony: 'Demonów', Smoki: 'Smoków' };
 export const DUNGEON_FOES = ['Kopalniany golem', 'Jaskiniowy troll', 'Kamienny pełzacz', 'Kret olbrzymi'];
 

@@ -25,7 +25,8 @@ import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
 import { hasUpdate, onPwa } from './pwa';
-import { initNative } from './native';
+import { initHistoryBack, initNative } from './native';
+import { runBack } from './back';
 
 /** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
 const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide']);
@@ -69,12 +70,14 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     const id = setInterval(() => force(x => x + 1), 250);
     const offPwa = onPwa(() => force(x => x + 1));
     // Aplikacja na telefon: powiadomienia i „wstecz” (zamyka okno; okna z decyzją zostają, bez okna — gra chowa się).
-    void initNative(game, () => {
-      const top = queue.current[0];
-      if (!top) return false;
-      if (!LOCKED.has(top.kind)) { queue.current.shift(); force(x => x + 1); }
-      return true;
-    });
+    // Najpierw najwyższe okno (rejestrują się w ModalShell), potem powrót do Kuźni z innej zakładki.
+    const back = () => {
+      if (runBack()) return true;
+      if (tabRef.current !== 'kuznia') { goTabRef.current('kuznia'); return true; }
+      return false;
+    };
+    void initNative(game, back);
+    const offHist = initHistoryBack(back);
     force(x => x + 1);
     onReady?.();
     // Kalendarz logowania wita gracza, który już grał (nowy gracz ma najpierw wstęp i samouczek).
@@ -84,7 +87,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     const unlock = () => { unlockAudio(); initMusic(); kickMusic(); };
     const evs = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
     for (const ev of evs) window.addEventListener(ev, unlock, { capture: true, passive: true });
-    return () => { off(); offPwa(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
+    return () => { off(); offPwa(); offHist(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
   }, [game]);
 
   // Podświetlenie przycisku, o którym mówi bieżący krok samouczka.
@@ -109,6 +112,11 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     setTab(t);
     if (scroll) panelRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   };
+  // Dla przycisku „wstecz” (rejestrowanego raz przy starcie) — bieżąca zakładka i przełączanie.
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const goTabRef = useRef(goTab);
+  goTabRef.current = goTab;
 
   /** Przełącza na zakładkę kroku samouczka i przewija do podświetlonego elementu. */
   const showStep = (t: Tab, target: string) => {

@@ -1,6 +1,6 @@
 // Zakładka Lochy: na górze Arena (z serwerem), potem dostępne lochy jako kafelki z kluczami
 // i nagrodą, a na końcu te, które dopiero się odblokują. Szczegóły lochu — w oknie „i” (DungInfoView).
-import { B, DUNGEONS, DUNG_ORDER, ELEM, EVENT, EVENT_MILESTONES, KRYPTA_RULES, LANDS, ORES, SETS, setOfLand } from '../../data';
+import { B, DUNGEONS, DUNG_ORDER, ELEM, EVENT, EVENT_MILESTONES, KRYPTA_RULES, ORES, SETS, setOfLand, landDef } from '../../data';
 import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
 import { dungUnlockText, elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
 import { dungName, dungScene, eventFloorPts, eventIcon, eventOf, eventPts, eventReached, evText } from '../../engine/events';
@@ -48,7 +48,7 @@ export function rewardList(game: Game, id: DungId): [string, string][] {
     case 'skarbiec': return [[resUrl('zloto'), 'Złoto — każdy kolejny goblin daje więcej']];
     case 'sztolnia': return [[oreUrl(game.dungTier()), `${ORES[game.dungTier()].n} — ruda o poziom lepsza niż w twojej krainie`]];
     case 'wieza': return [[resUrl('ksiega'), 'Księgi Wiedzy co 5 pięter'], [resUrl('zloto'), 'Złoto z każdego piętra']];
-    case 'leza': return lezaBosses(game.ctx).map(land => { const set = setOfLand(land)!; return [setOreUrl(set), `${SETS[set].ore} — ${LANDS[land].boss}`] as [string, string]; });
+    case 'leza': return lezaBosses(game.ctx).map(land => { const set = setOfLand(land)!; return [setOreUrl(set), `${SETS[set].ore} — ${landDef(land).boss}`] as [string, string]; });
     case 'oltarze': { const el = elementOfDay(now); return [[elemUrl(el), `${ELEM[el].n} — żywioł dnia (${ELEM[el].el})`]]; }
     case 'kopalnia': return [[resUrl('kamien'), 'Kamienie z każdej fali'], [resUrl('siodlo'), 'Siodło za 10. falę (od aktu III)']];
     case 'labirynt': return [[oreUrl(Math.min(6, game.dungTier())), 'Rzadkie rudy'], [resUrl('ksiega'), 'Księgi Wiedzy'], [resUrl('zwoj'), 'Zwoje zaklęć']];
@@ -116,7 +116,7 @@ function ArenaBanner({ game, online, onArena }: { game: Game; online: boolean; o
       <div class="ab-main">
         <div class="eyebrow">Gracz kontra gracz</div>
         <div class="ab-name">Arena</div>
-        <div class="ab-sub">{open ? `${B.ARENA_FIGHTS} walk dziennie z kopiami bohaterów innych graczy · ligi tygodniowe, Żetony Areny i sklep` : `Odblokujesz po pokonaniu bossa krainy ${LANDS[B.ARENA_UNLOCK_LAND - 1]?.n ?? LANDS[0].n}`}</div>
+        <div class="ab-sub">{open ? `${B.ARENA_FIGHTS} walk dziennie z kopiami bohaterów innych graczy · ligi tygodniowe, Żetony Areny i sklep` : `Odblokujesz po pokonaniu bossa krainy ${landDef(B.ARENA_UNLOCK_LAND - 1)?.n ?? landDef(0).n}`}</div>
       </div>
       {open && <button class="btn primary" disabled={!online} onClick={onArena} title={online ? undefined : 'Potrzebne połączenie z serwerem'}>{online ? 'Walcz' : 'Offline'}</button>}
     </section>
@@ -195,7 +195,7 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
                   const set = setOfLand(land)!;
                   return (
                     <button key={land} class="chip" onClick={() => enter(land)}>
-                      <Px src={setOreUrl(set)} size={16} />{LANDS[land].boss} → <span style={{ color: SETS[set].col }}>{SETS[set].ore}</span>
+                      <Px src={setOreUrl(set)} size={16} />{landDef(land).boss} → <span style={{ color: SETS[set].col }}>{SETS[set].ore}</span>
                     </button>
                   );
                 })}

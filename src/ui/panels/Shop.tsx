@@ -243,7 +243,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
           <div class="eyebrow" style={{ marginTop: '6px' }}>Przyspieszenia</div>
           {s.forge.up > 0 && <div class="row"><span class="sub">Ulepszenie kuźni do poziomu {s.forge.up} · {tfmt(s.forge.left)}</span><SpeedupButton game={game} what="forge" onShop={goGems} /></div>}
           {s.tech.cur && <div class="row"><span class="sub">Badanie · {tfmt(s.tech.cur.left)}</span><SpeedupButton game={game} what="tech" onShop={goGems} /></div>}
-          <p class="sub">Kuźnia: 1 Klejnot za każdą minutę ulepszenia. Badania: 1 Klejnot za każde 4 minuty.</p>
+          <p class="sub">Kuźnia i badania: 1 Klejnot za każdą minutę, która została.</p>
         </>
       )}
       <p class="sub">Limity odnawiają się o północy czasu UTC.</p>

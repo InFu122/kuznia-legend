@@ -2,12 +2,18 @@
 // Runy slotów, chowańce i wierzchowce.
 import type { ComponentChildren } from 'preact';
 import {
-  B, COMPANION_MAX, DRAW_ODDS, DUPE_STONES, HATCH_MS, MOUNTS, MOUNT_IDS, ORES, PETS, PET_IDS, RAR, SLOTS, SLOT_ORDER, STARS_MAX, STAR_BONUS,
+  B, COMPANION_MAX, DIVINE_ORE, DRAW_ODDS, DUPE_STONES, FORGE_UNLOCKS, HATCH_MS, MOUNTS, MOUNT_IDS, ORES, ORE_ORDER, PETS, PET_IDS, RAR, SLOTS, SLOT_ORDER,
+  STARS_MAX, STAR_BONUS, TECH,
 } from '../../data';
-import { itemUrl, oreUrl, resUrl } from '../../art/render';
+import { itemUrl, oreUrl, resUrl, techUrl } from '../../art/render';
+import { upgradeCost, upgradeTime } from '../../engine/forge';
+import { JUMP_TO_MULT, jumpChances } from '../../engine/formulas';
+import { techMods } from '../../engine/mods';
 import type { Game } from '../../engine/game';
 import { runeCost, runeLvl } from '../../engine/runes';
-import { fmt, tfmt } from '../format';
+import { fmt, pct, tfmt } from '../format';
+
+const f2 = (v: number) => String(v).replace('.', ',');
 import { Px } from '../Px';
 import { CompPortrait } from './Companions';
 
@@ -49,7 +55,7 @@ export function RuneInfo({ game, close }: { game: Game; close: () => void }) {
       steps={[
         [weapon ? itemUrl(weapon.kind, weapon.ore, weapon.r) : itemUrl('Miecz', 1, 1), '1. Slot', 'runa siedzi w miejscu na ekwipunek, nie w przedmiocie'],
         [resUrl('runa'), '2. Poziom', `+${B.RUNE_PCT}% głównej statystyki przedmiotu za każdy poziom (do ${B.RUNE_MAX})`],
-        [resUrl('pieczec'), '3. Na zawsze', 'zostaje przy zmianie przedmiotu i w nowym pokoleniu'],
+        [resUrl('pieczec'), '3. Na zawsze', 'zostaje w slocie, gdy zmieniasz przedmiot'],
       ]}
       tips={[
         [oreUrl(2), 'Brakuje rudy?', <>Gdy nie masz rudy z kosztu, płacisz tyle samo sztuk następnej lepszej rudy, której masz dość. Nadmiar słabszych rud zamienisz w Kuźni (Rafinacja).</>],
@@ -92,7 +98,7 @@ export function PetsInfo({ close }: { close: () => void }) {
         [resUrl('kamien'), 'Poziomy', <>Kamienie podnoszą poziom (do {COMPANION_MAX}): +5% siły za poziom. Kamienie dają bossowie, lochy, sklep, klan i arena.</>],
         [resUrl('trofeum'), 'Gwiazdki', <>{starsText}</>],
         [resUrl('moc'), 'Walczy jeden', <>Wybierasz jednego chowańca. Jego atak to % obrażeń bohatera, a cecha działa cały czas — także za nieobecność.</>],
-        [resUrl('pieczec'), 'Zostają', <>Chowańce przechodzą do nowego pokolenia (Dziedzictwo).</>],
+        [resUrl('pieczec'), 'Na zawsze', <>Chowańce zostają z tobą na całą grę — warto inwestować w ulubionego.</>],
       ]}
     >
       <div class="fi-sec">Czas wykluwania</div>
@@ -135,7 +141,7 @@ export function MountsInfo({ close }: { close: () => void }) {
         [resUrl('kamien'), 'Poziomy', <>Kamienie podnoszą poziom (do {COMPANION_MAX}): +5% premii wierzchowca za poziom.</>],
         [resUrl('trofeum'), 'Gwiazdki', <>{starsText}</>],
         [resUrl('lapa'), 'Razem z chowańcem', <>Wierzchowiec i chowaniec działają jednocześnie — to dwie osobne premie.</>],
-        [resUrl('pieczec'), 'Zostają', <>Wierzchowce przechodzą do nowego pokolenia (Dziedzictwo).</>],
+        [resUrl('pieczec'), 'Na zawsze', <>Wierzchowce zostają z tobą na całą grę — warto inwestować w ulubionego.</>],
       ]}
     >
       <div class="fi-sec">Wierzchowce</div>
@@ -147,6 +153,93 @@ export function MountsInfo({ close }: { close: () => void }) {
           </li>
         ))}
       </ul>
+    </Sheet>
+  );
+}
+
+/* ---------- poziom kuźni ---------- */
+
+/** Łączny czas ulepszeń z poziomu `from` do `to` (z premiami gracza). */
+const timeTo = (game: Game, from: number, to: number) => {
+  let ms = 0;
+  for (let n = from + 1; n <= to; n++) ms += upgradeTime(game.s, n);
+  return ms;
+};
+/** Czas w dniach/godzinach, krótko (np. „ok. 3 dni”, „ok. 5 h”). */
+const longT = (ms: number) => {
+  const h = ms / 3600000;
+  if (h < 1) return tfmt(ms);
+  if (h < 48) return `ok. ${Math.round(h)} h`;
+  const d = h / 24;
+  if (d < 60) return `ok. ${Math.round(d)} dni`;
+  return `ok. ${Math.round(d / 30)} mies.`;
+};
+
+export function ForgeLevelInfo({ game, close }: { game: Game; close: () => void }) {
+  const s = game.s;
+  const lvl = s.forge.lvl;
+  const rel = techMods(s).jumpRel;
+  const jp = (l: number) => { const [a, b] = jumpChances(l, rel); return a + b; };
+  const miles = Object.keys(FORGE_UNLOCKS).map(Number).sort((a, b) => a - b);
+  const next = miles.find(m => m > lvl);
+  const oresAt = (l: number) => ORE_ORDER.filter(i => ORES[i].lvl === l);
+  const nextOre = ORE_ORDER.find(i => ORES[i].lvl > lvl);
+  const weapon = s.eq.bron;
+  const soon = Array.from({ length: 5 }, (_, k) => lvl + 1 + k).filter(l => l <= B.FORGE_MAX);
+  const miech = TECH.k_miech;
+  return (
+    <Sheet
+      eyebrow={`Kuźnia · poziom ${lvl} z ${B.FORGE_MAX}`} title="Co daje poziom kuźni" close={close}
+      steps={[
+        [resUrl('kowadlo'), '1. Przeskok', `szansa na rzadkość wyżej: ${pct(jp(lvl))} teraz, ${pct(jp(B.FORGE_MAX))} na ${B.FORGE_MAX}. poziomie`],
+        [oreUrl(nextOre ?? DIVINE_ORE), '2. Nowe rudy', nextOre !== undefined ? `następna: ${ORES[nextOre].n} od ${ORES[nextOre].lvl}. poziomu` : 'wszystkie rudy już otwarte'],
+        [weapon ? itemUrl(weapon.kind, weapon.ore, weapon.r) : itemUrl('Miecz', 1, 1), '3. Moc przedmiotów', 'każdy poziom to +2 poziomy nowych przedmiotów'],
+      ]}
+      tips={[
+        [resUrl('czas'), 'Ile to trwa', <>Pierwsze 20 poziomów mija w kilka dni, dalej każdy poziom to od półtora do prawie trzech dni — cała kuźnia to mniej więcej rok gry. Kuźnia działa normalnie w trakcie ulepszania.</>],
+        [techUrl('k_miech'), 'Jak skrócić', <>{miech.n} w Nauce skracają każde ulepszenie, pomoc klanu odejmuje minuty, a przyspieszenie kosztuje 1 Klejnot za minutę.</>],
+        [oreUrl(4), 'Nowa ruda wchodzi stopniowo', <>Srebro, Mithril, Adamantyt i Smocza Stal tuż po odblokowaniu dają część wytopów o rzadkość niżej; po {B.RAMP_LEVELS} poziomach kuźni zawsze pełne minimum.</>],
+        [resUrl('klejnot'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski zależy od rudy (najwięcej z Boskiej Rudy).{rel ? ` Hartowanie dodaje +${pct(rel)} względnie — już wliczone.` : ''}</>],
+      ]}
+    >
+      <div class="fl-prog">
+        <div class="fl-row"><b>Poziom {lvl}</b><small>{B.FORGE_MAX - lvl > 0 ? `do ${B.FORGE_MAX}. poziomu: ${longT(timeTo(game, lvl, B.FORGE_MAX))}` : 'najwyższy poziom'}</small></div>
+        <div class="bar"><i style={{ width: (lvl / B.FORGE_MAX) * 100 + '%' }} /></div>
+        {next && <small class="muted">Następny kamień milowy: <b>{next}. poziom</b> — {FORGE_UNLOCKS[next]} (za {next - lvl} {next - lvl === 1 ? 'poziom' : next - lvl < 5 ? 'poziomy' : 'poziomów'}, {longT(timeTo(game, lvl, next))}).</small>}
+      </div>
+      <div class="fi-sec">Kamienie milowe</div>
+      <ul class="fi-odds fl-miles">
+        <li class={lvl >= 1 ? 'done' : ''}>
+          <span class="fl-lv">1</span>
+          <div class="fi-o"><div class="fi-on"><b>Miedź i Żelazo</b><small>✓</small></div><small class="muted">pierwsze rudy, pierwszy przedmiot</small></div>
+          <span class="fl-ores">{oresAt(1).map(i => <Px key={i} src={oreUrl(i)} size={20} />)}</span>
+        </li>
+        {miles.map(m => (
+          <li key={m} class={m <= lvl ? 'done' : m === next ? 'sel' : ''}>
+            <span class="fl-lv">{m}</span>
+            <div class="fi-o">
+              <div class="fi-on"><b>{FORGE_UNLOCKS[m]}</b><small>{m <= lvl ? '✓' : longT(timeTo(game, lvl, m))}</small></div>
+              <small class="muted">przeskok {pct(jp(m))}</small>
+            </div>
+            <span class="fl-ores">{oresAt(m).map(i => <Px key={i} src={oreUrl(i)} size={20} />)}</span>
+          </li>
+        ))}
+      </ul>
+      {soon.length > 0 && (
+        <>
+          <div class="fi-sec">Najbliższe ulepszenia</div>
+          <ul class="fl-soon">
+            {soon.map(l => (
+              <li key={l}>
+                <b>{l}</b>
+                <span>przeskok {pct(jp(l))} <small class="up">+{pct(jp(l) - jp(l - 1))}</small></span>
+                <span><Px src={resUrl('czas')} size={14} /> {tfmt(upgradeTime(s, l))}</span>
+                <span><Px src={resUrl('zloto')} size={14} /> {fmt(upgradeCost(s, l))}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </Sheet>
   );
 }

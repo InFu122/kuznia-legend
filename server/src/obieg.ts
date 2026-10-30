@@ -1,7 +1,7 @@
 // Wielki Obieg na serwerze: sprzedane przedmioty graczy trafiają do wspólnej puli, a skrzynie bossów
 // i Zbrojownia innych graczy dostają je z powrotem — podpisane przez serwer. Kowal dostaje wieść, gdy ktoś
 // znajdzie jego przedmiot. Gdy w puli brakuje przedmiotów innych graczy, serwer dokłada przedmioty kowali-widm.
-import { B, LANDS, oreCap, oreRank } from '../../src/data';
+import { B, oreCap, oreRank, landDef } from '../../src/data';
 import type { Ctx } from '../../src/engine/context';
 import { itemLevelFor, itemName } from '../../src/engine/formulas';
 import { newBattle } from '../../src/engine/state';
@@ -22,7 +22,7 @@ interface Pool { items: PoolEntry[] }
 
 /** Najlepsza ruda, której przedmioty gracz może dostać z Obiegu: z jego krainy i taka, którą sam umie wytopić. */
 export function maxOreFor(s: GameState): number {
-  return oreCap(LANDS[s.maxLand].rare, s.forge.lvl);
+  return oreCap(landDef(s.maxLand).rare, s.forge.lvl);
 }
 
 /** Przedmiot z puli przygotowany dla znalazcy: poziom na miarę jego kuźni i podpis serwera. */

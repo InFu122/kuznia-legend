@@ -1,7 +1,7 @@
 import { dungScene } from '../engine/events';
 import { skinOr } from '../engine/cosmetics';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { AD_BUFFS, BUFF_IDS, LANDS, ROMAN, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId } from '../data';
+import { AD_BUFFS, BUFF_IDS, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId, actName, landDef } from '../data';
 import { dungeonBgUrl, foeUrl, heroUrl, itemUrl, landBgUrl, resUrl, skillUrl } from '../art/render';
 import { passLevel, passUnclaimed } from '../engine/shop';
 import { foeTemplate } from '../art/actors';
@@ -112,7 +112,7 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
 
   const lastFoe = useRef<{ e: Enemy; id: number } | null>(null);
   const { s, b } = game;
-  const L = LANDS[s.cur.land];
+  const L = landDef(s.cur.land);
   const e = b.enemy;
   const dung = b.mode === 'dung' && b.dung;
   const waiting = bossWaiting(game.ctx);
@@ -135,7 +135,7 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
       <div class="arena-head">
         <div>
           <div class="land">{dung ? runTitle(dung) : L.n}</div>
-          <div class="ameta">{dung ? runMeta(dung) : `Akt ${ROMAN[L.act]} · etap ${s.cur.stage}/10${waiting ? ' · boss czeka' : ''}`}</div>
+          <div class="ameta">{dung ? runMeta(dung) : `${actName(L.act)} · etap ${s.cur.stage}/10${waiting ? ' · boss czeka' : ''}`}</div>
         </div>
         <div class="arena-btns">
           {!dung && <button class="info" onClick={() => onInfo(s.cur.land)} aria-label={`Co wypada w krainie ${L.n} i z bossa`}>i</button>}

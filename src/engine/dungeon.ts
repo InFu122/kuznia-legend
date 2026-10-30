@@ -2,8 +2,7 @@
 import {
   B, DIVINE_ORE, DUNGEONS, DUNGEON_FOES, DUNG_UNLOCK, EVENT, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS,
   LAB_DOORS, LAB_ROOMS, LANDS, ZBROJOWNIA_CHESTS, setOfLand,
-  type LabDoor,
-} from '../data';
+  type LabDoor, landDef } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { addEventPts, eventFloorPts, eventOf, evText } from './events';
 import type { Ctx } from './context';
@@ -39,7 +38,7 @@ export function dungUnlocked(ctx: Ctx, id: DungId): boolean {
 export function dungUnlockText(id: DungId): string {
   const u = DUNG_UNLOCK[id];
   const parts: string[] = [];
-  if (u.boss) parts.push(`po pokonaniu bossa ${LANDS[u.boss - 1].boss} (${u.boss}. kraina)`);
+  if (u.boss) parts.push(`po pokonaniu bossa ${landDef(u.boss - 1).boss} (${u.boss}. kraina)`);
   if (u.forge) parts.push(`od ${u.forge}. poziomu kuźni`);
   if (id === 'krypta') parts.push('gdy pierwszy przedmiot zostanie Zahartowany');
   return parts.join(', ');
@@ -55,7 +54,7 @@ export function dungKeys(ctx: Ctx, id: DungId): number {
 }
 
 /** Sztolnia daje rudę o poziom lepszą niż główna ruda najdalszej krainy. */
-export const dungTier = (ctx: Ctx) => Math.min(6, LANDS[ctx.s.maxLand].main + 1);
+export const dungTier = (ctx: Ctx) => Math.min(6, landDef(ctx.s.maxLand).main + 1);
 /** Żywioł dnia na Ołtarzach. */
 export const elementOfDay = (now: number): ElemKey => ELEM_KEYS[new Date(now).getDay() % ELEM_KEYS.length];
 /** Pokonane krainy, których bossowie dają rudy unikalne. */
@@ -124,7 +123,7 @@ export function spawnDung(ctx: Ctx): void {
     case 'skarbiec': foe('Goblin z workiem', 'Bestie', wHp * 0.6, wAtk * 0.5); break;
     case 'wieza': foe(`Strażnik ${d.floor}. piętra`, 'Demony', 5 * Dstar(g) * e, Hstar(g) * 0.12 * e); break;
     case 'leza': {
-      const L = LANDS[d.bossLand];
+      const L = landDef(d.bossLand);
       foe(L.boss, L.type, B.BOSS_HP_MULT * Dstar(g) * e, Hstar(g) * B.BOSS_ATK_MULT * e, true);
       break;
     }
@@ -216,7 +215,7 @@ export function dungFloor(ctx: Ctx): void {
       add(d.loot, 'books', 1);
       if (petsUnlocked(s) && ctx.rng.next() < 0.2 * (1 + allMods(s).eggPct / 100)) addEgg(d.loot, dungEggRarity(s.maxLand));
       if (mountsUnlocked(s) && ctx.rng.next() < 0.25) add(d.loot, 'saddles', 1);
-      addFame(ctx, 0, LANDS[d.bossLand].type, true);
+      addFame(ctx, 0, landDef(d.bossLand).type, true);
       s.dungeons.leza.best++; // liczba zwycięstw
       track(ctx, 'boss');
       dungEnd(ctx, false);
@@ -249,7 +248,7 @@ export function dungFloor(ctx: Ctx): void {
       return;
     }
     case 'labirynt': {
-      const rare = LANDS[s.maxLand].rare;
+      const rare = landDef(s.maxLand).rare;
       if (d.floor >= LAB_ROOMS) { // Minotaur
         add(d.loot, 'books', 3);
         add(d.loot, 'scrolls', 1);
@@ -374,7 +373,7 @@ export function labChoose(ctx: Ctx, i: number): boolean {
       return true;
     case 'skarb':
       add(d.loot, 'gold', Math.round(goldWave(s.bestG) * 8 * (1 + allMods(s).goldPct / 100)));
-      addOre(d.loot, LANDS[s.maxLand].rare, 1);
+      addOre(d.loot, landDef(s.maxLand).rare, 1);
       break;
     case 'zrodlo':
       b.heroHp = b.heroMax;

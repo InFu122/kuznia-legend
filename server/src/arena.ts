@@ -1,6 +1,6 @@
 // Arena: walki z kopiami bohaterów innych graczy. Serwer trzyma kopię bohatera z ostatniego zapisu
 // (tylko z uznanych przedmiotów), sam rozgrywa pojedynek i zmienia ocenę obu stron.
-import { B, FAKE_PLAYERS, LANDS } from '../../src/data';
+import { B, FAKE_PLAYERS, landDef } from '../../src/data';
 import { duel, eloDelta, fighterStats, scaleFighter, type Fighter } from '../../src/engine/duel';
 import { goldWave } from '../../src/engine/formulas';
 import { allMods } from '../../src/engine/mods';
@@ -45,7 +45,7 @@ export function updateArenaHero(
   if (!arenaOpen(s)) return;
   const st = computeStats(eq, allMods(s), extraOf(s));
   const name = cleanName(s.name);
-  const hero: Hero = { f: { name, st: fighterStats(st), skills: extraOf(s).skills ?? [] }, power, land: LANDS[s.maxLand].n, t: Date.now(), look: lookOf(eq), sk: skinOr(s.look?.skin), fr: frameOr(s.look?.frame) };
+  const hero: Hero = { f: { name, st: fighterStats(st), skills: extraOf(s).skills ?? [] }, power, land: landDef(s.maxLand).n, t: Date.now(), look: lookOf(eq), sk: skinOr(s.look?.skin), fr: frameOr(s.look?.frame) };
   try {
     nk.storageWrite([{ ...HERO, userId, value: hero as unknown as { [k: string]: unknown }, permissionRead: 0, permissionWrite: 0 }]);
     const rec = ownRecord(nk, 'arena', userId);
@@ -143,7 +143,7 @@ function view(nk: nkruntime.Nakama, userId: string, me: ArenaMe, hero: Hero) {
 
 function myHero(nk: nkruntime.Nakama, userId: string): Hero {
   const hero = readHero(nk, userId);
-  if (!hero) throw err(`Arena otwiera się po pokonaniu bossa ${LANDS[0].n} i zapisie gry.`, PRECONDITION);
+  if (!hero) throw err(`Arena otwiera się po pokonaniu bossa ${landDef(0).n} i zapisie gry.`, PRECONDITION);
   return hero;
 }
 

@@ -10,6 +10,7 @@ import { ServerError, ServerLink, serverConfig, setFlush, setLink } from './save
 import { connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
 import { initPwa } from './ui/pwa';
+import { bootDone, bootStep } from './ui/boot';
 import { watchErrors } from './ui/report';
 import './ui/fonts.css';
 import './ui/styles.css';
@@ -29,6 +30,7 @@ function why(e: unknown): string {
 }
 
 function boot(hotData?: { s?: string }) {
+  bootStep(45, 'Wczytywanie zapisu…');
   const now = Date.now();
   let fromHot = false;
   let state = null;
@@ -146,7 +148,9 @@ function boot(hotData?: { s?: string }) {
   const connect = async (l: ServerLink) => {
     clearTimeout(retry);
     try {
+      bootStep(80, 'Łączenie z serwerem…');
       const remote = await l.load();
+      bootStep(92, 'Pobieranie postępu…');
       game.setMaxSpeed(l.testSpeed);
       save.reason = undefined;
       if (remote) adopt(remote);
@@ -156,6 +160,8 @@ function boot(hotData?: { s?: string }) {
       save.reason = why(e);
       console.warn('Kuźnia Legend: serwer niedostępny —', save.reason);
       retry = setTimeout(() => void connect(l), RETRY_MS);
+    } finally {
+      bootDone();
     }
   };
   if (link) {
@@ -177,8 +183,12 @@ function boot(hotData?: { s?: string }) {
   }
 
   const onReady = () => {
+    bootStep(70, 'Rozgrzewanie kowadła…');
     if (!fromHot) game.offline(Date.now() - (game.s.lastSeen || Date.now()));
+    // Najdłużej 8 s ekranu ładowania (np. wolny serwer) — gra działa dalej i połączy się w tle.
+    setTimeout(bootDone, 8000);
     if (link) { void connect(link); return; }
+    if (document.fonts) void document.fonts.ready.then(bootDone, bootDone); else bootDone();
     connectArtifactCloud().then(c => {
       if (!c) return;
       cloud = c;

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { ACHIEVEMENTS, CODEX_PCT } from '../src/data';
 import { CODEX_TOTAL, achCount, achReached, achReward, achValue } from '../src/engine/achievements';
 import { smelt } from '../src/engine/forge';
-import { legacyReset } from '../src/engine/legacy';
 import { allMods } from '../src/engine/mods';
 import { migrate } from '../src/engine/state';
 import { makeGame, T0 } from './helpers';
@@ -31,8 +30,8 @@ describe('Kolekcja Kowala', () => {
     const m = migrate(old, T0);
     expect(m.codex).toEqual([`${it.kind}|2`]);
     expect(m.stats.bestR).toBe(it.r);
-    s.forge.lvl = 30; s.ach = { kowal: 1 };
-    const n = legacyReset(s, null, T0);
+    s.ach = { kowal: 1 };
+    const n = migrate(JSON.parse(JSON.stringify(s)), T0);
     expect(n.codex).toEqual(s.codex);
     expect(n.ach).toEqual({ kowal: 1 });
   });

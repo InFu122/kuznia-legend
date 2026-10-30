@@ -1,4 +1,4 @@
-import { ELEM, EVENT, FRAMES, KRYPTA_FLOORS, SKINS, KRYPTA_RULES, LAB_ROOMS, LANDS, ORES, RAR, SETS, ZBROJOWNIA_CHESTS, KOPALNIA_WAVES, setOfLand } from '../data';
+import { ELEM, EVENT, FRAMES, KRYPTA_FLOORS, SKINS, KRYPTA_RULES, LAB_ROOMS, ORES, RAR, SETS, ZBROJOWNIA_CHESTS, KOPALNIA_WAVES, setOfLand, landDef } from '../data';
 import { dungName, eventOf, evText } from '../engine/events';
 import type { DungRun, ElemKey, Reward, SetId } from '../engine/types';
 import { fmt } from './format';
@@ -67,14 +67,14 @@ export function rewardText(r: Reward): string {
 
 /** Nazwa i stan biegu lochu do nagłówka areny. */
 export function runTitle(d: DungRun): string {
-  return d.id === 'leza' ? `Leże: ${LANDS[d.bossLand].boss}` : dungName(d.id, Date.now());
+  return d.id === 'leza' ? `Leże: ${landDef(d.bossLand).boss}` : dungName(d.id, Date.now());
 }
 export function runMeta(d: DungRun): string {
   switch (d.id) {
     case 'sztolnia': return `Piętro ${d.floor} · w worku: ${rewardText(d.loot)}`;
     case 'skarbiec': return `Zostało ${Math.max(0, Math.ceil(d.timeLeft / 1000))} s · w worku: ${rewardText(d.loot)}`;
     case 'wieza': return `Piętro ${d.floor} · zdobyte: ${rewardText(d.loot)}`;
-    case 'leza': { const set = setOfLand(d.bossLand); return `${LANDS[d.bossLand].n} · nagroda: ${set ? SETS[set].ore : '—'}`; }
+    case 'leza': { const set = setOfLand(d.bossLand); return `${landDef(d.bossLand).n} · nagroda: ${set ? SETS[set].ore : '—'}`; }
     case 'oltarze': return `Strażnik ${d.floor}/5 · ${d.el ? ELEM[d.el].n : ''} · zebrane: ${rewardText(d.loot)}`;
     case 'kopalnia': return `Fala ${d.floor}/${KOPALNIA_WAVES} · zebrane: ${rewardText(d.loot)}`;
     case 'labirynt': {

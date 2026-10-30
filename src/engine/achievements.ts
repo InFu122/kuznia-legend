@@ -1,5 +1,5 @@
 // Osiągnięcia i Kolekcja Kowala. Postęp liczy się z liczników gry; nagrody to zasoby (bez Klejnotów).
-import { ACHIEVEMENTS, ACH_IDS, B, ORES, RAR, SLOTS, SLOT_ORDER, type AchId } from '../data';
+import { ABYSS_FROM, ACHIEVEMENTS, ACH_IDS, ORES, RAR, SLOTS, SLOT_ORDER, type AchId } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWave } from './formulas';
 import { grant } from './reward';
@@ -29,6 +29,9 @@ export const codexOre = (s: GameState, ore: number) => s.codex.filter(k => k.end
 
 /* ---------- osiągnięcia ---------- */
 
+/** Ile kręgów Otchłani gracz już pokonał. */
+export const abyssCleared = (s: GameState) => s.cleared.slice(ABYSS_FROM).filter(Boolean).length;
+
 /** Wartość postępu osiągnięcia. */
 export function achValue(s: GameState, id: AchId): number {
   switch (id) {
@@ -36,13 +39,13 @@ export function achValue(s: GameState, id: AchId): number {
     case 'przeskoki': return s.stats.jumps;
     case 'pogromca': return s.stats.kills;
     case 'bossowie': return s.stats.bosses;
-    case 'kuznia': return s.legacy?.gen ? B.FORGE_MAX : s.forge.lvl;
+    case 'kuznia': return s.legacy?.gen ? Math.max(30, s.forge.lvl) : s.forge.lvl; // Dziedzictwo było od kuźni 30
     case 'krainy': return s.cleared.filter(Boolean).length;
     case 'klucze': return s.stats.keys || 0;
     case 'wieza': return s.dungeons.wieza.best;
     case 'rzadkosc': return Math.max(s.stats.bestR ?? -1, ...Object.values(s.eq).map(it => it?.r ?? -1));
     case 'kolekcja': return s.codex.length;
-    case 'pokolenia': return s.legacy?.gen || 0;
+    case 'otchlan': return abyssCleared(s);
     case 'runy': return Object.values(s.runes || {}).reduce((a: number, b) => a + (b ?? 0), 0);
     case 'towarzysze': return Object.keys(s.pets).length + Object.keys(s.mounts).length;
   }

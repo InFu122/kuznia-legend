@@ -14,8 +14,41 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Kuźnia Legend" />
+    <style>
+      /* Ekran ładowania — widać go, zanim wczyta się gra (pasek postępu ustawia src/ui/boot.ts). */
+      #boot{position:fixed; inset:0; z-index:100; display:grid; place-items:center; background:#16120f; color:#f3e7cf; overflow:hidden;
+        font-family:'Barlow', system-ui, sans-serif; transition:opacity .45s ease}
+      #boot.done{opacity:0; pointer-events:none}
+      #boot .b-scene{position:absolute; inset:-2%; background-repeat:no-repeat; background-size:auto 54%; background-position:68% 100%; image-rendering:pixelated; filter:saturate(1.15);
+        -webkit-mask-image:linear-gradient(transparent 44%, #000 58%); mask-image:linear-gradient(transparent 44%, #000 58%);
+        animation:b-zoom 14s ease-out both}
+      #boot::before{content:""; position:absolute; inset:0; z-index:1;
+        background:radial-gradient(ellipse at 70% 85%, rgba(255,140,50,.22), transparent 50%), linear-gradient(rgba(22,18,15,.1), rgba(22,18,15,.35) 60%, rgba(22,18,15,.75))}
+      #boot .b-in{position:relative; z-index:2; width:min(320px, 82vw); display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:-8vh}
+      #boot .b-title{font-family:'Grenze Gotisch', 'UnifrakturMaguntia', Georgia, serif; font-weight:700; font-size:clamp(46px, 15vw, 68px); line-height:.9; text-align:center;
+        color:#f2c862; letter-spacing:.01em; text-shadow:0 3px 0 #5a3410, 0 0 22px rgba(255,170,60,.45)}
+      #boot .b-sub{font-size:12px; letter-spacing:.24em; text-transform:uppercase; color:#d9b98a; opacity:.85}
+      #boot .b-bar{width:100%; height:12px; margin-top:18vh; border-radius:7px; background:#0d0a08; box-shadow:inset 0 0 0 1px #4a3a2c, 0 0 0 3px rgba(0,0,0,.35); overflow:hidden}
+      #boot .b-bar i{display:block; height:100%; width:6%; border-radius:7px; transition:width .5s ease;
+        background:linear-gradient(90deg, #b8541a, #ff9a3c 60%, #ffd27a); box-shadow:0 0 12px rgba(255,150,60,.7); animation:b-start 4s ease-out forwards}
+      #boot .b-txt{font-size:13px; color:#cdb79a; min-height:1.3em}
+      @media (min-aspect-ratio: 1/1){#boot .b-scene{background-size:cover; background-position:center 60%; -webkit-mask-image:none; mask-image:none}}
+      @keyframes b-zoom{from{transform:scale(1.08)} to{transform:scale(1)}}
+      @keyframes b-start{to{width:38%}}
+      @media (prefers-reduced-motion: reduce){#boot .b-scene, #boot .b-bar i{animation:none}}
+      /* boot:bg */#boot .b-scene{background-image:url(data:image/png;base64,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)}/* /boot:bg */
+    </style>
   </head>
   <body>
+    <div id="boot" role="status" aria-live="polite">
+      <div class="b-scene"></div>
+      <div class="b-in">
+        <div class="b-sub">idle RPG kowala</div>
+        <div class="b-title">Kuźnia<br />Legend</div>
+        <div class="b-bar"><i id="boot-fill"></i></div>
+        <div class="b-txt" id="boot-txt">Rozpalanie pieca…</div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

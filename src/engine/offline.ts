@@ -1,4 +1,4 @@
-import { B, LANDS, oreShares } from '../data';
+import { B, oreShares, landDef } from '../data';
 import type { Ctx } from './context';
 import { autoHandle, canSmelt, smelt, tickForge } from './forge';
 import { curG, goldWave } from './formulas';
@@ -21,7 +21,7 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
   const t = Math.min(ms, B.OFFLINE_CAP_MS + mods.offlineMin * 60000);
   const waves = Math.floor((t / B.OFFLINE_WAVE_MS) * B.OFFLINE_EFFICIENCY);
   if (!waves) return null;
-  const L = LANDS[s.cur.land];
+  const L = landDef(s.cur.land);
   // Wzmocnienia z reklam działają w tej części nieobecności, w której jeszcze trwały.
   const now = ctx.now();
   const gold = Math.round(waves * goldWave(curG(s)) * (1 + mods.goldPct / 100) * buffMultSpan(s, 'zloto', now - t, now));

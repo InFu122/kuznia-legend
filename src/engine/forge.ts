@@ -1,4 +1,4 @@
-import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
+import { B, BATCH_OPTIONS, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
 import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreFloor, pityAllowed, sellPrice, upCost, upTime } from './formulas';
@@ -86,7 +86,7 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   const it: Item = {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, d.lvl),
     subs: rollSubs(rng, r), el: elKey, jump, flvl: s.forge.lvl, forced, jv: JUMP_V,
-    smith: s.name, land: LANDS[s.cur.land].n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
+    smith: s.name, land: landDef(s.cur.land).n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
   if (sx !== undefined) it.sx = sx;
   if (it.r > (s.stats.bestR ?? -1)) s.stats.bestR = it.r;
@@ -255,6 +255,12 @@ export function tickForge(ctx: Ctx, ms: number, quiet = false): boolean {
   if (f.left > 0) return false;
   f.lvl = f.up; f.up = 0; f.left = 0;
   ctx.dirty = true;
+  // Strój „Złoty Kowal” za 100. poziom kuźni.
+  const look = ctx.s.look;
+  if (f.lvl >= GOLD_SKIN_FORGE && look && !look.skins.includes('zloty')) {
+    ctx.s.look = { ...look, skins: [...look.skins, 'zloty'] };
+    if (!quiet) toast(ctx, 'Nowy strój: Złoty Kowal — za 100. poziom kuźni!', 'good');
+  }
   if (!quiet) ctx.emit({ t: 'sfx', k: 'levelup' });
   if (!quiet) toast(ctx, `Kuźnia osiągnęła poziom ${f.lvl}` + (FORGE_UNLOCKS[f.lvl] ? ': ' + FORGE_UNLOCKS[f.lvl] : ''), 'good');
   return true;

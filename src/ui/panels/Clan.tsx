@@ -1,7 +1,7 @@
 // Zakładka Klan: wyszukiwanie i zakładanie klanu, a w klanie — ogłoszenie, członkowie z rolami,
 // prośby o przyjęcie, ustawienia Przywódcy i odejście z klanu oraz życie klanu (Wspólna Kuźnia, boss, pomoc, sklep).
 import { useEffect, useState } from 'preact/hooks';
-import { B, LANDS } from '../../data';
+import { B, landDef } from '../../data';
 import type { Game } from '../../engine/game';
 import { getChat } from '../../save/chat';
 import { clanLife } from '../../save/clanlife';
@@ -96,7 +96,7 @@ function Finder({ info, reload }: { info: ClanInfo; reload: (msg?: string) => vo
         <div class="eyebrow">Klany</div>
         <div class="h">Razem raźniej</div>
         <p class="sub">Klan to wspólny czat, Wspólna Kuźnia z premiami dla wszystkich, boss klanowy, pomoc w ulepszeniach kuźni i sklep klanowy.</p>
-        <div class="lockline">Odblokujesz po pokonaniu bossa krainy {LANDS[0].n}.</div>
+        <div class="lockline">Odblokujesz po pokonaniu bossa krainy {landDef(0).n}.</div>
       </section>
     );
   }

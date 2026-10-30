@@ -28,10 +28,10 @@ export const SEEDS_AHEAD = B.SEEDS_RESERVE + 100;
 const PACE_SLACK_MS = 10 * 60000;
 
 /**
- * Klucze, którymi serwer sprawdza przedmioty jednego gracza. `jvFrom` / `jv3From` / `jv4From` — od którego numeru
- * wytopu obowiązują zasady przeskoku w wersji 2 / 3 / 4 (wcześniejsze wytopy mogą mieć poprzednią wersję).
+ * Klucze, którymi serwer sprawdza przedmioty jednego gracza. `jvFrom` / `jv3From` / `jv4From` / `jv5From` — od którego numeru
+ * wytopu obowiązują zasady przeskoku w wersji 2 / 3 / 4 / 5 (wcześniejsze wytopy mogą mieć poprzednią wersję).
  */
-export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number; jvFrom: number; jv3From: number; jv4From: number }
+export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number; jvFrom: number; jv3From: number; jv4From: number; jv5From: number }
 
 /**
  * Pierwszy numer wytopu, który musi spełniać zasady przeskoku w wersji 2. Wytopy wydane przed aktualizacją
@@ -43,13 +43,14 @@ export function proofFor(nk: nkruntime.Nakama, userId: string, s: GameState, met
   return {
     nk, secret: smeltSecret(nk, userId), sign: signSecret(nk), maxRel: techMods(s).jumpRel, forge: s.forge.lvl,
     jvFrom: meta?.jv2 ?? jvFromFor(s.sx || 0), jv3From: meta?.jv3 ?? jvFromFor(s.sx || 0), jv4From: meta?.jv4 ?? jvFromFor(s.sx || 0),
+    jv5From: meta?.jv5 ?? jvFromFor(s.sx || 0),
   };
 }
 
 /** Czy wytop przedmiotu zgadza się z ziarnem serwera. */
 export function smeltOk(p: Proof, it: Item, sxNext: number): boolean {
   if (typeof it.sx !== 'number' || !Number.isInteger(it.sx) || it.sx < 0 || it.sx >= sxNext) return false;
-  const minVer = it.sx < p.jvFrom ? 1 : it.sx < p.jv3From ? 2 : it.sx < p.jv4From ? 3 : 4;
+  const minVer = it.sx < p.jvFrom ? 1 : it.sx < p.jv3From ? 2 : it.sx < p.jv4From ? 3 : it.sx < p.jv5From ? 4 : 5;
   return verifySmelt(it, seedOf(p.nk, p.secret, it.sx), p.maxRel, p.forge, minVer) === null;
 }
 
@@ -166,6 +167,8 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   if (meta.jv3 === undefined) meta.jv3 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
   // Zasady w wersji 4 (nowa ruda wchodzi stopniowo): wcześniejsze wytopy zachowują zasady wersji 3.
   if (meta.jv4 === undefined) meta.jv4 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
+  // Zasady w wersji 5 (kuźnia do 200, rudy otwierają się później): wcześniejsze wytopy zachowują zasady wersji 4.
+  if (meta.jv5 === undefined) meta.jv5 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
   // W trybie testowym serwer nie pilnuje tempa kuźni, tylko przesuwa punkt odniesienia — po wyłączeniu
   // trybu testowego tempo liczy się od ostatniego zapisu, a nie od początku testów.
   if (maxSpeed > 1) { meta.t0 = now; meta.f0 = target; }

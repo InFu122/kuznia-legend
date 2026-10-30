@@ -1,6 +1,6 @@
 // Zgłoszenia od testerów: dane, które pomagają odtworzyć problem, i automatyczne raporty błędów skryptu.
 import type { Game } from '../engine/game';
-import { LANDS } from '../data';
+import { landDef } from '../data';
 import { getLink } from '../save/server';
 import { APP_VERSION, isNative, isStandalone } from './pwa';
 
@@ -14,7 +14,7 @@ export function reportMeta(game: Game | null): Record<string, string | number> {
   };
   if (game) {
     m.forge = game.s.forge.lvl;
-    m.land = LANDS[game.s.cur.land]?.n ?? '';
+    m.land = landDef(game.s.cur.land)?.n ?? '';
     m.power = Math.round(game.stats.power);
   }
   return m;

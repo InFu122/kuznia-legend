@@ -5,11 +5,11 @@
 //          npm run balance -- 1440 2 casual (60 dni: gracz gra 3 × 1 h dziennie, resztę czasu offline)
 import ExcelJS from 'exceljs';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { B, DUNG_ORDER, FORGE_AT_BOSS, LANDS, ORES, RAR, SET_FORGE_LVL, SET_IDS, TECH_IDS } from '../src/data';
+import { B, DUNG_ORDER, LANDS, ORES, RAR, SET_FORGE_LVL, SET_IDS, TECH_IDS, landDef } from '../src/data';
 import { bossWaiting } from '../src/engine/combat';
 import { lezaBosses } from '../src/engine/dungeon';
 import { canSmelt } from '../src/engine/forge';
-import { goldWave, jumpChances, recPower, upCost, upTime } from '../src/engine/formulas';
+import { forgeAtBoss, goldWave, jumpChances, recPower, upCost, upTime } from '../src/engine/formulas';
 import { Game } from '../src/engine/game';
 import { mulberry32 } from '../src/engine/rng';
 import { newState } from '../src/engine/state';
@@ -33,6 +33,8 @@ function nextSession(ms: number): number {
   for (let d = 0; d < 2; d++) for (const h of SESSIONS) { const at = day + d * 86400000 + h * 3600000; if (at > ms) return at; }
   return ms + 3600000;
 }
+/** Krainy do kalibracji: kampania i 12 pierwszych kręgów Otchłani. */
+const CAL_LANDS = Array.from({ length: LANDS.length + 12 }, (_, i) => i);
 const STEP = 250;          // ms czasu gry na krok
 const BOSS_RETRY = 120000; // bot próbuje bossa co 2 min, gdy ma ≥ 90% zalecanej Mocy
 const TOWER_RETRY = 30 * 60000;
@@ -169,7 +171,7 @@ function runOnce(run: number, seed: number) {
     g.tick(STEP);
     const nowCleared = g.s.cleared.filter(Boolean).length;
     if (nowCleared > cleared) {
-      for (let i = 0; i < LANDS.length; i++) if (g.s.cleared[i] && !bosses.some(b => b.run === run && b.land === LANDS[i].n)) bosses.push({ run, land: LANDS[i].n, boss: LANDS[i].boss, h: ms / 3600000, forge: g.s.forge.lvl, power: g.stats.power });
+      for (let i = 0; i < g.s.cleared.length; i++) if (g.s.cleared[i] && !bosses.some(b => b.run === run && b.land === landDef(i).n)) bosses.push({ run, land: landDef(i).n, boss: landDef(i).boss, h: ms / 3600000, forge: g.s.forge.lvl, power: g.stats.power });
       cleared = nowCleared;
     }
     if (ms % SAMPLE === 0) samples.push(g.stats.power);
@@ -178,7 +180,7 @@ function runOnce(run: number, seed: number) {
     if (ms % 3600000 === 0) {
       const bestR = Math.max(-1, ...Object.values(g.s.eq).map(it => it?.r ?? -1));
       hours.push({
-        run, h: ms / 3600000, land: LANDS[g.s.cur.land].n, stage: g.s.cur.stage, forge: g.s.forge.lvl, power: g.stats.power,
+        run, h: ms / 3600000, land: landDef(g.s.cur.land).n, stage: g.s.cur.stage, forge: g.s.forge.lvl, power: g.stats.power,
         rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, ore: g.s.ores.reduce((x, y) => x + y, 0), pass: g.s.pass ? passXp(g.s.pass) : 0, best: bestR >= 0 ? RAR[bestR].n : '—',
         books: g.s.books, tech: TECH_IDS.reduce((a, id) => a + (g.s.tech.lv[id] ?? 0), 0),
         sets: g.stats.sets.map(x => `${x.id}:${x.count}`).join(' '), tower: g.s.dungeons.wieza.best,
@@ -198,7 +200,7 @@ async function main() {
   for (let r = 1; r <= RUNS; r++) {
     const res = runOnce(r, 1000 + r);
     // Kalibracja: najwyższa Moc bota na poziomie kuźni oczekiwanym przy bossie krainy, względem zalecanej Mocy krainy.
-    calib.push(LANDS.map((_, i) => (res.powerAtForge[FORGE_AT_BOSS[i]] ?? NaN) / recPower(i)));
+    calib.push(CAL_LANDS.map(i => (res.powerAtForge[Math.round(forgeAtBoss(i))] ?? NaN) / recPower(i)));
     hours.push(...res.hours);
     bosses.push(...res.bosses);
     samples.push(res.samples);
@@ -207,7 +209,7 @@ async function main() {
     console.log('  bossowie (' + (CASUAL ? 'dni' : 'h') + '): ' + res.bosses.map(b => (CASUAL ? b.h / 24 : b.h).toFixed(1)).join(' '));
   }
   console.log('Moc przy oczekiwanym poziomie kuźni / zalecana Moc krainy (średnio):');
-  console.log('  ' + LANDS.map((_, i) => { const v = calib.map(c => c[i]).filter(x => Number.isFinite(x)); return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : '—'; }).join(' '));
+  console.log('  ' + CAL_LANDS.map((_, i) => { const v = calib.map(c => c[i]).filter(x => Number.isFinite(x)); return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : '—'; }).join(' '));
   mkdirSync('balans', { recursive: true });
   writeFileSync(`balans/sim-${PLAIN ? 'plain' : 'full'}.json`, JSON.stringify({ bosses, samples, step: SAMPLE }));
 

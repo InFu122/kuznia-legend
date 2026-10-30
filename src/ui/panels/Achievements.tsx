@@ -16,7 +16,7 @@ export function AchievementsView({ game }: { game: Game }) {
   const all = ACH_IDS.reduce((n, id) => n + ACHIEVEMENTS[id].tiers.length, 0);
   return (
     <>
-      <p class="sub">Długie cele na całą grę. Postęp zostaje także po Dziedzictwie. Zdobyte progi: <b class="num">{done}/{all}</b>.</p>
+      <p class="sub">Długie cele na całą grę — kuźnia rośnie do 200. poziomu, a Otchłań nie ma dna. Zdobyte progi: <b class="num">{done}/{all}</b>.</p>
       <ul class="clist achlist">
         {list.map(({ id, got, reached, A }) => {
           const max = got >= A.tiers.length;
@@ -50,7 +50,7 @@ export function CodexCard({ game }: { game: Game }) {
     <section class="card">
       <div class="row"><div class="eyebrow">Kolekcja Kowala</div><span class="num">{n}/{CODEX_TOTAL}</span></div>
       <div class="h">+{f1(n * CODEX_PCT)}% obrażeń i zdrowia</div>
-      <p class="sub">Każdy nowy model przedmiotu (rodzaj × ruda) daje na zawsze +{String(CODEX_PCT).replace('.', ',')}% obrażeń i zdrowia. Kolekcja zostaje po Dziedzictwie.</p>
+      <p class="sub">Każdy nowy model przedmiotu (rodzaj × ruda) daje na zawsze +{String(CODEX_PCT).replace('.', ',')}% obrażeń i zdrowia.</p>
       <ul class="codexores">
         {ORE_ORDER.map(i => {
           const o = ORES[i];

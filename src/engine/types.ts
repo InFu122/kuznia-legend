@@ -265,7 +265,6 @@ export type ModalData =
   | { kind: 'reset' }
   | { kind: 'shop'; tab?: 'sklep' | 'przepustka' | 'klejnoty' }
   | { kind: 'adOffer'; what: BuffId }
-  | { kind: 'legacy' };
 
 export type GameEvent =
   | { t: 'toast'; msg: string; kind?: 'good' | 'bad' }

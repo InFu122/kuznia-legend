@@ -11,14 +11,19 @@ export const ORES: readonly OreDef[] = [
   { n: 'Miedź', floor: 0, lvl: 1, col: '#c47a4b', adj: ['Miedziany', 'Miedziana', 'Miedziane'] },
   { n: 'Żelazo', floor: 1, lvl: 1, col: '#9ba3ab', adj: ['Żelazny', 'Żelazna', 'Żelazne'] },
   { n: 'Srebro', floor: 2, lvl: 5, col: '#dfe5ec', adj: ['Srebrny', 'Srebrna', 'Srebrne'] },
-  { n: 'Mithril', floor: 3, lvl: 10, col: '#7cd3df', adj: ['Mithrilowy', 'Mithrilowa', 'Mithrilowe'] },
-  { n: 'Adamantyt', floor: 4, lvl: 15, col: '#86b874', adj: ['Adamantytowy', 'Adamantytowa', 'Adamantytowe'] },
-  { n: 'Smocza Stal', floor: 5, lvl: 20, col: '#d6493f', adj: ['Smoczostalowy', 'Smoczostalowa', 'Smoczostalowe'], mj: 1 },
-  { n: 'Gwiezdny Kruszec', floor: 5, lvl: 25, col: '#f3e3a1', adj: ['Gwiezdny', 'Gwiezdna', 'Gwiezdne'], q: 1.15, mj: 1, div: 0.12, d: 'najwięcej szans na Boski poza Boską Rudą' },
-  { n: 'Obsydian', floor: 4, lvl: 17, col: '#6a5a8a', adj: ['Obsydianowy', 'Obsydianowa', 'Obsydianowe'], q: 1.1, mj: 1, d: 'Legendarny z lepszą jakością' },
-  { n: 'Eteryt', floor: 5, lvl: 23, col: '#8fd8f0', adj: ['Eterytowy', 'Eterytowa', 'Eterytowe'], q: 1.08, mj: 1, div: 0.07, d: 'Mityczny z lepszą jakością' },
-  { n: 'Boska Ruda', floor: 5, lvl: 25, col: '#ffd76a', adj: ['Niebiański', 'Niebiańska', 'Niebiańskie'], q: 1.25, mj: 1, div: 0.6, d: 'bardzo rzadka: największa szansa na Boski' },
+  { n: 'Mithril', floor: 3, lvl: 12, col: '#7cd3df', adj: ['Mithrilowy', 'Mithrilowa', 'Mithrilowe'] },
+  { n: 'Adamantyt', floor: 4, lvl: 25, col: '#86b874', adj: ['Adamantytowy', 'Adamantytowa', 'Adamantytowe'] },
+  { n: 'Smocza Stal', floor: 5, lvl: 60, col: '#d6493f', adj: ['Smoczostalowy', 'Smoczostalowa', 'Smoczostalowe'], mj: 1 },
+  { n: 'Gwiezdny Kruszec', floor: 5, lvl: 100, col: '#f3e3a1', adj: ['Gwiezdny', 'Gwiezdna', 'Gwiezdne'], q: 1.15, mj: 1, div: 0.12, d: 'najwięcej szans na Boski poza Boską Rudą' },
+  { n: 'Obsydian', floor: 4, lvl: 40, col: '#6a5a8a', adj: ['Obsydianowy', 'Obsydianowa', 'Obsydianowe'], q: 1.1, mj: 1, d: 'Legendarny z lepszą jakością' },
+  { n: 'Eteryt', floor: 5, lvl: 85, col: '#8fd8f0', adj: ['Eterytowy', 'Eterytowa', 'Eterytowe'], q: 1.08, mj: 1, div: 0.07, d: 'Mityczny z lepszą jakością' },
+  { n: 'Boska Ruda', floor: 5, lvl: 120, col: '#ffd76a', adj: ['Niebiański', 'Niebiańska', 'Niebiańskie'], q: 1.25, mj: 1, div: 0.6, d: 'bardzo rzadka: największa szansa na Boski' },
 ];
+/**
+ * Poziom kuźni, od którego dało się wytopić rudę według zasad przeskoku do wersji 4 (kuźnia do 30. poziomu).
+ * Od wersji 5 (kuźnia do 200. poziomu) rudy otwierają się dużo później — `lvl` w ORES. Serwer sprawdza dawne wytopy według tej tabeli.
+ */
+export const ORE_LVL_V4: readonly number[] = [1, 1, 5, 10, 15, 20, 25, 17, 23, 25];
 /** Kolejność rud w grze (od najprostszej). Boska Ruda jest osobno: nie wypada w krainach i nie da się jej rafinować. */
 export const ORE_ORDER = [0, 1, 2, 3, 4, 7, 5, 8, 6, 9];
 export const DIVINE_ORE = 9;

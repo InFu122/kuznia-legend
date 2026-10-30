@@ -35,16 +35,20 @@ describe('kuźnia', () => {
     expect(upCost(2)).toBe(150);
     expect(upCost(10)).toBe(3844);
   });
-  it('pierwsze ulepszenia trwają minuty, ostatnie dni; łącznie ok. 2 miesięcy', () => {
+  it('pierwsze ulepszenia trwają minuty, potem dni; cała kuźnia (200 poziomów) to ok. roku', () => {
     expect(upTime(2)).toBe(30000);
     let sum = 0;
     for (let n = 2; n <= 10; n++) sum += upTime(n);
     expect(sum / 3600000).toBeLessThan(2.5);
-    for (let n = 3; n <= 30; n++) expect(upTime(n)).toBeGreaterThan(upTime(n - 1));
-    expect(upTime(30) / 86400000).toBeGreaterThan(7);
-    for (let n = 11; n <= 30; n++) sum += upTime(n);
-    expect(sum / 86400000).toBeGreaterThan(50);
-    expect(sum / 86400000).toBeLessThan(65);
+    for (let n = 3; n <= 200; n++) expect(upTime(n)).toBeGreaterThanOrEqual(upTime(n - 1));
+    for (let n = 11; n <= 20; n++) sum += upTime(n);
+    expect(sum / 86400000).toBeGreaterThan(4.5);
+    expect(sum / 86400000).toBeLessThan(6);
+    for (let n = 21; n <= 200; n++) sum += upTime(n);
+    expect(sum / 86400000).toBeGreaterThan(330);
+    expect(sum / 86400000).toBeLessThan(400);
+    expect(upTime(200) / 86400000).toBeLessThan(3);
+    expect(upTime(201)).toBe(upTime(200));
   });
 });
 

@@ -1,4 +1,4 @@
-import { BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type FrameId, type SkinId } from '../data';
+import { ACHIEVEMENTS, BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId } from '../data';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
@@ -135,6 +135,7 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!isObj(out.boost) || typeof out.boost.lvl !== 'number' || typeof out.boost.ms !== 'number') out.boost = fresh.boost;
   if (!isObj(out.runes)) out.runes = {};
   if (!isObj(out.ach)) out.ach = {};
+  for (const k of Object.keys(out.ach)) if (!(k in ACHIEVEMENTS)) delete out.ach[k as AchId]; // np. dawne „pokolenia”
   if (!Array.isArray(raw.codex)) {
     // Kolekcja Kowala w starym zapisie: modele przedmiotów, które gracz ma teraz
     const have = [...Object.values(out.eq), out.legacy?.item, ...(Array.isArray(out.found) ? out.found : [])].filter((x): x is NonNullable<typeof x> => !!x && typeof x.kind === 'string');
@@ -151,7 +152,10 @@ export function migrate(raw: unknown, now: number): GameState {
     if (oldVersion < 2) it.lvl = 2 * (it.flvl || out.forge.lvl) + 1;
   }
   if (oldVersion < 5 && out.stats.smelted > 0) out.tut = TUTORIAL.length; // stary gracz nie potrzebuje samouczka
-  out.maxLand = Math.min(out.maxLand, LANDS.length - 1);
+  // Kampania i kręgi Otchłani: najdalsza kraina to najwyżej pierwsza nie pokonana po ostatniej pokonanej.
+  if (!(out.maxLand >= 0)) out.maxLand = 0;
+  out.maxLand = Math.min(Math.floor(out.maxLand), out.cleared.length);
+  while (out.cleared.length <= out.maxLand) out.cleared.push(false);
   out.cur.land = Math.min(out.cur.land, out.maxLand);
   out.v = SAVE_VERSION;
   return out;

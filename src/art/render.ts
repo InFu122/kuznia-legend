@@ -1,5 +1,6 @@
 // Rysowanie pixel artu w przeglądarce: sprite + paleta → obrazek (data URL), z pamięcią podręczną.
 import type { SkinId } from '../data/cosmetics';
+import { ABYSS_FROM, abyssBase } from '../data/world';
 import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from './icons-data';
 import { FOE_H, FOE_W, HERO_H, HERO_W, companionPixels, foeKey, foePixels, heroKey, heroPixels, avatarPixels, AVATAR, type HeroGear } from './actors';
 import { itemPalette, itemSprite, tierOf } from './items';
@@ -50,8 +51,22 @@ export const skillUrl = (k: string) => once(`k:${k}`, () => icon(SKILL_ICONS[k])
 export const techUrl = (k: string) => once(`t:${k}`, () => icon(TECH_ICONS[k]));
 /** Boss klanowy 32×32 (paleta: golem, kamien, ogien, lod, upior). */
 export const bossUrl = (k: string) => once(`b:${k}`, () => icon(BOSS_ICONS[k] ?? BOSS_ICONS.golem));
-/** Tło krainy (160×96, pixel art) jako obrazek. */
-export const landBgUrl = (land: number) => cached(`bg:l${land}`, () => pxUrl(renderScene(LAND_SCENES[Math.max(0, Math.min(LAND_SCENES.length - 1, land))]), SCENE_W, SCENE_H));
+/** Otchłań: ta sama scena co kraina-wzór, ale ciemna i fioletowa, z żarzącymi się szczelinami. */
+function abyssTint(px: Uint8ClampedArray): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(px);
+  for (let i = 0; i < out.length; i += 4) {
+    const r = out[i], g = out[i + 1], b = out[i + 2];
+    const l = 0.3 * r + 0.59 * g + 0.11 * b;
+    out[i] = Math.min(255, l * 0.55 + r * 0.2 + 18);
+    out[i + 1] = Math.min(255, l * 0.35 + g * 0.1 + 6);
+    out[i + 2] = Math.min(255, l * 0.75 + b * 0.25 + 30);
+  }
+  return out;
+}
+/** Tło krainy (160×96, pixel art) jako obrazek; kręgi Otchłani — przyciemniona scena krainy-wzoru. */
+export const landBgUrl = (land: number) => (land >= ABYSS_FROM
+  ? cached(`bg:a${abyssBase(land)}`, () => pxUrl(abyssTint(renderScene(LAND_SCENES[abyssBase(land)])), SCENE_W, SCENE_H))
+  : cached(`bg:l${land}`, () => pxUrl(renderScene(LAND_SCENES[Math.max(0, Math.min(LAND_SCENES.length - 1, land))]), SCENE_W, SCENE_H)));
 /** Tło lochu albo areny (klucz jak w DUNGEON_SCENES). */
 export const dungeonBgUrl = (id: string) => cached(`bg:d${id}`, () => pxUrl(renderScene(DUNGEON_SCENES[id] ?? DUNGEON_SCENES.arena), SCENE_W, SCENE_H));
 /** Bohater w założonym ekwipunku (36×36, patrzy w prawo). */

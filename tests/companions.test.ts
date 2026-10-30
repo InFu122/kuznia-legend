@@ -11,7 +11,7 @@ import { constRng, makeGame, simulate, T0 } from './helpers';
 function geared(seed = 3) {
   const h = makeGame(seed);
   const { ctx, s } = h;
-  s.forge.lvl = 30; s.ores[4] = 200; s.stats.smelted = 10;
+  s.forge.lvl = 40; s.ores[4] = 200; s.stats.smelted = 10;
   for (let i = 0; i < 200 && Object.keys(s.eq).length < 8; i++) equip(ctx, smelt(ctx, 4, null)!, true); // wszystkie 8 slotów
   return h;
 }

@@ -1,5 +1,8 @@
 // Wygląd: stroje bohatera (kolory włosów, tuniki i spodni oraz płaszcz) i ramki awatara.
-// Wyłącznie ozdoby — nie zmieniają statystyk. Zdobywa się je w przepustce, wydarzeniach, ligach, sezonach wojen i Dziedzictwie.
+// Wyłącznie ozdoby — nie zmieniają statystyk. Zdobywa się je w przepustce, wydarzeniach, ligach, sezonach wojen i za kuźnię.
+
+/** Strój „Złoty Kowal” za ten poziom kuźni (dawniej za Dziedzictwo). */
+export const GOLD_SKIN_FORGE = 100;
 
 export type SkinId = 'zwykly' | 'nocny' | 'szkarlat' | 'ognisty' | 'lowca' | 'upiorny' | 'mistrz' | 'zloty';
 export type FrameId = 'prosta' | 'przepustka' | 'braz' | 'srebro' | 'zloto' | 'platyna' | 'diament' | 'iskra' | 'szron' | 'widmo' | 'puchar';
@@ -41,7 +44,7 @@ export const SKINS: Record<SkinId, SkinDef> = {
     cape: ['#f2c94c', '#c89a28', '#8a6410'],
   },
   zloty: {
-    n: 'Złoty Kowal', src: 'Dziedzictwo — nowe pokolenie',
+    n: 'Złoty Kowal', src: `Kuźnia — ${GOLD_SKIN_FORGE}. poziom`,
     pal: { D: '#f4e0a0', E: '#d8b860', F: '#a08030', H: '#c8a040', I: '#a07e28', J: '#705418', P: '#5a4a2a', Q: '#46381e', R: '#302612' },
     cape: ['#fff1b8', '#f2c14e', '#b07a1c'],
   },

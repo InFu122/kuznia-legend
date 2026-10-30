@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { B, SUBS } from '../src/data';
 import { equip, smelt } from '../src/engine/forge';
-import { legacyReset } from '../src/engine/legacy';
 import { mulberry32 } from '../src/engine/rng';
 import { reforgeBlock, reforgeCost, rerollSub, runeBlock, runeCost, runePay } from '../src/engine/runes';
 import { migrate } from '../src/engine/state';
@@ -40,8 +39,7 @@ describe('runy slotów', () => {
     expect(s.runes.bron).toBe(10);
     expect(s.ores[0]).toBe(5000 - (20 + 30 + 40 + 50 + 60));
     expect(g.stats.dmg).toBeGreaterThan(d0);
-    s.forge.lvl = 30;
-    expect(legacyReset(s, null, T0).runes.bron).toBe(10);
+    expect(migrate(JSON.parse(JSON.stringify(s)), T0).runes.bron).toBe(10);
     expect(migrate({ ...JSON.parse(JSON.stringify(s)), runes: undefined }, T0).runes).toEqual({});
   });
 });

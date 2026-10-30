@@ -214,6 +214,13 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .modal{position:fixed; inset:0; z-index:40; background:rgba(10,7,5,.74); display:grid; place-items:center; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px}
 .modal-box{width:100%; max-width:440px; max-height:100%; overflow:auto; background:var(--plate); border:1px solid var(--rivet); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:12px}
 .modal-box .h{font-size:26px; color:var(--straw)}
+/* „Wróć” u góry okna: zostaje przy przewijaniu długich okien */
+.modal-top{position:sticky; top:-18px; z-index:6; display:flex; margin:-18px -18px -4px; padding:10px 12px 6px;
+  background:linear-gradient(var(--plate) 80%, color-mix(in srgb, var(--plate) 0%, transparent)); border-radius:16px 16px 0 0}
+.modal-back{display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 14px 0 10px; border-radius:18px;
+  background:var(--plate-2); border:1px solid var(--rivet); color:var(--frost); font:inherit; font-size:14px; font-weight:700; cursor:pointer}
+.modal-back span{font-size:22px; line-height:1; margin-top:-2px; color:var(--straw)}
+.modal-back:active{transform:translateY(1px)}
 .toasts{position:fixed; z-index:50; left:0; right:0; top:calc(env(safe-area-inset-top, 0px) + 10px); display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
 .toast{max-width:460px; background:#110d0a; border:1px solid var(--rivet); border-left:3px solid var(--straw); border-radius:10px; padding:8px 12px; font-size:13px; box-shadow:0 6px 18px rgba(0,0,0,.4); animation:tin .25s ease-out}
 .toast.bad{border-left-color:var(--blood)}
@@ -1275,3 +1282,24 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .fi-comp small{font-size:11px; color:var(--ash); line-height:1.25}
 @media (max-width:420px){ .fi-comp{grid-template-columns:1fr} }
 @media (prefers-reduced-motion: reduce){ .incub-egg, .incub.on .incub-nest::before, .compshow .cport img{animation:none} }
+
+/* ---------- okno „Co daje poziom kuźni” ---------- */
+.fl-prog{display:flex; flex-direction:column; gap:6px; padding:10px 12px; border-radius:12px; background:var(--plate-2); border:1px solid var(--rivet)}
+.fl-row{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap}
+.fl-row b{font-size:16px; color:var(--straw)}
+.fl-row small{color:var(--ash); font-size:12px}
+.fl-miles li{grid-template-columns:34px 1fr auto; align-items:center}
+.fl-miles .fl-lv{flex:none; display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:#140f0c; color:var(--frost);
+  font-weight:800; font-size:13px; font-variant-numeric:tabular-nums; box-shadow:inset 0 0 0 1px var(--rivet)}
+.fl-miles li.done .fl-lv{background:color-mix(in srgb, var(--straw) 22%, #140f0c); color:var(--straw); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--straw) 55%, transparent)}
+.fl-miles li.done .fi-on small{color:#7ad38a}
+.fl-miles li.done{opacity:.72}
+.fl-miles li.sel .fl-lv{background:var(--straw); color:var(--straw-ink); box-shadow:0 0 12px -2px var(--straw)}
+.fl-miles .fl-ores{flex:none; display:flex; gap:2px}
+.fl-miles .fi-on b{font-size:13.5px; line-height:1.25}
+.fl-soon{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+.fl-soon li{display:grid; grid-template-columns:26px 1.5fr 1fr 1fr; align-items:center; gap:4px; padding:8px 8px; border-radius:10px; background:var(--plate-2);
+  font-size:12px; font-variant-numeric:tabular-nums}
+.fl-soon li b{color:var(--straw); font-size:14px}
+.fl-soon li span{display:inline-flex; align-items:center; gap:4px; white-space:nowrap}
+.fl-soon .up{color:#7ad38a}

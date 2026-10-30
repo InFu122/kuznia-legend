@@ -1,7 +1,7 @@
 // Kontrola zapisu wysłanego przez klienta. Odrzuca wartości, których uczciwa gra nie może wytworzyć.
 // Pochodzenie przedmiotów (ziarno wytopu, podpis Obiegu) i tempo rozwoju kuźni sprawdza save.ts.
 import {
-  ACHIEVEMENTS, B, CLAN, COMPANION_MAX, EVENT, EVENT_MILESTONES, FRAMES, FRAME_IDS, LANDS, SKINS, SKIN_IDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
+  ABYSS_FROM, ACHIEVEMENTS, B, CLAN, COMPANION_MAX, EVENT, EVENT_MILESTONES, FRAMES, FRAME_IDS, SKINS, SKIN_IDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
 } from '../../src/data';
 import { eventOf, eventPtsMax, eventReached } from '../../src/engine/events';
 import { maxJump, oreRamps } from '../../src/engine/formulas';
@@ -32,8 +32,9 @@ export function validateSave(s: GameState): string[] {
   const bad = (m: string) => out.push(m);
   if (!fin(s.forge.lvl) || s.forge.lvl < 1 || s.forge.lvl > B.FORGE_MAX || Math.floor(s.forge.lvl) !== s.forge.lvl) bad(`poziom kuźni ${s.forge.lvl}`);
   if (s.forge.up && s.forge.up !== s.forge.lvl + 1) bad('ulepszenie kuźni');
-  if (!fin(s.maxLand) || s.maxLand < 0 || s.maxLand >= LANDS.length) bad('kraina');
-  if (!fin(s.bestG) || s.bestG < 0 || s.bestG > LANDS.length * 10) bad('postęp kampanii');
+  // kampania i kręgi Otchłani (bez końca): najdalsza kraina najwyżej o jedną za ostatnią pokonaną
+  if (!fin(s.maxLand) || s.maxLand < 0 || s.maxLand > 10000 || !Array.isArray(s.cleared) || s.maxLand > s.cleared.length) bad('kraina');
+  if (!fin(s.bestG) || s.bestG < 0 || s.bestG > Math.max(ABYSS_FROM, s.maxLand + 1) * 10) bad('postęp kampanii');
   for (const k of ['gold', 'books', 'scrolls', 'saddles', 'stones', 'seals'] as const) if (!nonNeg(s[k])) bad(`zasób ${k}`);
   if (!Array.isArray(s.ores) || s.ores.length !== ORES.length || !s.ores.every(nonNeg)) bad('rudy');
   if (!Array.isArray(s.eggs) || !s.eggs.every(nonNeg)) bad('jaja');

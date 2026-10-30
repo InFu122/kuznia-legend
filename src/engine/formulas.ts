@@ -1,34 +1,53 @@
-import { B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, JUMP_TABLE, LANDS, LEGEND, ORES, ORE_ORDER, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank } from '../data';
+import {
+  B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
+  JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank,
+} from '../data';
 import type { GameState, Item } from './types';
 
-/** Globalny indeks trudności: kraina × 10 + etap (0–159). */
+/** Globalny indeks trudności: kraina × 10 + etap (kampania 0–159, dalej kręgi Otchłani). */
 export const gOf = (land: number, stage: number) => land * 10 + (stage - 1);
 export const curG = (s: GameState) => gOf(s.cur.land, s.cur.stage);
 
-const MAX_G = LANDS.length * 10 - 1;
 /** Rozbija indeks trudności na krainę i postęp w niej (0 = etap 1, 1 = boss). */
 function landAt(g: number): [number, number] {
-  const c = Math.min(MAX_G, Math.max(0, g));
-  const land = Math.min(LANDS.length - 1, Math.floor(c / 10));
+  const c = Math.max(0, g);
+  const land = Math.floor(c / 10);
   return [land, Math.min(1, (c - land * 10) / 9)];
 }
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const LAST = LANDS.length - 1;
+/** Oczekiwany poziom kuźni przy bossie krainy L; w Otchłani +4 poziomy na krąg (do najwyższego poziomu). */
+export const forgeAtBoss = (L: number) => (L <= LAST ? FORGE_AT_BOSS[L] : Math.min(B.FORGE_MAX, FORGE_AT_BOSS[LAST] + 4 * (L - LAST)));
+/** Oczekiwany mnożnik rzadkości przy bossie krainy L (w Otchłani powoli do 6). */
+export const rarityAtBoss = (L: number) => (L <= LAST ? RARITY_AT_BOSS[L] : Math.min(6, RARITY_AT_BOSS[LAST] + 0.035 * (L - LAST)));
+/**
+ * Mnożnik siły wrogów przy bossie krainy L. W Otchłani rośnie o 3% na krąg, a gdy kuźnia nie może już urosnąć
+ * (najwyższy poziom), każdy krąg jest o 10% trudniejszy — Otchłań nie ma dna.
+ */
+export function enemyAtBoss(L: number): number {
+  if (L <= LAST) return ENEMY_SCALE_AT_BOSS[L];
+  const k = L - LAST;
+  const capAt = Math.ceil((B.FORGE_MAX - FORGE_AT_BOSS[LAST]) / 4);
+  return ENEMY_SCALE_AT_BOSS[LAST] * (1 + 0.03 * k) * Math.pow(1.1, Math.max(0, k - capAt));
+}
 /** Oczekiwany poziom kuźni gracza na etapie g. */
 export function forgeExp(g: number): number {
   const [L, t] = landAt(g);
-  return lerp(L === 0 ? 1 : FORGE_AT_BOSS[L - 1], FORGE_AT_BOSS[L], t);
+  return lerp(L === 0 ? 1 : forgeAtBoss(L - 1), forgeAtBoss(L), t);
 }
 /** Oczekiwany mnożnik rzadkości ekwipunku na etapie g. */
 export function rarityExp(g: number): number {
   const [L, t] = landAt(g);
-  return lerp(L === 0 ? 1 : RARITY_AT_BOSS[L - 1], RARITY_AT_BOSS[L], t);
+  return lerp(L === 0 ? 1 : rarityAtBoss(L - 1), rarityAtBoss(L), t);
 }
 /** Mnożnik siły wrogów na etapie g (kalibracja z symulatora). */
 export function enemyScale(g: number): number {
   const [L, t] = landAt(g);
-  return lerp(L === 0 ? 1 : ENEMY_SCALE_AT_BOSS[L - 1], ENEMY_SCALE_AT_BOSS[L], t);
+  return lerp(L === 0 ? 1 : enemyAtBoss(L - 1), enemyAtBoss(L), t);
 }
-export const lvlFactor = (lvl: number) => Math.pow(ITEM_LVL_GROWTH, lvl);
+/** Mnożnik siły przedmiotu z poziomu: +8% na poziom do ITEM_LVL_SOFT, dalej mniej (kuźnia rośnie do 200). */
+export const lvlFactor = (lvl: number) =>
+  Math.pow(ITEM_LVL_GROWTH, Math.min(lvl, ITEM_LVL_SOFT)) * Math.pow(ITEM_LVL_GROWTH_HI, Math.max(0, lvl - ITEM_LVL_SOFT));
 /** Poziom przedmiotu wynika z poziomu kuźni, na której go wytopiono. */
 export const itemLevelFor = (forgeLvl: number, extra: number) => Math.max(1, 2 * forgeLvl + extra);
 
@@ -40,12 +59,14 @@ export const Hstar = (g: number) => (100 + 150 * lvlFactor(2 * forgeExp(g) + 1) 
 /** Złagodzenie pierwszej krainy dla gracza bez ekwipunku. */
 export const early = (g: number) => (g < 10 ? 0.4 + 0.06 * g : 1);
 
-export const upCost = (n: number) => Math.round(B.UPGRADE_COST_BASE * Math.pow(B.UPGRADE_COST_MULT, n - 1));
+/** Koszt ulepszenia kuźni do poziomu n: ×1,5 na poziom do 30., dalej ×1,04. */
+export const upCost = (n: number) =>
+  Math.round(B.UPGRADE_COST_BASE * Math.pow(B.UPGRADE_COST_MULT, Math.min(n, B.UPGRADE_COST_SOFT) - 1) * Math.pow(B.UPGRADE_COST_MULT_HI, Math.max(0, n - B.UPGRADE_COST_SOFT)));
 /** Czas ulepszenia kuźni do poziomu n (tabela UPGRADE_MIN). Pierwsze ulepszenie trwa 30 s (samouczek). */
 export const upTime = (n: number) => (UPGRADE_MIN[Math.max(2, Math.min(B.FORGE_MAX, n))] ?? 0) * 60000;
 /** Ile fal walki „kosztuje” następne ulepszenie przy kuźni na poziomie f. */
 export const goldWaves = (f: number) =>
-  Math.max(GOLD_WAVES * Math.pow(GOLD_WAVES_GROWTH, Math.max(0, f - 1)), GOLD_TIME_K * (UPGRADE_MIN[Math.min(B.FORGE_MAX, f + 1)] ?? 0));
+  Math.max(GOLD_WAVES * Math.pow(GOLD_WAVES_GROWTH, Math.max(0, Math.min(f, B.UPGRADE_COST_SOFT) - 1)), GOLD_TIME_K * (UPGRADE_MIN[Math.min(B.FORGE_MAX, f + 1)] ?? 0));
 /** Złoto z fali na etapie g: koszt następnego ulepszenia oczekiwanej kuźni podzielony przez liczbę fal (rośnie z poziomem). */
 export const goldWave = (g: number) => {
   const f = Math.min(B.FORGE_MAX, Math.ceil(forgeExp(g)));
@@ -67,10 +88,13 @@ export const recPower = (land: number) => {
  * rzadkości Legendarną, Mityczną i Boską jest trudniejszy, a pewny przeskok nie daje Boskiego.
  * 3 — Gwiezdny Kruszec daje najmniej Mityczny, a Boski tylko z przeskoku z małą szansą
  * (mnożnik `div` rudy, domyślnie DIVINE_JUMP); nowe rudy: Obsydian, Eteryt, Boska Ruda.
- * 4 — obecna: ruda, która podnosi minimum rzadkości (Srebro, Mithril, Adamantyt, Smocza Stal), wchodzi stopniowo —
+ * 4 — ruda, która podnosi minimum rzadkości (Srebro, Mithril, Adamantyt, Smocza Stal), wchodzi stopniowo —
  * tuż po odblokowaniu część wytopów wychodzi o rzadkość niżej (`dropChance`).
+ * 5 — obecna: kuźnia do 200. poziomu, rudy otwierają się dużo później (`oreLvl`; dawne poziomy w ORE_LVL_V4).
  */
-export const JUMP_V = 4;
+export const JUMP_V = 5;
+/** Od którego poziomu kuźni ruda daje się wytopić według zasad wersji `ver`. */
+export const oreLvl = (ore: number, ver = JUMP_V) => (ver < 5 ? ORE_LVL_V4[ore] ?? ORES[ore]?.lvl ?? 1 : ORES[ore]?.lvl ?? 1);
 /** Mnożnik szansy na przeskok, który kończy się na danej rzadkości (wersja 2). */
 export const JUMP_TO_MULT = [1, 1, 1, 1, 0.8, 0.55, 0.25];
 
@@ -124,7 +148,7 @@ export function oreRamps(ore: number): boolean {
  * a po B.RAMP_LEVELS poziomach już zawsze pełne minimum. Spadek wypada przy najwyższych wynikach losowania.
  */
 export const dropChance = (ore: number, flvl: number, ver = JUMP_V) =>
-  (ver < 4 || !oreRamps(ore) ? 0 : B.RAMP_DROP * Math.max(0, Math.min(1, 1 - (flvl - ORES[ore].lvl) / B.RAMP_LEVELS)));
+  (ver < 4 || !oreRamps(ore) ? 0 : B.RAMP_DROP * Math.max(0, Math.min(1, 1 - (flvl - oreLvl(ore, ver)) / B.RAMP_LEVELS)));
 
 /** Rozkład wyniku wytopu: lista [rzadkość, szansa w %]. */
 export function dist(ore: number, lvl: number, rel = 0, ver = JUMP_V): [number, number][] {

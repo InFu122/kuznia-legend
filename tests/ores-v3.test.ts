@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { B, DIVINE_ORE, EVENT_MILESTONES, LANDS, ORES, ORE_ORDER, PASS_LEVELS, oreCap, oreRank } from '../src/data';
 import { obiegItem } from '../src/engine/obieg';
 import { refineRatio, refineTo, rollSubs, smelt, smeltDraws } from '../src/engine/forge';
-import { JUMP_V, dist, divineName, itemName, oreFloor } from '../src/engine/formulas';
+import { JUMP_V, dist, divineName, itemLevelFor, itemName, oreFloor } from '../src/engine/formulas';
 import { mulberry32 } from '../src/engine/rng';
 import { bestOre, passItemsReward } from '../src/engine/shop';
 import { migrate, newState } from '../src/engine/state';
@@ -34,14 +34,16 @@ describe('rudy w wersji 3: Boski tylko z przeskoku', () => {
     for (const L of LANDS) expect(L.drops.some(([o]) => o === DIVINE_ORE)).toBe(false);
     expect(LANDS.some(L => L.drops.some(([o]) => o === 7))).toBe(true);
     expect(LANDS.some(L => L.drops.some(([o]) => o === 8))).toBe(true);
-    expect(oreCap(DIVINE_ORE, 30)).toBe(6);
-    expect(oreCap(DIVINE_ORE, 18)).toBe(7);
-    expect(oreCap(5, 16)).toBe(4);
+    // kuźnia do 200: rudy otwierają się później (Adamantyt 25, Obsydian 40, Smocza Stal 60, Eteryt 85, Gwiezdny Kruszec 100)
+    expect(oreCap(DIVINE_ORE, 200)).toBe(6);
+    expect(oreCap(DIVINE_ORE, 45)).toBe(7);
+    expect(oreCap(DIVINE_ORE, 30)).toBe(4);
+    expect(oreCap(5, 16)).toBe(3);
     expect(oreRank(7)).toBeLessThan(oreRank(5));
     const s = newState(T0);
-    s.forge.lvl = 30;
+    s.forge.lvl = 100;
     expect(bestOre(s)).toBe(6);
-    s.forge.lvl = 23;
+    s.forge.lvl = 90;
     expect(bestOre(s)).toBe(8);
   });
 
@@ -50,9 +52,11 @@ describe('rudy w wersji 3: Boski tylko z przeskoku', () => {
     expect(refineTo(6)).toBe(-1);
     expect(refineTo(DIVINE_ORE)).toBe(-1);
     const s = newState(T0);
-    s.forge.lvl = 30;
+    s.forge.lvl = 100;
     expect(refineRatio(s, 6)).toBe(0);
     expect(refineRatio(s, 8)).toBeGreaterThan(0);
+    s.forge.lvl = 99;
+    expect(refineRatio(s, 8)).toBe(0); // Gwiezdny Kruszec dopiero od 100. poziomu
   });
 
   it('stary zapis z 7 rudami dostaje nowe rudy z zerem, a stare ilości zostają', () => {
@@ -64,7 +68,7 @@ describe('rudy w wersji 3: Boski tylko z przeskoku', () => {
 
   it('wytop z rudy unikalnej nie gwarantuje Boskiego', () => {
     const { ctx, s } = makeGame(3);
-    s.forge.lvl = 30; s.stats.smelted = 10; s.ores[6] = 400;
+    s.forge.lvl = 100; s.stats.smelted = 10; s.ores[6] = 400;
     s.uniq.smok = 400;
     s.uniqSel = 'smok';
     let div = 0;
@@ -76,15 +80,15 @@ describe('rudy w wersji 3: Boski tylko z przeskoku', () => {
 describe('dawne Boskie przedmioty zostają', () => {
   it('Gwiezdny Kruszec wykuty według zasad w wersji 2 przechodzi kontrolę jako wytop sprzed aktualizacji', () => {
     const { ctx, s } = makeGame(4);
-    s.forge.lvl = 30; s.stats.smelted = 10; s.ores[6] = 5;
+    s.forge.lvl = 100; s.stats.smelted = 10; s.ores[6] = 5;
     const n = 7;
     s.seeds = [seedFor(n)]; s.sx = n;
     const it = smelt(ctx, 6, null)!;
     expect(it.jv).toBe(JUMP_V);
-    expect(verifySmelt(it, seedFor(n), 0, 30)).toBeNull();
-    // ten sam wytop według zasad w wersji 2: Gwiezdny Kruszec zawsze Boski, bez przeskoku
-    const rng = mulberry32(seedFor(n)); smeltDraws(rng);
-    const old: Item = { ...it, r: 6, jump: 0, subs: rollSubs(rng, 6), jv: 2 };
+    expect(verifySmelt(it, seedFor(n), 0, 100)).toBeNull();
+    // ten sam wytop według zasad w wersji 2 (kuźnia 30): Gwiezdny Kruszec zawsze Boski, bez przeskoku
+    const rng = mulberry32(seedFor(n)); const dr = smeltDraws(rng);
+    const old: Item = { ...it, r: 6, jump: 0, flvl: 30, lvl: itemLevelFor(30, dr.lvl), subs: rollSubs(rng, 6), jv: 2 };
     expect(oreFloor(6, 2)).toBe(6);
     expect(verifySmelt(old, seedFor(n), 0, 30, 2)).toBeNull();
     expect(verifySmelt(old, seedFor(n), 0, 30, 3)).not.toBeNull();

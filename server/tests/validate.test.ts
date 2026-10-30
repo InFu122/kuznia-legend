@@ -7,7 +7,7 @@ import { cleanName, validateSave } from '../src/validate';
 function played() {
   const h = makeGame(4);
   const { g, ctx, s } = h;
-  s.forge.lvl = 30; s.ores[5] = 50; s.stats.smelted = 10;
+  s.forge.lvl = 60; s.ores[5] = 50; s.stats.smelted = 10;
   for (let i = 0; i < 40; i++) equip(ctx, smelt(ctx, 5, null)!, true);
   simulate(g, 60000);
   return h;
@@ -21,7 +21,7 @@ describe('kontrola zapisu na serwerze', () => {
 
   it('odrzuca niemożliwe wartości', () => {
     const { s } = played();
-    s.forge.lvl = 31;
+    s.forge.lvl = 201;
     s.gold = -5;
     s.ores[2] = Number.NaN;
     const it = Object.values(s.eq)[0]!;

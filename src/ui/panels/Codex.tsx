@@ -3,6 +3,8 @@ import { FRAME_IDS, LANDS, SKIN_IDS } from '../../data';
 import { Avatar } from '../Avatar';
 import { showProfile } from '../profile';
 import { nextSmithTitle, smithTitle } from '../../engine/formulas';
+import { abyssCleared } from '../../engine/achievements';
+import { pl } from '../texts';
 import type { Game } from '../../engine/game';
 import type { GameState } from '../../engine/types';
 import { ServerError, getLink } from '../../save/server';
@@ -213,7 +215,8 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
           <div class="stat"><small>Przeskoki</small><b>{fmt(s.stats.jumps)}</b></div>
           <div class="stat"><small>Wrogowie</small><b>{fmt(s.stats.kills)}</b></div>
           <div class="stat"><small>Bossowie</small><b>{fmt(s.stats.bosses)}</b></div>
-          <div class="stat"><small>Krainy</small><b>{s.cleared.filter(Boolean).length}/{LANDS.length}</b></div>
+          <div class="stat"><small>Krainy</small><b>{s.cleared.slice(0, LANDS.length).filter(Boolean).length}/{LANDS.length}</b></div>
+          {abyssCleared(s) > 0 && <div class="stat"><small>Otchłań</small><b>{abyssCleared(s)} {pl(abyssCleared(s), 'krąg', 'kręgi', 'kręgów')}</b></div>}
           <div class="stat"><small>Sztolnia</small><b>{s.dungeons.sztolnia.best || '—'}</b></div>
           <div class="stat"><small>Wieża Wyzwań</small><b>{s.dungeons.wieza.best || '—'}</b></div>
           <div class="stat"><small>Technologie</small><b>{Object.values(s.tech.lv).reduce((a, b) => a + (b ?? 0), 0)}</b></div>

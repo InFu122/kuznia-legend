@@ -26,7 +26,7 @@ describe('przeskoki w wersji 2: rzadsze wyniki są trudniejsze', () => {
     expect(pityAllowed(5, 1)).toBe(true); // dawne zasady
     expect(pityAllowed(6)).toBe(false); // Gwiezdny Kruszec: pewny przeskok nie daje Boskiego
     const { ctx, s } = makeGame(5);
-    s.forge.lvl = 25; s.ores[5] = 5000; s.stats.smelted = 10;
+    s.forge.lvl = 60; s.ores[5] = 5000; s.stats.smelted = 10;
     let pity = 0;
     for (let i = 0; i < 3000; i++) { s.pity = B.PITY_MAX; if (smelt(ctx, 5, null)!.forced === 'pity') pity++; }
     expect(pity).toBe(0);

@@ -7,7 +7,7 @@ import { constRng, makeGame } from './helpers';
 describe('wytop', () => {
   it('ruda zawsze gwarantuje minimalną rzadkość i nigdy nie przekracza limitu przeskoku', () => {
     const { ctx, s } = makeGame(7);
-    s.forge.lvl = 30;
+    s.forge.lvl = 200;
     s.stats.smelted = 10;
     for (let o = 0; o < ORES.length; o++) {
       s.ores[o] = 3000;

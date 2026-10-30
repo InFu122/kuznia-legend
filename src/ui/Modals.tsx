@@ -1,13 +1,13 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
-  B, DIVINE_JUMP, DIVINE_ORE, ELEM, ELEM_KEYS, EVENT, FORGE_UNLOCKS, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, MOUNTS, ORES, PETS, RAR, ROMAN, SEAL_FAME, SETS, SET_FORGE_LVL,
-  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, ORE_ORDER, isRareOre, oreShares, setOfLand, skillValue,
-} from '../data';
+  B, DIVINE_JUMP, DIVINE_ORE, ELEM, ELEM_KEYS, EVENT, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, MOUNTS, ORES, PETS, RAR, SEAL_FAME, SETS, SET_FORGE_LVL,
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, ORE_ORDER, isRareOre, oreShares, setOfLand, skillValue, landDef, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
-import { MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
-import { JUMP_TO_MULT, baseName, dist, gOf, goldWave, itemName, jumpChances, recPower } from '../engine/formulas';
+import { ForgeLevelInfo, MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
+import { useEffect, useRef } from 'preact/hooks';
+import { onBack } from './back';
+import { JUMP_TO_MULT, baseName, dist, gOf, goldWave, itemName, recPower } from '../engine/formulas';
 import { allMods } from '../engine/mods';
-import { upgradeCost, upgradeTime } from '../engine/forge';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
 import type { ModalData, Reward } from '../engine/types';
@@ -23,7 +23,6 @@ import { f1, fmt, pct, pctS, tfmt } from './format';
 import { OddsBar } from './panels/Forge';
 import { MissionsView } from './panels/Missions';
 import { AdOfferView, ShopView } from './panels/Shop';
-import { LegacyView } from './panels/Legacy';
 import { Reforge } from './panels/Runes';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
@@ -34,10 +33,26 @@ import { FeedbackView } from './panels/Feedback';
 import { ChatView } from './panels/Chat';
 import type { Tab } from './icons';
 
+/**
+ * Ramka okna: przycisk „Wróć” u góry (zostaje widoczny przy przewijaniu), zamknięcie dotknięciem obok okna
+ * i przyciskiem „wstecz” telefonu. Okna z decyzją (`locked`) nie zamykają się same — „wstecz” nic w nich nie robi.
+ */
 export function ModalShell({ locked, onClose, children }: { locked: boolean; onClose: () => void; children: ComponentChildren }) {
+  const close = useRef(onClose);
+  close.current = onClose;
+  const lock = useRef(locked);
+  lock.current = locked;
+  useEffect(() => onBack(() => { if (!lock.current) close.current(); return true; }), []);
   return (
     <div class="modal" onClick={e => { if (e.target === e.currentTarget && !locked) onClose(); }}>
-      <div class="modal-box" role="dialog" aria-modal="true">{children}</div>
+      <div class="modal-box" role="dialog" aria-modal="true">
+        {!locked && (
+          <div class="modal-top">
+            <button class="modal-back" onClick={onClose} aria-label="Wróć — zamknij okno"><span aria-hidden="true">‹</span> Wróć</button>
+          </div>
+        )}
+        {children}
+      </div>
     </div>
   );
 }
@@ -62,8 +77,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         </>
       );
     case 'boss': {
-      const L = LANDS[m.land];
-      const next = m.land < LANDS.length - 1 ? LANDS[m.land + 1] : null;
+      const L = landDef(m.land);
+      const next = landDef(m.land + 1);
       const set = setOfLand(m.land);
       return (
         <>
@@ -74,9 +89,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
           {set && m.uniq > 0 && (
             <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej część zestawu <b>{SETS[set].n}</b>. Więcej dają Leża Bossów.</p>
           )}
-          {next
-            ? <p>Odblokowana kraina: <b>{next.n}</b> (Akt {ROMAN[next.act]}). Rudy: {next.drops.map(([o, p]) => `${ORES[o].n} ${pctS(p)}`).join(' · ')}.</p>
-            : <p>Pokonałeś ostatniego bossa. Gwiezdny Krater możesz farmić dalej.</p>}
+          {m.land + 1 === ABYSS_FROM && <p class="sub"><b>Kampania ukończona!</b> Dalej Otchłań — kręgi bez dna z coraz silniejszymi wrogami i rudami z końca gry.</p>}
+          <p>Odblokowana kraina: <b>{next.n}</b> ({actName(next.act)}). Rudy: {next.drops.map(([o, p]) => `${ORES[o].n} ${pctS(p)}`).join(' · ')}.</p>
           <Close onClose={close} label="Dalej" />
         </>
       );
@@ -131,7 +145,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
     }
     case 'offline': {
       const r = m.report;
-      const L = LANDS[r.land];
+      const L = landDef(r.land);
       const ores: Record<number, number> = {};
       (r.ores ?? []).forEach((n, o) => { if (n > 0) ores[o] = n; });
       const got: Reward = { gold: r.gold, ores, books: r.books, els: r.el && L.el ? { [L.el]: r.el } : undefined };
@@ -227,8 +241,6 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       return <ShopView game={game} initial={m.tab} close={close} />;
     case 'adOffer':
       return <AdOfferView game={game} what={m.what} close={close} />;
-    case 'legacy':
-      return <LegacyView game={game} close={close} />;
     case 'chat':
       return <ChatView game={game} initial={m.ch} close={close} goClan={() => { close(); goTab?.('klan'); }} />;
     case 'draw':
@@ -248,7 +260,7 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
       if (m.k === 'runes') return <RuneInfo game={game} close={close} />;
       if (m.k === 'pets') return <PetsInfo close={close} />;
       if (m.k === 'mounts') return <MountsInfo close={close} />;
-      return m.k === 'level' ? <LevelInfo game={game} close={close} /> : <ForgeInfo game={game} close={close} />;
+      return m.k === 'level' ? <ForgeLevelInfo game={game} close={close} /> : <ForgeInfo game={game} close={close} />;
   }
 }
 
@@ -357,7 +369,7 @@ function DrawView({ m, close }: { m: Extract<ModalData, { kind: 'draw' }>; close
 /** Co wypada w krainie: z fal i z bossa (przycisk „i” na polu walki). */
 function LandInfoView({ game, land, close }: { game: Game; land: number; close: () => void }) {
   const s = game.s;
-  const L = LANDS[land];
+  const L = landDef(land);
   const mods = techMods(s);
   const shares = oreShares(L, allMods(s).rarePct);
   const set = setOfLand(land);
@@ -367,7 +379,7 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
   return (
     <>
       <div class="li-head" style={{ '--bg': `url(${landBgUrl(land)})` } as Record<string, string>}>
-        <div class="eyebrow">Akt {ROMAN[act]} · kraina {land + 1}</div>
+        <div class="eyebrow">{isAbyss(land) ? `Otchłań · krąg ${abyssCircle(land)}` : `${actName(act)} · kraina ${land + 1}`}</div>
         <div class="h">{L.n}</div>
       </div>
       <div class="eyebrow">Z każdej fali</div>
@@ -448,37 +460,3 @@ function MixView({ game, what, close }: { game: Game; what: 'el' | 'set'; close:
   );
 }
 
-function LevelInfo({ game, close }: { game: Game; close: () => void }) {
-  const s = game.s;
-  const lvl = s.forge.lvl;
-  const rel = techMods(s).jumpRel;
-  const rows = Array.from({ length: B.FORGE_MAX }, (_, i) => i + 1);
-  return (
-    <>
-      <div class="eyebrow">Kuźnia · poziom {lvl}</div>
-      <div class="h">Co daje poziom kuźni</div>
-      <p class="sub">Każdy poziom podnosi szansę, że wytop przeskoczy ponad minimalną rzadkość rudy, i co kilka poziomów otwiera wytop szlachetniejszej rudy. Wyższa kuźnia to też wyższy poziom przedmiotów (2 poziomy przedmiotu na poziom kuźni, każdy +8% statystyki głównej). Kuźnia działa normalnie w trakcie ulepszania.</p>
-      <div class="otable-wrap lvltable">
-        <table class="otable">
-          <thead><tr><th>Poz.</th><th>Przeskok</th><th>Zmiana</th><th>Ulepszenie</th></tr></thead>
-          <tbody>
-            {rows.map(l => {
-              const [p1, p2] = jumpChances(l, rel);
-              const [q1, q2] = l > 1 ? jumpChances(l - 1, rel) : [p1, p2];
-              return (
-                <tr key={l} class={l === lvl ? 'sel' : l < lvl ? 'done' : ''}>
-                  <td class="oname">{l}{l === lvl ? ' ◀' : ''}{(l === 1 || FORGE_UNLOCKS[l]) && <small class="unl">{ORES.map((o, i) => (o.lvl === l ? <Px key={i} src={oreUrl(i)} size={16} /> : null))}{l === 1 ? 'Miedź, Żelazo' : FORGE_UNLOCKS[l]}</small>}</td>
-                  <td>{pct(p1 + p2)}<small class="muted"> ({pct(p2)} o 2)</small></td>
-                  <td class="up">{l > 1 ? '+' + pct(p1 + p2 - q1 - q2) : '—'}</td>
-                  <td>{l === 1 ? '—' : <>{tfmt(upgradeTime(s, l))}<br /><small class="muted">{fmt(upgradeCost(s, l))} zł</small></>}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <p class="sub">„Przeskok” to bazowa szansa na rzadkość wyższą niż minimum rudy (w nawiasie: o dwie) — tyle ma przeskok do Epickiego. Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} tej szansy, na Mityczny ×{f2(JUMP_TO_MULT[5])}, na Boski {divMults}. {rel ? `Wliczona premia Hartowania: +${pct(rel)} względnie.` : ''}</p>
-      <Close onClose={close} label="Rozumiem" />
-    </>
-  );
-}

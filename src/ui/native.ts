@@ -1,10 +1,13 @@
 // Tylko w aplikacji na telefon (Capacitor): lokalne powiadomienia i przycisk „wstecz” Androida.
 // Powiadomienia planuje sam telefon, gdy gra schodzi w tło — serwer nie jest do tego potrzebny:
 // koniec ulepszenia kuźni, koniec badania, wyklucie jaja i limit nagród za nieobecność.
-import { B, LANDS, TECH } from '../data';
+import { B, TECH, landDef } from '../data';
 import type { Game } from '../engine/game';
 import { allMods } from '../engine/mods';
-import { isNative } from './pwa';
+import { isNative, isStandalone } from './pwa';
+import { EXIT_WINDOW_MS } from './back';
+import { toast } from '../engine/context';
+import { flushSave } from '../save/server';
 
 type LN = typeof import('@capacitor/local-notifications').LocalNotifications;
 let ln: LN | null = null;
@@ -19,7 +22,7 @@ export function upcoming(game: Game): { id: number; at: number; title: string; b
   if (s.tech.cur && s.tech.cur.left > 0) out.push({ id: 2, at: s.tech.cur.left / sp, title: 'Badanie zakończone', body: `${TECH[s.tech.cur.id].n} — nowy poziom czeka. Wybierz następne badanie.` });
   if (s.hatch && s.hatch.left > 0) out.push({ id: 3, at: s.hatch.left / sp, title: 'Jajo się wykluwa!', body: 'Nowy chowaniec czeka w zakładce Bohater.' });
   const cap = B.OFFLINE_CAP_MS + allMods(s).offlineMin * 60000;
-  out.push({ id: 4, at: cap, title: 'Bohater czeka na rozkazy', body: `Łupy z ${LANDS[s.cur.land].n} doszły do limitu nagród za nieobecność. Zajrzyj do kuźni!` });
+  out.push({ id: 4, at: cap, title: 'Bohater czeka na rozkazy', body: `Łupy z ${landDef(s.cur.land).n} doszły do limitu nagród za nieobecność. Zajrzyj do kuźni!` });
   return out.filter(n => n.at > 30000);
 }
 
@@ -59,8 +62,11 @@ async function cancelAll(): Promise<void> {
   if (pending.notifications.length) await p.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
 }
 
-/** Start w aplikacji: powiadomienia przy zejściu w tło, „wstecz” zamyka okno albo chowa grę. */
-export async function initNative(game: Game, closeModal: () => boolean): Promise<void> {
+/**
+ * Start w aplikacji: powiadomienia przy zejściu w tło i przycisk „wstecz”: `back` zamyka okno albo wraca do Kuźni;
+ * gdy nie ma już nic do cofnięcia, pierwsze naciśnięcie pokazuje podpowiedź, a drugie (w ciągu 2 s) zamyka grę.
+ */
+export async function initNative(game: Game, back: () => boolean): Promise<void> {
   if (!isNative()) return;
   setTimeout(() => void askOnce().catch(() => {}), 60000);
   document.addEventListener('visibilitychange', () => {
@@ -69,5 +75,28 @@ export async function initNative(game: Game, closeModal: () => boolean): Promise
   });
   void cancelAll().catch(() => {});
   const { App } = await import('@capacitor/app');
-  await App.addListener('backButton', () => { if (!closeModal()) void App.minimizeApp(); });
+  let last = 0;
+  await App.addListener('backButton', () => {
+    if (back()) { last = 0; return; }
+    const now = Date.now();
+    if (now - last < EXIT_WINDOW_MS) {
+      // zapis przed wyjściem (najwyżej 1,5 s czekania)
+      void Promise.race([flushSave(), new Promise(r => setTimeout(r, 1500))]).finally(() => void App.exitApp());
+      return;
+    }
+    last = now;
+    toast(game.ctx, 'Naciśnij „wstecz” jeszcze raz, aby wyjść z gry.');
+  });
+}
+
+/**
+ * Zainstalowana gra w przeglądarce (bez aplikacji): „wstecz” telefonu cofa historię przeglądarki. Gra trzyma jeden
+ * wpis zapasu — „wstecz” zamyka okno albo wraca do Kuźni i odnawia zapas; gdy nie ma nic do cofnięcia, wychodzi.
+ */
+export function initHistoryBack(back: () => boolean): () => void {
+  if (isNative() || !isStandalone()) return () => {};
+  try { history.pushState({ kl: 1 }, ''); } catch { return () => {}; }
+  const onPop = () => { if (back()) { try { history.pushState({ kl: 1 }, ''); } catch { /* bez historii */ } } };
+  window.addEventListener('popstate', onPop);
+  return () => window.removeEventListener('popstate', onPop);
 }

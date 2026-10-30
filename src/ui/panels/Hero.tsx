@@ -1,4 +1,4 @@
-import { B, LANDS, SETS, SLOTS, SLOT_ORDER } from '../../data';
+import { B, SETS, SLOTS, SLOT_ORDER, landDef } from '../../data';
 import { itemName, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { FoeType, Item } from '../../engine/types';
@@ -52,7 +52,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
           <div>
             <div class="eyebrow">Bohater</div>
             <div class="h">{s.name}</div>
-            <p class="sub">{smithTitle(s.smith.fame).n} · najdalej: {LANDS[s.maxLand].n}</p>
+            <p class="sub">{smithTitle(s.smith.fame).n} · najdalej: {landDef(s.maxLand).n}</p>
             <button class="btn small" style={{ marginTop: '6px' }} onClick={() => showProfile(null)}>Podgląd bohatera</button>
           </div>
         </div>
@@ -98,7 +98,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
         </div>
       </section>
       <RunesCard game={game} />
-      <LegacyCard game={game} onItem={onItem} onOpen={() => game.openModal({ kind: 'legacy' })} />
+      <LegacyCard game={game} onItem={onItem} />
     </>
   );
 }

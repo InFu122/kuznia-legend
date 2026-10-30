@@ -1,5 +1,5 @@
 // Rankingi: Moc (aktualna), Wieża Wyzwań (tygodniowy), postęp w kampanii i ocena na arenie.
-import { LANDS } from '../../src/data';
+import { landDef } from '../../src/data';
 import type { GameState } from '../../src/engine/types';
 import { parse, userOf } from './common';
 import { frameOr, skinOr } from '../../src/engine/cosmetics';
@@ -25,7 +25,7 @@ export function createBoards(nk: nkruntime.Nakama, logger: nkruntime.Logger): vo
   }
 }
 
-export const boardMeta = (s: GameState, power: number) => ({ name: cleanName(s.name), land: LANDS[s.maxLand].n, forge: s.forge.lvl, power });
+export const boardMeta = (s: GameState, power: number) => ({ name: cleanName(s.name), land: landDef(s.maxLand).n, forge: s.forge.lvl, power });
 
 /** Wyniki liczone z zapisu (arena zmienia się tylko po walkach). */
 export function submitBoards(nk: nkruntime.Nakama, logger: nkruntime.Logger, userId: string, username: string, s: GameState, power: number): void {
