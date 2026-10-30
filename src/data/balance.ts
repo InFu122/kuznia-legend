@@ -131,6 +131,8 @@ export const B = {
   BOOKS_BOSS_CHANCE: 0.1,       // kolejne pokonania: szansa na 1 Księgę
   UNIQ_BOSS_FIRST: 2,           // rudy unikalne za pierwsze pokonanie bossa z zestawem
   UNIQ_BOSS_CHANCE: 0.05,       // szansa na rudę unikalną przy kolejnych pokonaniach
+  RAMP_DROP: 50,                // nowa ruda wchodzi stopniowo: tyle % wytopów o rzadkość niżej na poziomie kuźni, na którym się odblokowuje…
+  RAMP_LEVELS: 5,               // …i mniej z każdym poziomem — po tylu poziomach już zawsze pełne minimum
   DIVINE_AURA: 3,               // Boska aura: +% obrażeń i zdrowia bohatera za każdy założony Boski przedmiot
   DIVINE_ORE_BOSS: 0.01,        // szansa na Boską Rudę z bossa krainy w akcie IV
   DIVINE_ORE_EVENT_BOSS: 0.05,  // szansa na Boską Rudę ze skrzyni bossa lochu sezonowego

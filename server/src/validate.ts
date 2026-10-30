@@ -4,7 +4,7 @@ import {
   ACHIEVEMENTS, B, CLAN, COMPANION_MAX, EVENT, EVENT_MILESTONES, FRAMES, FRAME_IDS, LANDS, SKINS, SKIN_IDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
 } from '../../src/data';
 import { eventOf, eventPtsMax, eventReached } from '../../src/engine/events';
-import { maxJump } from '../../src/engine/formulas';
+import { maxJump, oreRamps } from '../../src/engine/formulas';
 import type { GameState, Item, SubId } from '../../src/engine/types';
 
 const MAX_ITEM_LVL = 2 * B.FORGE_MAX + 2;
@@ -16,7 +16,7 @@ function checkItem(it: Item, where: string, out: string[]): void {
   if (!it || typeof it !== 'object') { bad('brak przedmiotu'); return; }
   if (!SLOTS[it.slot]) bad('nieznany slot');
   if (!fin(it.ore) || !ORES[it.ore]) { bad('nieznana ruda'); return; }
-  if (!fin(it.r) || it.r < ORES[it.ore].floor || it.r > Math.min(6, ORES[it.ore].floor + maxJump(it.ore) + 1)) bad(`rzadkość ${it.r} niemożliwa z rudy ${ORES[it.ore].n}`);
+  if (!fin(it.r) || it.r < ORES[it.ore].floor - (oreRamps(it.ore) ? 1 : 0) || it.r > Math.min(6, ORES[it.ore].floor + maxJump(it.ore) + 1)) bad(`rzadkość ${it.r} niemożliwa z rudy ${ORES[it.ore].n}`);
   if (!fin(it.lvl) || it.lvl < 1 || it.lvl > MAX_ITEM_LVL) bad(`poziom ${it.lvl}`);
   if (!Array.isArray(it.subs) || it.subs.length > 6) bad('za dużo statystyk dodatkowych');
   else for (const sub of it.subs) {

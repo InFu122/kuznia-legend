@@ -136,18 +136,21 @@ describe('sklep i reklamy', () => {
     expect(rb.gold).toBe(ra.gold);
   });
 
-  it('przyspieszenia: cena za każde rozpoczęte 4 minuty; pomoc z serwera kończy ulepszenie', () => {
+  it('przyspieszenia: kuźnia 1 Klejnot za minutę, Nauka za 4 minuty; pomoc z serwera kończy ulepszenie', () => {
     expect(speedupGems(0)).toBe(0);
     expect(speedupGems(1000)).toBe(1);
-    expect(speedupGems(60 * 60000)).toBe(15);
+    expect(speedupGems(60 * 60000)).toBe(60);
+    expect(speedupGems(60 * 60000, 'tech')).toBe(15);
+    expect(speedupGems(1000, 'tech')).toBe(1);
     const { g, s, ctx } = makeGame(9);
     s.forge.lvl = 5; s.forge.up = 6; s.forge.left = 3 * 3600000;
-    expect(speedupCost(s, 'forge')).toBe(45);
-    expect(g.speedup('forge')).toBe(false);
+    expect(speedupCost(s, 'forge')).toBe(180);
     s.gems = 100;
+    expect(g.speedup('forge')).toBe(false);
+    s.gems = 200;
     expect(g.speedup('forge')).toBe(true);
     expect(s.forge.lvl).toBe(6);
-    expect(s.gems).toBe(55);
+    expect(s.gems).toBe(20);
     // z serwera: łączny czas przyspieszenia ulepszenia na poziom 7, liczony raz
     s.forge.up = 7; s.forge.left = 3600000;
     expect(applyBoost(ctx, 7, 3600000 + 5000)).toBeGreaterThan(0);

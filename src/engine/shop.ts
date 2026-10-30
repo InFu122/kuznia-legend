@@ -292,7 +292,7 @@ export function tickPassLocal(ctx: Ctx): Reward | null {
 /** Cena przyspieszenia w Klejnotach: kuźnia (trwające ulepszenie) albo badanie. */
 export function speedupCost(s: GameState, what: 'forge' | 'tech'): number {
   if (what === 'forge') return s.forge.up ? speedupGems(s.forge.left) : 0;
-  return s.tech.cur ? speedupGems(s.tech.cur.left) : 0;
+  return s.tech.cur ? speedupGems(s.tech.cur.left, 'tech') : 0;
 }
 
 /** Przyspieszenie bez serwera: kończy ulepszenie kuźni albo badanie (dokończy je następny krok gry). */

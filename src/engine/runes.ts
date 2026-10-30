@@ -1,9 +1,10 @@
 // Runy slotów i przekuwanie statystyk dodatkowych — ujścia rudy i złota.
 // Runa: każdy z 8 slotów ma poziom 0–30; +1% głównej statystyki przedmiotu w tym slocie za poziom (działa na każdy założony przedmiot).
 // Koszt rośnie po pięć poziomów na każdą rudę: 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal.
+// Gdy brakuje tej rudy, płaci się tyle samo sztuk następnej lepszej, której wystarczy (gracz z dalszych krain nie ma już Miedzi).
 // Przekuwanie: jedna statystyka dodatkowa przedmiotu losowana od nowa za rudę przedmiotu i złoto; gracz wybiera, którą wersję zatrzymać.
 // Z serwerem przekuwa serwer (server/src/runes.ts) i podpisuje przedmiot, żeby dalej liczył się do rankingów.
-import { B, DIVINE_ORE, ORES, RAR, SLOTS, SUBS, SUB_IDS } from '../data';
+import { B, DIVINE_ORE, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, oreRank } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWave } from './formulas';
 import { rnd, type Rng } from './rng';
@@ -22,11 +23,24 @@ export function runeCost(s: GameState, lvl: number): Cost {
   return { ore: tier, n: 20 + 10 * ((lvl - 1) % 5), gold: goldWave(s.bestG) * 5 * lvl };
 }
 
+/**
+ * Czym zapłacisz za poziom `lvl`: ruda z kosztu albo — gdy jej brakuje — ta sama liczba sztuk najbliższej lepszej rudy,
+ * której masz dość (bez Boskiej Rudy). Gdy żadnej nie wystarcza, zwraca koszt podstawowy.
+ */
+export function runePay(s: GameState, lvl: number): Cost {
+  const c = runeCost(s, lvl);
+  for (let k = oreRank(c.ore); k < ORE_ORDER.length; k++) {
+    const o = ORE_ORDER[k];
+    if (o !== DIVINE_ORE && s.ores[o] >= c.n) return { ...c, ore: o };
+  }
+  return c;
+}
+
 export function runeBlock(s: GameState, slot: SlotId): string | null {
   if (s.forge.lvl < B.RUNE_FORGE_LVL) return `od ${B.RUNE_FORGE_LVL}. poziomu kuźni`;
   const L = runeLvl(s, slot);
   if (L >= B.RUNE_MAX) return 'maksymalny poziom';
-  const c = runeCost(s, L + 1);
+  const c = runePay(s, L + 1);
   if (s.ores[c.ore] < c.n) return `za mało: ${ORES[c.ore].n}`;
   if (s.gold < c.gold) return 'za mało złota';
   return null;
@@ -36,7 +50,7 @@ export function upgradeRune(ctx: Ctx, slot: SlotId): boolean {
   const s = ctx.s;
   if (!SLOTS[slot] || runeBlock(s, slot)) return false;
   const L = runeLvl(s, slot) + 1;
-  const c = runeCost(s, L);
+  const c = runePay(s, L);
   s.ores[c.ore] -= c.n;
   s.gold -= c.gold;
   s.runes = { ...s.runes, [slot]: L };

@@ -40,6 +40,7 @@ export interface SaveMeta {
   clMax?: number;    // najwyższy poziom klanu gracza (premia do czasu ulepszeń w kontroli tempa)
   jv2?: number;      // od tego numeru wytopu obowiązują zasady przeskoku w wersji 2 (wcześniejsze mogą mieć dawne)
   jv3?: number;      // od tego numeru wytopu obowiązują zasady w wersji 3 (nowe rudy; wcześniejsze mogą mieć wersję 2)
+  jv4?: number;      // od tego numeru wytopu obowiązują zasady w wersji 4 (nowa ruda wchodzi stopniowo)
 }
 export interface SaveValue { state: GameState; power: number; savedAt: number; meta?: SaveMeta }
 

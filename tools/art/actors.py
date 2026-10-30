@@ -445,6 +445,78 @@ def dragon():
 def golem():
     return bosses.golem()
 
+# ---------- towarzysze (chowańce i wierzchowce) ----------
+
+def horse(horn=False):
+    c = Cv(FW, FH)
+    c.line(6, 13, 3, 23, 's', 2.6); c.line(3, 23, 2, 26, 's', 1.6)      # ogon
+    c.ell(14, 17, 9.2, 5.2, 'p')                                       # tułów
+    c.ell(14, 20.5, 6.5, 1.6, 'q', only='p')                           # brzuch
+    c.rect(7, 20, 8, 28, 'p'); c.rect(10, 21, 11, 27, 'p')             # tylne nogi
+    c.rect(18, 20, 19, 28, 'p'); c.rect(21, 21, 22, 27, 'p')           # przednie
+    c.rect(6, 29, 9, 30, 't'); c.rect(9, 28, 12, 28, 't'); c.rect(17, 29, 20, 30, 't'); c.rect(20, 28, 23, 28, 't')  # kopyta
+    c.poly([(18, 16), (21, 7), (25.5, 7), (24, 16)], 'p')              # szyja
+    c.poly([(22, 5), (29, 8), (30.5, 11.5), (27, 12.5), (22.5, 9.5)], 'p')  # głowa
+    c.poly([(22.5, 2.5), (24.5, 5.5), (22, 6)], 'p')                   # ucho
+    c.line(21.5, 5, 18.5, 15, 's', 2.2)                                # grzywa
+    c.ell(13, 13.6, 5, 1.6, 'r', only='p')                             # siodło / derka
+    c.put(25, 8, 'e'); c.put(29, 10.5, 'k')
+    if horn: c.line(25.5, 5, 30.5, 0, 'r', 1.4)
+    return c
+
+def turtle():
+    c = Cv(FW, FH)
+    c.ell(24.5, 20, 3.6, 3, 's')                                       # głowa
+    c.rect(6, 22, 8, 27, 's'); c.rect(18, 22, 20, 27, 's')             # łapy
+    c.line(3, 23, 6, 22, 's', 1.6)                                     # ogonek
+    c.ell(13.5, 20, 10.5, 8, 'p')                                      # skorupa
+    c.rect(0, 22, 31, 31, '.')
+    c.rect(4, 22, 23, 23, 'q')                                         # brzeg skorupy
+    for (x, y) in [(9, 16), (14, 14), (19, 16), (11, 20), (17, 20)]: c.ell(x, y, 2.2, 1.8, 'r', only='p')  # tarczki
+    c.rect(6, 24, 8, 27, 's'); c.rect(18, 24, 20, 27, 's')
+    c.put(26, 19, 'e'); c.rect(26, 21, 27, 21, 'k')
+    return c
+
+def bear():
+    c = Cv(FW, FH)
+    c.ell(13, 18, 10, 7.5, 'p')                                        # tułów
+    c.ell(13, 22.5, 7, 2.2, 'q', only='p')
+    c.rect(5, 21, 9, 29, 'p'); c.rect(16, 21, 20, 29, 'p')             # łapy
+    c.rect(4, 30, 9, 30, 's'); c.rect(15, 30, 20, 30, 's')
+    c.ell(24, 13.5, 5.6, 5, 'p')                                       # głowa
+    c.ell(28.5, 15.5, 2.8, 2.2, 'q')                                   # pysk
+    c.ell(20.5, 8.8, 1.9, 1.9, 'p'); c.ell(25.5, 8.6, 1.9, 1.9, 'p')   # uszy
+    c.ell(11, 12.5, 6.5, 2.6, 'r', only='p')                           # pancerz na grzbiecie
+    c.put(24, 12, 'e'); c.put(30.5, 15, 'k')
+    return c
+
+def lizard():
+    c = Cv(FW, FH)
+    c.line(2, 25, 9, 20.5, 'p', 2.6); c.line(0, 27, 3, 25, 'p', 1.4)    # ogon
+    c.ell(15, 20, 8, 4, 'p')                                           # tułów
+    c.ell(15, 22.6, 6, 1.4, 'q', only='p')
+    c.rect(9, 22, 10, 27, 'p'); c.rect(19, 22, 20, 27, 'p')
+    c.rect(7, 27, 11, 27, 'p'); c.rect(18, 27, 22, 27, 'p')
+    c.ell(25, 18, 5.4, 3.2, 'p')                                       # głowa
+    c.poly([(13, 16), (15, 13), (17, 16), (19, 13.5), (21, 16)], 'r')  # grzebień
+    for (x, y) in [(11, 18), (15, 18.5), (18, 19)]: c.put(x, y, 'r')
+    c.put(27, 17, 'e'); c.rect(26, 20, 30, 20, 'k')
+    return c
+
+def owl():
+    c = Cv(FW, FH)
+    c.ell(16, 20, 8, 8.5, 'p')                                         # ciało
+    c.ell(16, 22.5, 5, 5, 'q', only='p')                               # pierś
+    c.ell(9, 20, 3, 7, 's', only='p'); c.ell(23, 20, 3, 7, 's', only='p')  # skrzydła
+    c.ell(16, 11, 7, 6, 'p')                                           # głowa
+    c.poly([(9, 7), (10, 2), (13, 6)], 'p'); c.poly([(19, 6), (22, 2), (23, 7)], 'p')  # pióra-uszy
+    c.ell(13, 11, 2.6, 2.6, 'w'); c.ell(19, 11, 2.6, 2.6, 'w')         # oczy
+    c.rect(13, 10, 13, 11, 'e'); c.rect(19, 10, 19, 11, 'e')
+    c.poly([(15, 13), (17, 13), (16, 16)], 't')                        # dziób
+    c.rect(12, 28, 14, 29, 't'); c.rect(18, 28, 20, 29, 't')           # szpony
+    return c
+
+
 def finish_foe(c, flip=True):
     rows = c.rows()
     if flip: rows = [r[::-1] for r in rows]
@@ -458,6 +530,8 @@ FOE_TEMPLATES = {
     'golem': golem, 'troll': lambda: finish_foe(troll()), 'minotaur': lambda: finish_foe(troll(horns=True)),
     'chochlik': lambda: finish_foe(imp()), 'goblin': lambda: finish_foe(imp(wings=False, horns=False, sack=True)),
     'ptak': lambda: finish_foe(bird()), 'gryf': lambda: finish_foe(bird(beast=True)), 'smok': lambda: finish_foe(dragon()),
+    'kon': lambda: finish_foe(horse()), 'rog': lambda: finish_foe(horse(horn=True)), 'zolw': lambda: finish_foe(turtle()),
+    'mis': lambda: finish_foe(bear()), 'jaszczur': lambda: finish_foe(lizard()), 'sowa': lambda: finish_foe(owl()),
 }
 
 # Palety: region → 4 kolory (jasny → najciemniejszy); e oczy, w biel.
@@ -570,6 +644,29 @@ FOES = {
     'Duch': ('upior', P(R('#dfe8ff', '#aab8e6', '#7a88b8', '#4e5a86'), R('#c0ccf6', '#8e9cd0', '#6270a6', '#3e4878'), RED, DARK, e='#9fe8ff')),
     'Strażnik Krypty': ('rycerz', P(BLACK, BONE, R('#8affb0', '#4ae080', '#2aa05a', '#186a3a'), R('#2a3a32', '#1c2a22', '#121c16', '#0a120e'), BONE, e='#8affb0')),
 }
+# Towarzysze (portrety w Bohaterze): klucz = id chowańca albo wierzchowca.
+COMPANIONS = {
+    # chowańce
+    'wilczek': ('wilk', P(R('#d8d2c6', '#aaa396', '#7a7468', '#4e4a42'), CREAM, RED, GREY, e='#5ab0ff')),
+    'kruk': ('ptak', P(BLACK, R('#6a6878', '#4c4a58', '#33323e', '#1e1d26'), RED, R('#3c3a48', '#2a2834', '#1c1a24', '#100f16'), R('#5a5664', '#3c3946', '#27252f', '#17161d'), e='#ff5a5a')),
+    'zolw': ('zolw', P(R('#8fae6a', '#6a8a4a', '#4a6a32', '#2e461e'), SAND, R('#c8d88a', '#a0b864', '#748c40', '#4a5c26'), R('#a8b48a', '#7e8a64', '#566042', '#353c28'), e='#ffd23a')),
+    'salamandra': ('jaszczur', P(FIRE, R('#ffe08a', '#f0b040', '#c08020', '#7a5010'), R('#5a2a1a', '#401c10', '#2a120a', '#180a06'), DARK, e='#fff07a')),
+    'sowa': ('sowa', P(R('#f4f6fa', '#d0d8e2', '#a2aebe', '#6e7a8c'), R('#ffffff', '#eef2f6', '#ccd6e0', '#9aa8b8'), RED, R('#c0ccda', '#94a2b4', '#6a788c', '#465264'), GOLD, e='#ffcf3a')),
+    'gryfiatko': ('gryf', P(R('#fff6e0', '#f0dcb0', '#c8b07a', '#8a764a'), CREAM, R('#d8b080', '#b08a5a', '#80623a', '#544024'), ICE, GOLD, e='#2a6aff')),
+    'wilkor': ('wilk', P(R('#5a4a7a', '#3e3258', '#2a213c', '#1a1426'), R('#8a7ab0', '#6a5a90', '#4c3e6e', '#30264a'), PURPLE, BLACK, e='#c88aff')),
+    'feniks': ('ptak', P(FIRE, R('#fff2a8', '#ffd060', '#e09a2a', '#a0641a'), RED, R('#ff5a2a', '#d83a1a', '#a0240e', '#661406'), GOLD, e='#fff6c0')),
+    'smoczek': ('smok', P(TEAL, R('#c8f0e0', '#9ad0bc', '#6aa890', '#407a66'), CREAM, R('#2a5a6a', '#1c4250', '#122c36', '#0a1a20'), BONE, e='#ffe03a')),
+    # wierzchowce
+    'kon': ('kon', P(BROWN, CREAM, R('#c8463a', '#a0302a', '#741e1c', '#4a1212'), R('#3a2618', '#2a1a10', '#1c110a', '#100a06'), STEEL, e='#1a1010')),
+    'dzik': ('dzik', P(DARK, SKIN, BONE, STEEL, e='#ff5a3a')),
+    'wilk': ('wilk', P(SAND, CREAM, RED, BROWN, e='#ffd23a')),
+    'niedzwiedz': ('mis', P(BROWN, R('#c8a07a', '#a07a54', '#765634', '#4c361e'), STEEL, DARK, e='#ffcf4a')),
+    'jaszczur': ('jaszczur', P(SAND, CREAM, R('#e07a3a', '#b8582a', '#843a1a', '#56240e'), BROWN, e='#ffe03a')),
+    'jednorozec': ('rog', P(R('#ffffff', '#e6eaf2', '#bcc4d4', '#8a94a8'), R('#ffffff', '#f2f4f8', '#d4dae4', '#a8b2c2'), GOLD, R('#e0b0ff', '#b880f0', '#8a54c8', '#5c3490'), GOLD, e='#5a3a8a')),
+    'gryf': ('gryf', P(GOLD, CREAM, BROWN, R('#7a8ab0', '#56648a', '#3a4664', '#232c42'), GOLD, e='#9ff0ff')),
+    'smok': ('smok', P(R('#4a3a66', '#33284a', '#221a32', '#140f1e'), R('#9a7ac8', '#7458a6', '#503a7c', '#322450'), R('#c8a0ff', '#a070f0', '#7044c0', '#46288a'), BLACK, BONE, e='#c8a0ff')),
+}
+
 # Wróg spoza listy: szablon i paleta według rodzaju (Bestie, Nieumarli, Demony, Smoki).
 FOE_BY_TYPE = {'Bestie': 'Wygłodniały wilk', 'Nieumarli': 'Szkielet', 'Demony': 'Chochlik', 'Smoki': 'Wywerna'}
 
@@ -648,5 +745,11 @@ def export_ts(out):
         lines.append(f"  {json.dumps(n, ensure_ascii=False)}: ['{tk}', {json.dumps({k: v for k, v in pal.items() if k in used})}],")
     lines.append('};')
     lines.append(f"export const FOE_BY_TYPE: Record<string, string> = {json.dumps(FOE_BY_TYPE, ensure_ascii=False)};")
+    lines.append("\n/** Towarzysze (chowańce i wierzchowce) → [szablon, paleta]; portret patrzy w lewo jak wrogowie. */")
+    lines.append("export const COMPANION_LOOK: Record<string, [string, Record<string, string>]> = {")
+    for n, (tk, pal) in COMPANIONS.items():
+        used = set(''.join(T[tk])) - {'.'}
+        lines.append(f"  '{n}': ['{tk}', {json.dumps({k: v for k, v in pal.items() if k in used})}],")
+    lines.append('};')
     open(f'{out}/actors-data.ts', 'w').write('\n'.join(lines) + '\n')
-    print('actors:', len(L), 'warstw,', len(T), 'szablonów,', len(FOES), 'wrogów')
+    print('actors:', len(L), 'warstw,', len(T), 'szablonów,', len(FOES), 'wrogów,', len(COMPANIONS), 'towarzyszy')

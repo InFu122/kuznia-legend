@@ -67,7 +67,9 @@ export type Layer =
   | { k: 'glow'; x: number; y: number; r: number; c: string; a?: number }
   | { k: 'furnace'; x: number; base: number; w: number; h: number; c: string; fire: string }
   | { k: 'anvil'; x: number; base: number; c: string; hot?: string }
-  | { k: 'tools'; x: number; y: number; c: string; n: number };
+  | { k: 'tools'; x: number; y: number; c: string; n: number }
+  | { k: 'bellows'; x: number; base: number; c: string }
+  | { k: 'shelf'; x: number; y: number; w: number; c: string; bars: string[] };
 
 export interface Scene {
   sky: string[];                                       // kolory nieba od góry do horyzontu
@@ -379,6 +381,36 @@ function drawLayer(b: Buf, L: Layer, rng: () => number): void {
       }
       break;
     }
+    case 'bellows': {
+      // Miech kowalski: skórzany worek z żebrami między dwiema deskami, rura do pieca, uchwyt.
+      const c = hex(L.c), dark = lift(c, -0.3), lit = lift(c, 0.18), wood = hex('#6a4428'), woodL = hex('#8a5c36'), iron = hex('#6a6e78');
+      const y = L.base - 12;
+      b.rect(L.x - 6, L.base - 6, 3, 6, wood); b.rect(L.x + 6, L.base - 6, 3, 6, wood); // nóżki
+      for (let i = 0; i < 26; i++) {                                    // worek (klin) zwężający się ku piecowi
+        const h = Math.round(2 + (25 - i) * 0.36);
+        for (let j = -h; j <= h; j++) b.set(L.x - 13 + i, y + j, i % 5 === 0 ? dark : j < 0 ? lit : c);
+        b.set(L.x - 13 + i, y - h - 1, woodL); b.set(L.x - 13 + i, y - h - 2, woodL); // deska górna
+        b.set(L.x - 13 + i, y + h + 1, wood); b.set(L.x - 13 + i, y + h + 2, wood);   // deska dolna
+      }
+      b.rect(L.x - 17, y - 14, 5, 2, woodL); b.rect(L.x - 17, y - 14, 2, 6, woodL);   // uchwyt
+      b.rect(L.x + 12, y - 1, 12, 3, iron); b.rect(L.x + 12, y - 1, 12, 1, lift(iron, 0.3)); // rura do pieca
+      break;
+    }
+    case 'shelf': {
+      // Półka ze sztabami rud (kolory z `bars`), na kołkach w ścianie.
+      const c = hex(L.c), lit = lift(c, 0.2);
+      for (const sy of [L.y, L.y + 14]) {
+        b.rect(L.x, sy, L.w, 2, lit); b.rect(L.x, sy + 2, L.w, 1, lift(c, -0.25));
+        b.rect(L.x + 3, sy + 2, 2, 4, c); b.rect(L.x + L.w - 5, sy + 2, 2, 4, c);
+        let x = L.x + 3;
+        for (let k = 0; x < L.x + L.w - 7; k++) {
+          const bar = hex(L.bars[(k + (sy === L.y ? 0 : 2)) % L.bars.length]);
+          b.rect(x, sy - 3, 7, 3, bar); b.rect(x + 1, sy - 4, 5, 1, lift(bar, 0.35)); b.set(x + 1, sy - 3, lift(bar, 0.5));
+          x += 9;
+        }
+      }
+      break;
+    }
   }
 }
 
@@ -600,6 +632,19 @@ export const DUNGEON_SCENES: Record<string, Scene> = {
   zbrojownia: { seed: 58, sky: ['#000000'], layers: [{ k: 'cave', c: '#1e1e24', c2: '#121216', lamps: '#ffc070' }, { k: 'pillars', base: 84, c: '#2a2a32', n: 4, h: 40 }, { k: 'ground', y: 84, c: '#26262c', c2: '#141418' }], fx: [{ k: 'ash', c: '#8a8a9a', n: 20 }] },
   krypta: { seed: 59, sky: ['#000000'], layers: [{ k: 'cave', c: '#14181e', c2: '#0a0c10' }, { k: 'arch', base: 84, c: '#1c2028', x: 54, w: 52, h: 50, glow: '#e8d080' }, { k: 'graves', base: 84, c: '#22262e', n: 6 }, { k: 'ground', y: 86, c: '#1a1e24', c2: '#0c0e12' }], fx: [{ k: 'spores', c: '#f0e0a0', n: 12 }] },
   // kuźnia (tło okna wytopu na zakładce Kuźnia)
+  ulepszenie: {
+    seed: 77, sky: ['#000000'],
+    layers: [
+      { k: 'cave', c: '#2c1e16', c2: '#160e0a' },
+      { k: 'shelf', x: 8, y: 30, w: 58, c: '#6a4428', bars: ['#d9824a', '#9aa1ab', '#cbd6e4', '#6fd0de', '#79b86c', '#5f5180'] },
+      { k: 'furnace', x: 136, base: 84, w: 34, h: 46, c: '#6a3a28', fire: '#ff7a1a' },
+      { k: 'ground', y: 84, c: '#3a2a1e', c2: '#20160f' },
+      { k: 'bellows', x: 100, base: 86, c: '#7a4a2e' },
+      { k: 'anvil', x: 48, base: 86, c: '#4a4e5a', hot: '#ffb04a' },
+      { k: 'glow', x: 136, y: 70, r: 34, c: '#ff7a1a', a: 0.1 },
+    ],
+    fx: [{ k: 'embers', c: '#ffb04a', n: 26 }],
+  },
   kuznia: { seed: 64, sky: ['#000000'], layers: [{ k: 'cave', c: '#2a1c14', c2: '#170f0a' }, { k: 'tools', x: 14, y: 30, c: '#8a8a96', n: 4 }, { k: 'furnace', x: 118, base: 84, w: 40, h: 50, c: '#6a3a28', fire: '#ff7a1a' }, { k: 'ground', y: 84, c: '#3a2a1e', c2: '#20160f' }, { k: 'anvil', x: 62, base: 86, c: '#4a4e5a', hot: '#ffb04a' }], fx: [{ k: 'embers', c: '#ffb04a', n: 36 }] },
   // lochy sezonowe (wydarzenia)
   ev_kuznia: { seed: 61, sky: ['#000000'], layers: [{ k: 'cave', c: '#2a120a', c2: '#160806', lamps: '#ff8a2a' }, { k: 'glow', x: 80, y: 74, r: 22, c: '#ff5a1a', a: 0.18 }, { k: 'water', y: 84, c: '#ff6a1a', c2: '#c03a0a', shine: '#ffd04a' }], fx: [{ k: 'embers', c: '#ffb04a', n: 50 }] },

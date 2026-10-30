@@ -335,6 +335,54 @@ def spark_icon():
     pal = {**K, 'a': '#c8381a', 'b': '#ff7a1a', 'c': '#ffc040', 'w': '#fff4c0', 'y': '#ffd060'}
     return rows, pal
 
+def rune_icon():
+    # Runa 16×16: kamienna tabliczka z wyrytym, świecącym znakiem.
+    rows = [
+        "................",
+        "....aaaaaaaa....",
+        "...abbbbbbbba...",
+        "...abbbybbbca...",
+        "...abbbyybbca...",
+        "...abbbyyybca...",
+        "...abbbybybca...",
+        "...abbbyybbca...",
+        "...abbbybbbca...",
+        "...abbbybbbca...",
+        "...abbbybbbca...",
+        "...abbbbbbbca...",
+        "...abccccccca...",
+        "....aaaaaaaa....",
+        "................",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#3a3f4c', 'b': '#7a8296', 'c': '#555c6c', 'y': '#7ff0ff'}
+    return rows, pal
+
+def paw_icon():
+    # Łapa 16×16 (chowańce): odcisk łapy z czterema palcami.
+    rows = [
+        "................",
+        "....aa....aa....",
+        "...abba..abba...",
+        "...abba..abba...",
+        "....aa....aa....",
+        ".aa..........aa.",
+        "abba..aaaa..abba",
+        "abba.abbbba.abba",
+        ".aa.abbbbbba.aa.",
+        "...abbbccbbba...",
+        "...abbccccbba...",
+        "...abbbccbbba...",
+        "....abbbbbba....",
+        ".....aaaaaa.....",
+        "................",
+        "................",
+    ]
+    rows = outline(rows)
+    pal = {**K, 'a': '#7a4a2a', 'b': '#c9925a', 'c': '#e8b880'}
+    return rows, pal
+
 def horn_icon():
     # Trofeum 16×16 (Wielkie Łowy): zakrzywiony róg myśliwski z mosiężnym okuciem.
     rows = [

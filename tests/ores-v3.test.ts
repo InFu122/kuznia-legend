@@ -86,10 +86,10 @@ describe('dawne Boskie przedmioty zostają', () => {
     const rng = mulberry32(seedFor(n)); smeltDraws(rng);
     const old: Item = { ...it, r: 6, jump: 0, subs: rollSubs(rng, 6), jv: 2 };
     expect(oreFloor(6, 2)).toBe(6);
-    expect(verifySmelt(old, seedFor(n), 0, 30, false, true)).toBeNull();
-    expect(verifySmelt(old, seedFor(n), 0, 30, false, false)).not.toBeNull();
+    expect(verifySmelt(old, seedFor(n), 0, 30, 2)).toBeNull();
+    expect(verifySmelt(old, seedFor(n), 0, 30, 3)).not.toBeNull();
     // nowe rudy nie istniały w wersji 2
-    expect(verifySmelt({ ...old, ore: 7 }, seedFor(n), 0, 30, false, true)).not.toBeNull();
+    expect(verifySmelt({ ...old, ore: 7 }, seedFor(n), 0, 30, 2)).not.toBeNull();
   });
 });
 

@@ -3,45 +3,76 @@ import { useState } from 'preact/hooks';
 import { B, ORES, SLOTS, SLOT_ORDER } from '../../data';
 import { itemUrl, oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
-import { reforgeBlock, reforgeCost, runeBlock, runeCost, runeLvl, subText } from '../../engine/runes';
+import { reforgeBlock, reforgeCost, runeBlock, runeCost, runeLvl, runePay, subText } from '../../engine/runes';
 import type { Item, SlotId } from '../../engine/types';
 import { getLink } from '../../save/server';
 import { fmt } from '../format';
 import { SlotIcon } from '../icons';
 import { Px } from '../Px';
 import { Note, errText } from './ClanLife';
+import { InfoBtn } from './Forge';
 
 const CostLine = ({ ore, n, gold, lack }: { ore: number; n: number; gold: number; lack?: boolean }) => (
   <span class={`rcost${lack ? ' lack' : ''}`}><Px src={oreUrl(ore)} size={14} />{fmt(n)} <Px src={resUrl('zloto')} size={14} />{fmt(gold)}</span>
 );
+
+/** Pasek runy: 6 odcinków po 5 poziomów, każdy w kolorze rudy, którą się za nie płaci. */
+function RuneBar({ s, lvl }: { s: Game['s']; lvl: number }) {
+  return (
+    <span class="rbar" aria-hidden="true">
+      {Array.from({ length: B.RUNE_MAX / 5 }, (_, t) => {
+        const fill = Math.max(0, Math.min(5, lvl - t * 5)) / 5;
+        return <i key={t} style={{ '--c': ORES[runeCost(s, t * 5 + 1).ore].col, '--f': fill } as Record<string, string | number>} />;
+      })}
+    </span>
+  );
+}
 
 /** Karta run slotów. */
 export function RunesCard({ game }: { game: Game }) {
   const s = game.s;
   const any = SLOT_ORDER.some(sl => runeLvl(s, sl) > 0);
   if (s.forge.lvl < B.RUNE_FORGE_LVL && !any) return null;
+  const locked = s.forge.lvl < B.RUNE_FORGE_LVL;
+  const total = SLOT_ORDER.reduce((a, sl) => a + runeLvl(s, sl), 0);
   return (
-    <section class="card">
-      <div class="row"><div class="eyebrow">Runy slotów</div><span class="sub">+{B.RUNE_PCT}% głównej statystyki za poziom</span></div>
+    <section class="card runes">
+      <div class="row">
+        <div class="rhead"><Px src={resUrl('runa')} size={28} /><div><div class="eyebrow">Runy slotów</div><div class="h">+{B.RUNE_PCT}% za poziom</div></div></div>
+        <InfoBtn onClick={() => game.openModal({ kind: 'info', k: 'runes' })} label="Jak działają runy" />
+      </div>
+      <p class="sub">Runa wzmacnia główną statystykę przedmiotu w swoim slocie i zostaje w nim na zawsze. Razem: <b>{total}</b>/{B.RUNE_MAX * SLOT_ORDER.length} poziomów.{locked ? ` Ulepszanie od ${B.RUNE_FORGE_LVL}. poziomu kuźni.` : ''}</p>
       <ul class="runelist">
         {SLOT_ORDER.map(sl => {
           const L = runeLvl(s, sl);
           const it = s.eq[sl];
           const block = runeBlock(s, sl);
-          const c = L < B.RUNE_MAX ? runeCost(s, L + 1) : null;
+          const c = L < B.RUNE_MAX ? runePay(s, L + 1) : null;
+          const base = L < B.RUNE_MAX ? runeCost(s, L + 1) : null;
+          const lackOre = !!c && (s.ores[c.ore] ?? 0) < c.n;
+          const lackGold = !!c && s.gold < c.gold;
           return (
-            <li key={sl}>
-              <span class="rslot">{it ? <Px src={itemUrl(it.kind, it.ore, it.r)} size={24} /> : <SlotIcon slot={sl} />}</span>
+            <li key={sl} class={L >= B.RUNE_MAX ? 'max' : ''}>
+              <span class="rslot">{it ? <Px src={itemUrl(it.kind, it.ore, it.r)} size={28} /> : <SlotIcon slot={sl} />}<b class="rnum">{L}</b></span>
               <div class="cmain">
-                <b>{SLOTS[sl].n}</b> <span class="rlvl">{L ? `runa ${L} · +${L * B.RUNE_PCT}%` : 'bez runy'}</span>
-                {c && <div><CostLine ore={c.ore} n={c.n} gold={c.gold} lack={!!block && block !== `od ${B.RUNE_FORGE_LVL}. poziomu kuźni`} /></div>}
+                <div class="rtop">
+                  <b>{SLOTS[sl].n}</b>
+                  <span class="rbonus">{L ? `+${L * B.RUNE_PCT}%` : 'bez runy'}{c && <> → <b>+{(L + 1) * B.RUNE_PCT}%</b></>}</span>
+                </div>
+                <RuneBar s={s} lvl={L} />
+                {c ? (
+                  <div class="rneed">
+                    <span class={lackOre ? 'lack' : ''}><Px src={oreUrl(c.ore)} size={14} />{fmt(c.n)} × {ORES[c.ore].n} <small>(masz {fmt(s.ores[c.ore] ?? 0)})</small></span>
+                    <span class={lackGold ? 'lack' : ''}><Px src={resUrl('zloto')} size={14} />{fmt(c.gold)} złota</span>
+                    {base && base.ore !== c.ore && <small class="muted">zamiast: {ORES[base.ore].n} (brakuje)</small>}
+                  </div>
+                ) : <div class="rneed"><small class="muted">Maksymalny poziom</small></div>}
               </div>
-              <button class="btn small" disabled={!!block} title={block ?? undefined} onClick={() => game.upgradeRune(sl)}>{L >= B.RUNE_MAX ? 'maks.' : '+1'}</button>
+              <button class="btn small primary" disabled={!!block} title={block ?? undefined} onClick={() => game.upgradeRune(sl)}>{L >= B.RUNE_MAX ? 'maks.' : '+1'}</button>
             </li>
           );
         })}
       </ul>
-      <p class="sub">Runa zostaje w slocie, gdy zmieniasz przedmiot, i przechodzi do nowego pokolenia. Na kolejne poziomy idą coraz lepsze rudy: 1–5 {ORES[0].n}, 6–10 {ORES[1].n}, 11–15 {ORES[2].n}…</p>
     </section>
   );
 }

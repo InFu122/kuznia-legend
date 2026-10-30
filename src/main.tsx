@@ -6,7 +6,7 @@ import type { GameState } from './engine/types';
 import { toast } from './engine/context';
 import { ChatLink, setChat } from './save/chat';
 import { CLAN_SYNC_MS, clanLife } from './save/clanlife';
-import { ServerError, ServerLink, serverConfig, setLink } from './save/server';
+import { ServerError, ServerLink, serverConfig, setFlush, setLink } from './save/server';
 import { connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
 import { initPwa } from './ui/pwa';
@@ -214,6 +214,7 @@ function boot(hotData?: { s?: string }) {
   }, 2000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) void persist(); });
   save.flush = persist;
+  setFlush(persist);
   initPwa();
   watchErrors(game);
   window.claude?.hot?.snapshot?.(() => ({ s: JSON.stringify(game.s) }));

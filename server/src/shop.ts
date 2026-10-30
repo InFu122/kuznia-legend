@@ -229,13 +229,20 @@ function leftNow(save: { value: { state: GameState; savedAt: number } }, what: '
 /** Przyspieszenie Klejnotami: kończy ulepszenie kuźni (serwer zapamiętuje skrócony czas) albo badanie. */
 export function rpcSpeedup(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const what = parse(payload).what === 'tech' ? 'tech' : 'forge';
+  const req = parse(payload);
+  const what = req.what === 'tech' ? 'tech' : 'forge';
   const now = Date.now();
   const save = readSave(nk, userId);
   if (!save) throw err('Najpierw zapisz grę.', PRECONDITION);
+  // Gra podaje, co przyspiesza; jeśli zapis na serwerze jest starszy (inne ulepszenie), nic nie pobieramy.
+  const st = save.value.state;
+  const known = what === 'forge' ? st.forge.up : st.tech.cur ? st.tech.cur.id : null;
+  if (req.key !== undefined && req.key !== null && String(req.key) !== String(known)) {
+    throw err('Serwer nie ma jeszcze zapisu tego ulepszenia — spróbuj ponownie za chwilę.', PRECONDITION);
+  }
   const left = leftNow(save, what, now);
   if (left <= 0) throw err(what === 'forge' ? 'Kuźnia nie ma trwającego ulepszenia.' : 'Nie trwa żadne badanie.', PRECONDITION);
-  const cost = speedupGems(left);
+  const cost = speedupGems(left, what);
   spendGems(nk, userId, cost, `przyspieszenie: ${what}`);
   let boost: { lvl: number; ms: number } | null = null;
   if (what === 'forge') {

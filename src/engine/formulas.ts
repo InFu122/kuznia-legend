@@ -1,4 +1,4 @@
-import { B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, JUMP_TABLE, LANDS, LEGEND, ORES, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN } from '../data';
+import { B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, JUMP_TABLE, LANDS, LEGEND, ORES, ORE_ORDER, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank } from '../data';
 import type { GameState, Item } from './types';
 
 /** Globalny indeks trudności: kraina × 10 + etap (0–159). */
@@ -65,10 +65,12 @@ export const recPower = (land: number) => {
  * Wersja zasad przeskoku zapisana w przedmiocie (`jv`), żeby serwer sprawdzał każdy wytop według zasad,
  * z którymi powstał. 1 — do października 2026: ta sama szansa na każdą rzadkość. 2 — przeskok na
  * rzadkości Legendarną, Mityczną i Boską jest trudniejszy, a pewny przeskok nie daje Boskiego.
- * 3 — obecna: Gwiezdny Kruszec daje najmniej Mityczny, a Boski tylko z przeskoku z małą szansą
+ * 3 — Gwiezdny Kruszec daje najmniej Mityczny, a Boski tylko z przeskoku z małą szansą
  * (mnożnik `div` rudy, domyślnie DIVINE_JUMP); nowe rudy: Obsydian, Eteryt, Boska Ruda.
+ * 4 — obecna: ruda, która podnosi minimum rzadkości (Srebro, Mithril, Adamantyt, Smocza Stal), wchodzi stopniowo —
+ * tuż po odblokowaniu część wytopów wychodzi o rzadkość niżej (`dropChance`).
  */
-export const JUMP_V = 3;
+export const JUMP_V = 4;
 /** Mnożnik szansy na przeskok, który kończy się na danej rzadkości (wersja 2). */
 export const JUMP_TO_MULT = [1, 1, 1, 1, 0.8, 0.55, 0.25];
 
@@ -110,14 +112,30 @@ export function jumpChances(lvl: number, rel = 0, ore = -1, ver = JUMP_V): [numb
 /** Czy pewny przeskok (po PITY_MAX wytopach bez przeskoku) działa dla tej rudy. Od wersji 2 nie daje Boskiego. */
 export const pityAllowed = (ore: number, ver = JUMP_V) => maxJump(ore, ver) >= 1 && (ver < 2 || oreFloor(ore, ver) + 1 <= 5);
 
+/** Czy ruda podnosi minimum rzadkości względem poprzedniej rudy w grze (Srebro, Mithril, Adamantyt, Smocza Stal). */
+export function oreRamps(ore: number): boolean {
+  const k = oreRank(ore);
+  return k > 0 && !!ORES[ore] && ORES[ore].lvl > 1 && ORES[ore].floor > ORES[ORE_ORDER[k - 1]].floor;
+}
+
+/**
+ * Szansa (w %) na wynik o rzadkość niżej niż minimum rudy (od wersji 4): ruda, która podnosi minimum, wchodzi
+ * stopniowo — na poziomie kuźni, na którym się odblokowuje, B.RAMP_DROP %, potem mniej z każdym poziomem,
+ * a po B.RAMP_LEVELS poziomach już zawsze pełne minimum. Spadek wypada przy najwyższych wynikach losowania.
+ */
+export const dropChance = (ore: number, flvl: number, ver = JUMP_V) =>
+  (ver < 4 || !oreRamps(ore) ? 0 : B.RAMP_DROP * Math.max(0, Math.min(1, 1 - (flvl - ORES[ore].lvl) / B.RAMP_LEVELS)));
+
 /** Rozkład wyniku wytopu: lista [rzadkość, szansa w %]. */
 export function dist(ore: number, lvl: number, rel = 0, ver = JUMP_V): [number, number][] {
   const [p1, p2] = jumpChances(lvl, rel, ore, ver);
   const r = oreFloor(ore, ver);
   const mj = maxJump(ore, ver);
-  if (mj === 0) return [[r, 100]];
-  if (mj === 1) return [[r, 100 - p1 - p2], [r + 1, p1 + p2]];
-  return [[r, 100 - p1 - p2], [r + 1, p1], [r + 2, p2]];
+  const pd = dropChance(ore, lvl, ver);
+  const low: [number, number][] = pd > 0 ? [[r - 1, pd]] : [];
+  if (mj === 0) return [...low, [r, 100 - pd]];
+  if (mj === 1) return [...low, [r, 100 - p1 - p2 - pd], [r + 1, p1 + p2]];
+  return [...low, [r, 100 - p1 - p2 - pd], [r + 1, p1], [r + 2, p2]];
 }
 
 export const legStage = (fame: number) => (fame >= LEGEND[3].at ? 3 : fame >= LEGEND[2].at ? 2 : fame >= LEGEND[1].at ? 1 : 0);

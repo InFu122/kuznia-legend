@@ -261,7 +261,7 @@ export type ModalData =
   | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean; from?: number; to?: number; cards?: number; need?: number; stones?: number }
   | { kind: 'offline'; report: OfflineReport }
   | { kind: 'item'; item: Item }
-  | { kind: 'info'; k: 'forge' | 'level' }
+  | { kind: 'info'; k: 'forge' | 'level' | 'runes' | 'pets' | 'mounts' }
   | { kind: 'reset' }
   | { kind: 'shop'; tab?: 'sklep' | 'przepustka' | 'klejnoty' }
   | { kind: 'adOffer'; what: BuffId }

@@ -9,7 +9,7 @@ import {
   bestOre, gemItemBlock, gemItemLeft, gemItemOpen, gemItemReward, giftReward, passItemsReward, passLevel, passUnclaimed, packReward, passXp, seasonOf, speedupCost,
 } from '../../engine/shop';
 import { clanLife } from '../../save/clanlife';
-import { getLink, type ServerLink, type ShopResp } from '../../save/server';
+import { flushSave, getLink, type ServerLink, type ShopResp } from '../../save/server';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 import { gemsText } from '../texts';
@@ -121,7 +121,9 @@ export function SpeedupButton({ game, what, onShop }: { game: Game; what: 'forge
     if (lack) { (onShop ?? (() => game.openModal({ kind: 'shop', tab: 'klejnoty' })))(); return; }
     if (!sure) { setSure(true); setTimeout(() => setSure(false), 4000); return; }
     setSure(false);
-    void a.act(() => game.speedup(what), l => l.speedup(what), what === 'forge' ? 'Ulepszenie kuźni gotowe!' : 'Badanie gotowe!');
+    // Najpierw zapis: serwer liczy cenę i czas z zapisanego stanu, więc musi znać to samo ulepszenie co gra.
+    const key = what === 'forge' ? game.s.forge.up : game.s.tech.cur?.id;
+    void a.act(() => game.speedup(what), async l => { await flushSave(); return l.speedup(what, key); }, what === 'forge' ? 'Ulepszenie kuźni gotowe!' : 'Badanie gotowe!');
   };
   return (
     <div class="speedup">
@@ -241,6 +243,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
           <div class="eyebrow" style={{ marginTop: '6px' }}>Przyspieszenia</div>
           {s.forge.up > 0 && <div class="row"><span class="sub">Ulepszenie kuźni do poziomu {s.forge.up} · {tfmt(s.forge.left)}</span><SpeedupButton game={game} what="forge" onShop={goGems} /></div>}
           {s.tech.cur && <div class="row"><span class="sub">Badanie · {tfmt(s.tech.cur.left)}</span><SpeedupButton game={game} what="tech" onShop={goGems} /></div>}
+          <p class="sub">Kuźnia: 1 Klejnot za każdą minutę ulepszenia. Badania: 1 Klejnot za każde 4 minuty.</p>
         </>
       )}
       <p class="sub">Limity odnawiają się o północy czasu UTC.</p>

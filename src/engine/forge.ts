@@ -1,7 +1,7 @@
 import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, LANDS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
-import { JUMP_V, itemLevelFor, itemName, jumpChances, maxJump, oreFloor, pityAllowed, sellPrice, upCost, upTime } from './formulas';
+import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreFloor, pityAllowed, sellPrice, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
 import { allMods } from './mods';
 import { maybeObieg } from './obieg';
@@ -60,15 +60,17 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   if (set) s.uniq[set] = (s.uniq[set] ?? 0) - 1;
   const [p1, p2] = jumpChances(s.forge.lvl, mods.jumpRel, ore);
   const mj = maxJump(ore);
+  const pd = dropChance(ore, s.forge.lvl);
   let jump = 0;
   if (mj >= 2 && d.roll < p2) jump = 2;
   else if (mj >= 1 && d.roll < p1 + p2) jump = 1;
+  else if (d.roll >= 100 - pd) jump = -1; // nowa ruda: kuźnia jeszcze jej nie opanowała — o rzadkość niżej
   let forced: Item['forced'] = '';
-  if (s.stats.smelted === 2 && mj >= 1 && jump === 0) { jump = 1; forced = 'tut'; } // samouczek
-  if (jump === 0 && pityAllowed(ore) && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
-  if (set && jump === 0 && pityAllowed(ore)) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok (ale nigdy do Boskiego)
+  if (s.stats.smelted === 2 && mj >= 1 && jump <= 0) { jump = 1; forced = 'tut'; } // samouczek
+  if (jump <= 0 && pityAllowed(ore) && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
+  if (set && jump <= 0 && pityAllowed(ore)) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok (ale nigdy do Boskiego)
   if (mj >= 1) s.pity = jump > 0 ? 0 : s.pity + 1;
-  const r = Math.min(6, oreFloor(ore) + jump);
+  const r = Math.max(0, Math.min(6, oreFloor(ore) + jump));
 
   const first = s.stats.smelted === 0;
   const slot: SlotId = first ? 'bron' : set ? setSlot(s, set, d.slot) : SLOT_ORDER[Math.floor(d.slot * SLOT_ORDER.length)];
@@ -77,9 +79,9 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   let elKey: ElemKey | null = null;
   if (el && s.forge.lvl >= B.ELEM_FORGE_LVL && (s.els[el] ?? 0) > 0) { s.els[el] = (s.els[el] ?? 0) - 1; elKey = el; }
   s.stats.smelted++;
-  if (jump) s.stats.jumps++;
+  if (jump > 0) s.stats.jumps++;
   track(ctx, 'smelt');
-  if (jump) track(ctx, 'jump');
+  if (jump > 0) track(ctx, 'jump');
   ctx.dirty = true;
   const it: Item = {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, d.lvl),

@@ -2,7 +2,7 @@
 // filtruje wulgaryzmy, pilnuje trybu wolnego i podpisuje wiadomości nickiem gracza.
 // Wiadomość to JSON: { k: 'msg' | 'sys' | 'drop' | 'ann', t: tekst, n: nick, it?: przedmiot }.
 import { B, RAR } from '../../src/data';
-import { JUMP_V, itemName } from '../../src/engine/formulas';
+import { itemName } from '../../src/engine/formulas';
 import type { Item } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { INVALID, PRECONDITION, SYSTEM_USER, err, parse, readSave, userOf } from './common';
@@ -79,12 +79,12 @@ const writeBrag = (nk: nkruntime.Nakama, userId: string, done: Brag) =>
   nk.storageWrite([{ collection: 'chat', key: 'brag', userId, value: done as unknown as { [k: string]: unknown }, permissionRead: 0, permissionWrite: 0 }]);
 
 /**
- * Boski przedmiot wykuty według zasad wersji 3 (nowe rudy, Boski tylko z przeskoku) — serwer sam ogłasza go
+ * Boski przedmiot wykuty według zasad od wersji 3 (nowe rudy, Boski tylko z przeskoku) — serwer sam ogłasza go
  * na czacie globalnym, raz na przedmiot (bez limitu czasu i poziomu kuźni). `items` to przedmioty, których
  * wytop serwer już potwierdził. Przedmioty sprzed aktualizacji (inna wersja zasad) nie są ogłaszane.
  */
 export function announceDivine(nk: nkruntime.Nakama, userId: string, username: string, items: Item[]): number {
-  const fresh = items.filter(it => it && it.r >= 6 && typeof it.sx === 'number' && it.jv === JUMP_V && !it.obieg);
+  const fresh = items.filter(it => it && it.r >= 6 && typeof it.sx === 'number' && (it.jv ?? 0) >= 3 && !it.obieg);
   if (!fresh.length) return 0;
   const done = readBrag(nk, userId);
   const n = nameOf(nk, userId) || 'Kowal';

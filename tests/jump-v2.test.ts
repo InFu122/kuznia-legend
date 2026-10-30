@@ -48,9 +48,10 @@ describe('przeskoki w wersji 2: rzadsze wyniki są trudniejsze', () => {
     // ten sam wytop według dawnych zasad: Boski, bez numeru wersji
     const rng = mulberry32(seedFor(n)); smeltDraws(rng);
     const old = { ...it, r: 6, jump: 2, subs: rollSubs(rng, 6), jv: undefined };
-    expect(verifySmelt(old, seedFor(n), 0, 30, true)).toBeNull();
-    expect(verifySmelt(old, seedFor(n), 0, 30, false)).not.toBeNull();
+    expect(verifySmelt(old, seedFor(n), 0, 30, 1)).toBeNull();
+    expect(verifySmelt(old, seedFor(n), 0, 30, 2)).not.toBeNull();
+    expect(verifySmelt(old, seedFor(n), 0, 30)).not.toBeNull(); // dziś przedmiot bez wersji zasad nie przejdzie
     // nieznana wersja zasad — odrzucona
-    expect(verifySmelt({ ...it, jv: 7 }, seedFor(n), 0, 30, true)).not.toBeNull();
+    expect(verifySmelt({ ...it, jv: 7 }, seedFor(n), 0, 30, 1)).not.toBeNull();
   });
 });

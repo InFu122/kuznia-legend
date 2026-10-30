@@ -83,7 +83,8 @@ const STEP_MS = 420;
 function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
   const floor = oreFloor(it.ore, it.jv ?? 1);
   const mj = maxJump(it.ore, it.jv ?? 1);
-  const steps: (number | 'hot')[] = ['hot', 'hot', ...Array.from({ length: it.r - floor + 1 }, (_, i) => floor + i)];
+  const start = Math.min(floor, it.r); // nowa ruda: wynik może być o rzadkość niżej niż minimum
+  const steps: (number | 'hot')[] = ['hot', 'hot', ...Array.from({ length: it.r - start + 1 }, (_, i) => start + i)];
   const [i, setI] = useState(0);
   const box = useRef<HTMLDivElement>(null);
   const done = useRef(false);
@@ -173,6 +174,7 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
         <div class="dec-name">{itemName(it)}</div>
         <div class="irar">{RAR[it.r].n} · poz. {it.lvl}{it.obieg ? ` · kowal: ${it.smith}` : ''}</div>
         {it.jump > 0 && <div class="jump">Przeskok +{it.jump}!</div>}
+        {it.jump < 0 && <div class="jump low">Kuźnia dopiero poznaje tę rudę — tym razem o rzadkość niżej</div>}
       </div>
       {src === 'pending' && game.lastBatch?.best === it && (
         <div class="batch-sum">

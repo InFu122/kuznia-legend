@@ -4,6 +4,7 @@ import {
   MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, ORE_ORDER, isRareOre, oreShares, setOfLand, skillValue,
 } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
+import { MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
 import { JUMP_TO_MULT, baseName, dist, gOf, goldWave, itemName, jumpChances, recPower } from '../engine/formulas';
 import { allMods } from '../engine/mods';
 import { upgradeCost, upgradeTime } from '../engine/forge';
@@ -14,7 +15,7 @@ import { dungName, eventOf, evText } from '../engine/events';
 import { ItemCard } from './ItemCard';
 import { DecisionView } from './Decision';
 import { Px } from './Px';
-import { elemUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl, techUrl } from '../art/render';
+import { companionUrl, elemUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl, techUrl } from '../art/render';
 import { HeroSprite } from './Arena';
 import { RewardIcons, RewardTiles } from './RewardIcons';
 import { hasProof } from '../engine/verify';
@@ -244,6 +245,9 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
         </>
       );
     case 'info':
+      if (m.k === 'runes') return <RuneInfo game={game} close={close} />;
+      if (m.k === 'pets') return <PetsInfo close={close} />;
+      if (m.k === 'mounts') return <MountsInfo close={close} />;
       return m.k === 'level' ? <LevelInfo game={game} close={close} /> : <ForgeInfo game={game} close={close} />;
   }
 }
@@ -262,6 +266,7 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
   const tips: [string, string, JSX.Element][] = [
     [resUrl('czas'), 'Gwarancja przeskoku', <>Po {B.PITY_MAX} wytopach bez przeskoku następny przeskakuje na pewno o 1 (ale nie na Boski). Twój licznik: <b>{s.pity}/{B.PITY_MAX}</b>.</>],
     [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy bazowej, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski {divMults}. Paski wyżej już to uwzględniają.</>],
+    [oreUrl(4), 'Nowa ruda wchodzi stopniowo', <>Srebro, Mithril, Adamantyt i Smocza Stal podnoszą minimum rzadkości. Na poziomie kuźni, na którym je odblokujesz, {B.RAMP_DROP}% wytopów wychodzi o rzadkość niżej; z każdym poziomem mniej, a po {B.RAMP_LEVELS} poziomach ruda daje już pełne minimum.</>],
     [oreUrl(DIVINE_ORE), 'Boski przedmiot', <>Żadna ruda nie daje go na pewno. Ma własne imię, złotą ramkę i Boską aurę (+{B.DIVINE_AURA}% obrażeń i zdrowia za każdy założony), a serwer ogłasza go na czacie. {ORES[DIVINE_ORE].n}: bossowie aktu IV, loch sezonowy, wydarzenia i Przepustka.</>],
     [elemUrl('zar'), `Domieszki · od ${B.ELEM_FORGE_LVL}. poziomu`, <>Nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans.</>],
     [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Robią z przedmiotu część zestawu (premie za 2 i 4 części) i dają pewny przeskok o co najmniej 1 (ale nie na Boski).</>],
@@ -309,7 +314,7 @@ function DrawView({ m, close }: { m: Extract<ModalData, { kind: 'draw' }>; close
   const skill = m.what === 'skill' ? SKILLS[m.id as SkillId] : null;
   const def = skill ?? (m.what === 'pet' ? PETS[m.id as PetId] : MOUNTS[m.id as MountId]);
   const r = def.r;
-  const icon = m.what === 'skill' ? skillUrl(m.id) : m.what === 'pet' ? resUrl('jajo' + Math.min(4, r)) : resUrl('siodlo');
+  const icon = m.what === 'skill' ? skillUrl(m.id) : companionUrl(m.id); // nowy towarzysz: jego portret
   const from = m.from ?? 0, to = m.to ?? 0;
   const head = m.what === 'pet' ? 'Jajo się wykluło' : m.what === 'skill' ? 'Zwój zaklęć' : 'Siodło';
   const what = m.what === 'skill' ? 'Umiejętność' : m.what === 'pet' ? 'Chowaniec' : 'Wierzchowiec';
@@ -334,7 +339,7 @@ function DrawView({ m, close }: { m: Extract<ModalData, { kind: 'draw' }>; close
       <div class="eyebrow">{head}</div>
       <div class="dec-drop" aria-hidden="true">
         <span class="dec-burst" />
-        <Px src={icon} size={72} cls="dec-ico" />
+        <Px src={icon} size={m.what === 'skill' ? 72 : 96} cls={`dec-ico${m.what === 'skill' ? '' : ' flip'}`} />
       </div>
       <div class="dec-title">
         <div class="dec-name">{def.n}</div>

@@ -1,6 +1,6 @@
 // Postaci na polu walki: bohater złożony z założonego ekwipunku i wrogowie z szablonów (pixel art).
 // Moduł czysty (bez DOM): zwraca piksele RGBA, a render.ts robi z nich obrazki.
-import { FOE_BY_TYPE, FOE_LOOK, FOE_TEMPLATES, HERO_BASE_PAL, HERO_H, HERO_LAYERS, HERO_W } from './actors-data';
+import { COMPANION_LOOK, FOE_BY_TYPE, FOE_LOOK, FOE_TEMPLATES, HERO_BASE_PAL, HERO_H, HERO_LAYERS, HERO_W } from './actors-data';
 import { itemPalette, itemSprite, tierOf } from './items';
 import { SKINS, type SkinId } from '../data/cosmetics';
 import { rgba, sprite, type Palette } from './pixel';
@@ -129,6 +129,12 @@ export function foeKey(name: string, type = 'Bestie'): string {
 
 /** Szablon wroga (np. „wilk”, „smok”) — do animacji zależnych od sylwetki. */
 export const foeTemplate = (name: string, type?: string) => FOE_LOOK[foeKey(name, type)]?.[0] ?? 'wilk';
+
+/** Chowaniec albo wierzchowiec 32×32 (patrzy w lewo; interfejs odwraca go w stronę bohatera). */
+export function companionPixels(id: string): Uint8ClampedArray {
+  const [t, pal] = COMPANION_LOOK[id] ?? COMPANION_LOOK.wilczek;
+  return rgba(sprite(FOE_TEMPLATES[t]), pal);
+}
 
 /** Wróg 32×32, patrzy w lewo. */
 export function foePixels(name: string, type?: string): Uint8ClampedArray {

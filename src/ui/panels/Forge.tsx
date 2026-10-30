@@ -2,7 +2,7 @@ import { useRef } from 'preact/hooks';
 import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS , ORE_ORDER } from '../../data';
 import { batchOf, canSmelt, refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
 import { SpeedupButton } from './Shop';
-import { dist, itemName, jumpChances, maxJump, pityAllowed } from '../../engine/formulas';
+import { dist, dropChance, itemName, jumpChances, maxJump, pityAllowed } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
 import { Brag } from '../Decision';
@@ -58,6 +58,8 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
   const jn = jo >= 0 ? ` (${ORES[jo].n})` : '';
   const [j1, j2] = jumpChances(f.lvl, rel, jo);
   const [k1, k2] = jumpChances(n, rel, jo);
+  // Nowa ruda wchodzi stopniowo: ile wytopów wychodzi o rzadkość niżej teraz i po ulepszeniu.
+  const pd0 = dropChance(o, Math.max(f.lvl, ORES[o].lvl)), pd1 = dropChance(o, Math.max(n, ORES[o].lvl));
 
   return (
     <>
@@ -86,6 +88,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
         </div>
         <div class="o2-sel">
           <b>{ORES[o].n}</b> · minimum <span class={`rt${ORES[o].floor}`}>{RAR[ORES[o].floor].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
+          {pd0 > 0 && <> · <span class="rampnote">kuźnia dopiero poznaje tę rudę: {pct(pd0)} wytopów o rzadkość niżej (pełne minimum od {ORES[o].lvl + B.RAMP_LEVELS}. poziomu)</span></>}
         </div>
         {(elOn || setOn || SET_IDS.some(k => (s.uniq[k] ?? 0) > 0)) && (
           <div class="mixrow">
@@ -167,7 +170,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
         </section>
       )}
 
-      <section class="card">
+      <section class="card forgeup" style={{ '--bg': `url(${dungeonBgUrl('ulepszenie')})` } as Record<string, string>}>
         {f.lvl >= B.FORGE_MAX ? (
           <div class="row"><div><LevelEyebrow text="Kuźnia" onInfo={onInfo} /><div class="h">Poziom {B.FORGE_MAX}</div></div><button class="btn small primary" onClick={() => game.openModal({ kind: 'legacy' })}>Dziedzictwo…</button></div>
         ) : f.up ? (
@@ -184,6 +187,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
               <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
               <div class="h">Ulepsz do poziomu {n}</div>
               <p class="sub">Szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
+              {pd0 > 0 && <p class="sub rampnote">{ORES[o].n} o rzadkość niżej: {pct(pd0)} → <b>{pct(pd1)}</b></p>}
               <p class="sub upcost"><Costs items={[[resUrl('zloto'), `${fmt(cost)} złota`], [resUrl('czas'), tfmt(game.upgradeTime())]]} cls={s.gold < cost ? 'lack-0' : ''} /></p>
             </div>
             <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>

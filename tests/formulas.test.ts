@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ORES } from '../src/data';
-import { dist, jumpChances, legStage, maxJump, upCost, upTime } from '../src/engine/formulas';
+import { dist, dropChance, jumpChances, legStage, maxJump, upCost, upTime } from '../src/engine/formulas';
 
 describe('szanse przeskoku', () => {
   it('zgadzają się z tabelą balansu na krańcach', () => {
@@ -20,9 +20,11 @@ describe('szanse przeskoku', () => {
       for (let l = 1; l <= 30; l++) {
         const d = dist(o, l);
         expect(d.reduce((s, [, p]) => s + p, 0)).toBeCloseTo(100, 6);
-        expect(d[0][0]).toBe(ORES[o].floor);
+        const low = dropChance(o, l) > 0 ? 1 : 0; // nowa ruda tuż po odblokowaniu: także o rzadkość niżej
+        expect(d[0][0]).toBe(ORES[o].floor - low);
         expect(Math.max(...d.map(([r]) => r))).toBeLessThanOrEqual(6);
-        expect(d.length).toBe(maxJump(o) + 1);
+        expect(d.length).toBe(maxJump(o) + 1 + low);
+        expect(d.every(([, p]) => p >= 0)).toBe(true);
       }
     }
   });

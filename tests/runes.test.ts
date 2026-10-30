@@ -3,7 +3,7 @@ import { B, SUBS } from '../src/data';
 import { equip, smelt } from '../src/engine/forge';
 import { legacyReset } from '../src/engine/legacy';
 import { mulberry32 } from '../src/engine/rng';
-import { reforgeBlock, reforgeCost, rerollSub, runeBlock, runeCost } from '../src/engine/runes';
+import { reforgeBlock, reforgeCost, rerollSub, runeBlock, runeCost, runePay } from '../src/engine/runes';
 import { migrate } from '../src/engine/state';
 import { makeGame, T0 } from './helpers';
 
@@ -22,6 +22,12 @@ describe('runy slotów', () => {
     expect(runeCost(s, 5)).toMatchObject({ ore: 0, n: 60 });
     expect(runeCost(s, 6)).toMatchObject({ ore: 1, n: 20 });
     expect(runeCost(s, 30).ore).toBe(5);
+    // brak Miedzi: płaci się tyle samo sztuk następnej rudy, której wystarczy
+    s.ores[0] = 10; s.ores[1] = 5;
+    expect(runePay(s, 1)).toMatchObject({ ore: 2, n: 20 });
+    s.ores = s.ores.map(() => 0);
+    expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20 });
+    expect(runeBlock(s, 'bron')).toMatch(/Miedź/);
   });
 
   it('runa podnosi główną statystykę przedmiotu w slocie, zostaje po zmianie przedmiotu i po Dziedzictwie', () => {

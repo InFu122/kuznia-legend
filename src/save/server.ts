@@ -269,7 +269,8 @@ export class ServerLink {
   adReward(kind: AdKind): Promise<ShopResp & { left?: number }> { return this.rpc('ad_reward', { kind }); }
   passBuy(): Promise<ShopResp> { return this.rpc('pass_buy', {}); }
   passClaim(): Promise<ShopResp> { return this.rpc('pass_claim', {}); }
-  speedup(what: 'forge' | 'tech'): Promise<ShopResp> { return this.rpc('speedup', { what }); }
+  /** `key` — poziom trwającego ulepszenia kuźni albo trwające badanie (serwer sprawdza, że zna ten sam stan). */
+  speedup(what: 'forge' | 'tech', key?: number | string): Promise<ShopResp> { return this.rpc('speedup', { what, key }); }
   iapTest(id: string): Promise<ShopResp> { return this.rpc('iap_test', { id }); }
   iapGoogle(id: string, receipt: string): Promise<ShopResp> { return this.rpc('iap_google', { id, receipt }); }
   warState(): Promise<WarState> { return this.rpc('war_state', {}); }
@@ -325,3 +326,8 @@ export class ServerLink {
 let current: ServerLink | null = null;
 export const setLink = (l: ServerLink | null) => { current = l; };
 export const getLink = () => current;
+
+/** Zapis gry „teraz” (ustawia go main.tsx) — np. przed przyspieszeniem, żeby serwer znał bieżące ulepszenie. */
+let flusher: (() => Promise<void>) | null = null;
+export const setFlush = (f: (() => Promise<void>) | null) => { flusher = f; };
+export const flushSave = () => (flusher ? flusher() : Promise.resolve());

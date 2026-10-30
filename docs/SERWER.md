@@ -161,6 +161,8 @@ Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo 
 
 ### Rudy i Boskie przedmioty
 
+- **Nowa ruda wchodzi stopniowo:** Srebro (od 5. poziomu kuźni), Mithril (od 10.), Adamantyt (od 15.) i Smocza Stal (od 20.) tuż po odblokowaniu dają połowę wytopów o rzadkość niżej; z każdym poziomem kuźni mniej, a po 5 poziomach już zawsze pełne minimum. Kuźnia i karta ulepszenia pokazują, ile jeszcze zostało.
+
 - **Nowe rudy:** Obsydian (od 17. poziomu kuźni, minimum Legendarny z lepszą jakością), Eteryt (od 23., minimum Mityczny) i bardzo rzadka **Boska Ruda** (od 25.). Obsydian i Eteryt wypadają w aktach III i IV i da się je rafinować (Adamantyt → Obsydian → Smocza Stal → Eteryt → Gwiezdny Kruszec).
 - **Boski tylko z przeskoku:** żadna ruda nie daje Boskiego na pewno. Gwiezdny Kruszec daje najmniej Mityczny i kilka % szansy na Boski, Boska Ruda — kilkanaście %. Gwarancja przeskoku i ruda unikalna nie prowadzą do Boskiego.
 - **Skąd Boska Ruda:** bossowie krain aktu IV (rzadko), skrzynia bossa lochu sezonowego (5%), ostatni próg każdego wydarzenia i 30. poziom złotej ścieżki Przepustki. Nie wypada z fal, nie da się jej rafinować ani poprosić o nią klanu.
@@ -169,7 +171,7 @@ Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo 
 
 ### Runy i przekuwanie
 
-- **Runy slotów** (zakładka Bohater, od 10. poziomu kuźni): każdy slot ma runę do 30. poziomu, +1% głównej statystyki założonego tam przedmiotu za poziom. Runa zostaje przy zmianie przedmiotu i w nowym pokoleniu. Kosztuje złoto i rudę: poziomy 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal — tu przydaje się nadmiar starych rud.
+- **Runy slotów** (zakładka Bohater, od 10. poziomu kuźni): każdy slot ma runę do 30. poziomu, +1% głównej statystyki założonego tam przedmiotu za poziom. Runa zostaje przy zmianie przedmiotu i w nowym pokoleniu. Kosztuje złoto i rudę: poziomy 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal — tu przydaje się nadmiar starych rud. Gdy danej rudy brakuje, gra płaci tą samą liczbą sztuk następnej lepszej rudy. Przycisk „i” przy runach wyjaśnia wszystko krok po kroku (tak samo przy chowańcach i wierzchowcach).
 - **Przekuwanie** (okno założonego przedmiotu, od 15. poziomu kuźni): jedna statystyka dodatkowa losowana od nowa za rudę przedmiotu i złoto; potem wybierasz starą albo nową wersję. Z serwerem losuje i podpisuje serwer, więc przedmiot dalej liczy się do rankingów.
 
 ### Dziedzictwo
@@ -180,7 +182,7 @@ Od 30. poziomu kuźni bohater może przejść na emeryturę (zakładka Bohater a
 
 Przycisk z Klejnotem na górze ekranu (obok czatu i zadań) otwiera **Sklep** z trzema zakładkami:
 
-- **Sklep** — darmowy prezent dnia, nagrody za reklamy (×2 ruda albo ×2 złoto na godzinę, 5 Klejnotów raz dziennie), towary za Klejnoty z dziennym limitem (złoto, ruda, Księgi, Kamienie, Zwój, Siodło, jajo, komplet kluczy) i przyspieszenia (dokończenie ulepszenia kuźni albo badania: 1 Klejnot za 4 minuty).
+- **Sklep** — darmowy prezent dnia, nagrody za reklamy (×2 ruda albo ×2 złoto na godzinę, 5 Klejnotów raz dziennie), towary za Klejnoty z dziennym limitem (złoto, ruda, Księgi, Kamienie, Zwój, Siodło, jajo, komplet kluczy) i przyspieszenia (dokończenie ulepszenia kuźni: 1 Klejnot za minutę; badania: 1 Klejnot za 4 minuty).
 - **Przepustka** — sezon 28 dni, 30 poziomów. Punkty za wytopy, wrogów, bossów, klucze w lochach i piętra Wieży (najwyżej 1500 dziennie). Darmowa ścieżka dla wszystkich, złota za 500 Klejnotów.
 - **Klejnoty** — pakiety. Dopóki serwer ma tryb testowy (`TEST_SPEED` większe niż 1), pakiety są bez płatności — do sprawdzenia sklepu. Przy `TEST_SPEED=1` zakup testowy jest wyłączony, a płatności ruszą w aplikacji z Google Play.
 
