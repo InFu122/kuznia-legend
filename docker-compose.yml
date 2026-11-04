@@ -4,10 +4,19 @@
 #   3. gra: http://ADRES-SERWERA:8080 · konsola Nakamy: http://ADRES-SERWERA:7351
 name: kuznia-legend
 
+# Dzienniki kontenerów (adresy IP graczy) mają ograniczony rozmiar — najstarsze wpisy znikają same
+# (tak mówi polityka prywatności).
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logs
     environment:
       POSTGRES_DB: nakama
       POSTGRES_USER: nakama
@@ -26,6 +35,7 @@ services:
       dockerfile: server/Dockerfile
     image: kuznia-legend/nakama:local
     restart: unless-stopped
+    logging: *logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,6 +54,10 @@ services:
         --console.password "${NAKAMA_CONSOLE_PASSWORD:?Ustaw NAKAMA_CONSOLE_PASSWORD}"
         --console.signing_key "${NAKAMA_CONSOLE_KEY:?Ustaw NAKAMA_CONSOLE_KEY}"
         --runtime.env "TEST_SPEED=${TEST_SPEED:-100}"
+    volumes:
+      # Klucz konta usługi Google do sprawdzania zakupów w Google Play: plik sekrety/google-play.json obok tego
+      # pliku (docs/GOOGLE_PLAY.md). Katalogu nie ma w repozytorium; bez pliku płatności czekają.
+      - ./sekrety:/nakama/data/modules/sekrety:ro
     ports:
       - "${NAKAMA_PORT:-7350}:7350"           # API (aplikacja na telefon połączy się tu bezpośrednio)
       - "${NAKAMA_CONSOLE_PORT:-7351}:7351"   # konsola administratora
@@ -59,8 +73,12 @@ services:
       dockerfile: deploy/Dockerfile.web
       args:
         VITE_SERVER_KEY: ${NAKAMA_SERVER_KEY}
+        OWNER_NAME: ${OWNER_NAME:-}
+        CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+        ADMOB_PUBLISHER_ID: ${ADMOB_PUBLISHER_ID:-}
     image: kuznia-legend/web:local
     restart: unless-stopped
+    logging: *logs
     depends_on:
       - nakama
     ports:

@@ -8,7 +8,11 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
 ARG VITE_SERVER_KEY=defaultkey
-ENV VITE_SERVER_URL=/ VITE_SERVER_KEY=${VITE_SERVER_KEY}
+# Strony dla Google Play (polityka prywatności, usuwanie konta) i app-ads.txt — dane z .env (docker-compose.yml)
+ARG OWNER_NAME=
+ARG CONTACT_EMAIL=
+ARG ADMOB_PUBLISHER_ID=
+ENV VITE_SERVER_URL=/ VITE_SERVER_KEY=${VITE_SERVER_KEY} OWNER_NAME=${OWNER_NAME} CONTACT_EMAIL=${CONTACT_EMAIL} ADMOB_PUBLISHER_ID=${ADMOB_PUBLISHER_ID}
 RUN npm run build
 
 # 2) Serwer WWW

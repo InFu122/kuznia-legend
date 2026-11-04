@@ -4,7 +4,7 @@
 // Towary, prezent dnia i nagrody przepustki idą przez kolejkę nagród (clan/rewards), jak nagrody klanu;
 // Klejnoty z nagród trafiają wprost do portfela.
 //
-// Magazyn gracza (tylko serwer): shop/daily — dzienne limity (UTC), shop/iap — jednorazowe zakupy,
+// Magazyn gracza (tylko serwer): shop/daily — dzienne limity (UTC), shop/iap — jednorazowe pakiety i wydane zakupy Google Play,
 // shop/buffs — wzmocnienia z reklam, shop/boost — przyspieszenia ulepszeń kuźni (kontrola tempa kuźni je odejmuje),
 // pass/state — Przepustka Kowala (punkty liczy save_put z różnicy liczników, jak punkty wojny klanów).
 import { AD, AD_BUFFS, GEM_PACKS, GEM_SHOP, PASS, adMax, speedupGems, type AdKind, type BuffId, type GemItemId } from '../../src/data';
@@ -16,12 +16,15 @@ import type { GameState, Reward } from '../../src/engine/types';
 import { addArenaFight, readHero } from './arena';
 import { pushRewards, readPending } from './clanlife';
 import { INVALID, NOT_FOUND, PRECONDITION, UNAUTH, err, parse, readSave, testSpeed, updateObject, userOf } from './common';
+import { playCredentials, playReceipt, purchaseVerdict } from './play';
 
 const GEMS = 'gems';
 const perm = { read: 0 as nkruntime.ReadPermissionValues, write: 0 as nkruntime.WritePermissionValues };
 type Buffs = Partial<Record<BuffId, number>>;
 type Boost = Record<string, number>;
-interface Iap { once: string[] }
+/** `once` — kupione pakiety jednorazowe, `tx` — skróty tokenów zakupów Google Play, za które pakiet już wydano (ostatnie 300). */
+interface Iap { once: string[]; tx?: string[] }
+const TX_KEEP = 300;
 
 /* ---------- portfel ---------- */
 
@@ -258,7 +261,11 @@ export function rpcSpeedup(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
   return JSON.stringify(view(nk, userId, now, { boost, techDone: what === 'tech', cost }));
 }
 
-function grantPack(nk: nkruntime.Nakama, userId: string, id: string, how: string): void {
+/**
+ * Wydaje pakiet. Pakiet jednorazowy drugi raz: przy zakupie testowym — odmowa; przy prawdziwym zakupie (`paid`) gracz
+ * już zapłacił, więc dostaje same Klejnoty z pakietu (bez dodatków).
+ */
+function grantPack(nk: nkruntime.Nakama, userId: string, id: string, how: string, paid = false): void {
   const p = GEM_PACKS.find(x => x.id === id);
   const r = packReward(id);
   if (!p || !r) throw err('Nie ma takiego pakietu.', NOT_FOUND);
@@ -267,11 +274,27 @@ function grantPack(nk: nkruntime.Nakama, userId: string, id: string, how: string
     updateObject<Iap>(nk, 'shop', 'iap', userId, cur => {
       const once = (cur && cur.once) || [];
       fresh = !once.includes(p.id);
-      return fresh ? { once: once.concat(p.id) } : null;
+      return fresh ? { ...(cur || {}), once: once.concat(p.id) } : null;
     }, perm);
-    if (!fresh) throw err('Ten pakiet można kupić tylko raz.', PRECONDITION);
+    if (!fresh) {
+      if (!paid) throw err('Ten pakiet można kupić tylko raz.', PRECONDITION);
+      giveReward(nk, userId, `${p.n}${how} — ponowny zakup: same Klejnoty`, { gems: p.gems + p.bonus });
+      return;
+    }
   }
   giveReward(nk, userId, `${p.n}${how}`, r);
+}
+
+/** Zapisuje zakup jako wydany. false — ten zakup już wydano (np. gra wysłała go drugi raz po zerwanym połączeniu). */
+function claimTx(nk: nkruntime.Nakama, userId: string, tx: string, on: boolean): boolean {
+  let changed = false;
+  updateObject<Iap>(nk, 'shop', 'iap', userId, cur => {
+    const list = (cur && cur.tx) || [];
+    changed = list.includes(tx) !== on;
+    if (!changed) return null;
+    return { once: (cur && cur.once) || [], tx: on ? list.concat(tx).slice(-TX_KEEP) : list.filter(x => x !== tx) };
+  }, perm);
+  return changed;
 }
 
 /** Zakup testowy bez płatności — tylko w trybie testowym serwera (TEST_SPEED > 1). */
@@ -283,27 +306,49 @@ export function rpcIapTest(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
 }
 
 /**
- * Zakup w Google Play: serwer sprawdza potwierdzenie zakupu u Google (Nakama: iap.google w konfiguracji)
- * i daje pakiet raz na transakcję (`seenBefore`).
+ * Zakup w Google Play. Gra podaje produkt i token zakupu; serwer sprawdza go u Google (konto usługi z pliku
+ * sekrety/google-play.json, zob. play.ts), wydaje pakiet raz na zakup i odpowiada `done: true` — wtedy gra
+ * „zużywa” zakup w Google Play (można kupić ten pakiet znowu). Bez `done` gra zostawia zakup i ponowi go później.
  */
 export function rpcIapGoogle(ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
   const req = parse(payload);
   const id = String(req.id || '');
-  const receipt = typeof req.receipt === 'string' ? req.receipt : '';
-  if (!receipt) throw err('Brak potwierdzenia zakupu.', INVALID);
+  const token = typeof req.token === 'string' ? req.token : '';
+  if (!GEM_PACKS.some(p => p.id === id)) throw err('Nie ma takiego pakietu.', NOT_FOUND);
+  if (!token || token.length > 2000) throw err('Brak potwierdzenia zakupu.', INVALID);
+  const cred = playCredentials(nk);
+  if (!cred) {
+    logger.error('Zakup Google gracza %s (%s) czeka: brak pliku sekrety/google-play.json z kluczem konta usługi (albo Nakama nie może go odczytać).', userId, id);
+    throw err('Płatności nie są jeszcze włączone na serwerze gry. Zakup poczeka — Klejnoty dostaniesz po włączeniu (albo Google zwróci pieniądze po 3 dniach).', PRECONDITION);
+  }
   let res: nkruntime.ValidatePurchaseResponse;
   try {
-    res = nk.purchaseValidateGoogle(userId, receipt, true);
+    res = nk.purchaseValidateGoogle(userId, playReceipt(id, token), true, cred.email, cred.key);
   } catch (e) {
-    logger.warn('Zakup Google gracza %s: %s', userId, String(e));
+    logger.warn('Zakup Google gracza %s (%s): %s', userId, id, String(e));
     throw err('Nie udało się potwierdzić zakupu w Google Play — spróbuj za chwilę.', PRECONDITION);
   }
-  let given = 0;
-  for (const p of res.validatedPurchases || []) {
-    if (p.productId !== id || p.seenBefore || p.refundTime) continue;
-    grantPack(nk, userId, id, '');
-    given++;
+  const p = (res.validatedPurchases || [])[0];
+  const v = purchaseVerdict(p, userId, id);
+  if (v === 'other') {
+    logger.warn('Zakup Google %s zgłoszony przez %s należy do konta %s.', id, userId, p ? p.userId : '?');
+    throw err('Ten zakup jest przypisany do innego konta gry.', PRECONDITION);
   }
-  return JSON.stringify(view(nk, userId, Date.now(), { given }));
+  if (v === 'none') throw err('Google Play nie potwierdził tego zakupu.', PRECONDITION);
+  if (v === 'pending') return JSON.stringify(view(nk, userId, Date.now(), { given: 0, pending: true }));
+  if (v === 'void') return JSON.stringify(view(nk, userId, Date.now(), { given: 0, done: true })); // anulowany albo zwrócony
+  let given = 0;
+  const tx = nk.sha256Hash((p as nkruntime.ValidatedPurchase).transactionId || token).slice(0, 32);
+  if (claimTx(nk, userId, tx, true)) {
+    try {
+      grantPack(nk, userId, id, '', true);
+      given = 1;
+    } catch (e) {
+      claimTx(nk, userId, tx, false);
+      throw e;
+    }
+  }
+  logger.info('Zakup Google gracza %s: %s — %s.', userId, id, given ? 'pakiet wydany' : 'już wydany wcześniej');
+  return JSON.stringify(view(nk, userId, Date.now(), { given, done: true }));
 }

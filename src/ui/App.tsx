@@ -44,6 +44,7 @@ export interface SaveInfo {
   retry?: () => void;          // połącz ponownie teraz
   redeem?: (code: string) => Promise<void>;  // przejmij konto z kodu przeniesienia
   flush?: () => Promise<void>;               // zapisz teraz (np. przed odświeżeniem po aktualizacji)
+  deleteAccount?: (confirm: string) => Promise<void>; // usuń konto na serwerze i zacznij od zera
 }
 
 const SAVE_LABEL: Record<SaveInfo['mode'], string> = {

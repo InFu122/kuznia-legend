@@ -4,5 +4,5 @@ declare const __BUILD_ID__: string;    // znacznik builda — gra porównuje go 
 
 interface Window {
   /** Capacitor (aplikacja na telefon) — jest tylko w aplikacji, nie w przeglądarce. */
-  Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string };
+  Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string; isPluginAvailable?: (name: string) => boolean };
 }

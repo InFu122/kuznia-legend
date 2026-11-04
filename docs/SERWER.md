@@ -205,11 +205,15 @@ Przycisk z Klejnotem na górze ekranu (obok czatu i zadań) otwiera **Sklep** z 
 
 - **Sklep** — darmowy prezent dnia, nagrody za reklamy (×2 ruda albo ×2 złoto na godzinę, 5 Klejnotów raz dziennie), towary za Klejnoty z dziennym limitem (złoto, ruda, Księgi, Kamienie, Zwój, Siodło, jajo, komplet kluczy) i przyspieszenia (dokończenie ulepszenia kuźni albo badania: 1 Klejnot za każdą minutę).
 - **Przepustka** — sezon 28 dni, 30 poziomów. Punkty za wytopy, wrogów, bossów, klucze w lochach i piętra Wieży (najwyżej 1500 dziennie). Darmowa ścieżka dla wszystkich, złota za 500 Klejnotów.
-- **Klejnoty** — pakiety. Dopóki serwer ma tryb testowy (`TEST_SPEED` większe niż 1), pakiety są bez płatności — do sprawdzenia sklepu. Przy `TEST_SPEED=1` zakup testowy jest wyłączony, a płatności ruszą w aplikacji z Google Play.
+- **Klejnoty** — pakiety. Dopóki serwer ma tryb testowy (`TEST_SPEED` większe niż 1), pakiety są bez płatności — do sprawdzenia sklepu. Przy `TEST_SPEED=1` zakup testowy jest wyłączony: w aplikacji z Google Play płaci się przez Google Play, a w przeglądarce pakietów nie ma.
 
-Na polu walki co kilka minut pojawia się ikonka rudy albo złota z „×2” — po obejrzeniu reklamy (na razie testowej, 5 sekund) przez godzinę wpada dwa razy więcej rudy albo złota, także w nagrodach za nieobecność. Klejnoty trzyma serwer, więc nie znikają przy „Nowej grze”.
+Na polu walki co kilka minut pojawia się ikonka rudy albo złota z „×2” — po obejrzeniu reklamy (w aplikacji na Androida prawdziwa reklama AdMob z nagrodą, w przeglądarce reklama testowa — 5 sekund) przez godzinę wpada dwa razy więcej rudy albo złota, także w nagrodach za nieobecność. Klejnoty trzyma serwer, więc nie znikają przy „Nowej grze”.
 
-Płatności w Google Play (przy wydaniu w sklepie): w Google Play Console trzeba utworzyć produkty o identyfikatorach z `src/data/shop.ts` (`starter`, `gems_100` …) i konto usługi z dostępem do API, a jego adres i klucz podać Nakamie (`--iap.google.client_email`, `--iap.google.private_key`). Gra wyśle potwierdzenie zakupu do serwera (`iap_google`), a serwer sprawdzi je u Google i doda Klejnoty raz na zakup.
+Płatności w Google Play: gra wysyła token zakupu do serwera (`iap_google`), serwer sprawdza go u Google kluczem konta usługi z pliku `sekrety/google-play.json` (obok `docker-compose.yml`, poza repozytorium), wydaje pakiet raz na zakup (zakup zgłoszony przez inne konto odrzuca) i dopiero wtedy gra „zużywa” zakup w Google Play. Przerwany zakup gra dokańcza przy następnym uruchomieniu. Konfiguracja krok po kroku: [GOOGLE_PLAY.md](GOOGLE_PLAY.md).
+
+### Usuwanie konta
+
+Gracz usuwa konto w **Kodeks → Konto → Usuń konto…** (wpisuje USUŃ). Serwer (`account_delete`) usuwa wiadomości gracza z czatu, wypisuje go z klanu (przywództwo przechodzi na kolejnego członka, pusty klan znika), zwalnia nick, kasuje kod przeniesienia, miejsce w lidze, wpisy w rankingach i zgłoszenia uwag, a potem konto Nakamy z zapisem, portfelem i całym magazynem. Gra zapomina identyfikator urządzenia i startuje od zera na nowym koncie. Prośbę e-mailem obsługuje `account_delete_admin` (z kluczem `NAKAMA_HTTP_KEY`, opis w GOOGLE_PLAY.md). Strony `polityka-prywatnosci.html` i `usun-konto.html` buduje obraz `web` z szablonów w `deploy/strony/` (dane z `.env`: `OWNER_NAME`, `CONTACT_EMAIL`).
 
 
 **Ikonki obok pola walki:** ×2 ruda i ×2 złoto za reklamę (godzina, kolejne reklamy przedłużają; zielona ikonka z minutami, gdy trwa) i Przepustka Kowala (poziom, czerwona kropka przy nagrodach). W oknie areny +1 walka za reklamę (2 dziennie). Limity reklam liczy serwer (`ad_reward`).

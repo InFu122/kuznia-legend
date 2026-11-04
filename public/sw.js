@@ -36,6 +36,8 @@ self.addEventListener('fetch', e => {
   if (url.origin !== self.location.origin) return;
   const p = url.pathname;
   if (p.includes('/v2/') || p.endsWith('/ws') || p.endsWith('version.json') || req.headers.has('range')) return;
+  // Osobne strony (polityka prywatności, usuwanie konta) — prosto z serwera, bez podmiany zapamiętanej gry.
+  if (req.mode === 'navigate' && p.endsWith('.html') && !p.endsWith('/index.html')) return;
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
       try {

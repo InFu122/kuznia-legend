@@ -8,8 +8,12 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Numer kolejnej kompilacji (GitHub Actions) — telefon instaluje nową wersję na starej.
-        versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
-        versionName "0.1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        // Wydanie do Google Play (workflow play.yml) podaje własny numer i nazwę wersji (KL_VERSION_CODE, KL_VERSION_NAME).
+        versionCode((System.getenv("KL_VERSION_CODE") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
+        versionName(System.getenv("KL_VERSION_NAME") ?: ("0.1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")))
+        // Identyfikator aplikacji AdMob (bez niego aplikacja z reklamami nie wystartuje). Domyślnie przykładowy
+        // identyfikator Google do testów — wydanie do Google Play dostaje prawdziwy ze zmiennej ADMOB_APP_ID.
+        manifestPlaceholders = [admobAppId: System.getenv("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -17,14 +21,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    // Klucz testowy (w repozytorium) — tylko do wersji testowych dla znajomych. Do Google Play potrzebny będzie
-    // osobny, tajny klucz wydania.
+    // Klucz testowy (w repozytorium) — tylko do wersji testowych dla znajomych.
+    // Do Google Play: tajny klucz przesyłania (upload key) z sekretów GitHuba — workflow play.yml zapisuje go
+    // do pliku i podaje ścieżkę i hasła w zmiennych KL_UPLOAD_*. Klucza przesyłania nie ma w repozytorium.
+    def uploadStore = System.getenv("KL_UPLOAD_STORE_FILE")
     signingConfigs {
         test {
             storeFile file('kuznia-test.keystore')
             storePassword 'kuznia-test'
             keyAlias 'kuznia'
             keyPassword 'kuznia-test'
+        }
+        if (uploadStore) {
+            upload {
+                storeFile file(uploadStore)
+                storePassword System.getenv("KL_UPLOAD_STORE_PASSWORD")
+                keyAlias System.getenv("KL_UPLOAD_KEY_ALIAS")
+                keyPassword System.getenv("KL_UPLOAD_KEY_PASSWORD")
+            }
         }
     }
     buildTypes {
@@ -34,7 +48,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.test
+            signingConfig uploadStore ? signingConfigs.upload : signingConfigs.test
         }
     }
 }

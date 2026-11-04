@@ -122,6 +122,9 @@ write('public/icons/icon-512.png', 512, false, 0.78);
 write('public/icons/maskable-512.png', 512, true, 0.6);
 write('public/icons/apple-touch-icon.png', 180, true, 0.72);
 write('public/icons/favicon-32.png', 32, false, 0.95);
+// Google Play: kwadratowa ikona 512×512 bez zaokrągleń (sklep sam przycina rogi).
+mkdirSync('store', { recursive: true });
+write('store/ikona-512.png', 512, true, 0.78);
 
 // Android (Capacitor): ikona zwykła i okrągła, ikona adaptacyjna (tło z żarem + rysunek), ekrany startowe
 // i biała ikonka powiadomień.

@@ -12,6 +12,7 @@ import { fmt } from '../format';
 import type { SaveInfo } from '../App';
 import { APP_VERSION, canInstall, install, isIOS, isNative, isStandalone, onPwa } from '../pwa';
 import { CodexCard } from './Achievements';
+import { adsNative, privacyOptionsNeeded, showPrivacyOptions } from '../ads';
 
 /** Adres gry do zaproszeń: z ustawień builda (aplikacja) albo adres tej strony. */
 const publicUrl = () => {
@@ -19,6 +20,12 @@ const publicUrl = () => {
   if (env) return env;
   const local = /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
   return local || isNative() || location.protocol === 'file:' ? '' : location.origin + location.pathname;
+};
+
+/** Strona na serwerze gry (polityka prywatności, usuwanie konta) albo pusto, gdy gra nie zna swojego adresu. */
+const pageUrl = (file: string) => {
+  const base = publicUrl();
+  return base ? new URL(file, base.endsWith('/') ? base : base + '/').href : '';
 };
 
 /** Aplikacja i test: wersja gry, instalacja na telefonie, zaproszenie znajomych i zgłaszanie uwag. */
@@ -51,11 +58,72 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
       )}
       {isStandalone() && <p class="sub" style={{ marginTop: '8px' }}>Gra jest zainstalowana na tym urządzeniu.</p>}
       {msg && <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p>}
+      <PrivacyLinks />
     </section>
   );
 }
 
+/** Polityka prywatności i (w aplikacji) zmiana zgody na reklamy — formularz Google dla graczy z UE. */
+function PrivacyLinks() {
+  const [ads, setAds] = useState(false);
+  useEffect(() => { if (adsNative()) void privacyOptionsNeeded().then(setAds); }, []);
+  const url = pageUrl('polityka-prywatnosci.html');
+  if (!url && !ads) return null;
+  return (
+    <div class="pf-links" style={{ marginTop: '8px' }}>
+      {url && <a class="linkbtn" href={url} target="_blank" rel="noopener">Polityka prywatności</a>}
+      {ads && <button class="linkbtn" onClick={() => void showPrivacyOptions().catch(() => {})}>Prywatność reklam</button>}
+    </div>
+  );
+}
+
 const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
+
+/** Usunięcie konta na serwerze (wymóg Google Play). Potwierdzenie słowem „USUŃ”, potem gra startuje od zera. */
+function DeleteAccount({ save, online }: { save: SaveInfo; online: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [word, setWord] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const ok = ['USUŃ', 'USUN'].includes(word.trim().toUpperCase());
+  const go = async () => {
+    if (!save.deleteAccount || !ok) return;
+    setBusy(true); setMsg('');
+    try {
+      await save.deleteAccount(word.trim().toUpperCase());
+      setMsg('Konto usunięte. Gra za chwilę uruchomi się od nowa.');
+    } catch (e) {
+      setMsg(errText(e));
+      setBusy(false);
+    }
+  };
+  if (!open) {
+    return (
+      <div style={{ marginTop: '14px' }}>
+        <button class="linkbtn danger-link" disabled={!online} onClick={() => setOpen(true)}>Usuń konto…</button>
+      </div>
+    );
+  }
+  return (
+    <div class="confirm" role="alertdialog" aria-label="Usunięcie konta" style={{ marginTop: '14px' }}>
+      <span>
+        Usuniemy z serwera wszystko, co dotyczy tego kowala: postęp, przedmioty, Klejnoty (także kupione), przepustkę,
+        nick, miejsce w klanie i rankingach oraz twoje wiadomości na czacie. Tego nie da się cofnąć. Konto znika też na
+        innych urządzeniach połączonych kodem.
+      </span>
+      <label class="field" for="delword" style={{ marginTop: '8px' }}>
+        Wpisz USUŃ, żeby potwierdzić
+        <input id="delword" maxLength={8} autoComplete="off" autoCapitalize="characters" spellcheck={false} value={word}
+          onInput={e => { setWord(e.currentTarget.value); setMsg(''); }} />
+      </label>
+      <div class="btnrow">
+        <button class="btn danger small" disabled={!ok || busy || !online} onClick={() => void go()}>Usuń konto na zawsze</button>
+        <button class="btn small" disabled={busy} onClick={() => { setOpen(false); setWord(''); setMsg(''); }}>Anuluj</button>
+      </div>
+      {msg && <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p>}
+    </div>
+  );
+}
 const showCode = (c: string) => c.slice(0, 4) + '-' + c.slice(4);
 
 /** Nick na serwerze: unikalny, zmiana przez serwer (raz na dobę). */
@@ -150,6 +218,7 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
       )}
       {msg && <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p>}
       {!online && <div class="lockline">Potrzebne połączenie z serwerem.</div>}
+      {save.deleteAccount && <DeleteAccount save={save} online={online} />}
     </section>
   );
 }

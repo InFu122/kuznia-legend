@@ -113,6 +113,9 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
   font-family:Georgia, "Times New Roman", serif; font-style:italic; font-weight:700; font-size:15px; line-height:1; display:grid; place-items:center; padding:0}
 .info:hover{border-color:var(--straw)}
 .linkbtn{background:none; border:0; padding:0; color:var(--straw); font-size:13px; font-weight:600; text-decoration:underline; text-underline-offset:2px}
+a.linkbtn{display:inline-block}
+.linkbtn.danger-link{color:#e8938b}
+.linkbtn:disabled{opacity:.5}
 .otable-wrap{overflow-x:auto}
 .otable{width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums}
 .otable th{text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ash); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--rivet)}

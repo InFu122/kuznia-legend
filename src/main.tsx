@@ -7,9 +7,11 @@ import { toast } from './engine/context';
 import { ChatLink, setChat } from './save/chat';
 import { CLAN_SYNC_MS, clanLife } from './save/clanlife';
 import { ServerError, ServerLink, serverConfig, setFlush, setLink } from './save/server';
-import { connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
+import { clearLocal, connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
 import { initPwa } from './ui/pwa';
+import { recoverPurchases } from './ui/billing';
+import { gemsText } from './ui/texts';
 import { bootDone, bootStep } from './ui/boot';
 import { watchErrors } from './ui/report';
 import './ui/fonts.css';
@@ -78,6 +80,16 @@ function boot(hotData?: { s?: string }) {
     link.chatDrop(e.item, false).catch(() => {});
   });
 
+  /** Zakupy w Google Play zapłacone, ale niewydane (np. zamknięta aplikacja) — dokańczane raz po połączeniu. */
+  let recovered = false;
+  const finishPurchases = async (l: ServerLink) => {
+    for (const r of await recoverPurchases(l)) {
+      game.applyShop(r);
+      clanLife.rewards(game, r.rewards);
+      if (r.given) toast(game.ctx, `Zakup z Google Play dokończony — masz teraz ${gemsText(r.gems ?? 0)}.`, 'good');
+    }
+  };
+
   const saveServer = async (l: ServerLink) => {
     try {
       let r = await l.save(game.s);
@@ -93,6 +105,7 @@ function boot(hotData?: { s?: string }) {
       save.error = undefined;
       startChat(l);
       void extras(l);
+      if (!recovered) { recovered = true; void finishPurchases(l); }
     } catch (e) {
       if (e instanceof ServerError && e.status === 400) { save.error = e.message; return; } // serwer odrzucił zapis
       l.online = false;
@@ -103,7 +116,10 @@ function boot(hotData?: { s?: string }) {
     }
   };
 
+  /** Konto usunięte — od tej chwili nic już nie zapisujemy (gra zaraz uruchomi się od nowa). */
+  let wiped = false;
   const persist = async () => {
+    if (wiped) return;
     game.s.savedAt = Date.now();
     game.s.lastSeen = Date.now();
     const json = JSON.stringify(game.s);
@@ -179,6 +195,17 @@ function boot(hotData?: { s?: string }) {
       save.mode = 'server';
       save.reason = undefined;
       await saveServer(link);
+    };
+    save.deleteAccount = async (confirm: string) => {
+      wiped = true;
+      try {
+        await link.deleteAccount(confirm);
+      } catch (e) {
+        wiped = false;
+        throw e;
+      }
+      clearLocal();
+      setTimeout(() => location.reload(), 2500);
     };
   }
 

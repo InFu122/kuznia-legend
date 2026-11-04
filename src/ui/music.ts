@@ -161,6 +161,14 @@ export function setMood(m: Mood): void {
   if (on && decks.length) crossTo(m, m === 'boss' ? FADE_FAST : FADE);
 }
 
+/** Pauza muzyki na czas reklamy (reklama ma własny dźwięk); `false` — gra dalej. */
+export function holdMusic(hold: boolean): void {
+  const d = decks[active];
+  if (!d) return;
+  if (hold) d.el.pause();
+  else if (on && playing && !document.hidden) d.el.play().catch(() => {});
+}
+
 /** Na chwilę ścisza muzykę (rzadki przedmiot, boss, nagroda), żeby efekt było dobrze słychać. */
 export function duck(ms: number): void {
   if (!bus) return;

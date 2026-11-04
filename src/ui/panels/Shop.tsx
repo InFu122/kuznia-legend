@@ -1,6 +1,7 @@
 // Sklep: prezent dnia, reklamy z nagrodą, towary za Klejnoty, Przepustka Kowala i pakiety Klejnotów.
 // Z serwerem każdą akcję wykonuje serwer (Klejnoty w jego portfelu); bez serwera — silnik gry.
-// Reklamy są na razie testowe (odliczanie); w aplikacji z Google Play zastąpi je prawdziwa reklama z nagrodą.
+// Reklamy: w aplikacji na Androida — prawdziwa reklama z nagrodą (AdMob, ads.ts); w przeglądarce — reklama testowa (odliczanie).
+// Pakiety Klejnotów: w aplikacji z Google Play — płatność Google (billing.ts); serwer w trybie testowym — bez płatności.
 import { useEffect, useState } from 'preact/hooks';
 import { AD, AD_BUFFS, GEM_ITEM_IDS, GEM_PACKS, GEM_SHOP, PASS, PASS_LEVELS, type BuffId, type GemItemId } from '../../data';
 import { oreUrl, resUrl } from '../../art/render';
@@ -16,6 +17,8 @@ import { gemsText } from '../texts';
 import { buffIcon } from '../buffs';
 import { Note, errText, useAction } from './ClanLife';
 import { Res, RewardIcons } from '../RewardIcons';
+import { adsNative, showRewarded } from '../ads';
+import { billingNative, buyPack, recoverPurchases, storePrices } from '../billing';
 
 export type ShopTab = 'sklep' | 'przepustka' | 'klejnoty';
 const TABS: [ShopTab, string][] = [['sklep', 'Sklep'], ['przepustka', 'Przepustka'], ['klejnoty', 'Klejnoty']];
@@ -78,21 +81,44 @@ export function TestAd({ onDone, onCancel }: { onDone: () => void; onCancel: () 
   );
 }
 
+/**
+ * Oglądanie reklamy z nagrodą: w aplikacji — prawdziwa reklama (AdMob), gdzie indziej — reklama testowa.
+ * `view` — ekran reklamy testowej do pokazania zamiast okna (null, gdy nie trwa).
+ */
+export function useAdWatch() {
+  const [test, setTest] = useState<(() => void) | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const watch = (reward: () => void) => {
+    setMsg('');
+    if (!adsNative()) { setTest(() => reward); return; }
+    if (loading) return;
+    setLoading(true);
+    void showRewarded().then(r => {
+      setLoading(false);
+      if (r === 'ok') reward();
+      else if (r === 'cancel') setMsg('Reklama przerwana — nagroda tylko za obejrzenie do końca.');
+      else setMsg('Reklama nie jest teraz dostępna — spróbuj za chwilę.');
+    });
+  };
+  const view = test ? <TestAd onDone={() => { setTest(null); test(); }} onCancel={() => setTest(null)} /> : null;
+  return { watch, view, loading, msg };
+}
+
 /* ---------- okno ikonki reklamy z pola walki ---------- */
 
 export function AdOfferView({ game, what, close }: { game: Game; what: BuffId; close: () => void }) {
   const a = useShopAct(game);
-  const [watch, setWatch] = useState(false);
+  const ad = useAdWatch();
   const B = AD_BUFFS[what];
   const used = game.shopNow.ads[what] ?? 0;
   const until = game.s.buffs[what] ?? 0;
   const now = game.ctx.now();
   const reward = () => {
-    setWatch(false);
     game.dismissAdOffer();
     void a.act(() => game.adReward(what), l => l.adReward(what), `${B.n}: ${B.d}!`).then(() => setTimeout(close, 900));
   };
-  if (watch) return <TestAd onDone={reward} onCancel={() => setWatch(false)} />;
+  if (ad.view) return ad.view;
   return (
     <>
       <div class="eyebrow">Nagroda za reklamę</div>
@@ -102,8 +128,10 @@ export function AdOfferView({ game, what, close }: { game: Game; what: BuffId; c
       </div>
       {until > now && <p class="sub">Już trwa jeszcze {tfmt(until - now)} — kolejna reklama przedłuży je o godzinę (najwyżej do 3 h naprzód).</p>}
       <p class="tech-cost">Dziś: {used}/{B.day}</p>
-      <Note msg={a.msg} />
-      <button class="btn primary" disabled={a.busy || used >= B.day} onClick={() => setWatch(true)}>{used >= B.day ? 'Na dziś koniec' : 'Obejrzyj reklamę'}</button>
+      <Note msg={a.msg || ad.msg} />
+      <button class="btn primary" disabled={a.busy || ad.loading || used >= B.day} onClick={() => ad.watch(reward)}>
+        {used >= B.day ? 'Na dziś koniec' : ad.loading ? 'Wczytywanie reklamy…' : 'Obejrzyj reklamę'}
+      </button>
       <button class="btn" onClick={() => { game.dismissAdOffer(); close(); }}>Nie teraz</button>
     </>
   );
@@ -175,20 +203,16 @@ export function ShopView({ game, initial, close }: { game: Game; initial?: ShopT
 
 function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
   const a = useShopAct(game);
-  const [watch, setWatch] = useState<BuffId | 'gems' | null>(null);
+  const ad = useAdWatch();
   const s = game.s;
   const sh = game.shopNow;
   const now = game.ctx.now();
   const giftDone = sh.gift === sh.day;
   const msUntilReset = Date.parse(sh.day + 'T00:00:00Z') + 86400000 - now;
-  if (watch) {
-    const k = watch;
-    const done = () => {
-      setWatch(null);
-      void a.act(() => game.adReward(k), l => l.adReward(k), k === 'gems' ? `+${gemsText(AD.GEMS)}!` : `${AD_BUFFS[k].n}: ${AD_BUFFS[k].d}!`);
-    };
-    return <TestAd onDone={done} onCancel={() => setWatch(null)} />;
-  }
+  if (ad.view) return ad.view;
+  const watch = (k: BuffId | 'gems') => ad.watch(() => {
+    void a.act(() => game.adReward(k), l => l.adReward(k), k === 'gems' ? `+${gemsText(AD.GEMS)}!` : `${AD_BUFFS[k].n}: ${AD_BUFFS[k].d}!`);
+  });
   const adRow = (k: BuffId | 'gems') => {
     const max = k === 'gems' ? AD.GEMS_DAY : AD_BUFFS[k].day;
     const used = sh.ads[k] ?? 0;
@@ -200,7 +224,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
           <div class="cname">{k === 'gems' ? <Res r={{ gems: AD.GEMS }} /> : AD_BUFFS[k].n}</div>
           <div class="tech-cost">{k === 'gems' ? 'raz dziennie' : AD_BUFFS[k].d}{until > now ? ` · trwa jeszcze ${tfmt(until - now)}` : ''} · dziś {used}/{max}</div>
         </div>
-        <button class="btn small" disabled={a.busy || used >= max} onClick={() => setWatch(k)}><Px src={resUrl('reklama')} size={16} /> Obejrzyj</button>
+        <button class="btn small" disabled={a.busy || ad.loading || used >= max} onClick={() => watch(k)}><Px src={resUrl('reklama')} size={16} /> {ad.loading ? '…' : 'Obejrzyj'}</button>
       </li>
     );
   };
@@ -216,6 +240,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
       </section>
       <div class="eyebrow" style={{ marginTop: '6px' }}>Nagrody za reklamy</div>
       <ul class="clist shoplist">{(['ruda', 'zloto', 'gems'] as const).map(adRow)}</ul>
+      <Note msg={ad.msg} />
       <div class="eyebrow" style={{ marginTop: '6px' }}>Za Klejnoty</div>
       <ul class="gemgrid">
         {GEM_ITEM_IDS.filter(id => gemItemOpen(s, id)).map(id => {
@@ -320,17 +345,39 @@ function GemsTabView({ game }: { game: Game }) {
   const l = getLink();
   const testServer = game.net && (l?.testSpeed ?? 1) > 1;
   const free = !game.net || testServer; // gra bez serwera albo serwer w trybie testowym: zakup bez płatności
+  const play = game.net && !testServer && billingNative(); // aplikacja z Google Play: prawdziwa płatność
+  const [prices, setPrices] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!play) return;
+    void storePrices().then(setPrices);
+    // Zapłacone, a niewydane zakupy (np. przerwane połączenie) — dokończ przy wejściu do sklepu.
+    const lk = getLink();
+    if (lk?.online) void recoverPurchases(lk).then(rs => rs.forEach(r => applyResp(game, r)));
+  }, []);
   const bought = s.shop.once ?? [];
+  const buyPlay = (id: string) => a.run(async () => {
+    const lk = getLink();
+    if (!lk?.online) return 'Zakupy działają po połączeniu z serwerem gry.';
+    const p = GEM_PACKS.find(x => x.id === id)!;
+    const r = await buyPack(lk, id);
+    if (r.k === 'cancel') return '';
+    if (r.k === 'pending') return 'Płatność czeka na potwierdzenie w Google Play. Klejnoty dostaniesz, gdy płatność dojdzie — gra sprawdzi to sama.';
+    applyResp(game, r.r);
+    return r.r.given ? `${p.n}: +${gemsText(p.gems + p.bonus)}. Dziękujemy za wsparcie Kuźni!` : 'Ten zakup był już wydany wcześniej.';
+  });
   return (
     <>
       <p class="sub">
         {free
           ? 'Wersja testowa: pakiety dostajesz bez płatności, żeby sprawdzić sklep.'
-          : 'Płatności ruszą w aplikacji z Google Play. Do tego czasu Klejnoty zdobywasz w przepustce i za reklamy.'}
+          : play
+            ? 'Płatność obsługuje Google Play. Klejnoty trafiają na twoje konto na serwerze gry.'
+            : 'Pakiety Klejnotów kupisz w aplikacji z Google Play. Tutaj Klejnoty zdobywasz w przepustce i za reklamy.'}
       </p>
       <ul class="clist shoplist">
         {GEM_PACKS.map(p => {
           const done = !!p.once && bought.includes(p.id);
+          const price = prices[p.id] ?? pln(p.pln);
           return (
             <li key={p.id} class={p.once ? 'starter' : ''}>
               <GemIco size={28} />
@@ -338,9 +385,9 @@ function GemsTabView({ game }: { game: Game }) {
                 <div class="cname">{p.n}{p.bonus > 0 && <span class="tag">+{fmt(p.bonus)} gratis</span>}</div>
                 <div class="tech-cost">{packReward(p.id) ? <RewardIcons r={packReward(p.id)!} size={14} /> : <Res r={{ gems: p.gems + p.bonus }} />}</div>
               </div>
-              <button class="btn small primary" disabled={a.busy || done || !free}
-                onClick={() => void a.act(() => game.buyPack(p.id), lk => lk.iapTest(p.id), `${p.n}: +${gemsText(p.gems + p.bonus)}.`)}>
-                {done ? 'Kupiony' : free ? `Test · ${pln(p.pln)}` : pln(p.pln)}
+              <button class="btn small primary" disabled={a.busy || done || (!free && !play)}
+                onClick={() => (play ? void buyPlay(p.id) : void a.act(() => game.buyPack(p.id), lk => lk.iapTest(p.id), `${p.n}: +${gemsText(p.gems + p.bonus)}.`))}>
+                {done ? 'Kupiony' : free ? `Test · ${pln(p.pln)}` : price}
               </button>
             </li>
           );

@@ -7,3 +7,5 @@ balans/
 server/build
 .env
 __pycache__/
+sekrety/
+*.jks

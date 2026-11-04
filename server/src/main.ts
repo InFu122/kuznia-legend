@@ -19,6 +19,7 @@ import { createBoards, rpcRanking } from './ranking';
 import { createClanBoards, rpcClanRanking } from './clanrank';
 import { rpcPlayerProfile } from './profile';
 import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
+import { rpcAccountDelete, rpcAccountDeleteAdmin } from './account';
 import { rpcAdReward, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
 import { rpcWarAttack, rpcWarState, rpcWarTestClock } from './war';
@@ -81,6 +82,8 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('speedup', rpcSpeedup);
   initializer.registerRpc('iap_test', rpcIapTest);
   initializer.registerRpc('iap_google', rpcIapGoogle);
+  initializer.registerRpc('account_delete', rpcAccountDelete);
+  initializer.registerRpc('account_delete_admin', rpcAccountDeleteAdmin);
   initializer.registerRpc('chat_drop', rpcChatDrop);
   initializer.registerRpc('chat_report', rpcChatReport);
   initializer.registerRpc('feedback', rpcFeedback);

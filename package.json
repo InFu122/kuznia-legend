@@ -17,10 +17,12 @@
     "build:server": "tsc --noEmit -p server && node server/build.mjs"
   },
   "dependencies": {
+    "@capacitor-community/admob": "8.2.1",
     "@capacitor/android": "8.5.3",
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
     "@capacitor/local-notifications": "8.3.1",
+    "@capgo/native-purchases": "8.9.6",
     "@fontsource/barlow": "5.3.0",
     "@fontsource/grenze-gotisch": "5.3.0",
     "preact": "10.24.3"

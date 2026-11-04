@@ -69,7 +69,11 @@ export interface LeagueState {
 }
 
 /** Odpowiedź RPC sklepu: stan sklepu, nagrody do odebrania i wynik akcji. */
-export interface ShopResp extends ShopSync { rewards: ServerReward[]; serverTime: number; keys?: boolean; cost?: number; given?: number }
+export interface ShopResp extends ShopSync {
+  rewards: ServerReward[]; serverTime: number; keys?: boolean; cost?: number;
+  /** Zakup Google Play: `given` — wydane teraz pakiety, `done` — zakup można zamknąć (zużyć), `pending` — płatność w toku. */
+  given?: number; done?: boolean; pending?: boolean;
+}
 
 export interface WarSide { n: string; tag: string; power: number; total: number; days: number[]; ghost?: boolean }
 export interface WarState {
@@ -166,8 +170,12 @@ export class ServerLink {
     }
   }
 
+  /** Konto usunięte (albo właśnie usuwane): żadnych zapytań ani logowania — inaczej serwer założyłby nowe konto. */
+  private dead = false;
+
   /** Konto zakłada się samo przy pierwszym uruchomieniu na urządzeniu. */
   async auth(): Promise<void> {
+    if (this.dead) throw new ServerError(410, 'Konto zostało usunięte.');
     const res = await this.req('/v2/account/authenticate/device?create=true', {
       method: 'POST',
       headers: { Authorization: 'Basic ' + btoa(this.cfg.key + ':'), 'Content-Type': 'application/json' },
@@ -196,6 +204,7 @@ export class ServerLink {
   }
 
   async rpc<T>(id: string, body: unknown, retry = true): Promise<T> {
+    if (this.dead && id !== 'account_delete') throw new ServerError(410, 'Konto zostało usunięte.');
     if (!this.token) await this.auth();
     const res = await this.req(`/v2/rpc/${id}?unwrap`, {
       method: 'POST',
@@ -266,7 +275,30 @@ export class ServerLink {
   /** `key` — poziom trwającego ulepszenia kuźni albo trwające badanie (serwer sprawdza, że zna ten sam stan). */
   speedup(what: 'forge' | 'tech', key?: number | string): Promise<ShopResp> { return this.rpc('speedup', { what, key }); }
   iapTest(id: string): Promise<ShopResp> { return this.rpc('iap_test', { id }); }
-  iapGoogle(id: string, receipt: string): Promise<ShopResp> { return this.rpc('iap_google', { id, receipt }); }
+  /** Zakup w Google Play: serwer sprawdza token zakupu u Google i wydaje pakiet (raz na zakup). */
+  iapGoogle(id: string, token: string): Promise<ShopResp> { return this.rpc('iap_google', { id, token }); }
+
+  /**
+   * Usuwa konto na serwerze (zapis, Klejnoty, klan, nick, wiadomości czatu). Gra zapomina identyfikator urządzenia,
+   * więc przy następnym połączeniu serwer założy nowe, puste konto.
+   */
+  async deleteAccount(confirm: string): Promise<void> {
+    await this.session(); // świeży token — po ustawieniu `dead` gra już się nie zaloguje
+    this.dead = true;
+    try {
+      await this.rpc('account_delete', { confirm }, false);
+    } catch (e) {
+      this.dead = false;
+      throw e;
+    }
+    try { localStorage.removeItem(DEVICE_KEY); } catch { /* bez pamięci */ }
+    this.tmpDevice = null;
+    this.token = null;
+    this.version = null;
+    this.power = null;
+    this.unverified = [];
+    this.online = false;
+  }
   warState(): Promise<WarState> { return this.rpc('war_state', {}); }
   warAttack(id: string): Promise<WarState> { return this.rpc('war_attack', { id }); }
   raidState(): Promise<RaidState> { return this.rpc('raid_state', {}); }

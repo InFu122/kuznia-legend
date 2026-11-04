@@ -7,13 +7,14 @@ import { donateCost, shopBlock, shopLeft, shopReward } from '../../engine/clan';
 import type { Game } from '../../engine/game';
 import { clanLife } from '../../save/clanlife';
 import { ServerError, type ClanLife, type ClanOreReq } from '../../save/server';
+import { PlayError } from '../billing';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 import { coins } from '../texts';
 import { Res, RewardIcons } from '../RewardIcons';
 
 export type ClanTab = 'klan' | 'wojna' | 'smok' | 'boss' | 'kuznia' | 'pomoc' | 'sklep';
-export const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
+export const errText = (e: unknown) => (e instanceof ServerError || e instanceof PlayError ? e.message : 'Brak połączenia z serwerem.');
 
 /** Aktualny stan klanu z serwera (odświeża widok po każdej zmianie). */
 export function useClanLife(): ClanLife | null {

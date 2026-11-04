@@ -1,0 +1,119 @@
+# Wydanie do Google Play: plik AAB podpisany tajnym kluczem przesyłania (upload key).
+# Uruchamiasz ręcznie: zakładka Actions → „Google Play (AAB)” → Run workflow → wpisz numer wersji (np. 1.0.0).
+# Gotowy plik: na dole strony uruchomienia, sekcja Artifacts → kuznia-legend-aab. Wgrywasz go w Play Console
+# (Testowanie → Test wewnętrzny → Utwórz nową wersję). Krok po kroku: docs/GOOGLE_PLAY.md.
+#
+# Sekrety (Settings → Secrets and variables → Actions → zakładka Secrets):
+#   KL_UPLOAD_KEYSTORE_B64   — plik klucza przesyłania (.jks) zakodowany w base64 (jedna linia)
+#   KL_UPLOAD_STORE_PASSWORD — hasło magazynu kluczy
+#   KL_UPLOAD_KEY_ALIAS      — alias klucza (np. upload)
+#   KL_UPLOAD_KEY_PASSWORD   — hasło klucza (zwykle to samo co magazynu)
+# Zmienne (zakładka Variables):
+#   NAKAMA_SERVER_KEY  — ten sam klucz co w .env na serwerze (jak dla APK testowego)
+#   SERVER_URL         — publiczny adres gry (HTTPS)
+#   ADMOB_APP_ID       — identyfikator aplikacji AdMob (ca-app-pub-…~…)
+#   ADMOB_REWARDED_ID  — identyfikator jednostki reklamowej „z nagrodą” (ca-app-pub-…/…)
+name: Google Play (AAB)
+
+on:
+  workflow_dispatch:
+    inputs:
+      wersja:
+        description: 'Numer wersji widoczny dla graczy (np. 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: play-aab
+  cancel-in-progress: false
+
+jobs:
+  aab:
+    runs-on: ubuntu-24.04
+    env:
+      VITE_SERVER_URL: ${{ vars.SERVER_URL || 'https://adamserver.taild0a9c3.ts.net' }}
+      VITE_PUBLIC_URL: ${{ vars.SERVER_URL || 'https://adamserver.taild0a9c3.ts.net' }}
+      VITE_SERVER_KEY: ${{ vars.NAKAMA_SERVER_KEY }}
+      VITE_ADMOB_REWARDED: ${{ vars.ADMOB_REWARDED_ID }}
+      ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+      KL_VERSION_NAME: ${{ inputs.wersja }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Sprawdź ustawienia
+        env:
+          KS: ${{ secrets.KL_UPLOAD_KEYSTORE_B64 }}
+          SP: ${{ secrets.KL_UPLOAD_STORE_PASSWORD }}
+          KA: ${{ secrets.KL_UPLOAD_KEY_ALIAS }}
+          KP: ${{ secrets.KL_UPLOAD_KEY_PASSWORD }}
+        run: |
+          # Numer kompilacji dla Google Play: każde wgranie musi mieć większy numer niż poprzednie.
+          KL_VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))
+          echo "KL_VERSION_CODE=$KL_VERSION_CODE" >> "$GITHUB_ENV"
+          missing=""
+          [ -z "$KS" ] && missing="$missing KL_UPLOAD_KEYSTORE_B64"
+          [ -z "$SP" ] && missing="$missing KL_UPLOAD_STORE_PASSWORD"
+          [ -z "$KA" ] && missing="$missing KL_UPLOAD_KEY_ALIAS"
+          [ -z "$KP" ] && missing="$missing KL_UPLOAD_KEY_PASSWORD"
+          [ -z "$VITE_SERVER_KEY" ] && missing="$missing NAKAMA_SERVER_KEY(zmienna)"
+          if [ -n "$missing" ]; then
+            echo "::error::Brakuje ustawień:$missing — zobacz docs/GOOGLE_PLAY.md, krok „Klucz przesyłania”."
+            exit 1
+          fi
+          if ! echo "$KL_VERSION_NAME" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "::error::Numer wersji ma wyglądać jak 1.0.0 (podano: $KL_VERSION_NAME)."
+            exit 1
+          fi
+          if [ -z "$ADMOB_APP_ID" ] || [ -z "$VITE_ADMOB_REWARDED" ]; then
+            echo "::warning::Brak ADMOB_APP_ID lub ADMOB_REWARDED_ID — aplikacja pokaże reklamy testowe Google (bez zarobku). Do testu wewnętrznego to w porządku, przed wydaniem publicznym uzupełnij."
+          fi
+          echo "Wersja $KL_VERSION_NAME (kod $KL_VERSION_CODE)"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Gra (web)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Projekt Androida
+        run: npx cap sync android
+
+      - name: Klucz przesyłania
+        env:
+          KS: ${{ secrets.KL_UPLOAD_KEYSTORE_B64 }}
+        run: |
+          echo "$KS" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "KL_UPLOAD_STORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      - name: AAB
+        working-directory: android
+        env:
+          KL_UPLOAD_STORE_PASSWORD: ${{ secrets.KL_UPLOAD_STORE_PASSWORD }}
+          KL_UPLOAD_KEY_ALIAS: ${{ secrets.KL_UPLOAD_KEY_ALIAS }}
+          KL_UPLOAD_KEY_PASSWORD: ${{ secrets.KL_UPLOAD_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon --stacktrace
+
+      - name: Plik do wgrania
+        run: |
+          cp android/app/build/outputs/bundle/release/app-release.aab "kuznia-legend-${KL_VERSION_NAME}.aab"
+          rm -f "$RUNNER_TEMP/upload.jks"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: kuznia-legend-aab
+          path: kuznia-legend-*.aab
+          retention-days: 30

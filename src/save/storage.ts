@@ -18,6 +18,11 @@ export function saveLocal(json: string): void {
   try { localStorage.setItem(KEY, json); } catch { /* prywatne okno lub zablokowana pamięć */ }
 }
 
+/** Usuwa zapis z tego urządzenia (po usunięciu konta na serwerze). */
+export function clearLocal(): void {
+  try { localStorage.removeItem(KEY); } catch { /* bez pamięci */ }
+}
+
 interface DocRef { get(): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>; set(d: Record<string, unknown>): Promise<void> }
 interface CloudSave { ref: DocRef; busy: boolean }
 

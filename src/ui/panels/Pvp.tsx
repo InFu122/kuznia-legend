@@ -5,7 +5,7 @@ import type { Game } from '../../engine/game';
 import { AD, ARENA_SHOP, LEAGUES, type ArenaShopId } from '../../data';
 import { resUrl } from '../../art/render';
 import { Px } from '../Px';
-import { TestAd } from './Shop';
+import { useAdWatch } from './Shop';
 import { clanLife } from '../../save/clanlife';
 import { getLink, ServerError, type ArenaFight, type ArenaState, type DuelShow, type LeagueState } from '../../save/server';
 import { fmt } from '../format';
@@ -77,7 +77,7 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
-  const [adWatch, setAdWatch] = useState(false);
+  const ad = useAdWatch();
   const live = useRef(true);
   useEffect(() => () => { live.current = false; }, []);
 
@@ -117,14 +117,13 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
 
   const adLeft = Math.max(0, AD.ARENA_DAY - (game.shopNow.ads.arena ?? 0));
   const adFight = () => {
-    setAdWatch(false);
     call(l => l.adReward('arena'), r => {
       game.applyShop(r);
       setSt(x => (x ? { ...x, left: typeof r.left === 'number' ? r.left : x.left + 1, max: x.max + 1 } : x));
       setNote('+1 walka na arenie.');
     });
   };
-  if (adWatch) return <TestAd onDone={adFight} onCancel={() => setAdWatch(false)} />;
+  if (ad.view) return ad.view;
   if (fight) {
     const summary = (
       <>
@@ -186,10 +185,11 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
             {st.left < 1 && <button class="linkbtn" onClick={() => setTab('sklep')}>Bilet na arenę</button>}
           </div>
           {adLeft > 0 && (
-            <button class="btn small adbtn" disabled={busy} onClick={() => setAdWatch(true)}>
-              <Px src={resUrl('reklama')} size={16} /> +1 walka za reklamę <small>(dziś zostało {adLeft})</small>
+            <button class="btn small adbtn" disabled={busy || ad.loading} onClick={() => ad.watch(adFight)}>
+              <Px src={resUrl('reklama')} size={16} /> {ad.loading ? 'Wczytywanie reklamy…' : <>+1 walka za reklamę <small>(dziś zostało {adLeft})</small></>}
             </button>
           )}
+          {ad.msg && tab === 'walki' && <p class="sub" role="status">{ad.msg}</p>}
           {note && tab === 'walki' && <p class="sub" role="status">{note}</p>}
           <div class="eyebrow" style={{ marginTop: '4px' }}>Obrona</div>
           {st.log.length ? (

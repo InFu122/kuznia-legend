@@ -32,6 +32,7 @@ docker compose up -d --build
 ```
 
 Gra: `http://ADRES-SERWERA:8080`, konsola Nakamy: `:7351`. Szczegóły, CasaOS i kopie zapasowe: [docs/SERWER.md](docs/SERWER.md).
+Wydanie w Google Play krok po kroku: [docs/GOOGLE_PLAY.md](docs/GOOGLE_PLAY.md).
 
 ## Struktura
 
@@ -71,6 +72,6 @@ Tempo gry: kuźnia do 200. poziomu, czasy ulepszeń z `UPGRADE_MIN` — pierwsze
    - 4b: Wspólna Kuźnia Klanu z 10 poziomami premii, boss klanowy ze skrzyniami dla atakujących, pomoc w ulepszeniach kuźni, prośby o rudę, Monety i sklep klanowy. *(gotowe)*
    - 4c: cotygodniowa wojna klanów (dni kucia, walki, lochów i bossa, sobotnia bitwa, klan-widmo gdy brak przeciwnika) i rajd Smocze Leże (smok o 4 fazach ze słabościami na żywioły); wytop seryjny ×2 / ×3 (od 12. i 20. poziomu kuźni), rafinacja nadmiaru rud i mniejszy drop rudy (zwłaszcza za nieobecność). *(gotowe)*
 5. **Sklep i wydanie**
-   - 5a: Klejnoty w portfelu serwera, sklep z prezentem dnia i towarami za Klejnoty, przyspieszenia kuźni i badań, Przepustka Kowala (sezony 28 dni, darmowa i złota ścieżka), reklamy z nagrodą (ikonka na polu walki: ×2 ruda / ×2 złoto na godzinę), zakupy testowe i weryfikacja zakupów Google Play na serwerze. *(gotowe — reklamy i płatności na razie testowe)*
+   - 5a: Klejnoty w portfelu serwera, sklep z prezentem dnia i towarami za Klejnoty, przyspieszenia kuźni i badań, Przepustka Kowala (sezony 28 dni, darmowa i złota ścieżka), reklamy z nagrodą (ikonka na polu walki: ×2 ruda / ×2 złoto na godzinę), zakupy testowe i weryfikacja zakupów Google Play na serwerze. *(gotowe)*
    - 5c: zawartość długoterminowa — kuźnia do 200. poziomu (ok. rok gry) i Otchłań po kampanii (Dziedzictwo wycofane, premie zostają), runy slotów i przekuwanie, osiągnięcia i Kolekcja Kowala, gałąź Nauki „Towarzysze”, ligi areny z Żetonami i sklepem areny, ranking klanów i sezony wojen, wydarzenia co 2 tygodnie z lochem sezonowym, stroje bohatera i ramki awatara, +1 walka na arenie za reklamę, ikonki ×2 ruda / ×2 złoto i przepustki przy polu walki; nowe rudy (Obsydian, Eteryt, Boska Ruda), Boski tylko z przeskoku, Boska aura, imiona Boskich przedmiotów i ogłoszenia na czacie. *(gotowe)*
-   - 5b: wydanie w Google Play — klucz podpisu, plik AAB, prawdziwe płatności (Google Play Billing) i reklamy (AdMob), polityka prywatności, opis sklepu, soft launch (przed nim: `TEST_SPEED=1`).
+   - 5b: przygotowanie do Google Play — podpisany plik AAB z GitHub Actions (tajny klucz przesyłania w sekretach), płatności Google Play sprawdzane przez serwer, reklamy z nagrodą AdMob ze zgodą RODO, usuwanie konta w grze i przez stronę WWW, polityka prywatności, teksty i grafiki karty sklepu (`store/`). *(gotowe w kodzie — dalej konta Google: [docs/GOOGLE_PLAY.md](docs/GOOGLE_PLAY.md))*
