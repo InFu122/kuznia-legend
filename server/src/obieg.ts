@@ -1,7 +1,7 @@
 // Wielki Obieg na serwerze: sprzedane przedmioty graczy trafiają do wspólnej puli, a skrzynie bossów
 // i Zbrojownia innych graczy dostają je z powrotem — podpisane przez serwer. Kowal dostaje wieść, gdy ktoś
 // znajdzie jego przedmiot. Gdy w puli brakuje przedmiotów innych graczy, serwer dokłada przedmioty kowali-widm.
-import { B, oreCap, oreRank, landDef } from '../../src/data';
+import { B, R, oreCap, oreRank, landDef, rGe } from '../../src/data';
 import type { Ctx } from '../../src/engine/context';
 import { itemLevelFor, itemName } from '../../src/engine/formulas';
 import { newBattle } from '../../src/engine/state';
@@ -70,7 +70,7 @@ export function rpcObiegSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
       const sent = cur ? cur.sx.slice() : [];
       for (const it of out) {
         if (!it || typeof it !== 'object' || typeof it.sx !== 'number' || sent.includes(it.sx)) continue;
-        if (it.r < 2 || !smeltOk(proof, it, s.sx)) continue;
+        if (!rGe(it.r, R.RZADKI) || !smeltOk(proof, it, s.sx)) continue;
         sent.push(it.sx);
         // Piętno kowala to zawsze obecny nick z rejestru (nie da się podszyć pod innego gracza).
         const clean: Item = { ...it, smith: s.name, id: 0, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false };
@@ -89,7 +89,7 @@ export function rpcObiegSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
   if (fresh.length || want) {
     updateObject<Pool>(nk, 'obieg', 'pool', SYSTEM_USER, cur => {
       const items = (cur ? cur.items : []).concat(fresh);
-      const fits = items.map((e, i) => [e, i] as const).filter(([e]) => e.uid !== userId && oreRank(e.it.ore) <= oreRank(maxOre) && e.it.r <= 5);
+      const fits = items.map((e, i) => [e, i] as const).filter(([e]) => e.uid !== userId && oreRank(e.it.ore) <= oreRank(maxOre) && e.it.r !== R.BOSKI);
       const pickIdx = new Set<number>();
       while (pickIdx.size < Math.min(want, fits.length)) pickIdx.add(fits[Math.floor(rng.next() * fits.length)][1]);
       taken = items.filter((_, i) => pickIdx.has(i));

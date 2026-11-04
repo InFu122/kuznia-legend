@@ -1,5 +1,5 @@
 // Osiągnięcia i Kolekcja Kowala. Postęp liczy się z liczników gry; nagrody to zasoby (bez Klejnotów).
-import { ABYSS_FROM, ACHIEVEMENTS, ACH_IDS, ORES, RAR, SLOTS, SLOT_ORDER, type AchId } from '../data';
+import { ABYSS_FROM, ACHIEVEMENTS, ACH_IDS, ORES, RAR, SLOTS, SLOT_ORDER, type AchId, rRank } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
 import { grant } from './reward';
@@ -18,7 +18,7 @@ export function discover(ctx: Ctx, it: Item): boolean {
   const k = codexKey(it);
   if (s.codex.includes(k)) return false;
   s.codex = [...s.codex, k];
-  if (it.r > (s.stats.bestR ?? -1)) s.stats.bestR = it.r;
+  if (rRank(it.r) > rRank(s.stats.bestR ?? -1)) s.stats.bestR = it.r;
   ctx.cache = null;
   ctx.dirty = true;
   return true;
@@ -43,7 +43,8 @@ export function achValue(s: GameState, id: AchId): number {
     case 'krainy': return s.cleared.filter(Boolean).length;
     case 'klucze': return s.stats.keys || 0;
     case 'wieza': return s.dungeons.wieza.best;
-    case 'rzadkosc': return Math.max(s.stats.bestR ?? -1, ...Object.values(s.eq).map(it => it?.r ?? -1));
+    // progi to dawne rzadkości (Epicki … Boski); nowe rzadkości liczą się jak ta poniżej (np. Heroiczny jak Epicki)
+    case 'rzadkosc': return Math.max(-1, ...[s.stats.bestR ?? -1, ...Object.values(s.eq).map(it => it?.r ?? -1)].map(r => (r < 0 ? -1 : Math.floor(RAR[r]?.o ?? 0))));
     case 'kolekcja': return s.codex.length;
     case 'otchlan': return abyssCleared(s);
     case 'runy': return Object.values(s.runes || {}).reduce((a: number, b) => a + (b ?? 0), 0);

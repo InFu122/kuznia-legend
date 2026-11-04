@@ -1,5 +1,5 @@
 // Zapis gry, ziarna wytopu i sprawdzanie przedmiotów.
-import { B, CLAN } from '../../src/data';
+import { B, CLAN, R } from '../../src/data';
 import { upgradeTime } from '../../src/engine/forge';
 import { allMods, techMods } from '../../src/engine/mods';
 import { SAVE_VERSION, migrate } from '../../src/engine/state';
@@ -28,10 +28,10 @@ export const SEEDS_AHEAD = B.SEEDS_RESERVE + 100;
 const PACE_SLACK_MS = 10 * 60000;
 
 /**
- * Klucze, którymi serwer sprawdza przedmioty jednego gracza. `jvFrom` / `jv3From` / `jv4From` / `jv5From` — od którego numeru
- * wytopu obowiązują zasady przeskoku w wersji 2 / 3 / 4 / 5 (wcześniejsze wytopy mogą mieć poprzednią wersję).
+ * Klucze, którymi serwer sprawdza przedmioty jednego gracza. `jvFrom` / `jv3From` / … / `jv6From` — od którego numeru
+ * wytopu obowiązują zasady przeskoku w wersji 2 / 3 / 4 / 5 / 6 (wcześniejsze wytopy mogą mieć poprzednią wersję).
  */
-export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number; jvFrom: number; jv3From: number; jv4From: number; jv5From: number }
+export interface Proof { nk: nkruntime.Nakama; secret: string; sign: string; maxRel: number; forge: number; jvFrom: number; jv3From: number; jv4From: number; jv5From: number; jv6From: number }
 
 /**
  * Pierwszy numer wytopu, który musi spełniać zasady przeskoku w wersji 2. Wytopy wydane przed aktualizacją
@@ -43,14 +43,14 @@ export function proofFor(nk: nkruntime.Nakama, userId: string, s: GameState, met
   return {
     nk, secret: smeltSecret(nk, userId), sign: signSecret(nk), maxRel: techMods(s).jumpRel, forge: s.forge.lvl,
     jvFrom: meta?.jv2 ?? jvFromFor(s.sx || 0), jv3From: meta?.jv3 ?? jvFromFor(s.sx || 0), jv4From: meta?.jv4 ?? jvFromFor(s.sx || 0),
-    jv5From: meta?.jv5 ?? jvFromFor(s.sx || 0),
+    jv5From: meta?.jv5 ?? jvFromFor(s.sx || 0), jv6From: meta?.jv6 ?? jvFromFor(s.sx || 0),
   };
 }
 
 /** Czy wytop przedmiotu zgadza się z ziarnem serwera. */
 export function smeltOk(p: Proof, it: Item, sxNext: number): boolean {
   if (typeof it.sx !== 'number' || !Number.isInteger(it.sx) || it.sx < 0 || it.sx >= sxNext) return false;
-  const minVer = it.sx < p.jvFrom ? 1 : it.sx < p.jv3From ? 2 : it.sx < p.jv4From ? 3 : it.sx < p.jv5From ? 4 : 5;
+  const minVer = it.sx < p.jvFrom ? 1 : it.sx < p.jv3From ? 2 : it.sx < p.jv4From ? 3 : it.sx < p.jv5From ? 4 : it.sx < p.jv6From ? 5 : 6;
   return verifySmelt(it, seedOf(p.nk, p.secret, it.sx), p.maxRel, p.forge, minVer) === null;
 }
 
@@ -169,6 +169,8 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   if (meta.jv4 === undefined) meta.jv4 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
   // Zasady w wersji 5 (kuźnia do 200, rudy otwierają się później): wcześniejsze wytopy zachowują zasady wersji 4.
   if (meta.jv5 === undefined) meta.jv5 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
+  // Zasady w wersji 6 (10 rzadkości, płynne szanse rud): wcześniejsze wytopy zachowują zasady wersji 5.
+  if (meta.jv6 === undefined) meta.jv6 = cur ? jvFromFor(cur.value.state.sx || 0) : 0;
   // W trybie testowym serwer nie pilnuje tempa kuźni, tylko przesuwa punkt odniesienia — po wyłączeniu
   // trybu testowego tempo liczy się od ostatniego zapisu, a nie od początku testów.
   if (maxSpeed > 1) { meta.t0 = now; meta.f0 = target; }
@@ -210,7 +212,7 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   // Nowy Boski przedmiot (założony albo czekający na decyzję) — ogłoszenie na czacie globalnym.
   try {
     const divine = Object.values(ver.eq).filter((it): it is Item => !!it);
-    if (s.pending && s.pending.r >= 6 && smeltOk(proof, s.pending, s.sx || 0)) divine.push(s.pending);
+    if (s.pending && s.pending.r === R.BOSKI && smeltOk(proof, s.pending, s.sx || 0)) divine.push(s.pending);
     announceDivine(nk, userId, ctx.username ?? '', divine);
   } catch (e) { logger.warn('Ogłoszenie Boskiego przedmiotu gracza %s: %s', userId, String(e)); }
   // Nagrody klanu zapisane w grze (numery w clanGot) znikają z kolejki do odebrania.

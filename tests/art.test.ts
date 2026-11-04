@@ -56,6 +56,6 @@ describe('pixel art', () => {
     expect(h0.w).toBe(18);
     const count = (px: Uint8ClampedArray) => { let n = 0; for (let i = 3; i < px.length; i += 4) if (px[i]) n++; return n; };
     expect(count(h5.px)).toBeGreaterThan(count(h0.px));
-    expect(RARITY_GLOW).toHaveLength(7);
+    expect(RARITY_GLOW).toHaveLength(10); // 7 dawnych rzadkości + Wyjątkowy, Heroiczny, Pradawny
   });
 });

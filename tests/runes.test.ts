@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { B, SUBS } from '../src/data';
+import { B, SUBS, RAR, subMult } from '../src/data';
 import { equip, smelt } from '../src/engine/forge';
 import { mulberry32 } from '../src/engine/rng';
 import { reforgeBlock, reforgeCost, rerollSub, runeBlock, runeCost, runePay } from '../src/engine/runes';
@@ -48,7 +48,7 @@ describe('przekuwanie', () => {
   it('od 15. poziomu kuźni; koszt w rudzie przedmiotu, rośnie z rzadkością', () => {
     const { s } = armed(3);
     const it = Object.values(s.eq).find(x => x && x.subs.length)!;
-    expect(reforgeCost(s, it)).toMatchObject({ ore: it.ore, n: 15 * (it.r + 1) });
+    expect(reforgeCost(s, it)).toMatchObject({ ore: it.ore, n: Math.round(15 * (RAR[it.r].o + 1)) });
     s.forge.lvl = 14;
     expect(reforgeBlock(s, it)).toMatch(/15/);
   });
@@ -62,8 +62,8 @@ describe('przekuwanie', () => {
       const x = out.subs[0];
       expect(out.subs.slice(1)).toEqual(it.subs.slice(1));
       expect(it.subs.slice(1).some(o => o.id === x.id)).toBe(false);
-      expect(x.v).toBeGreaterThanOrEqual(Math.round(SUBS[x.id].lo * (1 + 0.15 * it.r) * 10) / 10 - 0.05);
-      expect(x.v).toBeLessThanOrEqual(Math.round(SUBS[x.id].hi * (1 + 0.15 * it.r) * 10) / 10 + 0.05);
+      expect(x.v).toBeGreaterThanOrEqual(Math.round(SUBS[x.id].lo * subMult(it.r) * 10) / 10 - 0.05);
+      expect(x.v).toBeLessThanOrEqual(Math.round(SUBS[x.id].hi * subMult(it.r) * 10) / 10 + 0.05);
     }
     expect(rerollSub(rng, it, 9)).toBeNull();
   });
@@ -74,7 +74,7 @@ describe('przekuwanie', () => {
     it.fame = 777;
     const ore0 = s.ores[it.ore];
     const cand = g.reforge(it.slot, 0)!;
-    expect(s.ores[it.ore]).toBe(ore0 - 15 * (it.r + 1));
+    expect(s.ores[it.ore]).toBe(ore0 - Math.round(15 * (RAR[it.r].o + 1)));
     expect(s.eq[it.slot]).toBe(it); // przed wyborem nic się nie zmienia
     expect(g.acceptReforge(cand)).toBe(true);
     expect(s.eq[it.slot]!.subs[0]).toEqual(cand.subs[0]);

@@ -1,9 +1,9 @@
 // Wielki Obieg: sprzedane przedmioty trafiają do innych graczy. Z serwerem (ctx.net) to prawdziwi gracze:
 // przedmioty czekają w kolejce obOut na wysłanie, a znaleziska przychodzą od serwera do obIn.
 // Bez serwera (np. w artefakcie) inni gracze są symulowani (FAKE_PLAYERS); interfejs mówi o tym wprost.
-import { B, FAKE_PLAYERS, ORES, SLOTS, SLOT_ORDER, oreCap, landDef } from '../data';
+import { B, FAKE_PLAYERS, SLOTS, SLOT_ORDER, oreCap, landDef, R, RAR, rAt, rGe, rRank } from '../data';
 import { toast, type Ctx } from './context';
-import { clockStr, itemLevelFor, itemName, legStage } from './formulas';
+import { clockStr, itemLevelFor, itemName, legStage, oreNominal } from './formulas';
 import { pick, ri } from './rng';
 import { rollSubs } from './forge';
 import type { FoundEvent, Item } from './types';
@@ -30,7 +30,7 @@ function logSent(ctx: Ctx, name: string): void {
 }
 
 export function maybeObieg(ctx: Ctx, it: Item, quiet: boolean): void {
-  if (it.r < 2 || it.smith !== ctx.s.name || it.obieg || ctx.rng.next() >= B.OBIEG_CHANCE) return;
+  if (!rGe(it.r, R.RZADKI) || it.smith !== ctx.s.name || it.obieg || ctx.rng.next() >= B.OBIEG_CHANCE) return;
   if (ctx.net) {
     // Serwer przyjmuje tylko przedmioty, których wytop umie sprawdzić.
     if (typeof it.sx !== 'number') return;
@@ -51,7 +51,7 @@ export function obiegEvent(ctx: Ctx): void {
   if (s.sent.length) {
     const x = s.sent.splice(Math.floor(ctx.rng.next() * s.sent.length), 1)[0];
     const who = pick(ctx.rng, FAKE_PLAYERS);
-    const pts = 10 * (x.r + 1);
+    const pts = findFame(x.r);
     s.fame += pts;
     logSmith(ctx, `${who} znalazł(a) twój przedmiot: ${x.n}. +${pts} Sławy kowala`);
     toast(ctx, `${who} znalazł(a) twój ${x.n} · +${pts} Sławy kowala`, 'good');
@@ -74,7 +74,8 @@ export function obiegItem(ctx: Ctx): Item {
   const ore = oreCap(landDef(s.maxLand).main, s.forge.lvl);
   const slot = pick(ctx.rng, SLOT_ORDER);
   const kind = pick(ctx.rng, SLOTS[slot].kinds);
-  const r = Math.min(5, ORES[ore].floor + (ctx.rng.next() < 0.3 ? 1 : 0)); // Boskie nie trafiają do Obiegu
+  // Rzadkość jak wytop bez przeskoku na twojej kuźni, czasem o rangę wyżej; Boskie nie trafiają do Obiegu.
+  const r = rAt(Math.min(rRank(R.MITYCZNY), oreNominal(ore, s.forge.lvl) + (ctx.rng.next() < 0.3 ? 1 : 0)));
   const fame = ri(ctx.rng, 300, 4500);
   const it: Item = {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, ri(ctx.rng, -1, 1)),
@@ -87,7 +88,7 @@ export function obiegItem(ctx: Ctx): Item {
 }
 
 /** Sława kowala za znalezienie twojego przedmiotu przez innego gracza. */
-export const findFame = (r: number) => 10 * (r + 1);
+export const findFame = (r: number) => Math.round(10 * ((RAR[r]?.o ?? 0) + 1));
 
 /** Wieści z serwera: inni gracze znaleźli twoje przedmioty. */
 export function applyFound(ctx: Ctx, events: FoundEvent[], quiet = false): number {

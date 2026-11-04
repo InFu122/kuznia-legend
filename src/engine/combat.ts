@@ -1,4 +1,4 @@
-import { ABYSS_FROM, B, DIVINE_ORE, ELEM, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isRareOre, oreShares, setOfLand, skillValue, landDef } from '../data';
+import { ABYSS_FROM, B, DIVINE_ORE, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isRareOre, oreShares, setOfLand, skillValue, landDef } from '../data';
 import { buffMult } from './shop';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
@@ -11,7 +11,7 @@ import { pick, ri, rnd } from './rng';
 import { invalidate, stats } from './stats';
 import { grant } from './reward';
 import { track } from './missions';
-import type { Enemy, Fx, Reward, Stats } from './types';
+import type { Enemy, Fx, LootDrop, Reward, Stats } from './types';
 
 const fmtN = (n: number) => Math.round(n).toLocaleString('pl-PL');
 
@@ -191,30 +191,31 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   // Złoto wypada z każdej fali; ruda tylko czasem — wtedy interfejs pokazuje animację dropu.
   const gold = Math.round(goldWaveOf(s, curG(s)) * (1 + mods.goldPct / 100) * buffMult(s, 'zloto', ctx.now()));
   s.gold += gold;
-  let loot = `+${fmtN(gold)} zł.`;
+  // Co wypadło — interfejs pokazuje to na chwilę nad pokonanym wrogiem.
+  const drops: LootDrop[] = [{ k: 'gold', n: gold }];
   // Ruda: z części fal, według rozkładu krainy (główna 1–3 sztuki, rzadsze po 1).
   if (ctx.rng.next() < B.ORE_DROP) {
     const ore = pickOre(L, ctx.rng.next(), mods.rarePct);
     const nOre = ((ore === L.main ? ri(ctx.rng, 1, B.ORE_MAIN_MAX) : 1) + (ctx.rng.next() * 100 < mods.extraOre ? 1 : 0)) * buffMult(s, 'ruda', ctx.now());
     const rare = isRareOre(L, ore);
     s.ores[ore] += nOre;
-    loot += rare ? ` · ${ORES[ore].n}!` : ` · +${nOre} ${ORES[ore].n}`;
+    drops.push({ k: 'ore', ore, n: nOre, rare });
     ctx.emit({ t: 'drop', ore, n: nOre, rare });
     if (rare) toast(ctx, 'Rzadka ruda: ' + ORES[ore].n, 'good');
   }
   if (L.el && ctx.rng.next() < B.ELEM_DROP) {
     s.els[L.el] = (s.els[L.el] ?? 0) + 1;
-    loot += ' · ' + ELEM[L.el].n;
+    drops.push({ k: 'el', el: L.el });
   }
   if (ctx.rng.next() < B.BOOK_DROP) {
     s.books++;
-    loot += ' · Księga Wiedzy';
+    drops.push({ k: 'book', n: 1 });
   }
   if (s.bestG >= SKILLS_UNLOCK_G && ctx.rng.next() < B.SCROLL_DROP) {
     s.scrolls++;
-    loot += ' · Zwój zaklęć';
+    drops.push({ k: 'scroll', n: 1 });
   }
-  ctx.emit({ t: 'float', side: 'foe', text: loot, cls: 'loot', force: true });
+  ctx.emit({ t: 'loot', drops });
   addFame(ctx, e.count, e.type, false);
   s.stats.kills += e.count;
   track(ctx, 'wave');
@@ -277,6 +278,10 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   } else {
     s.cur.stage = 1;
     s.cur.wave = 1;
+    const drops: LootDrop[] = [{ k: 'gold', n: gold }, { k: 'ore', ore: L.rare, n, rare: true }];
+    if (books) drops.push({ k: 'book', n: books });
+    if (set && uniq) drops.push({ k: 'uniq', set, n: uniq });
+    ctx.emit({ t: 'loot', drops, boss: true });
     toast(ctx, `Pokonano: ${L.boss} · +${fmtN(gold)} złota, ${n} × ${ORES[L.rare].n}` + (books ? ', Księga Wiedzy' : '') +
       (uniq && set ? ` · ${SETS[set].ore}!` : '') + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
     if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });

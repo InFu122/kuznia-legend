@@ -7,7 +7,7 @@ import {
 } from '../../data';
 import { itemUrl, oreUrl, resUrl, techUrl } from '../../art/render';
 import { upgradeCost, upgradeTime } from '../../engine/forge';
-import { JUMP_TO_MULT, jumpChances } from '../../engine/formulas';
+import { JUMP_TO_MULT_RANK, jumpChances } from '../../engine/formulas';
 import { techMods } from '../../engine/mods';
 import type { Game } from '../../engine/game';
 import { runeCost, runeLvl } from '../../engine/runes';
@@ -198,8 +198,8 @@ export function ForgeLevelInfo({ game, close }: { game: Game; close: () => void 
       tips={[
         [resUrl('czas'), 'Ile to trwa', <>Pierwsze 20 poziomów mija w kilka dni, dalej każdy poziom to od półtora do prawie trzech dni — cała kuźnia to mniej więcej rok gry. Kuźnia działa normalnie w trakcie ulepszania.</>],
         [techUrl('k_miech'), 'Jak skrócić', <>{miech.n} w Nauce skracają każde ulepszenie, pomoc klanu odejmuje minuty, a przyspieszenie kosztuje 1 Klejnot za minutę.</>],
-        [oreUrl(4), 'Nowa ruda wchodzi stopniowo', <>Srebro, Mithril, Adamantyt i Smocza Stal tuż po odblokowaniu dają część wytopów o rzadkość niżej; po {B.RAMP_LEVELS} poziomach kuźni zawsze pełne minimum.</>],
-        [resUrl('klejnot'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski zależy od rudy (najwięcej z Boskiej Rudy).{rel ? ` Hartowanie dodaje +${pct(rel)} względnie — już wliczone.` : ''}</>],
+        [oreUrl(4), 'Ruda dojrzewa z kuźnią', <>Każda ruda tuż po odblokowaniu daje mieszankę dwóch sąsiednich rzadkości, a z każdym poziomem kuźni wyniki przesuwają się w górę, aż do jakości docelowej rudy.</>],
+        [resUrl('klejnot'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT_RANK[6])} szansy, na Mityczny ×{f2(JUMP_TO_MULT_RANK[8])}, a na Boski zależy od rudy (najwięcej z Boskiej Rudy).{rel ? ` Hartowanie dodaje +${pct(rel)} względnie — już wliczone.` : ''}</>],
       ]}
     >
       <div class="fl-prog">

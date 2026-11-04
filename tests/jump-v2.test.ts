@@ -21,12 +21,14 @@ describe('przeskoki w wersji 2: rzadsze wyniki są trudniejsze', () => {
   });
 
   it('pewny przeskok nie daje Boskiego (Smocza Stal), ale działa dla niższych rud', () => {
-    expect(pityAllowed(5)).toBe(false);
+    expect(pityAllowed(5, JUMP_V, 110)).toBe(false); // dojrzała Smocza Stal: Mityczny, wyżej tylko Boski
+    expect(pityAllowed(5, JUMP_V, 60)).toBe(true);   // świeża Smocza Stal: pewny przeskok na Mityczny
+    expect(pityAllowed(5, 2)).toBe(false);
     expect(pityAllowed(4)).toBe(true);
     expect(pityAllowed(5, 1)).toBe(true); // dawne zasady
-    expect(pityAllowed(6)).toBe(false); // Gwiezdny Kruszec: pewny przeskok nie daje Boskiego
+    expect(pityAllowed(6, JUMP_V, 100)).toBe(false); // Gwiezdny Kruszec: pewny przeskok nie daje Boskiego
     const { ctx, s } = makeGame(5);
-    s.forge.lvl = 60; s.ores[5] = 5000; s.stats.smelted = 10;
+    s.forge.lvl = 110; s.ores[5] = 5000; s.stats.smelted = 10;
     let pity = 0;
     for (let i = 0; i < 3000; i++) { s.pity = B.PITY_MAX; if (smelt(ctx, 5, null)!.forced === 'pity') pity++; }
     expect(pity).toBe(0);
@@ -43,7 +45,6 @@ describe('przeskoki w wersji 2: rzadsze wyniki są trudniejsze', () => {
     s.seeds = [seedFor(n)]; s.sx = n;
     const it = smelt(ctx, 4, null)!;
     expect(it.jv).toBe(JUMP_V);
-    expect(it.r).toBe(5); // dziś: Mityczny
     expect(verifySmelt(it, seedFor(n), 0, 30)).toBeNull();
     // ten sam wytop według dawnych zasad: Boski, bez numeru wersji
     const rng = mulberry32(seedFor(n)); smeltDraws(rng);

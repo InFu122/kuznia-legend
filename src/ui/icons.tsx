@@ -30,3 +30,9 @@ const UI_SVG: Record<UiIcon, string> = {
 
 export const SlotIcon = ({ slot }: { slot: SlotId }) => <span class="icon-wrap" dangerouslySetInnerHTML={{ __html: SLOT_SVG[slot] }} />;
 export const TabIcon = ({ tab }: { tab: UiIcon }) => <span class="icon-wrap" dangerouslySetInnerHTML={{ __html: UI_SVG[tab] }} />;
+/** Kłódka: funkcja jeszcze zablokowana. */
+export const LockIcon = () => (
+  <svg class="lock-ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+    <rect x="5" y="10.5" width="14" height="10" rx="2" fill="currentColor" fill-opacity=".18" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /><path d="M12 14.5v2.5" stroke-linecap="round" />
+  </svg>
+);

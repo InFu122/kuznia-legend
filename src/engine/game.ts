@@ -1,4 +1,4 @@
-import { AD, AD_BUFFS, B, DUNG_ORDER, ELEM, ORES, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, type AchId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
+import { AD, AD_BUFFS, B, DUNG_ORDER, ELEM, FEATURES, ORES, R, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, rGe, rTier, type AchId, type FeatureId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
@@ -11,6 +11,7 @@ import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
 import { applyFound, obiegEvent } from './obieg';
+import { checkUnlocks, isUnlocked, seenFeature } from './unlocks';
 import { applyOffline } from './offline';
 import { mulberry32, rnd, type Rng } from './rng';
 import { newBattle, newState } from './state';
@@ -50,6 +51,7 @@ export class Game {
   private lastOffer: BuffId = 'zloto';
   private passT = 0;
   private eventT = 0;
+  private unlT = 0;
   /** Lochy otwarte przy ostatnim sprawdzeniu — nowy loch dostaje komunikat. */
   private dungOpen: Set<DungId> | null = null;
 
@@ -102,6 +104,9 @@ export class Game {
     const ctx = this.ctx;
     const s = ctx.s;
     const now = ctx.now();
+    // Nowe funkcje (kłódki): sprawdzane kilka razy na sekundę, ogłoszenie oknem.
+    this.unlT -= realMs;
+    if (this.unlT <= 0) { this.unlT = 400; if (checkUnlocks(ctx).length) this.changed(); }
     this.eventT -= realMs;
     if (this.eventT <= 0) {
       this.eventT = 5000;
@@ -206,18 +211,23 @@ export class Game {
     this.dispatch({ t: 'forged', item: it });
     if (res === 'stop') {
       // Cel osiągnięty: auto staje, sygnał dźwiękowy i okno z decyzją.
-      this.dispatch({ t: 'sfx', k: 'alert', r: it.r });
+      this.dispatch({ t: 'sfx', k: 'alert', r: rTier(it.r) });
       toast(ctx, `Wybrana rzadkość! ${itemName(it)} (${RAR[it.r].n})`, 'good');
       this.dispatch({ t: 'modal', m: { kind: 'decide' } });
-    } else if (it.r >= 3) this.dispatch({ t: 'sfx', k: 'rare', r: it.r });
+    } else if (rGe(it.r, R.WYJATKOWY)) this.dispatch({ t: 'sfx', k: 'rare', r: rTier(it.r) });
     this.changed();
   }
 
+  /** Czy funkcja jest odblokowana (i dostępna w tej grze — część tylko z serwerem). */
+  unlocked(id: FeatureId): boolean { return isUnlocked(this.s, id) && (this.ctx.net || !FEATURES[id].net); }
+  /** Gracz otworzył nowe funkcje — znika znaczek „nowe”. */
+  seenFeatures(ids: FeatureId[]): void { if (seenFeature(this.s, ids)) { this.ctx.dirty = true; this.changed(); } }
+
   /** Rzadkości do wyboru dla auto-wytopu z wybranej rudy i aktualny cel. */
-  autoTargets(): number[] { return autoTargets(this.s.oreSel); }
+  autoTargets(): number[] { return autoTargets(this.s.oreSel, this.s.forge.lvl); }
   autoTarget(): number { return autoTarget(this.s); }
   setAutoStop(r: number): void {
-    if (!autoTargets(this.s.oreSel).includes(r)) return;
+    if (!autoTargets(this.s.oreSel, this.s.forge.lvl).includes(r)) return;
     this.s.autoStop = r;
     this.ctx.dirty = true;
     this.changed();

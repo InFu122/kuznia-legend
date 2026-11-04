@@ -16,7 +16,7 @@ const seedFor = (n: number) => (Math.imul(n + 1, 2654435761) ^ 0x5bd1e995) >>> 0
 describe('kuźnia do 200. poziomu', () => {
   it('rudy otwierają się później; dawne poziomy zostają dla wytopów sprzed aktualizacji', () => {
     expect(B.FORGE_MAX).toBe(200);
-    expect(JUMP_V).toBe(5);
+    expect(JUMP_V).toBe(6);
     expect([2, 3, 4, 7, 5, 8, 6, 9].map(o => ORES[o].lvl)).toEqual([5, 12, 25, 40, 60, 85, 100, 120]);
     expect(oreLvl(4, 4)).toBe(ORE_LVL_V4[4]);
     expect(oreLvl(4)).toBe(25);

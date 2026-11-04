@@ -1,4 +1,5 @@
-import { ACHIEVEMENTS, BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId } from '../data';
+import { unlockedNow } from './unlocks';
+import { ACHIEVEMENTS, BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
@@ -34,7 +35,7 @@ export function newState(now: number): GameState {
     scrolls: 0, skills: { lv: {}, cards: {}, eq: Array(SKILL_SLOTS).fill(null) },
     eggs: [0, 0, 0, 0, 0], hatch: null, pets: {}, petSel: null,
     saddles: 0, mounts: {}, mountSel: null, stones: 0, seals: 0, found: [],
-    missions: { day: '', daily: [], chest: false, week: '', weekly: [] }, login: { last: '', idx: 0 }, tut: 0,
+    missions: { day: '', daily: [], chest: false, week: '', weekly: [] }, login: { last: '', idx: 0 }, tut: 0, unl: [], unlNew: [],
     opts: { sound: true, vol: 0.6, music: true, mvol: 0.5, notify: true },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0, bestR: -1 },
     sx: 0, seeds: [], obIn: [], obOut: [],
@@ -141,7 +142,7 @@ export function migrate(raw: unknown, now: number): GameState {
     const have = [...Object.values(out.eq), out.legacy?.item, ...(Array.isArray(out.found) ? out.found : [])].filter((x): x is NonNullable<typeof x> => !!x && typeof x.kind === 'string');
     out.codex = [...new Set(have.map(it => `${it.kind}|${it.ore}`))];
   }
-  if (!isObj(raw.stats) || typeof raw.stats.bestR !== 'number') out.stats.bestR = Math.max(-1, ...Object.values(out.eq).map(it => it?.r ?? -1));
+  if (!isObj(raw.stats) || typeof raw.stats.bestR !== 'number') out.stats.bestR = Object.values(out.eq).reduce((m, it) => (it && rRank(it.r) > rRank(m) ? it.r : m), -1);
   if (!isObj(out.legacy) || typeof out.legacy.gen !== 'number' || typeof out.legacy.stars !== 'number') out.legacy = fresh.legacy;
   if (!isObj(out.legacy.item)) out.legacy.item = null;
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
@@ -157,6 +158,9 @@ export function migrate(raw: unknown, now: number): GameState {
   out.maxLand = Math.min(Math.floor(out.maxLand), out.cleared.length);
   while (out.cleared.length <= out.maxLand) out.cleared.push(false);
   out.cur.land = Math.min(out.cur.land, out.maxLand);
+  // Odblokowane funkcje: stary zapis zna już wszystko, co jest dostępne — bez ogłoszeń.
+  if (!Array.isArray(raw.unl) || !raw.unl.every((x: unknown) => typeof x === 'string')) { out.unl = unlockedNow(out); out.unlNew = []; }
+  if (!Array.isArray(out.unlNew) || !out.unlNew.every(x => typeof x === 'string')) out.unlNew = [];
   out.v = SAVE_VERSION;
   return out;
 }

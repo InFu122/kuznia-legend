@@ -1,7 +1,7 @@
 // Czat na żywo (WebSocket Nakamy): pokój globalny i kanał klanu. Serwer przepuszcza tylko te kanały,
 // filtruje wulgaryzmy, pilnuje trybu wolnego i podpisuje wiadomości nickiem gracza.
 // Wiadomość to JSON: { k: 'msg' | 'sys' | 'drop' | 'ann', t: tekst, n: nick, it?: przedmiot }.
-import { B, RAR } from '../../src/data';
+import { B, R, RAR, rGe } from '../../src/data';
 import { itemName } from '../../src/engine/formulas';
 import type { Item } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
@@ -84,7 +84,7 @@ const writeBrag = (nk: nkruntime.Nakama, userId: string, done: Brag) =>
  * wytop serwer już potwierdził. Przedmioty sprzed aktualizacji (inna wersja zasad) nie są ogłaszane.
  */
 export function announceDivine(nk: nkruntime.Nakama, userId: string, username: string, items: Item[]): number {
-  const fresh = items.filter(it => it && it.r >= 6 && typeof it.sx === 'number' && (it.jv ?? 0) >= 3 && !it.obieg);
+  const fresh = items.filter(it => it && it.r === R.BOSKI && typeof it.sx === 'number' && (it.jv ?? 0) >= 3 && !it.obieg);
   if (!fresh.length) return 0;
   const done = readBrag(nk, userId);
   const n = nameOf(nk, userId) || 'Kowal';
@@ -111,7 +111,7 @@ export function rpcChatDrop(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const it = req.item as Item;
   const save = readSave(nk, userId);
   if (!save || !it || typeof it !== 'object' || typeof it.sx !== 'number') throw err('Brak przedmiotu.', INVALID);
-  if (it.r < 5) throw err('Na czacie można pochwalić się przedmiotem Mitycznym albo Boskim.', INVALID);
+  if (!rGe(it.r, R.MITYCZNY)) throw err('Na czacie można pochwalić się przedmiotem Mitycznym albo Boskim.', INVALID);
   const s = save.value.state;
   if (!smeltOk(proofFor(nk, userId, s, save.value.meta), it, (s.sx || 0) + SEEDS_AHEAD)) throw err('Serwer nie potwierdził tego wytopu.', INVALID);
   const where = req.global === true ? 'global' : 'clan';

@@ -1,12 +1,12 @@
 // Okno decyzji o nowym przedmiocie (wytop, zatrzymany auto-wytop, skrzynia bossa, Zbrojownia):
 // animacja dropu, nowy przedmiot obok założonego, różnice statystyk i przyciski Załóż / Sprzedaj.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { ELEM, ORES, RAR, SETS, SLOTS, SUBS } from '../data';
+import { ELEM, ORES, R, RAR, RAR_ORDER, SETS, SLOTS, SUBS, rAt, rGe, rRank, rTier } from '../data';
 import { itemUrl, resUrl } from '../art/render';
 import { sparks } from './fx';
 import { play } from './sound';
 import { sellFor } from '../engine/forge';
-import { dist, itemName, mainVal, maxJump, oreFloor } from '../engine/formulas';
+import { dist, itemName, mainVal, maxJump, oreFloor, oreNominal } from '../engine/formulas';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
 import type { Item, SubId } from '../engine/types';
@@ -18,7 +18,7 @@ import { Px } from './Px';
 /** „Pochwal się dropem”: karta przedmiotu Mitycznego lub Boskiego na czacie globalnym. */
 export function Brag({ game, it }: { game: Game; it: Item }) {
   const [msg, setMsg] = useState('');
-  if (!game.net || it.r < 5 || typeof it.sx !== 'number') return null;
+  if (!game.net || !rGe(it.r, R.MITYCZNY) || typeof it.sx !== 'number') return null;
   const send = () => {
     const link = getLink();
     if (!link?.online) { setMsg('Brak połączenia z serwerem.'); return; }
@@ -81,10 +81,13 @@ const STEP_MS = 420;
  * (od minimum rudy aż do wyniku). Im wyższy przeskok, tym dłuższa wspinaczka. Dotknięcie pomija animację.
  */
 function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
-  const floor = oreFloor(it.ore, it.jv ?? 1);
-  const mj = maxJump(it.ore, it.jv ?? 1);
-  const start = Math.min(floor, it.r); // nowa ruda: wynik może być o rzadkość niżej niż minimum
-  const steps: (number | 'hot')[] = ['hot', 'hot', ...Array.from({ length: it.r - start + 1 }, (_, i) => start + i)];
+  // Rachunek na rangach (RAR_ORDER): wynik bez przeskoku — ranga nominalna (v6) albo dawne minimum rudy.
+  const jv = it.jv ?? 1;
+  const floor = jv >= 6 ? oreNominal(it.ore, it.flvl || 1) : rRank(oreFloor(it.ore, jv));
+  const mj = maxJump(it.ore, jv);
+  const top = rRank(it.r);
+  const start = Math.min(floor, top); // wynik może być o rangę niżej niż bez przeskoku
+  const steps: (number | 'hot')[] = ['hot', 'hot', ...Array.from({ length: top - start + 1 }, (_, i) => start + i)];
   const [i, setI] = useState(0);
   const box = useRef<HTMLDivElement>(null);
   const done = useRef(false);
@@ -97,14 +100,14 @@ function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
     const tick = () => {
       k++;
       if (k >= steps.length) {
-        if (it.r >= 3) play('rare', it.r);
+        if (rGe(it.r, R.WYJATKOWY)) play('rare', rTier(it.r));
         timer = setTimeout(finish, 260);
         return;
       }
       setI(k);
       const st = steps[k];
-      play('strike', st === 'hot' ? 0 : st > floor ? st : 0);
-      sparks(box.current, st === 'hot' ? 0 : st);
+      play('strike', st === 'hot' ? 0 : st > floor ? rTier(rAt(st)) : 0);
+      sparks(box.current, st === 'hot' ? 0 : rAt(st));
       timer = setTimeout(tick, STEP_MS);
     };
     let timer = setTimeout(tick, STEP_MS);
@@ -113,18 +116,18 @@ function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
   const st = steps[i];
   const climbed = st !== 'hot' && st > floor;
   return (
-    <div class={`fanim ${st === 'hot' ? 'hot' : 'r' + st}${climbed ? ' climb' : ''}`} ref={box} onClick={finish} role="button" aria-label="Pomiń animację wykuwania">
+    <div class={`fanim ${st === 'hot' ? 'hot' : 'r' + rAt(st)}${climbed ? ' climb' : ''}`} ref={box} onClick={finish} role="button" aria-label="Pomiń animację wykuwania">
       <span class="fa-glow" />
       <span class="fa-ingot" key={'i' + i} />
       <span class="fa-anvil"><Px src={resUrl('kowadlo')} size={80} /></span>
       <span class="fa-hammer" key={'h' + i}><Px src={itemUrl('Młot', 1)} size={56} /></span>
       <div class="fa-label" key={'l' + i}>
-        {st === 'hot' ? 'Kucie…' : <b class={`rt${st}`}>{RAR[st].n}</b>}
+        {st === 'hot' ? 'Kucie…' : <b class={`rt${rAt(st)}`}>{RAR[rAt(st)].n}</b>}
       </div>
       {climbed && <div class="fa-up" key={'u' + i}>Przeskok +{(st as number) - floor}!</div>}
       <div class="fa-ladder" aria-hidden="true">
-        {RAR.map((_, r) => (
-          <i key={r} class={`rb-${r}${r < floor || r > floor + mj ? ' out' : ''}${st !== 'hot' && r >= floor && r <= st ? ' lit' : ''}`} />
+        {RAR_ORDER.map((r, k) => (
+          <i key={r} class={`rb-${r}${k < start || k > floor + mj ? ' out' : ''}${st !== 'hot' && k >= start && k <= st ? ' lit' : ''}`} />
         ))}
       </div>
       <small class="fa-skip">dotknij, żeby pominąć</small>

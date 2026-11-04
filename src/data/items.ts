@@ -4,20 +4,26 @@ import type { ElemKey, Gender, SlotId, SubId } from '../engine/types';
  * Rudy. `floor` = minimalna rzadkość, `lvl` = od którego poziomu kuźni da się ją wytopić,
  * `q` = jakość (mnożnik statystyki głównej), `mj` = najwyższy przeskok (domyślnie 2),
  * `div` = mnożnik szansy na przeskok, który kończy się Boskim (domyślnie DIVINE_JUMP).
+ * `floor` to minimalna rzadkość do zasad v5; od v6 ruda daje mieszankę sąsiednich rzadkości, która przesuwa się
+ * z poziomem kuźni (`v6`: ranga na skali RAR_ORDER — np. 1,4 = 60% Niepospolity i 40% Rzadki przed przeskokiem).
  * Indeksy są stałe (zapisują je przedmioty i zapisy gry) — kolejność w grze wyznacza ORE_ORDER.
  */
-export interface OreDef { n: string; floor: number; lvl: number; col: string; adj: readonly [string, string, string]; q?: number; mj?: number; div?: number; d?: string }
+export interface OreDef {
+  n: string; floor: number; lvl: number; col: string; adj: readonly [string, string, string]; q?: number; mj?: number; div?: number; d?: string;
+  /** Zasady v6: ranga bazowa (ułamkowa) na poziomie odblokowania, ranga docelowa i poziom kuźni, na którym ruda ją osiąga. */
+  v6: readonly [number, number, number];
+}
 export const ORES: readonly OreDef[] = [
-  { n: 'Miedź', floor: 0, lvl: 1, col: '#c47a4b', adj: ['Miedziany', 'Miedziana', 'Miedziane'] },
-  { n: 'Żelazo', floor: 1, lvl: 1, col: '#9ba3ab', adj: ['Żelazny', 'Żelazna', 'Żelazne'] },
-  { n: 'Srebro', floor: 2, lvl: 5, col: '#dfe5ec', adj: ['Srebrny', 'Srebrna', 'Srebrne'] },
-  { n: 'Mithril', floor: 3, lvl: 12, col: '#7cd3df', adj: ['Mithrilowy', 'Mithrilowa', 'Mithrilowe'] },
-  { n: 'Adamantyt', floor: 4, lvl: 25, col: '#86b874', adj: ['Adamantytowy', 'Adamantytowa', 'Adamantytowe'] },
-  { n: 'Smocza Stal', floor: 5, lvl: 60, col: '#d6493f', adj: ['Smoczostalowy', 'Smoczostalowa', 'Smoczostalowe'], mj: 1 },
-  { n: 'Gwiezdny Kruszec', floor: 5, lvl: 100, col: '#f3e3a1', adj: ['Gwiezdny', 'Gwiezdna', 'Gwiezdne'], q: 1.15, mj: 1, div: 0.12, d: 'najwięcej szans na Boski poza Boską Rudą' },
-  { n: 'Obsydian', floor: 4, lvl: 40, col: '#6a5a8a', adj: ['Obsydianowy', 'Obsydianowa', 'Obsydianowe'], q: 1.1, mj: 1, d: 'Legendarny z lepszą jakością' },
-  { n: 'Eteryt', floor: 5, lvl: 85, col: '#8fd8f0', adj: ['Eterytowy', 'Eterytowa', 'Eterytowe'], q: 1.08, mj: 1, div: 0.07, d: 'Mityczny z lepszą jakością' },
-  { n: 'Boska Ruda', floor: 5, lvl: 120, col: '#ffd76a', adj: ['Niebiański', 'Niebiańska', 'Niebiańskie'], q: 1.25, mj: 1, div: 0.6, d: 'bardzo rzadka: największa szansa na Boski' },
+  { n: 'Miedź', floor: 0, lvl: 1, col: '#c47a4b', adj: ['Miedziany', 'Miedziana', 'Miedziane'], v6: [0, 0, 1] },
+  { n: 'Żelazo', floor: 1, lvl: 1, col: '#9ba3ab', adj: ['Żelazny', 'Żelazna', 'Żelazne'], v6: [0.5, 1, 6] },
+  { n: 'Srebro', floor: 2, lvl: 5, col: '#dfe5ec', adj: ['Srebrny', 'Srebrna', 'Srebrne'], v6: [1.4, 2, 18] },
+  { n: 'Mithril', floor: 3, lvl: 12, col: '#7cd3df', adj: ['Mithrilowy', 'Mithrilowa', 'Mithrilowe'], v6: [2.4, 4, 40] },
+  { n: 'Adamantyt', floor: 4, lvl: 25, col: '#86b874', adj: ['Adamantytowy', 'Adamantytowa', 'Adamantytowe'], v6: [3.6, 6, 70] },
+  { n: 'Smocza Stal', floor: 5, lvl: 60, col: '#d6493f', adj: ['Smoczostalowy', 'Smoczostalowa', 'Smoczostalowe'], mj: 1, v6: [6.3, 8, 110] },
+  { n: 'Gwiezdny Kruszec', floor: 5, lvl: 100, col: '#f3e3a1', adj: ['Gwiezdny', 'Gwiezdna', 'Gwiezdne'], q: 1.15, mj: 1, div: 0.12, d: 'najwięcej szans na Boski poza Boską Rudą', v6: [7.6, 8, 120] },
+  { n: 'Obsydian', floor: 4, lvl: 40, col: '#6a5a8a', adj: ['Obsydianowy', 'Obsydianowa', 'Obsydianowe'], q: 1.1, mj: 1, d: 'Legendarny z lepszą jakością', v6: [4.8, 6, 70] },
+  { n: 'Eteryt', floor: 5, lvl: 85, col: '#8fd8f0', adj: ['Eterytowy', 'Eterytowa', 'Eterytowe'], q: 1.08, mj: 1, div: 0.07, d: 'Mityczny z lepszą jakością', v6: [7.3, 8, 110] },
+  { n: 'Boska Ruda', floor: 5, lvl: 120, col: '#ffd76a', adj: ['Niebiański', 'Niebiańska', 'Niebiańskie'], q: 1.25, mj: 1, div: 0.6, d: 'bardzo rzadka: największa szansa na Boski', v6: [8, 8, 120] },
 ];
 /**
  * Poziom kuźni, od którego dało się wytopić rudę według zasad przeskoku do wersji 4 (kuźnia do 30. poziomu).
@@ -38,16 +44,43 @@ export function oreCap(ore: number, lvl: number): number {
 /** Mnożnik szansy na przeskok kończący się Boskim dla rud bez własnego `div` (zasady przeskoku w wersji 3). */
 export const DIVINE_JUMP = 0.04;
 
-/** Rzadkości: mnożnik statystyki głównej i liczba substatów. */
+/**
+ * Rzadkości: `m` — mnożnik statystyki głównej, `s` — liczba statystyk dodatkowych, `o` — miejsce na dawnej
+ * skali 7 rzadkości (od niego zależą wartości statystyk dodatkowych, cena sprzedaży i koszty run — dla dawnych
+ * rzadkości bez zmian). Indeksy są stałe (zapisują je przedmioty): 0–6 to dawne rzadkości, 7–9 dodane
+ * w zasadach przeskoku v6 pomiędzy nimi. Kolejność w grze wyznacza RAR_ORDER (tak jak ORE_ORDER dla rud).
+ */
 export const RAR = [
-  { n: 'Zwykły', m: 1, s: 0 },
-  { n: 'Niepospolity', m: 1.3, s: 1 },
-  { n: 'Rzadki', m: 1.7, s: 1 },
-  { n: 'Epicki', m: 2.3, s: 2 },
-  { n: 'Legendarny', m: 3.2, s: 3 },
-  { n: 'Mityczny', m: 4.5, s: 3 },
-  { n: 'Boski', m: 6.5, s: 4 },
+  { n: 'Zwykły', m: 1, s: 0, o: 0 },
+  { n: 'Niepospolity', m: 1.3, s: 1, o: 1 },
+  { n: 'Rzadki', m: 1.7, s: 1, o: 2 },
+  { n: 'Epicki', m: 2.3, s: 2, o: 3 },
+  { n: 'Legendarny', m: 3.2, s: 3, o: 4 },
+  { n: 'Mityczny', m: 4.5, s: 3, o: 5 },
+  { n: 'Boski', m: 6.5, s: 4, o: 6 },
+  { n: 'Wyjątkowy', m: 2.0, s: 2, o: 2.5 },
+  { n: 'Heroiczny', m: 2.7, s: 2, o: 3.5 },
+  { n: 'Pradawny', m: 3.8, s: 3, o: 4.5 },
 ] as const;
+/** Rzadkości od najsłabszej (ranga → indeks w RAR). */
+export const RAR_ORDER: readonly number[] = [0, 1, 2, 7, 3, 8, 4, 9, 5, 6];
+const RAR_RANK: readonly number[] = RAR.map((_, i) => RAR_ORDER.indexOf(i));
+/** Najwyższa ranga (Boski). */
+export const RANK_MAX = RAR_ORDER.length - 1;
+/** Ranga rzadkości (0 = Zwykły … 9 = Boski); brak przedmiotu (−1) → −1. */
+export const rRank = (r: number) => (r < 0 ? -1 : RAR_RANK[r] ?? 0);
+/** Rzadkość o randze `k` (w granicach skali). */
+export const rAt = (k: number) => RAR_ORDER[Math.max(0, Math.min(RANK_MAX, Math.round(k)))];
+/** Czy rzadkość `a` jest co najmniej tak wysoka jak `b`. */
+export const rGe = (a: number, b: number) => rRank(a) >= rRank(b);
+/** Do sortowania: dodatnie, gdy `a` jest rzadsza. */
+export const rCmp = (a: number, b: number) => rRank(a) - rRank(b);
+/** Stałe indeksy rzadkości, do których odwołuje się gra. */
+export const R = { ZWYKLY: 0, NIEPOSPOLITY: 1, RZADKI: 2, EPICKI: 3, LEGENDARNY: 4, MITYCZNY: 5, BOSKI: 6, WYJATKOWY: 7, HEROICZNY: 8, PRADAWNY: 9 } as const;
+/** Stopień rzadkości 0–6 na dawnej skali (dźwięki, efekty): nowe rzadkości zaokrąglone w górę. */
+export const rTier = (r: number) => Math.round(RAR[r]?.o ?? 0);
+/** Mnożnik wartości statystyk dodatkowych (dawne rzadkości: 1 + 0,15 × indeks). */
+export const subMult = (r: number) => 1 + 0.15 * (RAR[r]?.o ?? 0);
 
 export interface SlotDef { n: string; stat: 'dmg' | 'hp'; base: number; kinds: [string, Gender][] }
 

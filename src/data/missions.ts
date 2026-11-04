@@ -45,7 +45,8 @@ export interface TutStep {
   t: string;          // tytuł kroku
   d: string;          // co zrobić
   tab: TutTab;        // zakładka z przyciskiem
-  target: string;     // selektor podświetlanego elementu
+  target: string | string[]; // selektor wskazywanego elementu (pierwszy widoczny z listy)
+  act?: 'tap' | 'look';       // „look” — bez dłoni i przyciemnienia (czekanie na postęp)
 }
 
 /** Pierwsze 15 minut według dokumentu projektowego: wytop, walka, ulepszenie kuźni, umiejętność, boss. */
@@ -54,9 +55,9 @@ export const TUTORIAL: TutStep[] = [
   { id: 'equip1', t: 'Załóż broń', d: 'Porównaj Moc i załóż nowy przedmiot — bohater od razu zacznie bić mocniej.', tab: 'kuznia', target: '.result-actions .btn' },
   { id: 'smelt3', t: 'Kuj dalej', d: 'Przetop jeszcze dwie rudy. Trzeci wytop na pewno przeskoczy rzadkość wyżej.', tab: 'kuznia', target: '.btn-forge' },
   { id: 'upgrade', t: 'Ulepsz kuźnię', d: 'Zbierz 150 złota z walki i ulepsz kuźnię do 2. poziomu. Ulepszenie trwa 30 sekund i podnosi szanse na przeskok.', tab: 'kuznia', target: '.upgrade-btn' },
-  { id: 'stage5', t: 'Naprzód', d: 'Dojdź do 5. etapu Spalonej Wioski. Tam odblokujesz umiejętności.', tab: 'kuznia', target: '.arena .track' },
-  { id: 'skill', t: 'Pierwsza umiejętność', d: 'Otwórz Zwój zaklęć w zakładce Bohater → Umiejętności.', tab: 'bohater', target: '.btn-scroll' },
-  { id: 'boss1', t: 'Boss Spalonej Wioski', d: 'Na 10. etapie wyzwij Herszta Bandytów. Jeśli przegrasz, wzmocnij ekwipunek i wróć.', tab: 'kuznia', target: '.arena-actions .btn' },
+  { id: 'stage5', t: 'Naprzód', d: 'Bohater walczy sam — każda fala to złoto, a czasem ruda. Dojdź do 5. etapu Spalonej Wioski: tam odblokujesz umiejętności.', tab: 'kuznia', target: '.arena .track', act: 'look' },
+  { id: 'skill', t: 'Pierwsza umiejętność', d: 'Otwórz Zwój zaklęć: Bohater → Umiejętności.', tab: 'bohater', target: ['.btn-scroll', '[data-sub="skills"]'] },
+  { id: 'boss1', t: 'Boss Spalonej Wioski', d: 'Na 10. etapie wyzwij Herszta Bandytów. Jeśli przegrasz, wzmocnij ekwipunek i wróć.', tab: 'kuznia', target: ['.arena-actions .btn', '.arena .track'] },
   { id: 'dung1', t: 'Pierwszy loch', d: 'Wejdź do Skarbca Złota w zakładce Lochy.', tab: 'lochy', target: '.card.dung .btn' },
 ];
 

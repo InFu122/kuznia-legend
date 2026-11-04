@@ -1,6 +1,6 @@
 // Arena: walki z kopiami bohaterów innych graczy. Serwer trzyma kopię bohatera z ostatniego zapisu
 // (tylko z uznanych przedmiotów), sam rozgrywa pojedynek i zmienia ocenę obu stron.
-import { B, FAKE_PLAYERS, landDef } from '../../src/data';
+import { B, FAKE_PLAYERS, ORES, landDef } from '../../src/data';
 import { duel, eloDelta, fighterStats, scaleFighter, type Fighter } from '../../src/engine/duel';
 import { goldWave } from '../../src/engine/formulas';
 import { allMods } from '../../src/engine/mods';
@@ -29,7 +29,7 @@ function lookOf(eq: GameState['eq']): Look {
   const o: Look = {};
   for (const k of LOOK_SLOTS) {
     const it = (eq as Record<string, { kind?: unknown; ore?: unknown } | null | undefined>)[k];
-    if (it && typeof it.kind === 'string') o[k] = { kind: it.kind.slice(0, 24), ore: Math.max(0, Math.min(6, Math.floor(Number(it.ore)) || 0)) };
+    if (it && typeof it.kind === 'string') o[k] = { kind: it.kind.slice(0, 24), ore: Math.max(0, Math.min(ORES.length - 1, Math.floor(Number(it.ore)) || 0)) };
   }
   return o;
 }

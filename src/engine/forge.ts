@@ -1,7 +1,7 @@
-import { B, BATCH_OPTIONS, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef } from '../data';
+import { B, BATCH_OPTIONS, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, RANK_MAX, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
-import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreFloor, pityAllowed, sellPrice, upCost, upTime } from './formulas';
+import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreNominal, pityAllowed, sellPrice, smeltRarity, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
 import { allMods } from './mods';
 import { maybeObieg } from './obieg';
@@ -30,7 +30,7 @@ function setSlot(s: GameState, set: SetId, u: number): SlotId {
 
 export function rollSubs(rng: Rng, r: number) {
   return shuffle(rng, SUB_IDS).slice(0, RAR[r].s).map(id => ({
-    id, v: Math.round(rnd(rng, SUBS[id].lo, SUBS[id].hi) * (1 + 0.15 * r) * 10) / 10,
+    id, v: Math.round(rnd(rng, SUBS[id].lo, SUBS[id].hi) * subMult(r) * 10) / 10,
   }));
 }
 
@@ -58,19 +58,20 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   if (d.save >= mods.saveOre) s.ores[ore]--;
   const set = uniqActive(s);
   if (set) s.uniq[set] = (s.uniq[set] ?? 0) - 1;
-  const [p1, p2] = jumpChances(s.forge.lvl, mods.jumpRel, ore);
+  const flvl = s.forge.lvl;
+  const [p1, p2] = jumpChances(flvl, mods.jumpRel, ore);
   const mj = maxJump(ore);
-  const pd = dropChance(ore, s.forge.lvl);
+  const pd = dropChance(ore, flvl);
   let jump = 0;
   if (mj >= 2 && d.roll < p2) jump = 2;
   else if (mj >= 1 && d.roll < p1 + p2) jump = 1;
-  else if (d.roll >= 100 - pd) jump = -1; // nowa ruda: kuźnia jeszcze jej nie opanowała — o rzadkość niżej
+  else if (d.roll >= 100 - pd) jump = -1; // ruda jeszcze nie opanowana — o rzadkość niżej
   let forced: Item['forced'] = '';
   if (s.stats.smelted === 2 && mj >= 1 && jump <= 0) { jump = 1; forced = 'tut'; } // samouczek
-  if (jump <= 0 && pityAllowed(ore) && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
-  if (set && jump <= 0 && pityAllowed(ore)) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok (ale nigdy do Boskiego)
+  if (jump <= 0 && pityAllowed(ore, JUMP_V, flvl) && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
+  if (set && jump <= 0 && pityAllowed(ore, JUMP_V, flvl)) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok (ale nigdy do Boskiego)
   if (mj >= 1) s.pity = jump > 0 ? 0 : s.pity + 1;
-  const r = Math.max(0, Math.min(6, oreFloor(ore) + jump));
+  const r = smeltRarity(ore, flvl, jump);
 
   const first = s.stats.smelted === 0;
   const slot: SlotId = first ? 'bron' : set ? setSlot(s, set, d.slot) : SLOT_ORDER[Math.floor(d.slot * SLOT_ORDER.length)];
@@ -89,7 +90,7 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
     smith: s.name, land: landDef(s.cur.land).n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
   if (sx !== undefined) it.sx = sx;
-  if (it.r > (s.stats.bestR ?? -1)) s.stats.bestR = it.r;
+  if (rRank(it.r) > rRank(s.stats.bestR ?? -1)) s.stats.bestR = it.r;
   discover(ctx, it);
   return it;
 }
@@ -138,17 +139,22 @@ export function advancesSet(s: GameState, it: Item): boolean {
  * Część zestawu, która przybliża premię za 2 lub 4 części, zostaje założona, jeśli traci najwyżej 5% Mocy.
  */
 /**
- * Rzadkości, na których może zatrzymać się auto-wytop z rudy `ore`: wyższe niż minimalna rzadkość rudy
- * (ruda bez przeskoku — tylko jej rzadkość).
+ * Rzadkości (indeksy, od najsłabszej), na których może zatrzymać się auto-wytop z rudy `ore` na kuźni `flvl`:
+ * wyższe niż wynik bez przeskoku (gdy ruda bywa o rangę niżej — także sam wynik bez przeskoku).
+ * Ruda bez przeskoku — tylko jej rzadkość.
  */
-export function autoTargets(ore: number): number[] {
-  const f = oreFloor(ore), top = Math.min(6, f + maxJump(ore));
-  return top === f ? [f] : Array.from({ length: top - f }, (_, i) => f + 1 + i);
+export function autoTargets(ore: number, flvl: number): number[] {
+  const n = oreNominal(ore, flvl), top = Math.min(RANK_MAX, n + maxJump(ore));
+  const from = dropChance(ore, flvl) > 0 ? n : n + 1;
+  if (top < from) return [rAt(n)];
+  return Array.from({ length: top - from + 1 }, (_, i) => rAt(from + i));
 }
-/** Rzadkość, na której auto-wytop się zatrzyma (wybór gracza dopasowany do wybranej rudy). */
+/** Rzadkość, na której auto-wytop się zatrzyma (wybór gracza dopasowany do wybranej rudy; domyślnie pierwsza z przeskoku). */
 export function autoTarget(s: GameState): number {
-  const t = autoTargets(s.oreSel);
-  return t.includes(s.autoStop) ? s.autoStop : t[0];
+  const t = autoTargets(s.oreSel, s.forge.lvl);
+  if (t.includes(s.autoStop)) return s.autoStop;
+  const n = oreNominal(s.oreSel, s.forge.lvl);
+  return t.find(r => rRank(r) > n) ?? t[0];
 }
 
 /**
@@ -157,7 +163,7 @@ export function autoTarget(s: GameState): number {
  */
 export function autoHandle(ctx: Ctx, it: Item, quiet: boolean): 'stop' | 'equip' | 'sell' {
   const s = ctx.s;
-  if (it.r >= autoTarget(s) || it.set) { s.pending = it; ctx.dirty = true; return 'stop'; }
+  if (rGe(it.r, autoTarget(s)) || it.set) { s.pending = it; ctx.dirty = true; return 'stop'; }
   if (!s.eq[it.slot]) { equip(ctx, it, quiet); return 'equip'; }
   sell(ctx, it, quiet);
   return 'sell';
@@ -194,7 +200,7 @@ export function smeltBatch(ctx: Ctx, ore: number, n: number): BatchResult | null
   let bestD = powerDelta(ctx, best);
   for (const it of items.slice(1)) {
     const d = powerDelta(ctx, it);
-    if (it.r > best.r || (it.r === best.r && d > bestD)) { best = it; bestD = d; }
+    if (rRank(it.r) > rRank(best.r) || (it.r === best.r && d > bestD)) { best = it; bestD = d; }
   }
   let sold = 0, equipped = 0;
   const g0 = s.gold; // złoto ze sprzedaży (także zdjętych przedmiotów, gdy gra zakłada lepsze)

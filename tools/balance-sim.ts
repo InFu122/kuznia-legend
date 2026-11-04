@@ -5,7 +5,7 @@
 //          npm run balance -- 1440 2 casual (60 dni: gracz gra 3 × 1 h dziennie, resztę czasu offline)
 import ExcelJS from 'exceljs';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { B, DUNG_ORDER, LANDS, ORES, RAR, SET_FORGE_LVL, SET_IDS, TECH_IDS, landDef } from '../src/data';
+import { B, DUNG_ORDER, LANDS, ORES, ORE_ORDER, RAR, SET_FORGE_LVL, SET_IDS, TECH_IDS, landDef, rRank } from '../src/data';
 import { bossWaiting } from '../src/engine/combat';
 import { lezaBosses } from '../src/engine/dungeon';
 import { canSmelt } from '../src/engine/forge';
@@ -133,7 +133,7 @@ function runOnce(run: number, seed: number) {
     }
     t += STEP;
     // strategia: najlepsza dostępna ruda, auto-wytop od 5. poziomu, ręczne decyzje wcześniej
-    for (let o = ORES.length - 1; o >= 0; o--) if (canSmelt(g.ctx, o)) { g.s.oreSel = o; break; }
+    for (let k = ORE_ORDER.length - 1; k >= 0; k--) { const o = ORE_ORDER[k]; if (canSmelt(g.ctx, o)) { g.s.oreSel = o; break; } }
     // auto-wytop staje na przeskoku (cel domyślny) — bot zakłada lepszy przedmiot i jedzie dalej; znaleziska tak samo
     if (g.s.pending) { if (g.pendingDelta() > 0) g.equipPending(); else g.sellPending(); }
     while (g.s.found.length) g.takeFound(0, g.foundDelta(0) > 0);
@@ -185,7 +185,7 @@ function runOnce(run: number, seed: number) {
     if (powerAtForge[g.s.forge.lvl] === undefined) powerAtForge[g.s.forge.lvl] = g.stats.power;
     powerAtForge[g.s.forge.lvl] = Math.max(powerAtForge[g.s.forge.lvl], g.stats.power);
     if (ms % 3600000 === 0) {
-      const bestR = Math.max(-1, ...Object.values(g.s.eq).map(it => it?.r ?? -1));
+      const bestR = Object.values(g.s.eq).reduce((m, it) => (it && rRank(it.r) > rRank(m) ? it.r : m), -1);
       hours.push({
         run, h: ms / 3600000, land: landDef(g.s.cur.land).n, stage: g.s.cur.stage, forge: g.s.forge.lvl, power: g.stats.power,
         rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), earned: Math.round(earned), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, ore: g.s.ores.reduce((x, y) => x + y, 0), pass: g.s.pass ? passXp(g.s.pass) : 0, best: bestR >= 0 ? RAR[bestR].n : '—',

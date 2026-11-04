@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { B, DIVINE_ORE, EVENT_MILESTONES, LANDS, ORES, ORE_ORDER, PASS_LEVELS, oreCap, oreRank } from '../src/data';
+import { B, DIVINE_ORE, EVENT_MILESTONES, LANDS, ORES, ORE_ORDER, PASS_LEVELS, oreCap, oreRank, R } from '../src/data';
 import { obiegItem } from '../src/engine/obieg';
 import { refineRatio, refineTo, rollSubs, smelt, smeltDraws } from '../src/engine/forge';
 import { JUMP_V, dist, divineName, itemLevelFor, itemName, oreFloor } from '../src/engine/formulas';
@@ -17,15 +17,15 @@ const divPct = (ore: number, lvl = 30) => dist(ore, lvl).find(([r]) => r === 6)?
 
 describe('rudy w wersji 3: Boski tylko z przeskoku', () => {
   it('żadna ruda nie daje Boskiego na pewno; Gwiezdny Kruszec kilka %, Boska Ruda kilkanaście %', () => {
-    for (let o = 0; o < ORES.length; o++) expect(dist(o, 30)[0][0], ORES[o].n).toBeLessThan(6);
+    for (let o = 0; o < ORES.length; o++) expect(dist(o, 30)[0][0], ORES[o].n).not.toBe(R.BOSKI);
     expect(divPct(6)).toBeGreaterThan(2);
     expect(divPct(6)).toBeLessThan(5);
     expect(divPct(DIVINE_ORE)).toBeGreaterThan(14);
     expect(divPct(DIVINE_ORE)).toBeLessThan(20);
     expect(divPct(5)).toBeLessThan(divPct(8));
     expect(divPct(8)).toBeLessThan(divPct(6));
-    // Obsydian: Legendarny z lepszą jakością, przeskok najwyżej do Mitycznego
-    expect(dist(7, 30).map(([r]) => r)).toEqual([4, 5]);
+    // Obsydian: dojrzały — Legendarny z lepszą jakością, przeskok najwyżej o 1 (Pradawny)
+    expect(dist(7, 70).map(([r]) => r)).toEqual([R.LEGENDARNY, R.PRADAWNY]);
   });
 
   it('kolejność rud w grze i ograniczenia: Boska Ruda nie wypada w krainach i nie jest „najlepszą rudą” sklepu', () => {
@@ -72,7 +72,7 @@ describe('rudy w wersji 3: Boski tylko z przeskoku', () => {
     s.uniq.smok = 400;
     s.uniqSel = 'smok';
     let div = 0;
-    for (let i = 0; i < 400; i++) { const it = smelt(ctx, 6, null)!; if (it.r >= 6) div++; expect(it.forced).not.toBe('set'); }
+    for (let i = 0; i < 400; i++) { const it = smelt(ctx, 6, null)!; if (it.r === R.BOSKI) div++; expect(it.forced).not.toBe('set'); }
     expect(div).toBeLessThan(40);
   });
 });
@@ -128,7 +128,7 @@ describe('Boskie przedmioty są wyjątkowe', () => {
   it('Obieg nie rozdaje Boskich przedmiotów', () => {
     const { ctx, s } = makeGame(9);
     s.maxLand = 15; s.forge.lvl = 30;
-    for (let i = 0; i < 300; i++) expect(obiegItem(ctx).r).toBeLessThanOrEqual(5);
+    for (let i = 0; i < 300; i++) expect(obiegItem(ctx).r).not.toBe(R.BOSKI);
   });
 
   it('Boska Ruda: w przepustce (złota ścieżka, poziom 30) i za ostatni próg wydarzenia', () => {

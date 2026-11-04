@@ -1,5 +1,6 @@
 // Czat na żywo przez WebSocket Nakamy: pokój globalny i kanał klanu. Historia przychodzi przez REST,
 // nowe wiadomości przez gniazdo. Wyciszeni gracze są zapamiętani na tym urządzeniu.
+import { R } from '../data';
 import type { SubId, ElemKey, SetId, SlotId } from '../engine/types';
 import type { ServerLink } from './server';
 
@@ -108,7 +109,7 @@ export class ChatLink {
     this.msgs[ch] = this.msgs[ch].concat(msg).slice(-HISTORY * 2);
     if (this.viewing !== ch && !msg.mine && !this.muted.has(msg.uid)) this.unread[ch]++;
     if (msg.k === 'ann') this.ann = msg.t;
-    if (ch === 'global' && msg.k === 'drop' && msg.it && msg.it.r >= 6 && !msg.mine && !this.muted.has(msg.uid)) this.onDivine?.(msg);
+    if (ch === 'global' && msg.k === 'drop' && msg.it && msg.it.r === R.BOSKI && !msg.mine && !this.muted.has(msg.uid)) this.onDivine?.(msg);
     this.changed();
   }
 

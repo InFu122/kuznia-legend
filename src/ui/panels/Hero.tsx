@@ -1,10 +1,10 @@
-import { B, SETS, SLOTS, SLOT_ORDER, landDef } from '../../data';
+import { B, SETS, SLOTS, SLOT_ORDER, landDef, R, rGe, type FeatureId } from '../../data';
 import { itemName, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { FoeType, Item } from '../../engine/types';
 import { useState } from 'preact/hooks';
 import { f1, fmt, pct } from '../format';
-import { SlotIcon } from '../icons';
+import { LockIcon, SlotIcon } from '../icons';
 import { itemUrl } from '../../art/render';
 import { Px } from '../Px';
 import { MountsView, PetsView, SkillsView } from './Companions';
@@ -14,6 +14,8 @@ import { LegacyCard } from './Legacy';
 import { RunesCard } from './Runes';
 
 type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
+/** Funkcje odblokowywane w podzakładkach (kłódka i znaczek „nowe”). */
+const SUB_FEATURE: Partial<Record<Sub, FeatureId>> = { skills: 'umiejetnosci', pets: 'chowance', mounts: 'wierzchowce' };
 const SUBS: [Sub, string][] = [['eq', 'Ekwipunek'], ['skills', 'Umiejętności'], ['pets', 'Chowaniec'], ['mounts', 'Wierzchowiec']];
 
 export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
@@ -21,7 +23,17 @@ export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => 
   return (
     <>
       <div class="seg" role="tablist" aria-label="Bohater">
-        {SUBS.map(([id, n]) => <button key={id} role="tab" aria-selected={sub === id} class={sub === id ? 'on' : ''} onClick={() => setSub(id)}>{n}</button>)}
+        {SUBS.map(([id, n]) => {
+          const f = SUB_FEATURE[id];
+          const locked = !!f && !game.unlocked(f);
+          const fresh = !!f && game.s.unlNew.includes(f);
+          return (
+            <button key={id} role="tab" data-sub={id} aria-selected={sub === id} class={`${sub === id ? 'on' : ''}${locked ? ' locked' : ''}`}
+              onClick={() => { setSub(id); if (f) game.seenFeatures([f]); }}>
+              {locked && <LockIcon />}{n}{fresh && <i class="tab-dot new" aria-label="nowe" />}
+            </button>
+          );
+        })}
       </div>
       {sub === 'eq' && <Equipment game={game} onItem={onItem} />}
       {sub === 'skills' && <SkillsView game={game} />}
@@ -48,7 +60,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
     <>
       <section class="card">
         <div class="hero-head">
-          <div class={`actor hero doll${bestRarity(s.eq) >= 2 ? ' r' + bestRarity(s.eq) : ''}`} aria-hidden="true"><HeroSprite eq={s.eq} skin={s.look.skin} /></div>
+          <div class={`actor hero doll${rGe(bestRarity(s.eq), R.RZADKI) ? ' r' + bestRarity(s.eq) : ''}`} aria-hidden="true"><HeroSprite eq={s.eq} skin={s.look.skin} /></div>
           <div>
             <div class="eyebrow">Bohater</div>
             <div class="h">{s.name}</div>

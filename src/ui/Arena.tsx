@@ -1,14 +1,14 @@
 import { dungScene } from '../engine/events';
 import { skinOr } from '../engine/cosmetics';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { AD_BUFFS, BUFF_IDS, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId, actName, landDef } from '../data';
-import { dungeonBgUrl, foeUrl, heroUrl, itemUrl, landBgUrl, resUrl, skillUrl } from '../art/render';
+import { AD_BUFFS, BUFF_IDS, ORES, SETS, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId, actName, landDef, rRank } from '../data';
+import { dungeonBgUrl, elemUrl, foeUrl, heroUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl } from '../art/render';
 import { passLevel, passUnclaimed } from '../engine/shop';
 import { foeTemplate } from '../art/actors';
 import { Px } from './Px';
 import { bossWaiting } from '../engine/combat';
 import type { Game } from '../engine/game';
-import type { Enemy, Item } from '../engine/types';
+import type { Enemy, Item, LootDrop } from '../engine/types';
 import { buffIcon } from './buffs';
 import { fmt } from './format';
 import type { Tab } from './icons';
@@ -17,9 +17,22 @@ import { flyOre } from './drops';
 import { play } from './sound';
 
 interface Float { id: number; text: string; cls: string; x: number; y: number }
+interface Loot { id: number; drops: LootDrop[]; boss: boolean }
 
-/** Najwyższa rzadkość założonego ekwipunku — od niej zależy poświata bohatera. */
-export const bestRarity = (eq: Record<string, Item | null>) => Object.values(eq).reduce((m, it) => (it ? Math.max(m, it.r) : m), -1);
+/** Jedna pozycja łupu: ikona i liczba (rzadka ruda — z nazwą i poświatą). */
+function LootChip({ d }: { d: LootDrop }) {
+  switch (d.k) {
+    case 'gold': return <span class="lc gold"><Px src={resUrl('zloto')} size={16} /><b>+{fmt(d.n)}</b></span>;
+    case 'ore': return <span class={`lc ore${d.rare ? ' rare' : ''}`}><Px src={oreUrl(d.ore)} size={18} /><b>+{fmt(d.n)}</b>{d.rare && <small>{ORES[d.ore].n}</small>}</span>;
+    case 'el': return <span class="lc el"><Px src={elemUrl(d.el)} size={16} /><b>+1</b></span>;
+    case 'book': return <span class="lc book"><Px src={resUrl('ksiega')} size={16} /><b>+{d.n}</b></span>;
+    case 'scroll': return <span class="lc scroll"><Px src={resUrl('zwoj')} size={16} /><b>+{d.n}</b></span>;
+    case 'uniq': return <span class="lc rare"><Px src={setOreUrl(d.set)} size={18} /><b>+{d.n}</b><small>{SETS[d.set].ore}</small></span>;
+  }
+}
+
+/** Najrzadszy założony przedmiot (indeks rzadkości) albo −1 — od niego zależy poświata bohatera. */
+export const bestRarity = (eq: Record<string, Item | null>) => Object.values(eq).reduce((m, it) => (it && rRank(it.r) > rRank(m) ? it.r : m), -1);
 
 /** Bohater w pixel arcie, ubrany w to, co ma założone. */
 export function HeroSprite({ eq, flip = false, skin }: { eq: Record<string, Item | null | { kind: string; ore: number }>; flip?: boolean; skin?: string }) {
@@ -78,6 +91,7 @@ function SideIcons({ game, onAd, onPass, ads }: { game: Game; onAd?: (what: Buff
 export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void; onAd?: (what: BuffId) => void; onPass?: () => void }) {
   const [, setFrame] = useState(0);
   const [floats, setFloats] = useState<Float[]>([]);
+  const [loots, setLoots] = useState<Loot[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
   const foeRef = useRef<HTMLDivElement>(null);
   const lastFloat = useRef(0);
@@ -97,6 +111,11 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
         setTimeout(() => el.classList.remove(e.cls), e.cls === 'lunge' ? 260 : 220);
       } else if (e.t === 'drop') {
         flyOre(foeRef.current, e.ore, e.n, e.rare);
+      } else if (e.t === 'loot') {
+        // Łup z pokonanej fali: na chwilę nad wrogiem (najwyżej dwa naraz).
+        const id = ++nextId.current;
+        setLoots(ls => [...ls.slice(-1), { id, drops: e.drops, boss: !!e.boss }]);
+        setTimeout(() => setLoots(ls => ls.filter(x => x.id !== id)), e.boss ? 2600 : 1700);
       } else if (e.t === 'float') {
         const now = performance.now();
         if (!e.force && now - lastFloat.current < 110) return;
@@ -165,6 +184,13 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
         {side && <SideIcons game={game} onAd={onAd} onPass={onPass} ads={!dung} />}
         <div class="floats">
           {floats.map(f => <span key={f.id} class={`fl ${f.cls}`} style={{ left: f.x + '%', top: f.y + '%' }}>{f.text}</span>)}
+        </div>
+        <div class="loots" aria-live="off">
+          {loots.map(l => (
+            <div key={l.id} class={`lootpop${l.boss ? ' boss' : ''}${l.drops.some(d => (d.k === 'ore' && d.rare) || d.k === 'uniq') ? ' rare' : ''}`}>
+              {l.drops.map((d, i) => <LootChip key={i} d={d} />)}
+            </div>
+          ))}
         </div>
       </div>
       <div class="bars">

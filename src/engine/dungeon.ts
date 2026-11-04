@@ -1,8 +1,5 @@
 // Lochy. Każdy loch to osobny tryb walki w arenie; nagrody zbierają się w `loot` i trafiają do gracza na końcu.
-import {
-  B, DIVINE_ORE, DUNGEONS, DUNGEON_FOES, DUNG_UNLOCK, EVENT, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS,
-  LAB_DOORS, LAB_ROOMS, LANDS, ZBROJOWNIA_CHESTS, setOfLand,
-  type LabDoor, landDef } from '../data';
+import { B, DIVINE_ORE, DUNGEONS, DUNGEON_FOES, DUNG_UNLOCK, EVENT, ELEM, ELEM_KEYS, FAKE_PLAYERS, KOPALNIA_WAVES, KRYPTA_FLOORS, KRYPTA_ORDER, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, LANDS, ZBROJOWNIA_CHESTS, setOfLand, type LabDoor, landDef, R, rAt, rRank } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { addEventPts, eventFloorPts, eventOf, evText } from './events';
 import type { Ctx } from './context';
@@ -274,7 +271,7 @@ export function dungFloor(ctx: Ctx): void {
       if (!real) {
         it.smith = d.ghost ?? it.smith;
         it.owners = [it.smith, ...it.owners.filter(o => o !== it.smith)].slice(0, 3);
-        if (ctx.rng.next() < 0.5 && it.r < 5) { it.r++; it.subs = rollSubs(ctx.rng, it.r); }
+        if (ctx.rng.next() < 0.5 && rRank(it.r) < rRank(R.MITYCZNY)) { it.r = rAt(rRank(it.r) + 1); it.subs = rollSubs(ctx.rng, it.r); }
       }
       const fame = ri(ctx.rng, 1000, 6000);
       if (fame > it.fame) {

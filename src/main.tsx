@@ -1,5 +1,5 @@
 import { render } from 'preact';
-import { B } from './data';
+import { B, R, rGe } from './data';
 import { Game } from './engine/game';
 import { migrate, newState } from './engine/state';
 import type { GameState } from './engine/types';
@@ -74,7 +74,7 @@ function boot(hotData?: { s?: string }) {
   };
   // Przedmiot Mityczny albo Boski: wpis na czacie klanu (serwer sprawdza, czy naprawdę go wykuto).
   game.on(e => {
-    if (e.t !== 'forged' || !link || !chat?.clanId || e.item.r < 5 || typeof e.item.sx !== 'number') return;
+    if (e.t !== 'forged' || !link || !chat?.clanId || !rGe(e.item.r, R.MITYCZNY) || typeof e.item.sx !== 'number') return;
     link.chatDrop(e.item, false).catch(() => {});
   });
 

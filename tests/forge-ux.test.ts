@@ -1,23 +1,26 @@
 import { describe, expect, it } from 'vitest';
+import { R } from '../src/data';
 import { addFound, autoTarget, autoTargets, smelt } from '../src/engine/forge';
 import { makeGame, simulate } from './helpers';
 
 describe('auto-wytop do wybranej rzadkości', () => {
-  it('cele: rzadkości powyżej minimum rudy (Gwiezdny Kruszec — tylko Boski)', () => {
-    expect(autoTargets(0)).toEqual([1, 2]);
-    expect(autoTargets(4)).toEqual([5, 6]);
-    expect(autoTargets(5)).toEqual([6]);
-    expect(autoTargets(6)).toEqual([6]);
+  it('cele: rzadkości z przeskoku (i wynik bez przeskoku, gdy ruda jeszcze dojrzewa); Gwiezdny Kruszec — tylko Boski', () => {
+    expect(autoTargets(0, 1)).toEqual([R.NIEPOSPOLITY, R.RZADKI]);
+    expect(autoTargets(1, 1)).toEqual([R.NIEPOSPOLITY, R.RZADKI, R.WYJATKOWY]);
+    expect(autoTargets(1, 6)).toEqual([R.RZADKI, R.WYJATKOWY]);
+    expect(autoTargets(4, 200)).toEqual([R.PRADAWNY, R.MITYCZNY]);
+    expect(autoTargets(5, 200)).toEqual([R.BOSKI]);
+    expect(autoTargets(6, 200)).toEqual([R.BOSKI]);
   });
 
-  it('wybór spoza zakresu rudy zamienia się na najniższy cel', () => {
+  it('wybór spoza zakresu rudy zamienia się na pierwszy cel z przeskoku', () => {
     const { g, s } = makeGame(2);
     s.oreSel = 1; s.autoStop = 6;
-    expect(autoTarget(s)).toBe(2);
-    g.setAutoStop(3);
-    expect(s.autoStop).toBe(3);
-    g.setAutoStop(5); // Żelazo nie da Mitycznego
-    expect(s.autoStop).toBe(3);
+    expect(autoTarget(s)).toBe(R.RZADKI);
+    g.setAutoStop(R.WYJATKOWY);
+    expect(s.autoStop).toBe(R.WYJATKOWY);
+    g.setAutoStop(R.MITYCZNY); // Żelazo nie da Mitycznego
+    expect(s.autoStop).toBe(R.WYJATKOWY);
   });
 
   it('słabsze sprzedaje, pusty slot zakłada, na celu staje z dźwiękiem i oknem decyzji', () => {

@@ -1,12 +1,14 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
   B, DIVINE_JUMP, DIVINE_ORE, ELEM, ELEM_KEYS, EVENT, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, MOUNTS, ORES, PETS, RAR, SEAL_FAME, SETS, SET_FORGE_LVL,
-  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, FORGE_UNLOCKS, ORE_ORDER, isRareOre, oreShares, setOfLand, skillValue, landDef, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, FORGE_UNLOCKS, FEATURES, ORE_ORDER, rAt, rRank, type FeatureId, isRareOre, oreShares, setOfLand, skillValue, landDef, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
 import { ForgeLevelInfo, MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { LockIcon } from './icons';
+import { unlockProgress, unlockWhen } from '../engine/unlocks';
 import { onBack } from './back';
-import { JUMP_TO_MULT, baseName, dist, gOf, goldWaveOf, itemName, recPower } from '../engine/formulas';
+import { JUMP_TO_MULT_RANK, baseName, dist, gOf, goldWaveOf, itemName, oreNominal, recPower } from '../engine/formulas';
 import { allMods } from '../engine/mods';
 import type { Game } from '../engine/game';
 import { techLvl, techMods } from '../engine/mods';
@@ -60,9 +62,54 @@ export function ModalShell({ locked, onClose, children }: { locked: boolean; onC
 
 const Close = ({ onClose, label }: { onClose: () => void; label: string }) => <button class="btn primary" onClick={onClose}>{label}</button>;
 
-export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game; close: () => void; goTab?: (t: Tab) => void }): JSX.Element {
+/** Ikona funkcji w oknie z kłódką i w ogłoszeniu. */
+const FEATURE_ICON: Record<FeatureId, string> = {
+  bohater: 'moc', zadania: 'trofeum', nauka: 'ksiega', sklep: 'klejnot', auto: 'kowadlo', umiejetnosci: 'zwoj', krainy: 'swieca',
+  lochy: 'klucz', klan: 'moneta', czat: 'pieczec', runy: 'runa', arena: 'puchar', chowance: 'jajo2', wierzchowce: 'siodlo',
+};
+const featureIcon = (id: FeatureId) => resUrl(FEATURE_ICON[id]);
+
+export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; game: Game; close: () => void; goTab?: (t: Tab) => void; onFeature?: (id: FeatureId) => void }): JSX.Element {
   const s = game.s;
   switch (m.kind) {
+    case 'unlocked': {
+      const first = m.ids[0];
+      return (
+        <>
+          <div class="unl-burst" aria-hidden="true">{m.ids.slice(0, 5).map(id => <span key={id} class="unl-ic"><Px src={featureIcon(id)} size={40} /></span>)}</div>
+          <div class="eyebrow">{m.ids.length > 1 ? 'Nowe funkcje' : 'Nowa funkcja'}</div>
+          <div class="h">{m.ids.map(id => FEATURES[id].n).join(', ')}</div>
+          <ul class="unl-list">
+            {m.ids.map(id => (
+              <li key={id}><Px src={featureIcon(id)} size={28} /><div><b>{FEATURES[id].n}</b><p>{FEATURES[id].d}</p></div></li>
+            ))}
+          </ul>
+          <div class="result-actions">
+            <button class="btn primary" onClick={() => { close(); onFeature?.(first); }}>Pokaż{m.ids.length > 1 ? `: ${FEATURES[first].n}` : ''}</button>
+            <button class="btn" onClick={close}>Później</button>
+          </div>
+        </>
+      );
+    }
+    case 'locked': {
+      const F = FEATURES[m.id];
+      const [now, goal, unit] = unlockProgress(s, m.id);
+      return (
+        <>
+          <div class="lock-head"><span class="lock-big"><Px src={featureIcon(m.id)} size={44} /><LockIcon /></span></div>
+          <div class="eyebrow">Zablokowane</div>
+          <div class="h">{F.n}</div>
+          <p class="sub">{F.d}</p>
+          <div class="lock-when">Odblokujesz {unlockWhen(m.id)}.</div>
+          <div class="lock-prog">
+            <div class="bar"><i style={{ width: Math.min(100, (now / Math.max(1, goal)) * 100) + '%' }} /></div>
+            <small>{unit}: {fmt(Math.min(now, goal))}/{fmt(goal)}</small>
+          </div>
+          {F.net && !game.net && <p class="sub">Ta funkcja działa tylko z połączeniem z serwerem.</p>}
+          <Close onClose={close} label="Rozumiem" />
+        </>
+      );
+    }
     case 'intro':
       return (
         <>
@@ -71,7 +118,8 @@ export function ModalView({ m, game, close, goTab }: { m: ModalData; game: Game;
           <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i trzy sztaby żelaza: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie — nie pozwól mu iść z gołymi rękami”.</p>
           <ul class="list">
             <li>Bohater walczy sam. Ty przetapiasz rudy, które wypadają z wrogów, na ekwipunek.</li>
-            <li>Każda ruda gwarantuje minimalną rzadkość, a kuźnia daje szansę na przeskok wyżej.</li>
+            <li>Lepsza ruda to rzadsze przedmioty, a kuźnia daje szansę na przeskok o rzadkość wyżej. Z każdym poziomem kuźni wyniki są coraz lepsze.</li>
+            <li>Na początku masz tylko kuźnię i walkę — reszta odblokowuje się po kolei. Przy zablokowanych funkcjach zobaczysz kłódkę.</li>
             <li>Założone przedmioty zbierają Sławę Czynów i w końcu budzą się z własnym imieniem.</li>
           </ul>
           <Close onClose={close} label="Rozpal kuźnię" />
@@ -283,16 +331,19 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
   const cur = s.forge.lvl;
   const [lv, setLv] = useState(cur);
   const unlock = FORGE_UNLOCKS[lv];
-  /** Szanse (%) na rzadkość wyższą niż minimum rudy (przeskok) i niższą (nowa ruda wchodzi stopniowo). */
-  const split = (ore: number, d: [number, number][]) => ({
-    up: d.reduce((a, [r, p]) => a + (r > ORES[ore].floor ? p : 0), 0),
-    down: d.reduce((a, [r, p]) => a + (r < ORES[ore].floor ? p : 0), 0),
-  });
+  /** Szanse (%) na rzadkość wyższą niż wynik bez przeskoku na poziomie `lvl` (przeskok) i niższą (ruda jeszcze nie opanowana). */
+  const split = (ore: number, lvl: number, d: [number, number][]) => {
+    const n = oreNominal(ore, Math.max(lvl, ORES[ore].lvl));
+    return {
+      up: d.reduce((a, [r, p]) => a + (rRank(r) > n ? p : 0), 0),
+      down: d.reduce((a, [r, p]) => a + (rRank(r) < n ? p : 0), 0),
+    };
+  };
   const moved = (a: number, b: number) => Math.abs(a - b) >= 0.05;
   const tips: [string, string, JSX.Element][] = [
     [resUrl('czas'), 'Gwarancja przeskoku', <>Po {B.PITY_MAX} wytopach bez przeskoku następny przeskakuje na pewno o 1 (ale nie na Boski). Twój licznik: <b>{s.pity}/{B.PITY_MAX}</b>.</>],
-    [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT[4])} szansy bazowej, na Mityczny ×{f2(JUMP_TO_MULT[5])}, a na Boski {divMults}. Paski wyżej już to uwzględniają.</>],
-    [oreUrl(4), 'Nowa ruda wchodzi stopniowo', <>Srebro, Mithril, Adamantyt i Smocza Stal podnoszą minimum rzadkości. Na poziomie kuźni, na którym je odblokujesz, {B.RAMP_DROP}% wytopów wychodzi o rzadkość niżej; z każdym poziomem mniej, a po {B.RAMP_LEVELS} poziomach ruda daje już pełne minimum.</>],
+    [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Heroiczny ma ×{f2(JUMP_TO_MULT_RANK[5])} szansy bazowej, na Legendarny ×{f2(JUMP_TO_MULT_RANK[6])}, Pradawny ×{f2(JUMP_TO_MULT_RANK[7])}, Mityczny ×{f2(JUMP_TO_MULT_RANK[8])}, a na Boski {divMults}. Paski wyżej już to uwzględniają.</>],
+    [oreUrl(4), 'Ruda dojrzewa z kuźnią', <>Ruda nie ma sztywnego minimum: tuż po odblokowaniu daje mieszankę dwóch sąsiednich rzadkości, a z każdym poziomem kuźni wyniki przesuwają się w górę — aż do jakości docelowej rudy (wyżej przełącz poziom, żeby to zobaczyć).</>],
     [oreUrl(DIVINE_ORE), 'Boski przedmiot', <>Żadna ruda nie daje go na pewno. Ma własne imię, złotą ramkę i Boską aurę (+{B.DIVINE_AURA}% obrażeń i zdrowia za każdy założony), a serwer ogłasza go na czacie. {ORES[DIVINE_ORE].n}: bossowie aktu IV, loch sezonowy, wydarzenia i Przepustka.</>],
     [elemUrl('zar'), `Domieszki · od ${B.ELEM_FORGE_LVL}. poziomu`, <>Nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans.</>],
     [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Robią z przedmiotu część zestawu (premie za 2 i 4 części) i dają pewny przeskok o co najmniej 1 (ale nie na Boski).</>],
@@ -329,15 +380,16 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
           const off = lv < o.lvl;
           const fresh = !off && cur < o.lvl;
           const d = dist(i, Math.max(lv, o.lvl), rel);
-          const now = !off && !fresh && lv !== cur ? split(i, dist(i, Math.max(cur, o.lvl), rel)) : null;
-          const then = split(i, d);
+          // porównanie z twoim poziomem względem tego samego wyniku bez przeskoku (z oglądanego poziomu)
+          const now = !off && !fresh && lv !== cur ? split(i, lv, dist(i, Math.max(cur, o.lvl), rel)) : null;
+          const then = split(i, lv, d);
           return (
             <li key={o.n} class={`${i === sel ? 'sel' : ''}${off ? ' off' : ''}`}>
               <Px src={oreUrl(i)} size={28} />
               <div class="fi-o">
                 <div class="fi-on">
                   <b>{o.n}{fresh && <em class="fi-new">nowa</em>}</b>
-                  <small>min. <span class={`rt${o.floor}`}>{RAR[o.floor].n}</span>{off ? ` · od ${o.lvl}. poziomu` : ''}</small>
+                  <small>bez przeskoku <span class={`rt${rAt(oreNominal(i, Math.max(lv, o.lvl)))}`}>{RAR[rAt(oreNominal(i, Math.max(lv, o.lvl)))].n}</span>{off ? ` · od ${o.lvl}. poziomu` : ''}</small>
                 </div>
                 <OddsBar d={d} cls="compact" />
                 {now && (moved(now.up, then.up) || moved(now.down, then.down)) && (
@@ -351,7 +403,7 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
           );
         })}
       </ul>
-      {lv !== cur && <p class="fi-lv-n">Strzałki: zmiana względem twojego poziomu. Przeskok — szansa na rzadkość wyższą niż minimum rudy; niżej — szansa na rzadkość poniżej minimum, gdy ruda dopiero wchodzi.</p>}
+      {lv !== cur && <p class="fi-lv-n">Strzałki: zmiana względem twojego poziomu. Przeskok — szansa na rzadkość wyższą niż wynik bez przeskoku; niżej — szansa na rzadkość poniżej niego, gdy ruda jeszcze dojrzewa.</p>}
       <div class="fi-sec">Warto wiedzieć</div>
       <div class="fi-tips">
         {tips.map(([ic, h, d]) => (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { B, LANDS, TECH } from '../src/data';
+import { B, LANDS, R, TECH, rRank } from '../src/data';
 import { forgeExp, gAtForge, goldG, goldWave, goldWaveOf } from '../src/engine/formulas';
 import { equip, smelt } from '../src/engine/forge';
 import { applyOffline, offlineCapMs } from '../src/engine/offline';
@@ -44,7 +44,8 @@ describe('walka i postęp', () => {
     for (let i = 0; i < 8; i++) equip(g.ctx, smelt(g.ctx, 4, null)!, true);
     s.ores[0] = 0;
     let waves = 0, gold = 0;
-    g.on(e => { if (e.t === 'float' && e.cls === 'loot' && e.text.includes('zł.')) waves++; });
+    let oresShown = 0;
+    g.on(e => { if (e.t === 'loot' && !e.boss) { waves++; expect(e.drops[0]).toMatchObject({ k: 'gold' }); oresShown += e.drops.filter(d => d.k === 'ore').length; } });
     const before = s.gold;
     simulate(g, 20 * 60 * 1000);
     gold = s.gold - before;
@@ -53,6 +54,8 @@ describe('walka i postęp', () => {
     expect(gold).toBeGreaterThan(0);
     expect(drops / waves).toBeGreaterThan(B.ORE_DROP - 0.08);
     expect(drops / waves).toBeLessThan(B.ORE_DROP + 0.08);
+    // łup nad wrogiem pokazuje każdą rudę, która wypadła
+    expect(oresShown).toBe(events.filter(e => e.t === 'drop').length);
   });
 
   it('auto-wytop bez rudy czeka zamiast się wyłączać', () => {
@@ -103,14 +106,14 @@ describe('nagrody offline', () => {
     const { ctx, s } = makeGame();
     s.forge.lvl = 5; s.forge.up = 6; s.forge.left = 60000;
     s.auto = true; s.ores[1] = 1000;
-    s.autoStop = 3; // Epicki z Żelaza: tylko przeskok o 2
+    s.autoStop = R.WYJATKOWY; // Wyjątkowy z Żelaza: tylko przeskok o 2
     const r = applyOffline(ctx, 2 * 3600 * 1000)!;
     expect(s.forge.lvl).toBe(6);
     expect(r.forgeUp).toBe(6);
     expect(r.chestCount).toBeGreaterThan(0);
     // Skrzynia kończy się na przedmiocie o wybranej rzadkości (czeka na decyzję) albo na limicie wytopów.
     if (s.pending) {
-      expect(s.pending.r).toBeGreaterThanOrEqual(3);
+      expect(rRank(s.pending.r)).toBeGreaterThanOrEqual(rRank(R.WYJATKOWY));
       expect(s.auto).toBe(true);
       expect(r.chest[0].stop).toBe(true);
     } else expect(r.chestCount).toBe(B.OFFLINE_CHEST_MAX);

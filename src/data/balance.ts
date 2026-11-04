@@ -47,12 +47,13 @@ export const FORGE_UNLOCKS: Record<number, string> = {
  * Kampania kończy się przy kuźni ok. 120 (pół roku); dalej Otchłań — kręgi bez końca (`abyssForge` itd. w formulas.ts).
  */
 export const FORGE_AT_BOSS = [2, 4, 7, 10, 13, 16, 20, 25, 30, 38, 46, 55, 66, 80, 98, 120];
-export const RARITY_AT_BOSS = [1.15, 1.3, 1.5, 1.75, 1.95, 2.15, 2.3, 2.5, 2.85, 3.15, 3.45, 3.65, 4.1, 4.45, 4.85, 5.35];
+// Zasady v6 (10 rzadkości, ruda dojrzewa z kuźnią): niżej niż dawniej w środku gry — wcześniej [1.15, 1.3, 1.5, 1.75, 1.95, 2.15, 2.3, 2.5, 2.85, 3.15, 3.45, 3.65, 4.1, 4.45, 4.85, 5.35].
+export const RARITY_AT_BOSS = [1.05, 1.21, 1.43, 1.62, 1.75, 1.85, 1.92, 2.05, 2.2, 2.45, 2.86, 3.25, 3.45, 3.85, 4.57, 5.32];
 /**
  * Dodatkowy mnożnik siły wrogów przy bossie krainy L (zdrowie i obrażenia). Skalibrowany symulatorem:
  * gracz zbiera substaty, legendy i rzadkie rudy szybciej niż zakłada sama krzywa rzadkości.
  */
-export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.9, 2.5, 3.1, 4.2, 4.6, 4.6, 5.6, 6.0, 6.5, 9.9, 13.8, 22, 30];
+export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.9, 2.35, 2.95, 3.9, 4.6, 4.6, 5.6, 6.0, 6.5, 9.3, 13.8, 22, 30];
 /**
  * Siła przedmiotu rośnie o 8% na poziom przedmiotu do ITEM_LVL_SOFT (kuźnia 30), dalej o ITEM_LVL_GROWTH_HI na poziom —
  * kuźnia rośnie do 200, więc liczby nie mogą wybuchnąć. Poziom przedmiotu = 2 × poziom kuźni (+0–2).

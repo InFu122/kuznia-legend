@@ -4,7 +4,7 @@
 // Gdy brakuje tej rudy, płaci się tyle samo sztuk następnej lepszej, której wystarczy (gracz z dalszych krain nie ma już Miedzi).
 // Przekuwanie: jedna statystyka dodatkowa przedmiotu losowana od nowa za rudę przedmiotu i złoto; gracz wybiera, którą wersję zatrzymać.
 // Z serwerem przekuwa serwer (server/src/runes.ts) i podpisuje przedmiot, żeby dalej liczył się do rankingów.
-import { B, DIVINE_ORE, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, oreRank } from '../data';
+import { B, DIVINE_ORE, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, oreRank, subMult } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
 import { rnd, type Rng } from './rng';
@@ -64,7 +64,7 @@ export function upgradeRune(ctx: Ctx, slot: SlotId): boolean {
 
 /** Koszt przekucia jednej statystyki: ruda przedmiotu (z Boskiej Rudy — Gwiezdny Kruszec) i złoto, więcej dla wyższej rzadkości. */
 export function reforgeCost(s: GameState, it: Item): Cost {
-  return { ore: it.ore === DIVINE_ORE ? 6 : it.ore, n: 15 * (it.r + 1), gold: goldWaveOf(s) * 10 * (it.r + 1) };
+  return { ore: it.ore === DIVINE_ORE ? 6 : it.ore, n: Math.round(15 * (RAR[it.r].o + 1)), gold: Math.round(goldWaveOf(s) * 10 * (RAR[it.r].o + 1)) };
 }
 
 export function reforgeBlock(s: GameState, it: Item): string | null {
@@ -82,7 +82,7 @@ export function rerollSub(rng: Rng, it: Item, i: number): Item | null {
   const others = new Set(it.subs.filter((_, j) => j !== i).map(x => x.id));
   const pool = SUB_IDS.filter(id => !others.has(id));
   const id = pool[Math.floor(rng.next() * pool.length)];
-  const v = Math.round(rnd(rng, SUBS[id].lo, SUBS[id].hi) * (1 + 0.15 * it.r) * 10) / 10;
+  const v = Math.round(rnd(rng, SUBS[id].lo, SUBS[id].hi) * subMult(it.r) * 10) / 10;
   const out: Item = JSON.parse(JSON.stringify(it));
   out.subs[i] = { id, v };
   return out;

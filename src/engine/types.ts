@@ -4,6 +4,7 @@ import type { ClanShopId } from '../data/clan';
 import type { AdKind, BuffId, GemItemId } from '../data/shop';
 import type { AchId } from '../data/achievements';
 import type { FrameId, SkinId } from '../data/cosmetics';
+import type { FeatureId } from '../data/unlocks';
 
 export type SlotId = 'bron' | 'helm' | 'zbroja' | 'rekawice' | 'buty' | 'pas' | 'pierscien' | 'amulet';
 export type ElemKey = 'zar' | 'szron' | 'burz' | 'jad' | 'cien' | 'jasn';
@@ -150,6 +151,8 @@ export interface GameState {
   missions: { day: string; daily: Mission[]; chest: boolean; week: string; weekly: Mission[] };
   login: { last: string; idx: number };                // kalendarz logowania: ostatni odbiór, następny dzień 0–6
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
+  unl: string[];                                       // odblokowane funkcje, które gra już ogłosiła (FeatureId)
+  unlNew: string[];                                    // nowe funkcje ze znaczkiem „nowe” do pierwszego otwarcia
   opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean };
   stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number; bestR: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów)
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
@@ -234,6 +237,15 @@ export interface Mods {
   eggPct: number; hatchTime: number; compPct: number; compCost: number;
 }
 
+/** Co wypadło z pokonanej fali — pokazywane na chwilę nad wrogiem. */
+export type LootDrop =
+  | { k: 'gold'; n: number }
+  | { k: 'ore'; ore: number; n: number; rare: boolean }
+  | { k: 'el'; el: ElemKey }
+  | { k: 'book'; n: number }
+  | { k: 'scroll'; n: number }
+  | { k: 'uniq'; set: SetId; n: number };
+
 export interface OfflineReport {
   /** ms — czas, za który naliczono łupy (najwyżej limit); away — cały czas nieobecności. */
   ms: number; away?: number; capped: boolean; land: number; gold: number; ores: number[]; el: number; books: number;
@@ -242,6 +254,8 @@ export interface OfflineReport {
 
 export type ModalData =
   | { kind: 'intro' }
+  | { kind: 'unlocked'; ids: FeatureId[] }
+  | { kind: 'locked'; id: FeatureId }
   | { kind: 'boss'; land: number; gold: number; n: number; found: boolean; books: number; uniq: number; extra: Reward }
   | { kind: 'awaken'; item: Item }
   | { kind: 'dungChoice'; floor: number; loot: Reward }
@@ -273,6 +287,7 @@ export type GameEvent =
   | { t: 'bump'; who: 'hero' | 'foe'; cls: 'lunge' | 'hit' }
   | { t: 'modal'; m: ModalData }
   | { t: 'drop'; ore: number; n: number; rare: boolean }
+  | { t: 'loot'; drops: LootDrop[]; boss?: boolean }
   | { t: 'sfx'; k: SfxKind; r?: number }
   | { t: 'forged'; item: Item }                       // wykuty przedmiot (do wpisu na czacie klanu)
   | { t: 'change' };

@@ -1,4 +1,4 @@
-import { B, oreShares, landDef } from '../data';
+import { B, oreShares, landDef, rCmp } from '../data';
 import type { Ctx } from './context';
 import { autoHandle, canSmelt, smelt, tickForge } from './forge';
 import { curG, goldWaveOf } from './formulas';
@@ -69,7 +69,7 @@ export function applyOffline(ctx: Ctx, ms: number): OfflineReport | null {
       chestCount++;
       if (res === 'stop') break;
     }
-    chest.sort((a, b) => Number(!!b.stop) - Number(!!a.stop) || b.item.r - a.item.r);
+    chest.sort((a, b) => Number(!!b.stop) - Number(!!a.stop) || rCmp(b.item.r, a.item.r));
   }
   invalidate(ctx);
   ctx.dirty = true;

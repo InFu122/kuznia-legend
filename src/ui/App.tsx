@@ -7,7 +7,8 @@ import { ProfileView } from './panels/Profile';
 import { onProfile } from './profile';
 import { Toasts } from './Toasts';
 import { fmt } from './format';
-import { TabIcon, type Tab } from './icons';
+import { LockIcon, TabIcon, type Tab } from './icons';
+import { Coach, type CoachMark } from './Coach';
 import { ClanPanel } from './panels/Clan';
 import { clanLife } from '../save/clanlife';
 import { CodexPanel } from './panels/Codex';
@@ -20,7 +21,7 @@ import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
 import { ResearchPanel } from './panels/Research';
 import { shopTodo } from './panels/Shop';
-import { TUTORIAL } from '../data';
+import { FEATURES, FEATURE_IDS, TUTORIAL, type FeatureId } from '../data';
 import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
@@ -31,6 +32,9 @@ import { runBack } from './back';
 /** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
 const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide']);
 
+/** Zakładki odblokowywane z postępem (kłódka). */
+const TAB_FEATURE: Partial<Record<Tab, FeatureId>> = { bohater: 'bohater', nauka: 'nauka', krainy: 'krainy', lochy: 'lochy', klan: 'klan' };
+const TAB_NAME: Record<Tab, string> = { kuznia: 'Kuźnia', bohater: 'Bohater', nauka: 'Nauka', krainy: 'Krainy', lochy: 'Lochy', klan: 'Klan', kodeks: 'Kodeks' };
 const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['klan', 'Klan'], ['kodeks', 'Kodeks']];
 
 export interface SaveInfo {
@@ -81,7 +85,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     force(x => x + 1);
     onReady?.();
     // Kalendarz logowania wita gracza, który już grał (nowy gracz ma najpierw wstęp i samouczek).
-    if (game.s.stats.smelted > 0 && game.canClaimLogin()) { queue.current.push({ kind: 'missions', tab: 'login' }); force(x => x + 1); }
+    if (game.s.stats.smelted > 0 && game.unlocked('zadania') && game.canClaimLogin()) { queue.current.push({ kind: 'missions', tab: 'login' }); force(x => x + 1); }
     // Na telefonie przeglądarka pozwala na dźwięk dopiero po puszczeniu palca (pointerup/touchend/click),
     // a nie przy samym dotknięciu — dlatego nasłuchujemy kilku zdarzeń i ponawiamy start muzyki.
     const unlock = () => { unlockAudio(); initMusic(); kickMusic(); };
@@ -90,13 +94,13 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     return () => { off(); offPwa(); offHist(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
   }, [game]);
 
-  // Podświetlenie przycisku, o którym mówi bieżący krok samouczka.
+  // Samouczek: bieżący krok i wskazówka „palcem” (ukryta przez gracza do następnego kroku).
   const step = tutStep(game.s);
-  useEffect(() => {
-    document.querySelectorAll('.tut-hl').forEach(el => el.classList.remove('tut-hl'));
-    const top = queue.current[0]?.kind;
-    if (step && tab === step.tab && (!top || top === 'decide')) document.querySelector(step.target)?.classList.add('tut-hl');
-  });
+  const [coachOff, setCoachOff] = useState('');
+  /** Wskazówka po ogłoszeniu nowej funkcji („Pokaż”). */
+  const [feat, setFeat] = useState<FeatureId | null>(null);
+  // Nowe funkcje w otwartej zakładce: znika znaczek „nowe”.
+  useEffect(() => { game.seenFeatures(FEATURE_IDS.filter(id => FEATURES[id].at.tab === tab)); }, [tab]);
   setSound(game.s.opts.sound, game.s.opts.vol);
   setMusic(game.s.opts.music, game.s.opts.mvol);
   setMood(moodOf(game.b.mode, !!game.b.enemy?.boss));
@@ -109,6 +113,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   const close = () => { queue.current.shift(); force(x => x + 1); };
   const open = (m: ModalData) => { queue.current.unshift(m); force(x => x + 1); };
   const goTab = (t: Tab, scroll = false) => {
+    const f = TAB_FEATURE[t];
+    if (f && !game.unlocked(f)) { open({ kind: 'locked', id: f }); return; }
     setTab(t);
     if (scroll) panelRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   };
@@ -118,16 +124,38 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   const goTabRef = useRef(goTab);
   goTabRef.current = goTab;
 
-  /** Przełącza na zakładkę kroku samouczka i przewija do podświetlonego elementu. */
-  const showStep = (t: Tab, target: string) => {
-    setTab(t);
-    setTimeout(() => document.querySelector(target)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }), 60);
+  /** „Pokaż” w pasku samouczka: znowu wskazuje palcem bieżący krok. */
+  const showStep = () => { setCoachOff(''); setFeat(null); };
+  /** Przycisk w nagłówku: zablokowany — okno z kłódką, inaczej akcja (i koniec znaczka „nowe”). */
+  const headBtn = (id: FeatureId, act: () => void) => () => {
+    if (!game.unlocked(id)) { open({ kind: 'locked', id }); return; }
+    game.seenFeatures([id]);
+    act();
   };
+  const isNew = (pred: (f: (typeof FEATURES)[FeatureId]) => boolean) => s.unlNew.some(id => FEATURES[id as FeatureId] && pred(FEATURES[id as FeatureId]));
   const s = game.s;
   const nClaim = game.claimable();
   const chat = getChat();
   const unread = chat?.unreadTotal ?? 0;
   const tabs = game.net ? TABS : TABS.filter(([id]) => id !== 'klan'); // klany i czat tylko z serwerem
+
+  // Wskazówka palcem: najpierw nowa funkcja (po „Pokaż” w ogłoszeniu), potem bieżący krok samouczka.
+  let mark: (CoachMark & { key: string }) | null = null;
+  if (feat) {
+    const F = FEATURES[feat];
+    const where = F.at.inTab;
+    mark = where && tab !== where
+      ? { key: `f:${feat}:tab`, target: `[data-tab="${where}"]`, title: `Nowość: ${F.n}`, text: `Znajdziesz to w zakładce ${TAB_NAME[where]}.` }
+      : { key: `f:${feat}`, target: F.target, title: `Nowość: ${F.n}`, text: F.d };
+  } else if (step && coachOff !== step.id) {
+    mark = tab !== step.tab
+      ? { key: `${step.id}:tab`, target: `[data-tab="${step.tab}"]`, title: step.t, text: `Przejdź do zakładki ${TAB_NAME[step.tab]}.` }
+      : { key: step.id, target: step.target, title: step.t, text: step.d, act: step.act };
+  }
+  // Nad oknami wskazówka tylko przy decyzji o pierwszej broni (krok „Załóż broń”).
+  const coachOn = !!mark && (!modal || (!feat && modal.kind === 'decide' && step?.id === 'equip1'));
+  const hideCoach = () => { if (feat) setFeat(null); else if (step) setCoachOff(step.id); };
+  const tapCoach = () => { if (feat && mark?.key === `f:${feat}`) setFeat(null); };
   return (
     <>
       <div class="app">
@@ -138,16 +166,20 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
               <div class={`save-badge ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
             </div>
             <div class="top-btns">
-              <button class="quests shopbtn" onClick={() => open({ kind: 'shop' })} aria-label={`Sklep: ${fmt(s.gems)} Klejnotów`}>
-                <Px src={resUrl('klejnot')} size={18} /><b class="gemn">{fmt(s.gems)}</b>{shopTodo(game) && <i class="badge dotb" aria-hidden="true" />}
+              <button class={`quests shopbtn${game.unlocked('sklep') ? '' : ' locked'}`} data-btn="sklep" onClick={headBtn('sklep', () => open({ kind: 'shop' }))} aria-label={game.unlocked('sklep') ? `Sklep: ${fmt(s.gems)} Klejnotów` : 'Sklep: zablokowany'}>
+                {game.unlocked('sklep') ? <><Px src={resUrl('klejnot')} size={18} /><b class="gemn">{fmt(s.gems)}</b>{shopTodo(game) && <i class="badge dotb" aria-hidden="true" />}</>
+                  : <><LockIcon /><span class="qlabel">Sklep</span></>}
+                {s.unlNew.includes('sklep') && <i class="badge dotb new" aria-hidden="true" />}
               </button>
               {game.net && (
-                <button class="quests" data-chat onClick={() => open({ kind: 'chat' })} aria-label={`Czat${unread ? `: ${unread} nowych` : ''}`}>
-                  <TabIcon tab="czat" /><span class="qlabel">Czat</span>{unread > 0 && <i class="badge">{unread > 99 ? '99+' : unread}</i>}
+                <button class={`quests${game.unlocked('czat') ? '' : ' locked'}`} data-chat data-btn="czat" onClick={headBtn('czat', () => open({ kind: 'chat' }))} aria-label={`Czat${unread ? `: ${unread} nowych` : ''}`}>
+                  {game.unlocked('czat') ? <TabIcon tab="czat" /> : <LockIcon />}<span class="qlabel">Czat</span>{game.unlocked('czat') && unread > 0 && <i class="badge">{unread > 99 ? '99+' : unread}</i>}
+                  {s.unlNew.includes('czat') && <i class="badge dotb new" aria-hidden="true" />}
                 </button>
               )}
-              <button class="quests" onClick={() => open({ kind: 'missions' })} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
-                <TabIcon tab="kodeks" /><span class="qlabel">Zadania</span>{nClaim > 0 && <i class="badge">{nClaim}</i>}
+              <button class={`quests${game.unlocked('zadania') ? '' : ' locked'}`} data-btn="zadania" onClick={headBtn('zadania', () => open({ kind: 'missions' }))} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
+                {game.unlocked('zadania') ? <TabIcon tab="kodeks" /> : <LockIcon />}<span class="qlabel">Zadania</span>{game.unlocked('zadania') && nClaim > 0 && <i class="badge">{nClaim}</i>}
+                {s.unlNew.includes('zadania') && <i class="badge dotb new" aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -176,7 +208,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
               <b>{step.t}</b>
               <div class="sub">{step.d}</div>
             </div>
-            <button class="btn small primary" onClick={() => showStep(step.tab, step.target)}>Pokaż</button>
+            <button class="btn small primary" onClick={showStep}>Pokaż</button>
           </section>
         )}
         <main class="panel" ref={panelRef}>
@@ -191,18 +223,24 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       </div>
       <nav class="tabs" aria-label="Zakładki">
         <div class="tabs-in" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
-          {tabs.map(([id, n]) => (
-            <button key={id} data-tab={id} class={`tab${tab === id ? ' on' : ''}`} aria-current={tab === id ? 'page' : undefined} onClick={() => goTab(id)}>
-              <TabIcon tab={id} /><span>{n}</span>
+          {tabs.map(([id, n]) => {
+            const f = TAB_FEATURE[id];
+            const locked = !!f && !game.unlocked(f);
+            return (
+            <button key={id} data-tab={id} class={`tab${tab === id ? ' on' : ''}${locked ? ' locked' : ''}`} aria-current={tab === id ? 'page' : undefined}
+              aria-label={locked ? `${n}: zablokowane` : undefined} onClick={() => goTab(id)}>
+              {locked ? <LockIcon /> : <TabIcon tab={id} />}<span>{n}</span>
+              {tab !== id && isNew(F => F.at.tab === id || F.at.inTab === id) && <i class="tab-dot new" aria-label="nowe" />}
               {id === 'klan' && tab !== 'klan' && clanLife.todo() > 0 && <i class="tab-dot" aria-label="w klanie coś czeka" />}
               {id === 'lochy' && tab !== 'lochy' && game.eventTodo() > 0 && <i class="tab-dot" aria-label="nagrody wydarzenia do odebrania" />}
             </button>
-          ))}
+            );
+          })}
         </div>
       </nav>
       {modal && (
         <ModalShell locked={LOCKED.has(modal.kind)} onClose={close}>
-          <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} />
+          <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} onFeature={id => setFeat(id)} />
         </ModalShell>
       )}
       {profile !== undefined && (
@@ -210,6 +248,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           <ProfileView game={game} id={profile} close={() => setProfile(undefined)} />
         </ModalShell>
       )}
+      {coachOn && mark && <Coach key={mark.key} mark={mark} onHide={hideCoach} onTap={tapCoach} />}
       <Toasts game={game} />
     </>
   );

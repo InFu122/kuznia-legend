@@ -2,7 +2,7 @@
 // (numer wytopu `sx`), więc serwer może odtworzyć losowanie i sprawdzić, czy przedmiot jest prawdziwy.
 import { B, KIND_POOL_SIZES, ORES, SET_FORGE_LVL, SLOTS, SLOT_ORDER } from '../data';
 import { rollSubs, smeltDraws } from './forge';
-import { JUMP_V, dropChance, itemLevelFor, jumpChances, maxJump, oreFloor, oreLvl, pityAllowed } from './formulas';
+import { JUMP_V, dropChance, itemLevelFor, jumpChances, maxJump, oreLvl, pityAllowed, smeltRarity } from './formulas';
 import { mulberry32 } from './rng';
 import type { Item } from './types';
 
@@ -30,7 +30,7 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
   if (oreLvl(it.ore, ver) > it.flvl) return 'ruda niedostępna na tym poziomie kuźni';
   const mj = maxJump(it.ore, ver);
   const pd = dropChance(it.ore, it.flvl, ver);
-  if (!(it.jump >= (pd > 0 ? -1 : 0) && it.jump <= mj) || it.r !== Math.min(6, oreFloor(it.ore, ver) + it.jump)) return 'rzadkość';
+  if (!(it.jump >= (pd > 0 ? -1 : 0) && it.jump <= mj) || it.r !== smeltRarity(it.ore, it.flvl, it.jump, ver)) return 'rzadkość';
 
   const rng = mulberry32(seed);
   const d = smeltDraws(rng);
@@ -39,7 +39,7 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
     case '':
       if (it.jump === 2 && d.roll >= p2) return 'przeskok o 2 bez wylosowania';
       if (it.jump === 1 && d.roll >= p1 + p2) return 'przeskok bez wylosowania';
-      // nowa ruda (od wersji 4): najwyższe wyniki losowania dają rzadkość niżej
+      // nowa ruda (od wersji 4; od wersji 6 — ułamek rangi bazowej): najwyższe wyniki losowania dają rzadkość niżej
       if (it.jump === -1 && d.roll < 100 - pd) return 'spadek bez wylosowania';
       if (it.jump === 0 && pd > 0 && d.roll >= 100 - pd) return 'brak spadku rzadkości';
       break;
@@ -49,11 +49,11 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
     case 'pity': {
       // Pewny przeskok przychodzi tylko po nieudanym losowaniu.
       const [q1, q2] = jumpChances(it.flvl, 0, it.ore, ver);
-      if (it.jump !== 1 || d.roll < q1 + q2 || !pityAllowed(it.ore, ver)) return 'pewny przeskok';
+      if (it.jump !== 1 || d.roll < q1 + q2 || !pityAllowed(it.ore, ver, it.flvl)) return 'pewny przeskok';
       break;
     }
     case 'set':
-      if (it.jump !== 1 || !it.set || (ver >= 3 && !pityAllowed(it.ore, ver))) return 'przeskok z rudy unikalnej';
+      if (it.jump !== 1 || !it.set || (ver >= 3 && !pityAllowed(it.ore, ver, it.flvl))) return 'przeskok z rudy unikalnej';
       break;
     default:
       return 'rodzaj przeskoku';

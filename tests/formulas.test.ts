@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ORES } from '../src/data';
-import { dist, dropChance, jumpChances, legStage, maxJump, upCost, upTime } from '../src/engine/formulas';
+import { B, ORES, rRank } from '../src/data';
+import { dist, dropChance, jumpChances, legStage, maxJump, oreNominal, upCost, upTime } from '../src/engine/formulas';
 
 describe('szanse przeskoku', () => {
   it('zgadzają się z tabelą balansu na krańcach', () => {
@@ -15,12 +15,26 @@ describe('szanse przeskoku', () => {
       expect(b2).toBeGreaterThan(a2);
     }
   });
-  it('rozkład każdej rudy sumuje się do 100% i nie przekracza Boskiego', () => {
+  it('rozkład każdej rudy sumuje się do 100% i nie przekracza Boskiego (zasady v6: rangi od wyniku bez przeskoku)', () => {
     for (let o = 0; o < ORES.length; o++) {
-      for (let l = 1; l <= 30; l++) {
+      for (let l = 1; l <= B.FORGE_MAX; l += 7) {
         const d = dist(o, l);
         expect(d.reduce((s, [, p]) => s + p, 0)).toBeCloseTo(100, 6);
-        const low = dropChance(o, l) > 0 ? 1 : 0; // nowa ruda tuż po odblokowaniu: także o rzadkość niżej
+        const n = oreNominal(o, l);
+        const low = d.length > maxJump(o) + 1 ? 1 : 0;
+        expect(rRank(d[0][0])).toBe(n - low);
+        expect(d.map(([r]) => rRank(r))).toEqual(d.map((_, i) => n - low + i)); // kolejne rangi
+        expect(d.length).toBe(maxJump(o) + 1 + low);
+        expect(d.every(([, p]) => p >= 0)).toBe(true);
+      }
+    }
+  });
+  it('dawne zasady (v5): rozkład od minimum rudy, najwyżej Boski', () => {
+    for (let o = 0; o < ORES.length; o++) {
+      for (let l = 1; l <= 30; l++) {
+        const d = dist(o, l, 0, 5);
+        expect(d.reduce((s, [, p]) => s + p, 0)).toBeCloseTo(100, 6);
+        const low = dropChance(o, l, 5) > 0 ? 1 : 0; // nowa ruda tuż po odblokowaniu: także o rzadkość niżej
         expect(d[0][0]).toBe(ORES[o].floor - low);
         expect(Math.max(...d.map(([r]) => r))).toBeLessThanOrEqual(6);
         expect(d.length).toBe(maxJump(o) + 1 + low);

@@ -1,4 +1,4 @@
-import { B, ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue } from '../data';
+import { B, ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue, R } from '../data';
 import type { Ctx } from './context';
 import { mainVal } from './formulas';
 import { allMods, techMods } from './mods';
@@ -98,7 +98,7 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
     }
   }
   // Boska aura: każdy założony Boski przedmiot wzmacnia całego bohatera
-  const aura = Object.values(eq).filter(it => it && it.r >= 6).length;
+  const aura = Object.values(eq).filter(it => it && it.r === R.BOSKI).length;
   dmgPct += aura * B.DIVINE_AURA; hpPct += aura * B.DIVINE_AURA;
   dmg *= 1 + dmgPct / 100;
   hp *= 1 + hpPct / 100;

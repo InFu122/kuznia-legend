@@ -1,6 +1,6 @@
 import {
   B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
-  JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RARITY_AT_BOSS, RAR, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank,
+  JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RANK_MAX, RARITY_AT_BOSS, RAR, R, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank, rAt,
 } from '../data';
 import type { GameState, Item } from './types';
 
@@ -102,7 +102,7 @@ export const goldWaveOf = (s: Pick<GameState, 'bestG' | 'forge'>, g = s.bestG) =
 /** Cena sprzedaży: mniej więcej pół fali złota za przedmiot Zwykły, więcej za rzadsze. */
 export const sellPrice = (it: Item) => {
   const f = Math.min(B.FORGE_MAX, Math.floor(it.lvl / 2));
-  return Math.max(1, Math.round((upCost(Math.min(B.FORGE_MAX, f + 1)) / (2 * goldWaves(Math.max(1, f)))) * (1 + it.r * 0.5)));
+  return Math.max(1, Math.round((upCost(Math.min(B.FORGE_MAX, f + 1)) / (2 * goldWaves(Math.max(1, f)))) * (1 + (RAR[it.r]?.o ?? 0) * 0.5)));
 };
 export const recPower = (land: number) => {
   const g = land * 10 + 5;
@@ -117,13 +117,29 @@ export const recPower = (land: number) => {
  * (mnożnik `div` rudy, domyślnie DIVINE_JUMP); nowe rudy: Obsydian, Eteryt, Boska Ruda.
  * 4 — ruda, która podnosi minimum rzadkości (Srebro, Mithril, Adamantyt, Smocza Stal), wchodzi stopniowo —
  * tuż po odblokowaniu część wytopów wychodzi o rzadkość niżej (`dropChance`).
- * 5 — obecna: kuźnia do 200. poziomu, rudy otwierają się dużo później (`oreLvl`; dawne poziomy w ORE_LVL_V4).
+ * 5 — kuźnia do 200. poziomu, rudy otwierają się dużo później (`oreLvl`; dawne poziomy w ORE_LVL_V4).
+ * 6 — obecna: 10 rzadkości (RAR_ORDER) i płynne szanse: ruda nie ma twardego minimum, tylko rangę bazową
+ * (`oreBase`), która rośnie z poziomem kuźni; przeskok liczy się od rangi nominalnej (`oreNominal`), a część
+ * wytopów wychodzi o rangę niżej (`dropChance`). Do wersji 5 rzadkość to indeks 0–6 i rachunek na indeksach.
  */
-export const JUMP_V = 5;
+export const JUMP_V = 6;
 /** Od którego poziomu kuźni ruda daje się wytopić według zasad wersji `ver`. */
 export const oreLvl = (ore: number, ver = JUMP_V) => (ver < 5 ? ORE_LVL_V4[ore] ?? ORES[ore]?.lvl ?? 1 : ORES[ore]?.lvl ?? 1);
-/** Mnożnik szansy na przeskok, który kończy się na danej rzadkości (wersja 2). */
+/** Mnożnik szansy na przeskok, który kończy się na danej rzadkości (wersje 2–5, indeks dawnej rzadkości). */
 export const JUMP_TO_MULT = [1, 1, 1, 1, 0.8, 0.55, 0.25];
+/** Wersja 6: mnożnik przeskoku kończącego się na randze 0–9 (Heroiczny ×0,9, Legendarny ×0,8, Pradawny ×0,65, Mityczny ×0,55; Boski — według rudy). */
+export const JUMP_TO_MULT_RANK = [1, 1, 1, 1, 1, 0.9, 0.8, 0.65, 0.55, 0.25];
+
+/** Ranga bazowa rudy (ułamkowa, skala RAR_ORDER) na poziomie kuźni `flvl` — zasady v6. */
+export function oreBase(ore: number, flvl: number): number {
+  const O = ORES[ore];
+  if (!O) return 0;
+  const [b0, b1, full] = O.v6;
+  const t = full <= O.lvl ? 1 : Math.max(0, Math.min(1, (flvl - O.lvl) / (full - O.lvl)));
+  return b0 + (b1 - b0) * t;
+}
+/** Ranga nominalna (v6): wynik wytopu bez przeskoku. Ułamek rangi bazowej daje szansę na wynik o rangę niżej. */
+export const oreNominal = (ore: number, flvl: number) => Math.max(0, Math.ceil(oreBase(ore, flvl) - 1e-9));
 
 /** Bazowa szansa (w %) na przeskok o 1 i o 2 rzadkości na danym poziomie kuźni (z premią Hartowania `rel`). */
 export function jumpBase(lvl: number, rel = 0): [number, number] {
@@ -143,8 +159,10 @@ export function jumpBase(lvl: number, rel = 0): [number, number] {
 export const oreFloor = (ore: number, ver = JUMP_V) => (ver < 3 && ore === 6 ? 6 : ORES[ore]?.floor ?? 0);
 /** Najwyższy przeskok rudy (do wersji 2: Smocza Stal o 1, Gwiezdny Kruszec wcale). */
 export const maxJump = (ore: number, ver = JUMP_V) => (ver < 3 ? (ore === 6 ? 0 : ore === 5 ? 1 : 2) : ORES[ore]?.mj ?? 2);
-/** Mnożnik szansy na przeskok kończący się rzadkością `r` (od wersji 3 Boski — według rudy). */
-const jumpToMult = (ore: number, r: number, ver: number) => (ver >= 3 && r >= 6 ? ORES[ore]?.div ?? DIVINE_JUMP : JUMP_TO_MULT[Math.min(6, r)]);
+/** Mnożnik szansy na przeskok kończący się rzadkością `r` (od wersji 3 Boski — według rudy; od wersji 6 `r` to ranga). */
+const jumpToMult = (ore: number, r: number, ver: number) =>
+  ver >= 6 ? (r >= RANK_MAX ? ORES[ore]?.div ?? DIVINE_JUMP : JUMP_TO_MULT_RANK[Math.max(0, r)])
+    : ver >= 3 && r >= 6 ? ORES[ore]?.div ?? DIVINE_JUMP : JUMP_TO_MULT[Math.min(6, r)];
 
 /**
  * Szansa (w %) na przeskok o 1 i o 2 rzadkości przy wytopie rudy `ore` (bez rudy — szansa bazowa).
@@ -154,14 +172,18 @@ const jumpToMult = (ore: number, r: number, ver: number) => (ver >= 3 && r >= 6 
 export function jumpChances(lvl: number, rel = 0, ore = -1, ver = JUMP_V): [number, number] {
   const [p1, p2] = jumpBase(lvl, rel);
   if (ore < 0 || ver < 2 || !ORES[ore]) return [p1, p2];
-  const f = oreFloor(ore, ver);
+  const f = ver >= 6 ? oreNominal(ore, lvl) : oreFloor(ore, ver);
   const m1 = jumpToMult(ore, f + 1, ver);
   const m2 = maxJump(ore, ver) >= 2 ? jumpToMult(ore, f + 2, ver) : m1;
   return [p1 * m1, p2 * m2];
 }
 
-/** Czy pewny przeskok (po PITY_MAX wytopach bez przeskoku) działa dla tej rudy. Od wersji 2 nie daje Boskiego. */
-export const pityAllowed = (ore: number, ver = JUMP_V) => maxJump(ore, ver) >= 1 && (ver < 2 || oreFloor(ore, ver) + 1 <= 5);
+/**
+ * Czy pewny przeskok (po PITY_MAX wytopach bez przeskoku) działa dla tej rudy. Od wersji 2 nie daje Boskiego.
+ * Od wersji 6 zależy od poziomu kuźni `flvl` (ranga nominalna rośnie z poziomem).
+ */
+export const pityAllowed = (ore: number, ver = JUMP_V, flvl = 1) =>
+  maxJump(ore, ver) >= 1 && (ver < 2 || (ver >= 6 ? oreNominal(ore, flvl) + 1 < RANK_MAX : oreFloor(ore, ver) + 1 <= 5));
 
 /** Czy ruda podnosi minimum rzadkości względem poprzedniej rudy w grze (Srebro, Mithril, Adamantyt, Smocza Stal). */
 export function oreRamps(ore: number): boolean {
@@ -174,15 +196,37 @@ export function oreRamps(ore: number): boolean {
  * stopniowo — na poziomie kuźni, na którym się odblokowuje, B.RAMP_DROP %, potem mniej z każdym poziomem,
  * a po B.RAMP_LEVELS poziomach już zawsze pełne minimum. Spadek wypada przy najwyższych wynikach losowania.
  */
-export const dropChance = (ore: number, flvl: number, ver = JUMP_V) =>
-  (ver < 4 || !oreRamps(ore) ? 0 : B.RAMP_DROP * Math.max(0, Math.min(1, 1 - (flvl - oreLvl(ore, ver)) / B.RAMP_LEVELS)));
+export function dropChance(ore: number, flvl: number, ver = JUMP_V): number {
+  if (ver >= 6) {
+    // Ułamek rangi bazowej: tyle wyników bez przeskoku (przy szansach bez Hartowania) wychodzi o rangę niżej.
+    const frac = oreNominal(ore, flvl) - oreBase(ore, flvl);
+    if (frac <= 1e-9) return 0;
+    const [q1, q2] = jumpChances(flvl, 0, ore, ver);
+    return frac * (100 - q1 - q2);
+  }
+  return ver < 4 || !oreRamps(ore) ? 0 : B.RAMP_DROP * Math.max(0, Math.min(1, 1 - (flvl - oreLvl(ore, ver)) / B.RAMP_LEVELS));
+}
 
-/** Rozkład wyniku wytopu: lista [rzadkość, szansa w %]. */
+/** Rzadkość (indeks w RAR) wytopu rudy `ore` na kuźni `flvl` z przeskokiem `jump` według zasad wersji `ver`. */
+export const smeltRarity = (ore: number, flvl: number, jump: number, ver = JUMP_V) =>
+  ver >= 6 ? rAt(Math.max(0, Math.min(RANK_MAX, oreNominal(ore, flvl) + jump))) : Math.max(0, Math.min(6, oreFloor(ore, ver) + jump));
+
+/** Rozkład wyniku wytopu: lista [rzadkość (indeks w RAR), szansa w %], od najsłabszej. */
 export function dist(ore: number, lvl: number, rel = 0, ver = JUMP_V): [number, number][] {
   const [p1, p2] = jumpChances(lvl, rel, ore, ver);
-  const r = oreFloor(ore, ver);
   const mj = maxJump(ore, ver);
   const pd = dropChance(ore, lvl, ver);
+  if (ver >= 6) {
+    // Przeskok ma pierwszeństwo przed spadkiem (gdy z Hartowaniem zakresy losowania zachodzą na siebie).
+    const n = oreNominal(ore, lvl);
+    const up = mj >= 2 ? [p1, p2] : mj === 1 ? [p1 + p2] : [];
+    const low = Math.max(0, Math.min(pd, 100 - p1 - p2));
+    const out: [number, number][] = low > 0 ? [[rAt(n - 1), low]] : [];
+    out.push([rAt(n), 100 - low - up.reduce((a, b) => a + b, 0)]);
+    up.forEach((p, i) => out.push([rAt(Math.min(RANK_MAX, n + 1 + i)), p]));
+    return out;
+  }
+  const r = oreFloor(ore, ver);
   const low: [number, number][] = pd > 0 ? [[r - 1, pd]] : [];
   if (mj === 0) return [...low, [r, 100 - pd]];
   if (mj === 1) return [...low, [r, 100 - p1 - p2 - pd], [r + 1, p1 + p2]];
@@ -209,7 +253,7 @@ export function baseName(it: Item): string {
   const adj = ORES[it.ore].adj[it.g === 'm' ? 0 : it.g === 'f' ? 1 : 2];
   return adj + ' ' + it.kind;
 }
-export const itemName = (it: Item) => (it.aw ? it.aw.name : it.r >= 6 ? divineName(it) : baseName(it));
+export const itemName = (it: Item) => (it.aw ? it.aw.name : it.r === R.BOSKI ? divineName(it) : baseName(it));
 
 export function smithTitle(fame: number) {
   let t: (typeof SMITH_TITLES)[number] = SMITH_TITLES[0];

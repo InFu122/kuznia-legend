@@ -1,8 +1,8 @@
 // Barwy rzadkości w pixel arcie: obwódka (1 px) wokół sprite'a przedmiotu — od braku przy Zwykłym
-// po złotą, mieniącą się przy Boskim. Te same kolory co w interfejsie (--r0…--r6).
+// po złotą, mieniącą się przy Boskim. Te same kolory co w interfejsie (--r0…--r9).
 
-/** Kolor obwódki dla rzadkości 0–6 (0 — bez obwódki, 6 — mieniące się złoto). */
-export const RARITY_GLOW: (string | null)[] = [null, '#5be37a', '#45a6ff', '#b77bff', '#ffa23a', '#ff4f64', 'gold'];
+/** Kolor obwódki według indeksu rzadkości (0 — bez obwódki, 6 — mieniące się złoto; 7–9 — rzadkości z zasad v6). */
+export const RARITY_GLOW: (string | null)[] = [null, '#5be37a', '#45a6ff', '#b77bff', '#ffa23a', '#ff4f64', 'gold', '#2fd5c5', '#ff5fc5', '#ff6b2e'];
 
 const hex = (c: string) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
 
@@ -25,7 +25,7 @@ export function halo(src: Uint8ClampedArray, w: number, h: number, r: number): {
     const s = (y * w + x) * 4, d = ((y + 1) * W + x + 1) * 4;
     px[d] = src[s]; px[d + 1] = src[s + 1]; px[d + 2] = src[s + 2]; px[d + 3] = src[s + 3];
   }
-  const glow = RARITY_GLOW[Math.max(0, Math.min(6, r))];
+  const glow = RARITY_GLOW[r] ?? null;
   if (!glow) return { px, w: W, h: H };
   const solid = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && px[(y * W + x) * 4 + 3] === 255;
   const ring: [number, number][] = [];

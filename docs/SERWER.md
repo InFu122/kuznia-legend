@@ -120,6 +120,13 @@ Zakładka **Lochy → Arena** (po pokonaniu pierwszego bossa). Walczysz z kopiam
 
 Dotknięcie gracza w rankingu, na liście przeciwników areny, w tabeli ligi, na liście członków klanu albo „Profil” w menu wiadomości czatu otwiera jego profil: awatar w ramce, strój, tytuł kowala, klan, Moc, poziom kuźni, ligę i ocenę areny, Dziedzictwo oraz cały ekwipunek (dotknięcie przedmiotu pokazuje jego kartę) i statystyki bohatera. Statystyki liczy serwer z uznanych przedmiotów (jak na arenie). Własny profil: **Bohater → Podgląd bohatera** albo **Kodeks → Mój profil** (działa też bez serwera).
 
+### Pierwsze kroki: samouczek i kłódki
+
+- **Nowy gracz zaczyna od kuźni i walki.** Reszta otwiera się po kolei: Bohater (3. etap Spalonej Wioski), Zadania (2. poziom kuźni), Nauka i Sklep (3.), Auto-wytop (5.), Umiejętności (5. etap), Krainy, Lochy, Klan, Czat i Arena (po pierwszym bossie), Runy (10. poziom kuźni), Chowańce (po 4. krainie), Wierzchowce (po 8. krainie).
+- Zablokowana zakładka albo przycisk ma **kłódkę**; dotknięcie pokazuje, co to za funkcja, kiedy się odblokuje i ile brakuje. Gdy funkcja się otworzy, gra ogłasza ją oknem, a „Pokaż” wskazuje ją palcem; zielona kropka znika po pierwszym otwarciu. Gracze, którzy już grali, nie dostają ogłoszeń za rzeczy, które znają.
+- **Samouczek wskazuje palcem:** przyciemnia ekran wokół przycisku do naciśnięcia, animowana dłoń w niego stuka, a dymek mówi, co zrobić. Gdy przycisk jest na innej zakładce — wskazuje zakładkę; gdy gracz przewinie ekran — pokazuje przycisk ze strzałką. Podpowiedź można ukryć, a „Pokaż” w pasku samouczka przywraca ją.
+- **Łup nad wrogiem:** po każdej pokonanej fali nad wrogiem na chwilę pojawia się, co wypadło (złoto, ruda — rzadka z nazwą i poświatą, domieszka, Księga, Zwój); po bossie także.
+
 ### Lochy po kolei
 
 Lochy otwierają się stopniowo przez cztery akty: Skarbiec Złota po 1. bossie, loch sezonowy po 2., Głęboka Sztolnia po 3., Wieża Wyzwań od 6. poziomu kuźni, Ołtarze Żywiołów od 10., Leża Bossów po 5. bossie, Kopalnia Kryształów po 6., Labirynt Minotaura po 8., Zapomniana Zbrojownia po 10., Krypta Bohaterów po 11. bossie i pierwszym Zahartowanym przedmiocie. Gra ogłasza każdy nowy loch. Loch, w którym gracz już był, zostaje otwarty.
@@ -161,7 +168,11 @@ Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo 
 
 ### Rudy i Boskie przedmioty
 
-- **Nowa ruda wchodzi stopniowo:** Srebro (od 5. poziomu kuźni), Mithril (od 12.), Adamantyt (od 25.) i Smocza Stal (od 60.) tuż po odblokowaniu dają połowę wytopów o rzadkość niżej; z każdym poziomem kuźni mniej, a po 5 poziomach już zawsze pełne minimum. Kuźnia i karta ulepszenia pokazują, ile jeszcze zostało.
+- **10 rzadkości (zasady v6):** Zwykły, Niepospolity, Rzadki, **Wyjątkowy**, Epicki, **Heroiczny**, Legendarny, **Pradawny**, Mityczny, Boski. Nowe rzadkości siedzą pomiędzy dawnymi, więc siła przedmiotów rośnie mniejszymi krokami.
+- **Ruda dojrzewa z kuźnią:** ruda nie ma już sztywnego minimum. Tuż po odblokowaniu daje mieszankę dwóch sąsiednich rzadkości (np. Żelazo na starcie pół na pół Zwykły i Niepospolity, Srebro na 5. poziomie ok. 50% Niepospolity), a z każdym poziomem kuźni wyniki przesuwają się w górę, aż do jakości docelowej rudy (Żelazo — Niepospolity od 6. poziomu, Srebro — Rzadki od 18., Mithril — Epicki od 40., Adamantyt i Obsydian — Legendarny od 70., Smocza Stal i Eteryt — Mityczny od 110.). Przeskok liczy się od wyniku bez przeskoku. W oknie „Jak działa wytop” można podejrzeć szanse na dowolnym poziomie kuźni.
+- Przedmioty wykute wcześniej zostają bez zmian i dalej przechodzą kontrolę serwera (według zasad, z którymi powstały). **Najpierw zaktualizuj serwer**, potem aplikację — starsza aplikacja nie zna nowych rzadkości.
+
+- *(zasady v4–v5, dawne wytopy)* **Nowa ruda wchodzi stopniowo:** Srebro (od 5. poziomu kuźni), Mithril (od 12.), Adamantyt (od 25.) i Smocza Stal (od 60.) tuż po odblokowaniu dają połowę wytopów o rzadkość niżej; z każdym poziomem kuźni mniej, a po 5 poziomach już zawsze pełne minimum. Kuźnia i karta ulepszenia pokazują, ile jeszcze zostało.
 
 - **Nowe rudy:** Obsydian (od 40. poziomu kuźni, minimum Legendarny z lepszą jakością), Eteryt (od 85., minimum Mityczny) i bardzo rzadka **Boska Ruda** (od 120.; Gwiezdny Kruszec od 100.). Obsydian i Eteryt wypadają w aktach III i IV i da się je rafinować (Adamantyt → Obsydian → Smocza Stal → Eteryt → Gwiezdny Kruszec).
 - **Boski tylko z przeskoku:** żadna ruda nie daje Boskiego na pewno. Gwiezdny Kruszec daje najmniej Mityczny i kilka % szansy na Boski, Boska Ruda — kilkanaście %. Gwarancja przeskoku i ruda unikalna nie prowadzą do Boskiego.

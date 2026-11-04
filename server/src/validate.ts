@@ -1,7 +1,7 @@
 // Kontrola zapisu wysłanego przez klienta. Odrzuca wartości, których uczciwa gra nie może wytworzyć.
 // Pochodzenie przedmiotów (ziarno wytopu, podpis Obiegu) i tempo rozwoju kuźni sprawdza save.ts.
 import {
-  ABYSS_FROM, ACHIEVEMENTS, B, CLAN, COMPANION_MAX, EVENT, EVENT_MILESTONES, FRAMES, FRAME_IDS, SKINS, SKIN_IDS, MOUNTS, ORES, PETS, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH,
+  ABYSS_FROM, ACHIEVEMENTS, B, CLAN, COMPANION_MAX, EVENT, EVENT_MILESTONES, FRAMES, FRAME_IDS, SKINS, SKIN_IDS, MOUNTS, ORES, PETS, RANK_MAX, RAR, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH, FEATURE_IDS, rRank,
 } from '../../src/data';
 import { eventOf, eventPtsMax, eventReached } from '../../src/engine/events';
 import { maxJump, oreRamps } from '../../src/engine/formulas';
@@ -11,12 +11,25 @@ const MAX_ITEM_LVL = 2 * B.FORGE_MAX + 2;
 const fin = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 const nonNeg = (n: unknown) => fin(n) && n >= 0;
 
+/**
+ * Zakres rang rzadkości, które da się dostać z rudy (dawne zasady z twardym minimum i zasady v6 z płynnymi szansami),
+ * z zapasem jednej rangi w górę na skrzynię Zbrojowni.
+ */
+function rankRange(ore: number): [number, number] {
+  const O = ORES[ore];
+  const old = rRank(O.floor), mj = maxJump(ore);
+  const lo = Math.min(old - (oreRamps(ore) ? 1 : 0), Math.ceil(O.v6[0] - 1e-9) - 1);
+  const hi = Math.min(RANK_MAX, Math.max(old + mj + 1, Math.ceil(O.v6[1] - 1e-9) + mj + 1));
+  return [lo, hi];
+}
+
 function checkItem(it: Item, where: string, out: string[]): void {
   const bad = (m: string) => out.push(`${where}: ${m}`);
   if (!it || typeof it !== 'object') { bad('brak przedmiotu'); return; }
   if (!SLOTS[it.slot]) bad('nieznany slot');
   if (!fin(it.ore) || !ORES[it.ore]) { bad('nieznana ruda'); return; }
-  if (!fin(it.r) || it.r < ORES[it.ore].floor - (oreRamps(it.ore) ? 1 : 0) || it.r > Math.min(6, ORES[it.ore].floor + maxJump(it.ore) + 1)) bad(`rzadkość ${it.r} niemożliwa z rudy ${ORES[it.ore].n}`);
+  const [lo, hi] = rankRange(it.ore);
+  if (!fin(it.r) || !RAR[it.r] || rRank(it.r) < lo || rRank(it.r) > hi) bad(`rzadkość ${it.r} niemożliwa z rudy ${ORES[it.ore].n}`);
   if (!fin(it.lvl) || it.lvl < 1 || it.lvl > MAX_ITEM_LVL) bad(`poziom ${it.lvl}`);
   if (!Array.isArray(it.subs) || it.subs.length > 6) bad('za dużo statystyk dodatkowych');
   else for (const sub of it.subs) {
@@ -55,6 +68,8 @@ export function validateSave(s: GameState): string[] {
   if (!nonNeg(s.clanCoins)) bad('Monety klanowe');
   if (!Array.isArray(s.clanGot) || s.clanGot.length > 200 || !s.clanGot.every(x => typeof x === 'string' && x.length <= 40)) bad('nagrody klanu');
   if (!Array.isArray(s.codex) || s.codex.length > 400 || !s.codex.every(k => typeof k === 'string' && k.length <= 40)) bad('kolekcja');
+  // odblokowane funkcje (kłódki): tylko znane nazwy; stary klient ich nie wysyła
+  for (const k of ['unl', 'unlNew'] as const) if (s[k] !== undefined && (!Array.isArray(s[k]) || s[k].length > FEATURE_IDS.length || !s[k].every(x => (FEATURE_IDS as string[]).includes(x)))) bad('odblokowane funkcje');
   for (const [id, n] of Object.entries(s.ach || {})) if (!ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS] || !fin(n) || n < 0 || n > ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS].tiers.length) bad(`osiągnięcie ${id}`);
   for (const [sl, l] of Object.entries(s.runes || {})) if (!SLOTS[sl as keyof typeof SLOTS] || !fin(l) || l < 0 || l > B.RUNE_MAX || Math.floor(l) !== l) bad(`runa ${sl}`);
   if (!s.clanHelp || !fin(s.clanHelp.n) || s.clanHelp.n < 0 || s.clanHelp.n > CLAN.HELP_MAX) bad('pomoc klanu');
