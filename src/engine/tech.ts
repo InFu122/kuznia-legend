@@ -1,10 +1,34 @@
 // Akademia Kowalska: badania za Księgi Wiedzy i złoto. Jeden slot badań naraz; czas biegnie też offline.
-import { TECH, TECH_TIME_MIN, TECH_UNLOCK_FORGE } from '../data';
+import { B, TECH, TECH_TIME_MIN, TECH_UNLOCK_FORGE } from '../data';
 import { toast, type Ctx } from './context';
 import { upCost } from './formulas';
 
-/** Badania liczą koszt i czas jak dawna kuźnia do 30. poziomu. */
+/** Badania I stopnia liczą koszt i czas jak dawna kuźnia do 30. poziomu. */
 const TECH_CAP = 30;
+/** Badania późnej gry (II i III stopień, nowe badania od 30. poziomu kuźni): 80% kosztu ulepszenia kuźni na tym poziomie. */
+const LATE_GOLD = 0.8;
+/** …i czas: 24 h + 0,12 h za każdy „poziom kuźni” badania (np. II stopień ok. 29 h, III ok. 36 h). */
+const lateMs = (fe: number) => Math.round((24 + 0.12 * fe) * 3600000);
+
+/** Poziomy badania dostępne przy kuźni na poziomie `forge` (stopnie II i III dochodzą z kuźnią). */
+export const techMax = (id: TechId, forge: number) =>
+  TECH[id].max + (TECH[id].tiers ?? []).reduce((a, [f, n]) => a + (forge >= f ? n : 0), 0);
+/** Wszystkie poziomy badania (ze wszystkimi stopniami). */
+export const techMaxAll = (id: TechId) => TECH[id].max + (TECH[id].tiers ?? []).reduce((a, [, n]) => a + n, 0);
+/** Stopień poziomu `l` (liczonego od 0): 0 = I, 1 = II, 2 = III — z poziomem kuźni stopnia i pierwszym poziomem w nim. */
+export function techTier(id: TechId, l: number): { tier: number; forge: number; start: number } {
+  const T = TECH[id];
+  let start = T.max;
+  if (l < start) return { tier: 0, forge: T.req, start: 0 };
+  const tiers = T.tiers ?? [];
+  for (let i = 0; i < tiers.length; i++) {
+    if (l < start + tiers[i][1]) return { tier: i + 1, forge: tiers[i][0], start };
+    start += tiers[i][1];
+  }
+  return { tier: tiers.length, forge: tiers[tiers.length - 1]?.[0] ?? T.req, start };
+}
+/** Następny stopień, który jeszcze się nie otworzył: [poziom kuźni, ile poziomów] albo null. */
+export const nextTier = (id: TechId, forge: number) => (TECH[id].tiers ?? []).find(([f]) => f > forge) ?? null;
 import { techLvl } from './mods';
 import { invalidate } from './stats';
 import { track } from './missions';
@@ -15,6 +39,12 @@ export { allMods, techLvl, techMods } from './mods';
 /** Koszt kolejnego poziomu badania (poziom `l` liczony od 0). */
 export function techCost(id: TechId, l: number) {
   const T = TECH[id];
+  const { tier, forge, start } = techTier(id, l);
+  // Późne poziomy: „poziom kuźni” badania rośnie o 1,2 na poziom od progu stopnia (albo od wymaganego poziomu kuźni).
+  const fe = forge + Math.floor((l - start) * 1.2);
+  if (tier > 0 || T.req >= TECH_CAP) {
+    return { books: T.b0 * (l + 1), gold: Math.round(LATE_GOLD * upCost(Math.min(B.FORGE_MAX, fe))), ms: lateMs(fe) };
+  }
   return {
     books: T.b0 * (l + 1),
     gold: Math.round(upCost(Math.min(TECH_CAP, T.req + Math.floor(l * 1.2)))),
@@ -23,13 +53,14 @@ export function techCost(id: TechId, l: number) {
   };
 }
 
-export type TechBlock = 'max' | 'forge' | 'busy' | 'books' | 'gold' | null;
+export type TechBlock = 'max' | 'forge' | 'tier' | 'busy' | 'books' | 'gold' | null;
 
 export function techBlock(s: GameState, id: TechId): TechBlock {
   const T = TECH[id];
   const l = techLvl(s, id);
-  if (l >= T.max) return 'max';
+  if (l >= techMaxAll(id)) return 'max';
   if (s.forge.lvl < Math.max(T.req, TECH_UNLOCK_FORGE)) return 'forge';
+  if (l >= techMax(id, s.forge.lvl)) return 'tier';
   if (s.tech.cur) return 'busy';
   const c = techCost(id, l);
   if (s.books < c.books) return 'books';

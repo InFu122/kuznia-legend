@@ -46,7 +46,7 @@ export function dungKeys(ctx: Ctx, id: DungId): number {
   const d = ctx.s.dungeons[id];
   if (DUNGEONS[id].keys === 0) return Number.POSITIVE_INFINITY;
   const today = todayStr(ctx.now());
-  if (d.day !== today) { d.day = today; d.keys = DUNGEONS[id].keys; }
+  if (d.day !== today) { d.day = today; d.keys = DUNGEONS[id].keys + allMods(ctx.s).keys; } // Klucznik: +1 klucz
   return d.keys;
 }
 

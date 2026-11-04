@@ -7,6 +7,7 @@ const emptyMods = (): Mods => ({
   jumpRel: 0, saveOre: 0, forgeTime: 0, forgeCost: 0, autoSpeed: 0, dmgPct: 0, hpPct: 0, crit: 0, bossPct: 0,
   goldPct: 0, extraOre: 0, offlineMin: 0, rarePct: 0, spd: 0, ls: 0, regen: 0, eldmg: 0,
   eggPct: 0, hatchTime: 0, compPct: 0, compCost: 0,
+  runeCost: 0, abyssPct: 0, keys: 0, bossLoot: 0, eggUp: 0,
 });
 
 /** Zsumowane efekty zbadanych technologii. */

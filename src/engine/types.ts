@@ -15,7 +15,8 @@ export type TechId =
   | 'k_hart' | 'k_miech' | 'k_auto' | 'k_oszcz' | 'k_tanie'
   | 'w_ostrze' | 'w_pancerz' | 'w_precyzja' | 'w_pogromca'
   | 'e_kupiec' | 'e_gornik' | 'e_noc' | 'e_poszuk'
-  | 't_hodowca' | 't_wylegarnia' | 't_wiez' | 't_stajnia';
+  | 't_hodowca' | 't_wylegarnia' | 't_wiez' | 't_stajnia'
+  | 'k_runy' | 'w_otchlan' | 'e_klucz' | 'e_zyla' | 't_gniazdo';
 export type DungId = 'skarbiec' | 'sztolnia' | 'wieza' | 'leza' | 'oltarze' | 'kopalnia' | 'labirynt' | 'zbrojownia' | 'krypta' | 'sezon';
 export type SetId = 'lowca' | 'straz' | 'wicher' | 'nekro' | 'smok' | 'gwiazda';
 export type SkillId = 'deszcz' | 'tarcza' | 'okrzyk' | 'eliksir' | 'kula' | 'nova' | 'krwawe' | 'burza' | 'oddech';
@@ -220,6 +221,7 @@ export interface Battle {
 export interface Stats {
   dmg: number; hp: number; crit: number; critd: number; spd: number; ls: number; dodge: number; regen: number;
   boss: number; eldmg: number; slow: number; holy: number; pog: number;
+  abyss: number;       // premia do obrażeń wobec wrogów Otchłani (Zew Otchłani)
   vs: Partial<Record<FoeType, number>>;
   sets: { id: SetId; count: number }[];
   aura: number;        // Boska aura: ile założonych przedmiotów Boskich (każdy daje B.DIVINE_AURA % obrażeń i zdrowia)
@@ -235,6 +237,7 @@ export interface Mods {
   goldPct: number; extraOre: number; offlineMin: number; rarePct: number;
   spd: number; ls: number; regen: number; eldmg: number;
   eggPct: number; hatchTime: number; compPct: number; compCost: number;
+  runeCost: number; abyssPct: number; keys: number; bossLoot: number; eggUp: number;
 }
 
 /** Co wypadło z pokonanej fali — pokazywane na chwilę nad wrogiem. */

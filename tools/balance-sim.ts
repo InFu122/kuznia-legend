@@ -40,7 +40,7 @@ const BOSS_RETRY = 120000; // bot próbuje bossa co 2 min, gdy ma ≥ 90% zaleca
 const TOWER_RETRY = 30 * 60000;
 const SAMPLE = 6 * 60000;  // próbka Mocy co 6 min (do kalibracji)
 /** Kolejność badań bota: pierwsze niezablokowane z listy. */
-const TECH_PRIORITY: TechId[] = ['e_noc', 'w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 't_wiez', 't_hodowca', 't_wylegarnia', 't_stajnia'];
+const TECH_PRIORITY: TechId[] = ['e_noc', 'w_ostrze', 'w_pancerz', 'k_hart', 'e_kupiec', 'k_miech', 'e_gornik', 'w_precyzja', 'w_pogromca', 'k_oszcz', 'e_poszuk', 'k_auto', 'k_tanie', 't_wiez', 't_hodowca', 't_wylegarnia', 't_stajnia', 'e_klucz', 'k_runy', 'w_otchlan', 'e_zyla', 't_gniazdo'];
 
 interface HourRow {
   run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; earned: number; smelted: number; jumps: number; best: string; ore: number; pass: number;

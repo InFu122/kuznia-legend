@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SETS, SET_FORGE_LVL, TECH, TECH_IDS } from '../src/data';
 import { equip, smelt, startUpgrade } from '../src/engine/forge';
 import { computeStats } from '../src/engine/stats';
-import { techBlock, techCost, techMods, tickResearch } from '../src/engine/tech';
+import { techBlock, techCost, techMods, tickResearch, techMaxAll } from '../src/engine/tech';
 import { upCost } from '../src/engine/formulas';
 import { makeGame } from './helpers';
 
@@ -29,8 +29,11 @@ describe('technologie', () => {
     expect(techBlock(s, 'w_ostrze')).toBe('forge');
     s.forge.lvl = 30;
     s.tech.lv.w_ostrze = TECH.w_ostrze.max;
+    expect(techBlock(s, 'w_ostrze')).toBe('tier'); // II stopień od 40. poziomu kuźni
+    for (const id of TECH_IDS) if (id !== 'w_ostrze') expect(techBlock(s, id)).toBe(TECH[id].req > 30 ? 'forge' : null);
+    s.forge.lvl = 200;
+    s.tech.lv.w_ostrze = techMaxAll('w_ostrze');
     expect(techBlock(s, 'w_ostrze')).toBe('max');
-    for (const id of TECH_IDS) if (id !== 'w_ostrze') expect(techBlock(s, id)).toBeNull();
   });
 
   it('Ostrze i Pancerz podnoszą obrażenia i zdrowie', () => {

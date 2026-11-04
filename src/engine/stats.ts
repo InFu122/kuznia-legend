@@ -111,7 +111,7 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
   const [sd, sh] = skillFactor(extra.skills, spd);
   const dps = dmg * (1 + (crit / 100) * (critd / 100)) * (1 + spd / 100) * (1 + eldmg / 100) + (petInt ? petAtk * 1000 / petInt : 0);
   const power = Math.round(dps * 4 * sd + (hp * 0.4 / (1 - dodge / 100)) * sh);
-  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, vs, sets, aura, petAtk, petInt, power };
+  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, abyss: mods.abyssPct ?? 0, vs, sets, aura, petAtk, petInt, power };
 }
 
 /** Ekwipunek, którym walczy bohater: w Krypcie Bohaterów tylko przedmioty z legendą. */

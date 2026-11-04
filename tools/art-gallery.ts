@@ -31,7 +31,7 @@ const skills = (Object.keys(SKILLS) as (keyof typeof SKILLS)[]).map(k => tile(ic
 const sceneImg = (px: Uint8ClampedArray, name: string, sub: string) =>
   `<figure class="scene"><img src="data:image/png;base64,${png(SCENE_W, SCENE_H, px).toString('base64')}" width="${SCENE_W}" height="${SCENE_H}" alt="${esc(name)}"><figcaption>${esc(name)}<small>${esc(sub)}</small></figcaption></figure>`;
 const landBgs = LAND_SCENES.map((sc, i) => sceneImg(renderScene(sc), LANDS[i].n, `akt ${LANDS[i].act}`)).join('');
-const dungBgs = Object.entries(DUNGEON_SCENES).map(([k, sc]) => sceneImg(renderScene(sc), k === 'arena' ? 'Arena' : DUNGEONS[k as keyof typeof DUNGEONS].n, k === 'arena' ? 'gracze' : 'loch')).join('');
+const dungBgs = Object.entries(DUNGEON_SCENES).map(([k, sc]) => sceneImg(renderScene(sc), k === 'arena' ? 'Arena' : DUNGEONS[k as keyof typeof DUNGEONS]?.n ?? k, k === 'arena' ? 'gracze' : 'loch')).join('');
 const bosses = CLAN_BOSSES.map((b, i) => tile(ic(BOSS_ICONS[b.pal]), b.n, `boss klanowy ${i + 1}.`, 32)).join('');
 const techs = TECH_BRANCHES.map(b => `<div class="branch"><h3>${esc(b.n)}</h3><div class="tiles">${
   (Object.keys(TECH) as (keyof typeof TECH)[]).filter(k => TECH[k].branch === b.id).map(k => tile(ic(TECH_ICONS[k]), TECH[k].n, '', 20)).join('')}</div></div>`).join('');

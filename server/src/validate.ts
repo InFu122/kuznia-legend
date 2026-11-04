@@ -5,7 +5,8 @@ import {
 } from '../../src/data';
 import { eventOf, eventPtsMax, eventReached } from '../../src/engine/events';
 import { maxJump, oreRamps } from '../../src/engine/formulas';
-import type { GameState, Item, SubId } from '../../src/engine/types';
+import { techMax } from '../../src/engine/tech';
+import type { GameState, Item, SubId, TechId } from '../../src/engine/types';
 
 const MAX_ITEM_LVL = 2 * B.FORGE_MAX + 2;
 const fin = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
@@ -51,7 +52,8 @@ export function validateSave(s: GameState): string[] {
   for (const k of ['gold', 'books', 'scrolls', 'saddles', 'stones', 'seals'] as const) if (!nonNeg(s[k])) bad(`zasób ${k}`);
   if (!Array.isArray(s.ores) || s.ores.length !== ORES.length || !s.ores.every(nonNeg)) bad('rudy');
   if (!Array.isArray(s.eggs) || !s.eggs.every(nonNeg)) bad('jaja');
-  for (const [id, l] of Object.entries(s.tech.lv)) if (!TECH[id as keyof typeof TECH] || !fin(l) || l < 0 || l > TECH[id as keyof typeof TECH].max) bad(`technologia ${id}`);
+  // poziomy badań: najwyżej tyle, ile otwiera obecny poziom kuźni (stopnie II i III)
+  for (const [id, l] of Object.entries(s.tech.lv)) if (!TECH[id as keyof typeof TECH] || !fin(l) || l < 0 || l > techMax(id as TechId, s.forge.lvl)) bad(`technologia ${id}`);
   for (const [id, l] of Object.entries(s.skills.lv)) if (!SKILLS[id as keyof typeof SKILLS] || !fin(l) || l < 1 || l > SKILL_MAX) bad(`umiejętność ${id}`);
   for (const [id, c] of Object.entries(s.pets)) if (!PETS[id as keyof typeof PETS] || !c || c.lvl < 1 || c.lvl > COMPANION_MAX || c.stars < 0 || c.stars > STARS_MAX) bad(`chowaniec ${id}`);
   for (const [id, c] of Object.entries(s.mounts)) if (!MOUNTS[id as keyof typeof MOUNTS] || !c || c.lvl < 1 || c.lvl > COMPANION_MAX || c.stars < 0 || c.stars > STARS_MAX) bad(`wierzchowiec ${id}`);

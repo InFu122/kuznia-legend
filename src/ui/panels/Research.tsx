@@ -3,7 +3,7 @@ import { TECH, TECH_BRANCHES, TECH_IDS, TECH_UNLOCK_FORGE } from '../../data';
 import { resUrl, techUrl } from '../../art/render';
 import { Costs, Px } from '../Px';
 import type { Game } from '../../engine/game';
-import { techBlock, techCost, techLvl, techText, techValue, type TechBlock } from '../../engine/tech';
+import { nextTier, techBlock, techCost, techLvl, techMax, techMaxAll, techText, techTier, techValue, type TechBlock } from '../../engine/tech';
 import type { TechId } from '../../engine/types';
 import { fmt, tfmt } from '../format';
 import { booksShort } from '../texts';
@@ -13,10 +13,13 @@ import { SpeedupButton } from './Shop';
 const BLOCK: Record<Exclude<TechBlock, null>, string> = {
   max: 'Maks.',
   forge: '',
+  tier: '',
   busy: 'Trwa badanie',
   books: 'Za mało Ksiąg',
   gold: 'Za mało złota',
 };
+
+const ROMAN = ['I', 'II', 'III', 'IV'];
 
 /** Jednostka efektu wzięta z opisu (np. „%” albo „ min”). */
 const unit = (id: TechId) => { const after = TECH[id].d.split('{v}')[1] ?? ''; return after.startsWith('%') ? '%' : after.startsWith(' min') ? ' min' : ''; };
@@ -28,13 +31,17 @@ function TechNode({ game, id, on, pick }: { game: Game; id: TechId; on: boolean;
   const l = techLvl(s, id);
   const block = techBlock(s, id);
   const cur = s.tech.cur?.id === id;
-  const cls = ['tnode', on ? 'on' : '', l >= T.max ? 'max' : '', block === 'forge' ? 'locked' : '', cur ? 'busy' : '', !block ? 'can' : ''].filter(Boolean).join(' ');
+  const max = techMax(id, s.forge.lvl);
+  const nt = block === 'tier' ? nextTier(id, s.forge.lvl) : null;
+  const tierNow = techTier(id, Math.max(0, Math.min(l, max) - 1)).tier;
+  const cls = ['tnode', on ? 'on' : '', block === 'max' ? 'max' : '', block === 'forge' ? 'locked' : '', block === 'tier' ? 'wait' : '', cur ? 'busy' : '', !block ? 'can' : ''].filter(Boolean).join(' ');
   return (
-    <button class={cls} onClick={() => pick(id)} aria-pressed={on} aria-label={`${T.n}, poziom ${l} z ${T.max}`}>
+    <button class={cls} onClick={() => pick(id)} aria-pressed={on} aria-label={`${T.n}, poziom ${l} z ${max}`}>
       <Px src={techUrl(id)} size={32} />
       <span class="tn-n">{T.n}</span>
-      <span class="tn-l">{block === 'forge' ? `od ${Math.max(T.req, TECH_UNLOCK_FORGE)}. poz.` : cur ? 'w toku' : `${l}/${T.max}`}</span>
-      <i class="tn-bar"><i style={{ width: (l / T.max) * 100 + '%' }} /></i>
+      <span class="tn-l">{block === 'forge' ? `od ${Math.max(T.req, TECH_UNLOCK_FORGE)}. poz.` : cur ? 'w toku' : nt ? `${ROMAN[(T.tiers ?? []).indexOf(nt) + 1]} od ${nt[0]}.` : `${l}/${max}`}</span>
+      <i class="tn-bar"><i style={{ width: (l / max) * 100 + '%' }} /></i>
+      {tierNow > 0 && <em class="tn-tier" aria-hidden="true">{ROMAN[tierNow]}</em>}
     </button>
   );
 }
@@ -46,18 +53,32 @@ function TechRow({ game, id }: { game: Game; id: TechId }) {
   const block = techBlock(s, id);
   const c = techCost(id, l);
   const cur = s.tech.cur?.id === id;
+  const max = techMax(id, s.forge.lvl), all = techMaxAll(id);
+  const nt = nextTier(id, s.forge.lvl);
+  // Stopnie badania: I (od początku), II i III (od 40. i 100. poziomu kuźni).
+  const stages: [string, number, number, number][] = [];
+  { let a = 1; [[T.req, T.max] as const, ...(T.tiers ?? [])].forEach(([f, n], i) => { stages.push([ROMAN[i], f, a, a + n - 1]); a += n; }); }
   return (
     <li class={`tech${block === 'forge' ? ' locked' : ''}`}>
       <Px src={techUrl(id)} size={40} cls="row-ic" />
       <div class="tech-main">
-        <div class="tech-n">{T.n} <span class="muted">· {l}/{T.max}</span></div>
+        <div class="tech-n">{T.n} <span class="muted">· {l}/{max}{all > max ? ` (z ${all})` : ''}</span></div>
         <div class="sub">
           {l === 0 ? `Poziom 1: ${techText(id, 1)}` : techText(id, l)}
-          {l > 0 && l < T.max ? ` · następny poziom: ${techValue(id, l + 1)}${unit(id)}` : ''}
+          {l > 0 && l < max ? ` · następny poziom: ${techValue(id, l + 1)}${unit(id)}` : ''}
         </div>
+        {stages.length > 1 && (
+          <div class="tech-stages" aria-label="Stopnie badania">
+            {stages.map(([r, f, a, b], i) => (
+              <span key={r} class={l >= b ? 'done' : s.forge.lvl >= f || i === 0 ? 'open' : 'shut'}>
+                <b>{r}</b> {a}–{b}{i > 0 ? ` · kuźnia ${f}` : ''}
+              </span>
+            ))}
+          </div>
+        )}
         {block !== 'max' && (
           <div class="tech-cost">
-            {block === 'forge' ? `Od ${Math.max(T.req, TECH_UNLOCK_FORGE)}. poziomu kuźni` : (
+            {block === 'forge' ? `Od ${Math.max(T.req, TECH_UNLOCK_FORGE)}. poziomu kuźni` : block === 'tier' && nt ? `Stopień ${ROMAN[(T.tiers ?? []).indexOf(nt) + 1]} (+${nt[1]} ${nt[1] === 1 ? 'poziom' : nt[1] < 5 ? 'poziomy' : 'poziomów'}) od ${nt[0]}. poziomu kuźni` : (
               <Costs items={[[resUrl('ksiega'), booksShort(c.books)], [resUrl('zloto'), `${fmt(c.gold)} zł.`], [resUrl('czas'), tfmt(c.ms)]]}
                 cls={block === 'books' ? 'lack-0' : block === 'gold' ? 'lack-1' : ''} />
             )}
@@ -66,7 +87,7 @@ function TechRow({ game, id }: { game: Game; id: TechId }) {
       </div>
       {cur ? <span class="tech-busy">W toku</span> : (
         <button class="btn small primary" disabled={!!block} onClick={() => game.research(id)}>
-          {block ? BLOCK[block] || 'Zablokowane' : 'Badaj'}
+          {block === 'tier' ? `Od ${nt?.[0]}. poz.` : block ? BLOCK[block] || 'Zablokowane' : 'Badaj'}
         </button>
       )}
     </li>

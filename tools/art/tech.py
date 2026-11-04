@@ -325,7 +325,75 @@ def stable():
     for (x, y) in [(3, 6), (12, 6), (5, 2), (10, 2), (2, 10), (13, 10)]: P(g, x, y, 'k')
     return make('towarzysze', S(g), {'p': METAL})
 
+# --- badania późnej gry ---
+
+def rune_stone():
+    # Mistrz run: kamienna płyta z jarzącą się runą
+    g = blank()
+    for y in range(1, 15):
+        for x in range(3, 13):
+            if (x in (3, 12) and y in (1, 14)): continue
+            g[y][x] = 'p'
+    for (x, y) in [(7, 3), (7, 4), (7, 5), (7, 6), (7, 7), (7, 8), (7, 9), (7, 10), (7, 11), (8, 4), (9, 5), (8, 6), (6, 8), (5, 9), (9, 9), (10, 10)]:
+        P(g, x, y, 'q')
+    return make('kucie', S(g), {'p': ['#c8c4bc', '#9a958c', '#6c675f', '#45413b'], 'q': ['#e8fbff', '#8fe6ff', '#3fb4e8', '#1f6e9a']})
+
+def abyss():
+    # Zew Otchłani: wir otchłani i ostrze
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            dx, dy = x - 7.5, y - 7.5
+            d = math.hypot(dx, dy)
+            if d <= 7.2:
+                a = math.atan2(dy, dx)
+                band = (a / (2 * math.pi) * 3 + d / 3.0) % 1
+                g[y][x] = 'p' if band < 0.5 else 'q'
+            if d <= 1.6: g[y][x] = 'r'
+    for i in range(11): P(g, 2 + i, 13 - i, 's')
+    for (x, y) in [(2, 12), (3, 14), (1, 13)]: P(g, x, y, 't')
+    return make('walka', S(g), {'p': ['#c9a2ff', '#8a5ad6', '#5a2fa0', '#341a66'], 'q': ['#5a3a8a', '#3a2460', '#24163e', '#140c24'],
+                                'r': ['#ffffff', '#ffd6ff', '#ff8ae6', '#c040a8'], 's': METAL, 't': GOLD})
+
+def key():
+    # Klucznik: złoty klucz
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 5, y - 5)
+            if 2.0 <= d <= 4.2: g[y][x] = 'p'
+    for i in range(8): P(g, 7 + i, 7 + i, 'p'); P(g, 8 + i, 7 + i, 'p')
+    for (x, y) in [(11, 13), (12, 14), (13, 11), (14, 12), (10, 12)]: P(g, x, y, 'p')
+    P(g, 5, 5, 'q'); P(g, 4, 5, 'q')
+    return make('ekonomia', S(g), {'p': GOLD, 'q': ['#20321f', '#182618', '#121c12', '#0c120c']})
+
+def gold_vein():
+    # Bogate złoża: skała z żyłą złota i bryłkami
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            if ((x - 7.5) / 7.2) ** 2 + ((y - 8.5) / 6.4) ** 2 <= 1: g[y][x] = 'p'
+    for (x, y) in [(2, 9), (3, 8), (4, 8), (5, 9), (6, 10), (7, 9), (8, 8), (9, 7), (10, 7), (11, 8), (12, 9), (13, 8),
+                   (6, 9), (9, 8), (4, 9)]:
+        P(g, x, y, 'q')
+    for (x, y) in [(5, 5), (6, 5), (5, 4), (11, 11), (12, 11), (10, 12)]: P(g, x, y, 'r')
+    return make('ekonomia', S(g), {'p': ['#a8a29a', '#7c766e', '#58534c', '#3a3631'], 'q': GOLD, 'r': ['#fff8d0', '#ffe46a', '#e0a82a', '#8a5a12']})
+
+def golden_nest():
+    # Złote gniazdo: złote jajo w gnieździe z błyskiem
+    g = blank()
+    for y in range(16):
+        for x in range(16):
+            if ((x - 7.5) / 4.0) ** 2 + ((y - 6.5) / 5.2) ** 2 <= 1: g[y][x] = 'p'
+    for y in range(10, 15):
+        for x in range(1, 15):
+            if ((x - 7.5) / 7.0) ** 2 + ((y - 10.5) / 4.0) ** 2 <= 1 and y >= 10: g[y][x] = 'q'
+    for (x, y) in [(3, 11), (6, 12), (9, 11), (12, 12), (5, 13), (10, 13)]: P(g, x, y, 'r')
+    for (x, y) in [(13, 1), (13, 2), (13, 3), (12, 2), (14, 2), (2, 4)]: P(g, x, y, 's')
+    return make('towarzysze', S(g), {'p': GOLD, 'q': WOOD, 'r': ['#e8c890', '#c09a60', '#8a6a3e', '#5a4024'], 's': ['#ffffff', '#fff6c0', '#ffe08a', '#c7902a']})
+
 TECH_ICONS = {'k_hart': hart, 'k_miech': bellows, 'k_auto': gear, 'k_oszcz': save_ore, 'k_tanie': guild_coin,
               'w_ostrze': blade, 'w_pancerz': shield, 'w_precyzja': target, 'w_pogromca': skull,
               'e_kupiec': coin_bag, 'e_gornik': pickaxe, 'e_noc': moon, 'e_poszuk': magnifier,
-              't_hodowca': nest, 't_wylegarnia': hatch, 't_wiez': bond, 't_stajnia': stable}
+              't_hodowca': nest, 't_wylegarnia': hatch, 't_wiez': bond, 't_stajnia': stable,
+              'k_runy': rune_stone, 'w_otchlan': abyss, 'e_klucz': key, 'e_zyla': gold_vein, 't_gniazdo': golden_nest}

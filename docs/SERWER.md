@@ -161,6 +161,12 @@ Dzienne limity i dni wojny liczą się od północy czasu UTC (w Polsce o 1:00 z
 
 Czwarta gałąź Nauki (od 8. poziomu kuźni): Hodowca (do +100% szansy na jajo z bossów i lochów), Wylęgarnia (do −50% czasu wykluwania), Więź (do +20% siły chowańców i wierzchowców) i Stajnia (do −20% Kamieni na ich ulepszenia).
 
+### Nauka: stopnie II i III i badania późnej gry
+
+- **Stopnie badań:** na 40. poziomie kuźni otwiera się **II stopień**, na 100. — **III stopień**: istniejące badania dostają kolejne poziomy (Ostrze i Pancerz po +5 i +5, większość pozostałych po +3 i +3, Nocna zmiana +2 i +2 — do 10 h nagród offline). Wielkie miechy i Cech kowali zostają bez zmian, żeby kuźnia dalej rosła ok. roku, a Kupiec — bo złota w późnej grze i tak jest dość.
+- **Nowe badania:** Mistrz run (od 30. poziomu kuźni, taniej run), Klucznik (od 45., +1 klucz dziennie do każdego lochu, na III stopniu +2), Złote gniazdo (od 60., szansa na lepsze jajo z bossa), Bogate złoża (od 70., więcej rzadkiej rudy z bossów krain), Zew Otchłani (od 110., więcej obrażeń wobec wrogów Otchłani).
+- Późne poziomy kosztują więcej Ksiąg, część ceny ulepszenia kuźni w złocie i ok. doby–półtorej. Badań starcza mniej więcej na rok gry. Serwer pilnuje, żeby poziom badania nie przekraczał stopnia otwartego przez kuźnię.
+
 ### Osiągnięcia i Kolekcja Kowala
 
 - **Osiągnięcia** — czwarta zakładka w oknie Zadań: 13 długich celów po kilka progów (np. wykuj 100 / 1000 / 10 000 przedmiotów), za każdy próg Księgi, Kamienie i złoto, wyżej także Zwoje i jaja.

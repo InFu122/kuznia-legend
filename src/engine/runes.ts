@@ -7,6 +7,7 @@
 import { B, DIVINE_ORE, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, oreRank, subMult } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
+import { allMods } from './mods';
 import { rnd, type Rng } from './rng';
 import { invalidate } from './stats';
 import type { GameState, Item, SlotId } from './types';
@@ -20,7 +21,8 @@ export const runeLvl = (s: GameState, slot: SlotId) => Math.max(0, Math.min(B.RU
 /** Koszt wzmocnienia runy na poziom `lvl` (1–30). */
 export function runeCost(s: GameState, lvl: number): Cost {
   const tier = Math.min(5, Math.floor((lvl - 1) / 5)); // Miedź … Smocza Stal (indeksy 0–5)
-  return { ore: tier, n: 20 + 10 * ((lvl - 1) % 5), gold: goldWaveOf(s) * 5 * lvl };
+  const k = 1 - allMods(s).runeCost / 100; // Mistrz run
+  return { ore: tier, n: Math.ceil((20 + 10 * ((lvl - 1) % 5)) * k), gold: Math.round(goldWaveOf(s) * 5 * lvl * k) };
 }
 
 /**

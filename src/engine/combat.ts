@@ -1,4 +1,4 @@
-import { ABYSS_FROM, B, DIVINE_ORE, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isRareOre, oreShares, setOfLand, skillValue, landDef } from '../data';
+import { ABYSS_FROM, B, DIVINE_ORE, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isAbyss, isRareOre, oreShares, setOfLand, skillValue, landDef } from '../data';
 import { buffMult } from './shop';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
@@ -106,6 +106,7 @@ function bonusVs(ctx: Ctx, st: Stats, e: Enemy): number {
   const a = arena(ctx);
   let bonus = (a.elem ? st.eldmg : 0) + (st.vs[e.type] ?? 0);
   if (e.boss) bonus += st.boss + st.pog;
+  if (ctx.b.mode === 'camp' && isAbyss(ctx.s.cur.land)) bonus += st.abyss; // Zew Otchłani
   if (a.elem && (e.type === 'Nieumarli' || e.type === 'Demony')) bonus += st.holy;
   if (ctx.b.fx.dmgT > 0) bonus += ctx.b.fx.dmgV;
   return bonus;
@@ -246,8 +247,9 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   track(ctx, 'boss');
   ctx.emit({ t: 'sfx', k: 'boss' });
   const first = !s.cleared[land];
-  const gold = Math.round(goldWaveOf(s, gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + allMods(s).goldPct / 100));
-  const n = ri(ctx.rng, 2, 4);
+  const mods = allMods(s);
+  const gold = Math.round(goldWaveOf(s, gOf(land, B.STAGES_PER_LAND)) * 10 * (1 + mods.goldPct / 100));
+  const n = Math.round(ri(ctx.rng, 2, 4) * (1 + mods.bossLoot / 100)); // Bogate złoża: więcej rzadkiej rudy
   const books = first ? B.BOOKS_BOSS_FIRST + land : ctx.rng.next() < B.BOOKS_BOSS_CHANCE ? 1 : 0;
   const set = setOfLand(land);
   const uniq = set ? (first ? B.UNIQ_BOSS_FIRST : ctx.rng.next() < B.UNIQ_BOSS_CHANCE ? 1 : 0) : 0;
@@ -310,7 +312,12 @@ function bossExtras(ctx: Ctx, land: number, first: boolean): Reward {
   if (first) r.scrolls = B.SCROLLS_BOSS_FIRST + act;
   else if (ctx.rng.next() < B.SCROLL_BOSS_CHANCE) r.scrolls = 1;
   if (land >= PETS_UNLOCK_LAND - 1) {
-    if (first || ctx.rng.next() < B.EGG_BOSS_CHANCE * (1 + allMods(ctx.s).eggPct / 100)) r.eggs = { [eggRarity(land)]: 1 };
+    const mods = allMods(ctx.s);
+    if (first || ctx.rng.next() < B.EGG_BOSS_CHANCE * (1 + mods.eggPct / 100)) {
+      // Złote gniazdo: szansa na jajo o rzadkość lepsze
+      const up = mods.eggUp > 0 && ctx.rng.next() * 100 < mods.eggUp ? 1 : 0;
+      r.eggs = { [Math.min(4, eggRarity(land) + up)]: 1 };
+    }
     if (first) r.stones = 10 + 2 * land;
   }
   if (land >= MOUNTS_UNLOCK_LAND - 1) {
