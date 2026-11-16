@@ -1,8 +1,8 @@
 // Rysowanie pixel artu w przeglądarce: sprite + paleta → obrazek (data URL), z pamięcią podręczną.
 import type { SkinId } from '../data/cosmetics';
 import { ABYSS_FROM, abyssBase } from '../data/world';
-import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from './icons-data';
-import { FOE_H, FOE_W, HERO_H, HERO_W, companionPixels, foeKey, foePixels, heroKey, heroPixels, avatarPixels, AVATAR, type HeroGear } from './actors';
+import { ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from './icons-data';
+import { AVATAR, CLAN_BOSS_SIZE, HERO_H, HERO_W, avatarPixels, clanBossPixels, companionPixels, companionSize, foeKey, foePixels, foeSize, heroKey, heroPixels, type HeroGear } from './actors';
 import { itemPalette, itemSprite, tierOf } from './items';
 import { rgba, sprite, type Palette, type Sprite } from './pixel';
 import { halo } from './rarity';
@@ -49,8 +49,8 @@ export const setOreUrl = (k: string) => once(`s:${k}`, () => icon(SET_ORE_ICONS[
 export const resUrl = (k: string) => once(`r:${k}`, () => icon(RES_ICONS[k]));
 export const skillUrl = (k: string) => once(`k:${k}`, () => icon(SKILL_ICONS[k]));
 export const techUrl = (k: string) => once(`t:${k}`, () => icon(TECH_ICONS[k]));
-/** Boss klanowy 32×32 (paleta: golem, kamien, ogien, lod, upior). */
-export const bossUrl = (k: string) => once(`b:${k}`, () => icon(BOSS_ICONS[k] ?? BOSS_ICONS.golem));
+/** Boss klanowy 64×64 (klucz: golem, kamien, ogien, lod, upior). */
+export const bossUrl = (k: string, frame = 0) => cached(`b:${k}:${frame % 2}`, () => pxUrl(clanBossPixels(k, frame), CLAN_BOSS_SIZE, CLAN_BOSS_SIZE));
 /** Otchłań: ta sama scena co kraina-wzór, ale ciemna i fioletowa, z żarzącymi się szczelinami. */
 function abyssTint(px: Uint8ClampedArray): Uint8ClampedArray {
   const out = new Uint8ClampedArray(px);
@@ -69,11 +69,14 @@ export const landBgUrl = (land: number) => (land >= ABYSS_FROM
   : cached(`bg:l${land}`, () => pxUrl(renderScene(LAND_SCENES[Math.max(0, Math.min(LAND_SCENES.length - 1, land))]), SCENE_W, SCENE_H)));
 /** Tło lochu albo areny (klucz jak w DUNGEON_SCENES). */
 export const dungeonBgUrl = (id: string) => cached(`bg:d${id}`, () => pxUrl(renderScene(DUNGEON_SCENES[id] ?? DUNGEON_SCENES.arena), SCENE_W, SCENE_H));
-/** Bohater w założonym ekwipunku (36×36, patrzy w prawo). */
-export const heroUrl = (g: HeroGear, skin: SkinId = 'zwykly') => cached(`h:${heroKey(g, skin)}`, () => pxUrl(heroPixels(g, skin), HERO_W, HERO_H));
-/** Awatar (głowa bohatera w stroju, 18×18). */
+/** Bohater w założonym ekwipunku (48×48, patrzy w prawo). `frame` 0/1 — oddech. */
+export const heroUrl = (g: HeroGear, skin: SkinId = 'zwykly', frame = 0) => cached(`h:${heroKey(g, skin)}:${frame % 2}`, () => pxUrl(heroPixels(g, skin, frame), HERO_W, HERO_H));
+/** Awatar (głowa bohatera w stroju). */
 export const avatarUrl = (skin: SkinId = 'zwykly') => cached(`av:${skin}`, () => pxUrl(avatarPixels(skin), AVATAR, AVATAR));
-/** Chowaniec albo wierzchowiec (32×32, patrzy w lewo). */
-export const companionUrl = (id: string) => cached(`c:${id}`, () => pxUrl(companionPixels(id), FOE_W, FOE_H));
-/** Wróg z pola walki (32×32, patrzy w lewo). */
-export const foeUrl = (name: string, type?: string) => cached(`f:${foeKey(name, type)}`, () => pxUrl(foePixels(name, type), FOE_W, FOE_H));
+/** Chowaniec albo wierzchowiec (48×48, patrzy w lewo). */
+export const companionUrl = (id: string, frame = 0) => cached(`c:${id}:${frame % 2}`, () => { const n = companionSize(id); return pxUrl(companionPixels(id, frame), n, n); });
+/** Wróg z pola walki (48×48, boss krainy 64×64; patrzy w lewo). `frame` 0/1 — klatka ruchu. */
+export const foeUrl = (name: string, type?: string, frame = 0) => cached(`f:${foeKey(name, type)}:${frame % 2}`, () => { const n = foeSize(name, type); return pxUrl(foePixels(name, type, frame), n, n); });
+export { foeSize };
+/** Klatka ruchu postaci (0/1) dla czasu `t` ms; `ms` — długość klatki. */
+export const frameAt = (t: number, ms = 460) => Math.floor(t / ms) % 2;

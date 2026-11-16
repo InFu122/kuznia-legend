@@ -2,7 +2,7 @@
 // i rajd klanowy Smocze Leże (smok o czterech fazach ze słabościami na żywioły). Wszystko liczy serwer.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { B, ELEM, RAID, RAID_PHASES, WAR, WAR_DAYS } from '../../data';
-import { elemUrl, foeUrl, resUrl } from '../../art/render';
+import { elemUrl, foeSize, foeUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
 import { clanLife } from '../../save/clanlife';
 import { getLink, type RaidState, type WarState } from '../../save/server';
@@ -246,7 +246,7 @@ export function ClanRaidTab({ game }: { game: Game }) {
           {RAID_PHASES.map((_, i) => <i key={i} class={i < r.ph ? 'done' : i === r.ph ? 'on' : ''} />)}
         </div>
         <div class={`boss-art${hit ? ' hit' : ''}${r.done ? ' gone' : ''}`} key={hit?.key}>
-          <Px src={foeUrl(P.foe)} size={128} alt={P.foe} />
+          <Px src={foeUrl(P.foe)} size={foeSize(P.foe) * 2} alt={P.foe} />
           {hit && <span class={`bhit${hit.big ? ' kill' : ''}`} aria-hidden="true">−{fmt(hit.dmg)}</span>}
         </div>
         {!r.done && (

@@ -1,5 +1,6 @@
-// Tła krain i lochów w pixel arcie, rysowane w kodzie (bez plików graficznych): niebo z ditheringiem,
-// warstwy sylwetek (góry, lasy, ruiny, wydmy, jaskinie…) i efekty (śnieg, żar, deszcz, gwiazdy, mgła).
+// Tła krain i lochów w pixel arcie, rysowane w kodzie (bez plików graficznych): niebo w gładkich pasach z chmurami,
+// warstwy sylwetek (góry, lasy, ruiny, wydmy, jaskinie…) — dalsze toną w kolorze horyzontu — ziemia z fakturą
+// i efekty (śnieg, żar, deszcz, gwiazdy, mgła).
 // Każda scena to opis z kilku warstw; ten sam generator rysuje 16 krain i lochy. Obraz 160×96, skalowany ostro.
 import { mulberry32 } from '../engine/rng';
 
@@ -227,7 +228,16 @@ function drawLayer(b: Buf, L: Layer, rng: () => number): void {
     }
     case 'cave': {
       const c = hex(L.c), c2 = hex(L.c2);
-      b.rect(0, 0, SCENE_W, SCENE_H, c2);
+      // Tylna ściana: jaśniejsza pośrodku (pasami), z rzadkimi cegłami/spękaniami.
+      for (let y = 0; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) {
+        const d = Math.hypot((x - SCENE_W / 2) / (SCENE_W * 0.62), (y - SCENE_H * 0.55) / (SCENE_H * 0.8));
+        b.set(x, y, mix(c2, c, Math.max(0, 0.55 - Math.min(4, Math.floor(d * 5)) * 0.16)));
+      }
+      for (let k = 0; k < 26; k++) {
+        const x = Math.floor(rng() * SCENE_W), y = 16 + Math.floor(rng() * 56), w = 3 + Math.floor(rng() * 5);
+        const base = b.get(x, y);
+        b.rect(x, y, w, 1, lift(base, -0.2)); if (rng() < 0.5) b.rect(x + w, y - 2, 1, 3, lift(base, -0.2)); else b.rect(x, y - 1, w - 1, 1, lift(base, 0.07));
+      }
       const n = noise1(rng, 0.06);
       for (let x = 0; x < SCENE_W; x++) {
         const ceil = 6 + n(x) * 14 + (x % 7 === 0 ? 6 + rng() * 12 : 0);
@@ -247,14 +257,32 @@ function drawLayer(b: Buf, L: Layer, rng: () => number): void {
     }
     case 'water': {
       const c = hex(L.c), c2 = hex(L.c2), shine = L.shine ? hex(L.shine) : lift(c, 0.35);
-      for (let y = L.y; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) b.set(x, y, dith(x, y) < (y - L.y) / (SCENE_H - L.y) ? c2 : c);
+      for (let y = L.y; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) {
+        const t = ((y - L.y) + Math.sin(x * 0.3 + y * 0.9) * 1.1) / (SCENE_H - L.y);
+        b.set(x, y, mix(c, c2, Math.max(0, Math.min(4, Math.floor(t * 5))) / 4));
+      }
       for (let k = 0; k < 40; k++) { const x = rng() * SCENE_W, y = L.y + 1 + rng() * (SCENE_H - L.y - 2), w = 2 + rng() * 6; for (let i = 0; i < w; i++) b.set(x + i, y, shine); }
       break;
     }
     case 'ground': {
+      // Ziemia: kilka gładkich pasów ciemniejących ku dołowi (granice pasów lekko poszarpane), kamyki i plamki.
       const c = hex(L.c), c2 = L.c2 ? hex(L.c2) : lift(c, -0.2);
-      for (let y = L.y; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) b.set(x, y, dith(x, y) < (y - L.y) / (SCENE_H - L.y) * 0.9 ? c2 : c);
-      for (let x = 0; x < SCENE_W; x++) b.set(x, L.y, lift(c, 0.15));
+      const H = SCENE_H - L.y, BANDS = 4;
+      for (let y = L.y; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) {
+        const t = ((y - L.y) + Math.sin(x * 0.45 + y * 1.3) * 0.9) / H;
+        b.set(x, y, mix(c, c2, Math.max(0, Math.min(BANDS - 1, Math.floor(t * BANDS))) / (BANDS - 1)));
+      }
+      for (let x = 0; x < SCENE_W; x++) { b.set(x, L.y, lift(c, 0.2)); if ((x * 7 + L.y) % 5 < 2) b.set(x, L.y + 1, lift(c, 0.09)); }
+      for (let k = 0; k < 46; k++) {                                   // plamki faktury
+        const x = Math.floor(rng() * SCENE_W), y = L.y + 2 + Math.floor(rng() * Math.max(1, H - 3));
+        const base = b.get(x, y), up = rng() < 0.45;
+        b.set(x, y, lift(base, up ? 0.1 : -0.16)); if (rng() < 0.5) b.set(x + 1, y, lift(base, up ? 0.07 : -0.12));
+      }
+      for (let k = 0; k < 7; k++) {                                    // kamyki z jasnym wierzchem
+        const x = Math.floor(rng() * (SCENE_W - 4)), y = L.y + 3 + Math.floor(rng() * Math.max(1, H - 5)), w = 2 + Math.floor(rng() * 2);
+        const base = b.get(x, y);
+        b.rect(x, y, w, 2, lift(base, -0.22)); b.rect(x, y, w, 1, lift(base, 0.16)); b.set(x + w, y + 1, lift(base, -0.3));
+      }
       if (L.tufts) { const t = hex(L.tufts); for (let k = 0; k < 30; k++) { const x = rng() * SCENE_W; b.set(x, L.y - 1, t); b.set(x + 1, L.y - 2, t); } }
       break;
     }
@@ -332,9 +360,12 @@ function drawLayer(b: Buf, L: Layer, rng: () => number): void {
       }
       break;
     }
-    case 'glow':
-      b.disc(L.x, L.y, L.r, hex(L.c), L.a ?? 0.3);
+    case 'glow': {
+      // Poświata w kilku pierścieniach (zamiast płaskiego krążka).
+      const g = hex(L.c), a0 = L.a ?? 0.3;
+      for (const [k, m] of [[1.5, 0.3], [1.15, 0.45], [0.8, 0.6], [0.45, 0.8]] as const) b.disc(L.x, L.y, Math.max(1, Math.round(L.r * k)), g, a0 * m);
       break;
+    }
     case 'furnace': {
       // Piec kowalski z cegieł: komin, łukowe palenisko z ogniem i poświata.
       const c = hex(L.c), mortar = lift(c, -0.35), lit = lift(c, 0.12), fire = hex(L.fire), core = lift(fire, 0.55);
@@ -420,11 +451,19 @@ export function renderScene(sc: Scene): Uint8ClampedArray {
   const r = () => rng.next();
   const b = new Buf();
   const sky = sc.sky.map(hex), H = sc.skyH ?? SCENE_H;
+  // Niebo: gładkie pasy (po 5 odcieni między kolejnymi kolorami), granice pasów z jednym rzędem szachownicy.
+  const STEPS = 5;
+  const skyAt = (y: number): RGB => {
+    const t = Math.min(0.999, Math.max(0, y / H)) * (sky.length - 1);
+    const i = Math.floor(t), q = Math.floor((t - i) * STEPS) / STEPS;
+    return mix(sky[i], sky[Math.min(sky.length - 1, i + 1)], q);
+  };
   for (let y = 0; y < SCENE_H; y++) {
-    const t = Math.min(0.999, y / H) * (sky.length - 1);
-    const i = Math.floor(t), f = t - i;
-    for (let x = 0; x < SCENE_W; x++) b.set(x, y, f > dith(x, y) ? sky[Math.min(sky.length - 1, i + 1)] : sky[i]);
+    const c = skyAt(y), next = skyAt(y + 1);
+    const edge = c[0] !== next[0] || c[1] !== next[1] || c[2] !== next[2];
+    for (let x = 0; x < SCENE_W; x++) b.set(x, y, edge && (x + y) % 2 === 0 ? next : c);
   }
+  const outdoor = sky.length > 1 && !sc.layers.some(L => L.k === 'cave');
   if (sc.aurora) {
     const a = hex(sc.aurora);
     for (let x = 0; x < SCENE_W; x++) { const y0 = 10 + Math.sin(x * 0.07) * 6 + Math.sin(x * 0.19) * 3; for (let j = 0; j < 12; j++) b.set(x, y0 + j, a, 0.35 * (1 - j / 12)); }
@@ -432,11 +471,41 @@ export function renderScene(sc: Scene): Uint8ClampedArray {
   for (let k = 0; k < (sc.stars ?? 0); k++) b.set(r() * SCENE_W, r() * (H * 0.6), r() < 0.2 ? [255, 255, 255] : [190, 200, 230]);
   if (sc.sun) {
     const s = sc.sun, c = hex(s.c);
-    if (s.glow) { b.disc(s.x, s.y, s.r * 3, hex(s.glow), 0.18); b.disc(s.x, s.y, s.r * 2, hex(s.glow), 0.3); }
+    if (s.glow) { const g = hex(s.glow); for (const [k, a] of [[4.2, 0.07], [3.2, 0.1], [2.3, 0.16], [1.6, 0.24]] as const) b.disc(s.x, s.y, Math.round(s.r * k), g, a); }
     b.disc(s.x, s.y, s.r, c);
-    if (s.moon) b.disc(s.x + Math.ceil(s.r * 0.45), s.y - 1, s.r - 1, b.get(Math.round(s.x + s.r * 2.2), Math.round(s.y)));
+    b.disc(s.x - 1, s.y - 1, Math.max(1, s.r - 2), lift(c, 0.25));
+    if (s.moon) b.disc(s.x + Math.ceil(s.r * 0.45), s.y - 1, s.r - 1, skyAt(s.y));
   }
-  for (const L of sc.layers) drawLayer(b, L, r);
+  if (outdoor) {
+    // Chmury: płaskie od spodu, jaśniejsze od koloru nieba za nimi (własne losowanie — nie zmienia układu warstw).
+    const cr = mulberry32(sc.seed + 1000);
+    const count = 3 + Math.floor(cr.next() * 3);
+    for (let k = 0; k < count; k++) {
+      const cx = cr.next() * SCENE_W, cy = 6 + cr.next() * H * 0.42, w = 12 + cr.next() * 18;
+      const base = skyAt(cy), lit = lift(base, 0.13), top = lift(base, 0.22);
+      const puffs = 3 + Math.floor(cr.next() * 3);
+      for (let i = 0; i < puffs; i++) {
+        const px = cx + (i / (puffs - 1) - 0.5) * w, pr = 2 + cr.next() * 3 * (1 - Math.abs(i / (puffs - 1) - 0.5));
+        for (let y = -Math.ceil(pr); y <= 0; y++) for (let x = -Math.ceil(pr * 1.8); x <= Math.ceil(pr * 1.8); x++) {
+          if ((x / (pr * 1.8)) ** 2 + (y / pr) ** 2 <= 1) b.set(px + x, cy + y, y <= -pr * 0.55 ? top : lit, 0.85);
+        }
+      }
+      for (let x = -w / 2 - 3; x <= w / 2 + 3; x++) b.set(cx + x, cy + 1, lit, 0.5);
+    }
+  }
+  // Dalekie sylwetki toną w kolorze horyzontu (perspektywa powietrzna): im wcześniej w kolejce, tym mocniej.
+  const horizon = skyAt(H - 1);
+  const FAR: Partial<Record<Layer['k'], number>> = { mountains: 1, hills: 1, dunes: 1, pines: 1, spires: 1, islands: 1, volcano: 1, castle: 0.5, tower: 0.4, houses: 0.4, deadtrees: 0.4 };
+  const cut = sc.layers.findIndex(L => L.k === 'ground' || L.k === 'water');
+  const nFar = cut < 0 ? sc.layers.length : cut;
+  const toHex = (c: RGB) => '#' + c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  sc.layers.forEach((L, i) => {
+    const k = FAR[L.k];
+    if (outdoor && k && i < nFar && 'c' in L) {
+      const haze = 0.4 * k * (1 - i / Math.max(1, nFar));
+      drawLayer(b, { ...L, c: toHex(mix(hex(L.c), horizon, haze)) } as Layer, r);
+    } else drawLayer(b, L, r);
+  });
   for (const f of sc.fx ?? []) {
     const c = hex(f.c), n = f.n ?? 60;
     switch (f.k) {

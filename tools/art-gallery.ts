@@ -1,12 +1,12 @@
 // Galeria pixel artu (strona HTML do przeglądu): npx vite-node tools/art-gallery.ts plik.html
 import { writeFileSync } from 'node:fs';
 import { CLAN_BOSSES, DUNGEONS, ELEM, LANDS, ORES, RAR, SETS, SKILLS, SLOTS, TECH, TECH_BRANCHES } from '../src/data';
-import { BOSS_ICONS, ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
+import { ELEM_ICONS, ORE_ICONS, RES_ICONS, SET_ORE_ICONS, SKILL_ICONS, TECH_ICONS, type IconData } from '../src/art/icons-data';
 import { ITEM_KINDS, METALS, itemPalette, itemSprite, tierOf } from '../src/art/items';
 import { rgba, sprite, type Palette, type Sprite } from '../src/art/pixel';
 import { halo } from '../src/art/rarity';
-import { FOE_H, FOE_W, HERO_H, HERO_W, foePixels, heroPixels, type HeroGear } from '../src/art/actors';
-import { FOE_LOOK } from '../src/art/actors-data';
+import { CLAN_BOSS_SIZE, HERO_H, HERO_W, clanBossPixels, companionPixels, foePixels, foeSize, heroPixels, type HeroGear } from '../src/art/actors';
+import { COMPANION_LOOK, FOE_LOOK } from '../src/art/actors-data';
 import { DUNGEON_SCENES, LAND_SCENES, SCENE_H, SCENE_W, renderScene } from '../src/art/scenes';
 import { png } from './png';
 
@@ -32,7 +32,7 @@ const sceneImg = (px: Uint8ClampedArray, name: string, sub: string) =>
   `<figure class="scene"><img src="data:image/png;base64,${png(SCENE_W, SCENE_H, px).toString('base64')}" width="${SCENE_W}" height="${SCENE_H}" alt="${esc(name)}"><figcaption>${esc(name)}<small>${esc(sub)}</small></figcaption></figure>`;
 const landBgs = LAND_SCENES.map((sc, i) => sceneImg(renderScene(sc), LANDS[i].n, `akt ${LANDS[i].act}`)).join('');
 const dungBgs = Object.entries(DUNGEON_SCENES).map(([k, sc]) => sceneImg(renderScene(sc), k === 'arena' ? 'Arena' : DUNGEONS[k as keyof typeof DUNGEONS]?.n ?? k, k === 'arena' ? 'gracze' : 'loch')).join('');
-const bosses = CLAN_BOSSES.map((b, i) => tile(ic(BOSS_ICONS[b.pal]), b.n, `boss klanowy ${i + 1}.`, 32)).join('');
+
 const techs = TECH_BRANCHES.map(b => `<div class="branch"><h3>${esc(b.n)}</h3><div class="tiles">${
   (Object.keys(TECH) as (keyof typeof TECH)[]).filter(k => TECH[k].branch === b.id).map(k => tile(ic(TECH_ICONS[k]), TECH[k].n, '', 20)).join('')}</div></div>`).join('');
 
@@ -49,7 +49,9 @@ const OUTFITS: [string, string, HeroGear][] = [
 ];
 const heroes = OUTFITS.map(([n, sub, g]) => pxTile(HERO_W, HERO_H, heroPixels(g), n, sub)).join('');
 const TPL_N: Record<string, string> = { wilk: 'wilk', dzik: 'dzik', pajak: 'pająk', ropucha: 'ropucha', waz: 'wąż', rycerz: 'rycerz', bandyta: 'bandyta', mag: 'mag', wiedzma: 'wiedźma', szkielet: 'szkielet', upior: 'upiór', golem: 'golem', troll: 'troll', minotaur: 'minotaur', chochlik: 'chochlik', goblin: 'goblin', ptak: 'ptak', gryf: 'gryf', smok: 'smok' };
-const foes = Object.entries(FOE_LOOK).map(([n, [tp]]) => pxTile(FOE_W, FOE_H, foePixels(n), n, TPL_N[tp] ?? tp)).join('');
+const foes = Object.entries(FOE_LOOK).map(([n, [tp]]) => pxTile(foeSize(n), foeSize(n), foePixels(n), n, TPL_N[tp] ?? tp)).join('');
+const bosses = CLAN_BOSSES.map((b, i) => pxTile(CLAN_BOSS_SIZE, CLAN_BOSS_SIZE, clanBossPixels(b.pal), b.n, `boss klanowy ${i + 1}.`)).join('');
+const comps = Object.keys(COMPANION_LOOK).map(id => pxTile(48, 48, companionPixels(id), id)).join('');
 
 const head = `<tr><th scope="col"></th>${METALS.map((m, i) => `<th scope="col">${esc(m.n)}<small>${TIER_N[tierOf(i)]}</small></th>`).join('')}</tr>`;
 const body = Object.values(SLOTS).map(sl => `<tr class="grp"><th colspan="8" scope="rowgroup">${esc(sl.n)} · ${sl.kinds.length}</th></tr>` + sl.kinds.map(([k]) => `<tr><th scope="row">${esc(k)}</th>${METALS.map((_, i) =>
@@ -153,9 +155,10 @@ tr.grp th{text-align:left; font-size:12px; letter-spacing:.1em; text-transform:u
   <section><h2>Umiejętności</h2><p>Ikony 24×24 z tłem w barwie żywiołu.</p><div class="tiles">${skills}</div></section>
   <section><h2>Tła krain</h2><p>Sceny 160×96 rysowane w kodzie (niebo z ditheringiem, warstwy sylwetek, efekty). W grze: pole walki, karty krain i okno z dropami.</p><div class="scenes">${landBgs}</div></section>
   <section><h2>Tła lochów i areny</h2><div class="scenes">${dungBgs}</div></section>
-  <section><h2>Bohater</h2><p>Postać 36×36 składana z założonego ekwipunku: hełm, zbroja, rękawice, buty, pas i amulet mają własne warstwy w kolorze rudy, a broń to ikona przedmiotu w dłoni. Tak wygląda na polu walki, w zakładce Bohater i na arenie.</p><div class="tiles">${heroes}</div></section>
-  <section><h2>Przeciwnicy</h2><p>Wrogowie 32×32 z kilkunastu szablonów (wilk, pająk, szkielet, smok…) w paletach dla każdej krainy i lochu. Patrzą w lewo, na bohatera.</p><div class="tiles">${foes}</div></section>
-  <section><h2>Bossowie klanowi</h2><p>Kolosy 32×32 — jeden szablon w pięciu paletach; po każdym pokonaniu przychodzi następny, silniejszy.</p><div class="tiles">${bosses}</div></section>
+  <section><h2>Bohater</h2><p>Postać 48×48 składana z założonego ekwipunku: hełm, zbroja, rękawice, buty, pas, amulet i broń mają własne warstwy w kolorze rudy. Tak wygląda na polu walki, w zakładce Bohater i na arenie.</p><div class="tiles">${heroes}</div></section>
+  <section><h2>Przeciwnicy</h2><p>Wrogowie 48×48 z kilkudziesięciu szablonów, bossowie krain 64×64 — każdy z własnym wyglądem. Patrzą w lewo, na bohatera.</p><div class="tiles">${foes}</div></section>
+  <section><h2>Bossowie klanowi</h2><p>Kolosy 64×64; po każdym pokonaniu przychodzi następny, silniejszy.</p><div class="tiles">${bosses}</div></section>
+  <section><h2>Towarzysze</h2><p>Chowańce i wierzchowce 48×48.</p><div class="tiles">${comps}</div></section>
   <section><h2>Badania</h2><p>Odznaki 20×20; kolor ramki to gałąź Akademii Kowalskiej.</p>${techs}</section>
 </div>
 <script>

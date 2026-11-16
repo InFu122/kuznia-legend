@@ -9,3 +9,4 @@ server/build
 __pycache__/
 sekrety/
 *.jks
+.tmp-art/

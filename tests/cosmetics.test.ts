@@ -69,6 +69,6 @@ describe('wygląd: stroje i ramki', () => {
     expect(keys.size).toBe(SKIN_IDS.length);
     const sig = (a: Uint8ClampedArray) => Array.from(a).join(',');
     expect(new Set(SKIN_IDS.map(k => sig(heroPixels({}, k)))).size).toBe(SKIN_IDS.length);
-    expect(avatarPixels('zwykly').length).toBe(18 * 18 * 4);
+    expect(avatarPixels('zwykly').length).toBe(22 * 22 * 4);
   });
 });

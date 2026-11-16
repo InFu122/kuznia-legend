@@ -75,10 +75,10 @@ export function SkillsView({ game }: { game: Game }) {
 /* ---------- chowańce ---------- */
 
 /** Portret towarzysza 32×32 (odwrócony w stronę bohatera) w ramce w kolorze rzadkości. */
-export function CompPortrait({ id, r, size = 40, locked = false }: { id: string; r: number; size?: number; locked?: boolean }) {
+export function CompPortrait({ id, r, size = 48, locked = false }: { id: string; r: number; size?: number; locked?: boolean }) {
   return (
     <span class={`cport r${r}${locked ? ' locked' : ''}`} style={{ '--ps': size + 'px' } as Record<string, string>}>
-      <Px src={companionUrl(id)} size={size} cls="flip" />
+      <Px src={companionUrl(id)} size={size} cls={size < 48 ? 'flip smooth' : 'flip'} />
     </span>
   );
 }
@@ -152,7 +152,7 @@ export function PetsView({ game }: { game: Game }) {
       </section>
       {sel && t && (
         <section class={`card compshow r${PETS[sel].r}`}>
-          <CompPortrait id={sel} r={PETS[sel].r} size={64} />
+          <CompPortrait id={sel} r={PETS[sel].r} size={72} />
           <div class="cmain">
             <div class="eyebrow">Walczy u twojego boku</div>
             <div class="h"><span class={`rt${PETS[sel].r}`}>{PETS[sel].n}</span> <Stars n={s.pets[sel]!.stars} /></div>
@@ -229,7 +229,7 @@ export function MountsView({ game }: { game: Game }) {
       </section>
       {sel && (
         <section class={`card compshow r${MOUNTS[sel].r}`}>
-          <CompPortrait id={sel} r={MOUNTS[sel].r} size={64} />
+          <CompPortrait id={sel} r={MOUNTS[sel].r} size={72} />
           <div class="cmain">
             <div class="eyebrow">Dosiadasz</div>
             <div class="h"><span class={`rt${MOUNTS[sel].r}`}>{MOUNTS[sel].n}</span> <Stars n={s.mounts[sel]!.stars} /></div>

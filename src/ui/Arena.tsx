@@ -2,7 +2,7 @@ import { dungScene } from '../engine/events';
 import { skinOr } from '../engine/cosmetics';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { AD_BUFFS, BUFF_IDS, ORES, SETS, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId, actName, landDef, rRank } from '../data';
-import { dungeonBgUrl, elemUrl, foeUrl, heroUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl } from '../art/render';
+import { dungeonBgUrl, elemUrl, foeSize, foeUrl, frameAt, heroUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl } from '../art/render';
 import { passLevel, passUnclaimed } from '../engine/shop';
 import { foeTemplate } from '../art/actors';
 import { Px } from './Px';
@@ -34,19 +34,25 @@ function LootChip({ d }: { d: LootDrop }) {
 /** Najrzadszy założony przedmiot (indeks rzadkości) albo −1 — od niego zależy poświata bohatera. */
 export const bestRarity = (eq: Record<string, Item | null>) => Object.values(eq).reduce((m, it) => (it && rRank(it.r) > rRank(m) ? it.r : m), -1);
 
-/** Bohater w pixel arcie, ubrany w to, co ma założone. */
-export function HeroSprite({ eq, flip = false, skin }: { eq: Record<string, Item | null | { kind: string; ore: number }>; flip?: boolean; skin?: string }) {
-  return <img class={`sprite${flip ? ' flip' : ''}`} src={heroUrl(eq as Record<string, Item | null>, skinOr(skin))} alt="" draggable={false} />;
+/** Bohater w pixel arcie, ubrany w to, co ma założone. `frame` 0/1 — klatka oddechu (pole walki podaje ją z zegara). */
+export function HeroSprite({ eq, flip = false, skin, frame = 0 }: { eq: Record<string, Item | null | { kind: string; ore: number }>; flip?: boolean; skin?: string; frame?: number }) {
+  return <img class={`sprite${flip ? ' flip' : ''}`} src={heroUrl(eq as Record<string, Item | null>, skinOr(skin), frame)} alt="" draggable={false} />;
 }
 
-/** Wróg (albo kilku — wtedy dalsi stoją z tyłu). */
-export function FoeSprite({ e }: { e: Enemy }) {
-  const url = foeUrl(e.name, e.type);
+/** Latający i unoszący się wrogowie machają skrzydłami szybciej niż reszta przestępuje z nogi na nogę. */
+const FAST = new Set(['ptak', 'feniks', 'harpia', 'gryf', 'gryf_boss', 'chochlik', 'wywerna']);
+
+/** Wróg (albo kilku — wtedy dalsi stoją z tyłu). Dwie klatki ruchu przełącza zegar pola walki. */
+export function FoeSprite({ e, now = 0 }: { e: Enemy; now?: number }) {
+  const n = foeSize(e.name, e.type);
+  const f = frameAt(now, FAST.has(foeTemplate(e.name, e.type)) ? 240 : 460);
+  const url = foeUrl(e.name, e.type, f);
   const back = Math.min(2, Math.max(0, e.count - 1));
+  const sz = { width: n * 2 + 'px', height: n * 2 + 'px' };
   return (
     <>
-      {Array.from({ length: back }, (_, i) => <img key={i} class={`sprite back b${i + 1}`} src={url} alt="" draggable={false} />)}
-      <img class="sprite" src={url} alt="" draggable={false} />
+      {Array.from({ length: back }, (_, i) => <img key={i} class={`sprite back b${i + 1}`} src={foeUrl(e.name, e.type, (f + i + 1) % 2)} alt="" draggable={false} />)}
+      <img class="sprite" style={sz} src={url} alt="" draggable={false} />
     </>
   );
 }
@@ -149,6 +155,7 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
   const dead = !e || e.hp <= 0;
   const best = bestRarity(s.eq);
   const side = s.tut >= TUTORIAL.length && s.forge.lvl >= 3;
+  const tnow = typeof performance !== 'undefined' ? performance.now() : 0;
   return (
     <section class="arena" aria-label="Arena walki" style={{ '--bg': `url(${bg})` } as Record<string, string>}>
       <div class="arena-head">
@@ -174,11 +181,11 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
       <div class={`stage${e?.boss ? ' boss' : ''}${side ? ' has-side' : ''}`}>
         <div class={`st-tag${e?.boss ? ' boss' : ''}`}>{label}</div>
         <div class={`actor hero${best >= 2 ? ' r' + best : ''}${hp <= 0 ? ' dead' : ''}`} ref={heroRef}>
-          <HeroSprite eq={s.eq} skin={s.look.skin} />
+          <HeroSprite eq={s.eq} skin={s.look.skin} frame={hp > 0 ? frameAt(tnow, 520) : 0} />
         </div>
         {shown && (
           <div key={lastFoe.current?.id} class={`actor foe tp-${foeTemplate(shown.name, shown.type)}${shown.boss ? ' boss' : ''}${dead ? ' dead' : ''}`} ref={foeRef}>
-            <div class="enter"><FoeSprite e={shown} /></div>
+            <div class="enter"><FoeSprite e={shown} now={dead ? 0 : tnow + 230} /></div>
           </div>
         )}
         {side && <SideIcons game={game} onAd={onAd} onPass={onPass} ads={!dung} />}
