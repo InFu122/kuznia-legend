@@ -328,7 +328,7 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
             <button class={`toggle${s.opts.notify ? ' on' : ''}`} aria-pressed={s.opts.notify} onClick={() => game.setNotify(!s.opts.notify)}><span class="knob" />Powiadomienia</button>
           </div>
         )}
-        <p class="sub credits">Muzyka: eBunny, Sonican · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
+        <p class="sub credits">Muzyka: eBunny, Sonican, Dummy Daniel · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
         {game.speeds.length > 1 && (
           <div class="speed-set">
             <span class="sub">Tempo testowe przyspiesza walkę, kuźnię, badania i inne timery, żeby szybciej sprawdzić progresję.{game.net ? ' Działa, bo serwer ma włączony tryb testowy.' : ''}</span>

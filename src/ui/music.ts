@@ -6,11 +6,18 @@ import { audioCtx, audioUrl, setDuckHook } from './sound';
 
 export type Mood = 'camp' | 'dung' | 'boss';
 
-/** Playlisty: spokojne w krainach, tajemnicze w lochach, podniosłe przy bossach. */
+/** Spokojne — tylko w tle krain. */
+const CALM = ['simple-magic', 'legend', 'celtic-morning', 'celtic-sun', 'helpless-land', 'medieval-kingdom', 'medieval-castle', 'knight-of-flowers'];
+/** Dynamiczne — w tle krain, a do tego w ważniejszych walkach (lochy) i przy bossach. */
+const DYNAMIC = ['celtic-wild', 'mystical-fantasy', 'celtic-fantasy', 'naughty-princess'];
+/** Chóry — tylko walka z bossem. */
+const BOSS_ONLY = ['gregorian-choir', 'religious-choir'];
+
+/** Playlisty: w krainach spokojne i dynamiczne na zmianę, w lochach dynamiczne, przy bossach chóry i dynamiczne. */
 export const PLAYLISTS: Record<Mood, string[]> = {
-  camp: ['celtic-fantasy', 'celtic-morning', 'celtic-sun', 'medieval-castle', 'naughty-princess', 'simple-magic', 'knight-of-flowers'],
-  dung: ['mystical-fantasy', 'religious-choir'],
-  boss: ['legend', 'medieval-kingdom'],
+  camp: [...CALM, ...DYNAMIC],
+  dung: [...DYNAMIC],
+  boss: [...BOSS_ONLY, ...DYNAMIC],
 };
 /** Muzyka jest cichsza od efektów — ma być tłem. */
 const LEVEL = 0.55;
@@ -36,7 +43,10 @@ const level = () => vol * LEVEL;
 
 function pick(m: Mood): string {
   const list = PLAYLISTS[m];
-  const options = list.length > 1 ? list.filter(x => x !== lastTrack[m]) : list;
+  // Bez powtórki: ani poprzedni utwór tej playlisty, ani ten, który właśnie gra (utwory dynamiczne są na kilku listach).
+  const now = decks[active]?.track;
+  const fresh = list.filter(x => x !== lastTrack[m] && x !== now);
+  const options = fresh.length ? fresh : list;
   const t = options[Math.floor(Math.random() * options.length)];
   lastTrack[m] = t;
   return t;
