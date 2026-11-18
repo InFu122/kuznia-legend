@@ -68,11 +68,11 @@ Zrzuty i grafikę zrobiono z prawdziwej gry (pixel art z silnika). Jeśli dodasz
 
 ## Produkty w aplikacji (Zarabianie → Produkty → Produkty w aplikacji)
 
-Identyfikator produktu musi być **dokładnie** taki jak w tabeli (gra i serwer szukają tych identyfikatorów). Typ: produkt jednorazowy, „do wielokrotnego zakupu” (gra zużywa zakup po wydaniu Klejnotów).
+Identyfikator produktu musi być **dokładnie** taki jak w tabeli (gra i serwer szukają tych identyfikatorów). Identyfikatora usuniętego produktu Google nie pozwala użyć ponownie — wtedy trzeba nadać nowy i wpisać go jako `play` przy pakiecie w `src/data/shop.ts` (tak jest z `starter_pack`). Identyfikator opcji zakupu (drugie pole) może być dowolny, np. `kup`. Typ: produkt jednorazowy, „do wielokrotnego zakupu” (gra zużywa zakup po wydaniu Klejnotów).
 
 | Identyfikator | Nazwa | Opis | Cena (PLN) |
 |---|---|---|---|
-| `starter` | Pakiet Nowicjusza | 300 Klejnotów, 10 Ksiąg Wiedzy, 2 Zwoje zaklęć i Rzadkie jajo — tylko raz | 9,99 |
+| `starter_pack` | Pakiet Nowicjusza | 300 Klejnotów, 10 Ksiąg Wiedzy, 2 Zwoje zaklęć i Rzadkie jajo — tylko raz | 9,99 |
 | `gems_100` | Garść Klejnotów | 100 Klejnotów | 4,99 |
 | `gems_550` | Sakiewka Klejnotów | 500 + 50 gratis Klejnotów | 22,99 |
 | `gems_1200` | Szkatuła Klejnotów | 1000 + 200 gratis Klejnotów | 44,99 |

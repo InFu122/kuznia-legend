@@ -3,15 +3,20 @@
 /* ---------- Klejnoty za prawdziwe pieniądze ---------- */
 
 /** Pakiety Klejnotów. `id` = identyfikator produktu w Google Play; cena w złotych tylko do wyświetlenia przed połączeniem ze sklepem. */
-export interface GemPack { id: string; n: string; gems: number; bonus: number; pln: number; once?: boolean; d?: string }
+/** `play` — identyfikator produktu w Google Play, gdy jest inny niż `id` (usuniętego identyfikatora Google nie pozwala użyć drugi raz). */
+export interface GemPack { id: string; n: string; gems: number; bonus: number; pln: number; once?: boolean; d?: string; play?: string }
 export const GEM_PACKS: GemPack[] = [
-  { id: 'starter', n: 'Pakiet Nowicjusza', gems: 300, bonus: 0, pln: 9.99, once: true, d: '300 Klejnotów, 10 Ksiąg Wiedzy, 2 Zwoje zaklęć i Rzadkie jajo — tylko raz' },
+  { id: 'starter', play: 'starter_pack', n: 'Pakiet Nowicjusza', gems: 300, bonus: 0, pln: 9.99, once: true, d: '300 Klejnotów, 10 Ksiąg Wiedzy, 2 Zwoje zaklęć i Rzadkie jajo — tylko raz' },
   { id: 'gems_100', n: 'Garść Klejnotów', gems: 100, bonus: 0, pln: 4.99 },
   { id: 'gems_550', n: 'Sakiewka Klejnotów', gems: 500, bonus: 50, pln: 22.99 },
   { id: 'gems_1200', n: 'Szkatuła Klejnotów', gems: 1000, bonus: 200, pln: 44.99 },
   { id: 'gems_2600', n: 'Kufer Klejnotów', gems: 2000, bonus: 600, pln: 89.99 },
   { id: 'gems_7000', n: 'Skarbiec Klejnotów', gems: 5000, bonus: 2000, pln: 219.99 },
 ];
+/** Identyfikator produktu w Google Play. */
+export const playId = (p: GemPack) => p.play ?? p.id;
+/** Pakiet po identyfikatorze produktu z Google Play. */
+export const packByPlayId = (pid: string) => GEM_PACKS.find(p => playId(p) === pid);
 export const STARTER_EXTRA = { books: 10, scrolls: 2, eggs: { 2: 1 } };
 
 /* ---------- towary za Klejnoty ---------- */

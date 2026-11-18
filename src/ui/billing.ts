@@ -4,7 +4,7 @@
 // u Google i wydaje pakiet → dopiero wtedy gra „zużywa” zakup (można kupić ten pakiet znowu). Jeśli coś przerwie
 // drogę (brak sieci, zamknięta aplikacja), zakup zostaje niezużyty: gra ponawia go przy starcie i przy otwarciu
 // sklepu (`recoverPurchases`). Zakupu niepotwierdzonego przez 3 dni Google sam zwraca graczowi pieniądze.
-import { GEM_PACKS } from '../data';
+import { GEM_PACKS, packByPlayId, playId } from '../data';
 import type { ServerLink, ShopResp } from '../save/server';
 import { isNative } from './pwa';
 
@@ -38,8 +38,8 @@ export async function storePrices(): Promise<Record<string, string>> {
   const m = await plugin();
   if (!m) return {};
   try {
-    const { products } = await m.NativePurchases.getProducts({ productIdentifiers: GEM_PACKS.map(p => p.id), productType: m.PURCHASE_TYPE.INAPP });
-    return Object.fromEntries(products.filter(p => p.priceString).map(p => [p.identifier, p.priceString]));
+    const { products } = await m.NativePurchases.getProducts({ productIdentifiers: GEM_PACKS.map(playId), productType: m.PURCHASE_TYPE.INAPP });
+    return Object.fromEntries(products.filter(p => p.priceString).map(p => [packByPlayId(p.identifier)?.id ?? p.identifier, p.priceString]));
   } catch (e) {
     console.warn('Kuźnia Legend: ceny z Google Play —', e);
     return {};
@@ -59,10 +59,13 @@ export type BuyResult = { k: 'ok'; r: ShopResp } | { k: 'pending' } | { k: 'canc
 export async function buyPack(link: ServerLink, id: string): Promise<BuyResult> {
   const m = await plugin();
   if (!m) throw new PlayError('Płatności Google Play nie działają na tym urządzeniu.');
+  const pack = GEM_PACKS.find(p => p.id === id);
+  if (!pack) throw new PlayError('Nie ma takiego pakietu.');
+  const pid = playId(pack);
   let t: Awaited<ReturnType<NP['NativePurchases']['purchaseProduct']>>;
   try {
     t = await m.NativePurchases.purchaseProduct({
-      productIdentifier: id, productType: m.PURCHASE_TYPE.INAPP, isConsumable: false, autoAcknowledgePurchases: false,
+      productIdentifier: pid, productType: m.PURCHASE_TYPE.INAPP, isConsumable: false, autoAcknowledgePurchases: false,
     });
   } catch (e) {
     const code = String((e as { code?: unknown }).code ?? '');
@@ -98,9 +101,10 @@ export async function recoverPurchases(link: ServerLink): Promise<ShopResp[]> {
   }
   const out: ShopResp[] = [];
   for (const t of list) {
-    if (!t.purchaseToken || !GEM_PACKS.some(p => p.id === t.productIdentifier)) continue;
+    const pack = packByPlayId(t.productIdentifier);
+    if (!t.purchaseToken || !pack) continue;
     try {
-      const r = await deliver(m, link, t.productIdentifier, t.purchaseToken);
+      const r = await deliver(m, link, pack.id, t.purchaseToken);
       if (r.done) out.push(r);
     } catch (e) {
       console.warn('Kuźnia Legend: zakup czeka —', e);

@@ -7,7 +7,7 @@
 // Magazyn gracza (tylko serwer): shop/daily — dzienne limity (UTC), shop/iap — jednorazowe pakiety i wydane zakupy Google Play,
 // shop/buffs — wzmocnienia z reklam, shop/boost — przyspieszenia ulepszeń kuźni (kontrola tempa kuźni je odejmuje),
 // pass/state — Przepustka Kowala (punkty liczy save_put z różnicy liczników, jak punkty wojny klanów).
-import { AD, AD_BUFFS, GEM_PACKS, GEM_SHOP, PASS, adMax, speedupGems, type AdKind, type BuffId, type GemItemId } from '../../src/data';
+import { AD, AD_BUFFS, GEM_PACKS, GEM_SHOP, PASS, adMax, playId, speedupGems, type AdKind, type BuffId, type GemItemId } from '../../src/data';
 import {
   buffUntil, gemItemBlock, gemItemReward, giftReward, newShop, packReward, passUnclaimed, passUpdate, shopToday,
   type PassTrack, type ShopState,
@@ -315,7 +315,9 @@ export function rpcIapGoogle(ctx: nkruntime.Context, logger: nkruntime.Logger, n
   const req = parse(payload);
   const id = String(req.id || '');
   const token = typeof req.token === 'string' ? req.token : '';
-  if (!GEM_PACKS.some(p => p.id === id)) throw err('Nie ma takiego pakietu.', NOT_FOUND);
+  const pack = GEM_PACKS.find(p => p.id === id);
+  if (!pack) throw err('Nie ma takiego pakietu.', NOT_FOUND);
+  const pid = playId(pack); // identyfikator produktu w Google Play (może być inny niż w grze)
   if (!token || token.length > 2000) throw err('Brak potwierdzenia zakupu.', INVALID);
   const cred = playCredentials(nk);
   if (!cred) {
@@ -324,13 +326,13 @@ export function rpcIapGoogle(ctx: nkruntime.Context, logger: nkruntime.Logger, n
   }
   let res: nkruntime.ValidatePurchaseResponse;
   try {
-    res = nk.purchaseValidateGoogle(userId, playReceipt(id, token), true, cred.email, cred.key);
+    res = nk.purchaseValidateGoogle(userId, playReceipt(pid, token), true, cred.email, cred.key);
   } catch (e) {
     logger.warn('Zakup Google gracza %s (%s): %s', userId, id, String(e));
     throw err('Nie udało się potwierdzić zakupu w Google Play — spróbuj za chwilę.', PRECONDITION);
   }
   const p = (res.validatedPurchases || [])[0];
-  const v = purchaseVerdict(p, userId, id);
+  const v = purchaseVerdict(p, userId, pid);
   if (v === 'other') {
     logger.warn('Zakup Google %s zgłoszony przez %s należy do konta %s.', id, userId, p ? p.userId : '?');
     throw err('Ten zakup jest przypisany do innego konta gry.', PRECONDITION);

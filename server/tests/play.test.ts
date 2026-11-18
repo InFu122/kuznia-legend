@@ -1,6 +1,7 @@
 // Zakupy w Google Play: ocena odpowiedzi Google i potwierdzenie składane przez serwer.
 import { describe, expect, it } from 'vitest';
 import { PLAY_PACKAGE, playReceipt, purchaseVerdict } from '../src/play';
+import { GEM_PACKS, packByPlayId, playId } from '../../src/data';
 
 const ME = '11111111-1111-1111-1111-111111111111';
 const buy = (over: Partial<{ userId: string; productId: string; refundTime: number; providerResponse: string }> = {}) => ({
@@ -27,5 +28,11 @@ describe('zakupy Google Play', () => {
   it('potwierdzenie zakupu składa serwer: zawsze pakiet tej gry', () => {
     expect(JSON.parse(playReceipt('starter', 'tok-1'))).toEqual({ packageName: PLAY_PACKAGE, productId: 'starter', purchaseToken: 'tok-1' });
     expect(PLAY_PACKAGE).toBe('pl.kuznialegend.gra');
+  });
+  it('Pakiet Nowicjusza ma w Google Play identyfikator starter_pack (starter został tam usunięty)', () => {
+    expect(playId(GEM_PACKS.find(p => p.id === 'starter')!)).toBe('starter_pack');
+    expect(packByPlayId('starter_pack')?.id).toBe('starter');
+    expect(packByPlayId('gems_100')?.id).toBe('gems_100');
+    expect(new Set(GEM_PACKS.map(playId)).size).toBe(GEM_PACKS.length);
   });
 });
