@@ -1,4 +1,4 @@
-// Animacja dropu rudy: kamień wyskakuje z wroga, podskakuje i leci do zakładki Kuźnia.
+// Animacja dropu rudy: kamień wyskakuje z wroga, podskakuje i leci do rudy przy kowadle (albo do zakładki Kuźnia).
 import { ORES } from '../data';
 import { oreUrl } from '../art/render';
 
@@ -16,7 +16,8 @@ function pulse(el: Element): void {
 
 export function flyOre(from: Element | null, ore: number, n: number, rare: boolean): void {
   if (!from || reducedMotion()) return;
-  const to = document.querySelector('.tab[data-tab="kuznia"]');
+  // Do rudy przy przycisku Wytop (zakładka Kuźnia), a gdy go nie ma — do przycisku Kuźnia na dole.
+  const to = document.querySelector('.dock-ore') ?? document.querySelector('.tab[data-tab="kuznia"]');
   if (!to) return;
   const a = from.getBoundingClientRect();
   const b = to.getBoundingClientRect();

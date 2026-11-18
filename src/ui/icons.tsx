@@ -12,7 +12,7 @@ const SLOT_SVG: Record<SlotId, string> = {
 };
 
 export type Tab = 'kuznia' | 'bohater' | 'nauka' | 'krainy' | 'lochy' | 'klan' | 'kodeks';
-export type UiIcon = Tab | 'czat';
+export type UiIcon = Tab | 'czat' | 'przygoda' | 'menu' | 'ustawienia';
 
 const TAB_SVG: Record<Tab, string> = {
   kuznia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 8h13c0 3 2 4 5 4-1 2-3 3-6 3v2h2v3H7v-3h2v-2c-3 0-6-3-6-7z"/></svg>',
@@ -26,6 +26,9 @@ const TAB_SVG: Record<Tab, string> = {
 const UI_SVG: Record<UiIcon, string> = {
   ...TAB_SVG,
   czat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>',
+  przygoda: TAB_SVG.krainy,
+  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  ustawienia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>',
 };
 
 export const SlotIcon = ({ slot }: { slot: SlotId }) => <span class="icon-wrap" dangerouslySetInnerHTML={{ __html: SLOT_SVG[slot] }} />;

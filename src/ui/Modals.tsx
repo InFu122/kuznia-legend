@@ -34,20 +34,22 @@ import { LookView } from './panels/Look';
 import { DungInfoView } from './panels/Dungeon';
 import { FeedbackView } from './panels/Feedback';
 import { ChatView } from './panels/Chat';
+import { MenuView } from './Menu';
+import { OrePicker } from './Dock';
 import type { Tab } from './icons';
 
 /**
  * Ramka okna: przycisk „Wróć” u góry (zostaje widoczny przy przewijaniu), zamknięcie dotknięciem obok okna
  * i przyciskiem „wstecz” telefonu. Okna z decyzją (`locked`) nie zamykają się same — „wstecz” nic w nich nie robi.
  */
-export function ModalShell({ locked, onClose, children }: { locked: boolean; onClose: () => void; children: ComponentChildren }) {
+export function ModalShell({ locked, onClose, children, cls = '' }: { locked: boolean; onClose: () => void; children: ComponentChildren; cls?: string }) {
   const close = useRef(onClose);
   close.current = onClose;
   const lock = useRef(locked);
   lock.current = locked;
   useEffect(() => onBack(() => { if (!lock.current) close.current(); return true; }), []);
   return (
-    <div class="modal" onClick={e => { if (e.target === e.currentTarget && !locked) onClose(); }}>
+    <div class={`modal ${cls}`} onClick={e => { if (e.target === e.currentTarget && !locked) onClose(); }}>
       <div class="modal-box" role="dialog" aria-modal="true">
         {!locked && (
           <div class="modal-top">
@@ -298,6 +300,10 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       return <ChatView game={game} initial={m.ch} close={close} goClan={() => { close(); goTab?.('klan'); }} />;
     case 'draw':
       return <DrawView m={m} close={close} />;
+    case 'menu':
+      return <MenuView game={game} close={close} goTab={goTab} />;
+    case 'ores':
+      return <OrePicker game={game} close={close} />;
     case 'reset':
       return (
         <>

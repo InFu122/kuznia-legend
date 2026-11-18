@@ -36,13 +36,6 @@ button:focus-visible, input:focus-visible{outline:2px solid var(--straw); outlin
 .app{max-width:560px; margin:0 auto; display:flex; flex-direction:column; gap:12px; padding-block:10px 96px}
 
 /* pasek zasobów */
-.top{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
-.brand{font-family:var(--f-display); font-weight:700; font-size:28px; color:var(--straw); line-height:1; letter-spacing:.01em}
-.res{display:flex; gap:14px; font-variant-numeric:tabular-nums; font-weight:600; flex-wrap:wrap}
-.res span{display:flex; flex-direction:column; align-items:flex-end; line-height:1.1}
-.res small{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); font-weight:500}
-.res b{font-size:17px}
-.res .gold b{color:var(--straw)}
 
 /* arena */
 .arena{position:relative; overflow:hidden; border:1px solid var(--rivet); border-radius:14px; padding:12px 14px 14px;
@@ -231,20 +224,16 @@ a.linkbtn{display:inline-block}
 .toast.bad{border-left-color:var(--blood)}
 .toast.good{border-left-color:var(--good)}
 @keyframes tin{from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:none}}
-.save-badge{font-size:11px; color:var(--ash)}
 
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{animation:none !important; transition:none !important}
 }
 @media (max-width:380px){
   .stats{grid-template-columns:repeat(2, minmax(0,1fr))}
-  .res{gap:10px}
-  .res b{font-size:15px}
 }
 .icon-wrap{display:contents}
 
 /* Etap 2a: Nauka, Lochy, zestawy */
-.res .books b{color:#c9b8ff}
 .keys{font-size:12px; color:var(--ash); border:1px solid var(--rivet); border-radius:999px; padding:3px 9px; white-space:nowrap; font-variant-numeric:tabular-nums}
 .card.locked .h, .card.locked .sub{color:var(--ash)}
 .card.locked .h{opacity:.8}
@@ -301,9 +290,6 @@ a.linkbtn{display:inline-block}
 .tab.got svg{animation:tabgot .5s ease-out}
 @keyframes tabgot{30%{transform:scale(1.3); color:var(--straw)} 100%{transform:none}}
 /* Etap 2c: Zadania, samouczek, kalendarz */
-.top-row{flex:1 1 100%; display:flex; align-items:center; justify-content:space-between; gap:12px}
-.quests{position:relative; display:flex; align-items:center; gap:6px; background:var(--plate); border:1px solid var(--rivet); border-radius:999px; padding:7px 12px; font-size:13px; font-weight:600; color:var(--frost)}
-.quests svg{width:18px; height:18px; color:var(--straw)}
 .badge{position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--blood); color:#fff; font-size:11px; font-style:normal; line-height:18px; text-align:center; font-weight:700}
 .dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--blood); margin-left:5px; vertical-align:middle}
 .seg.seg3{grid-template-columns:repeat(3, minmax(0,1fr)); margin:6px 0 4px}
@@ -318,15 +304,11 @@ a.linkbtn{display:inline-block}
 .calday.got{opacity:.5}
 .calday.now{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw) inset}
 .calday.big{grid-column:span 2; border-color:var(--r3)}
-.tutbar{display:flex; align-items:center; gap:10px; background:linear-gradient(90deg, rgba(231,190,98,.12), transparent 70%), var(--plate); border:1px solid var(--straw); border-radius:14px; padding:10px 12px}
-.tutbar b{display:block; font-size:15px}
-.tutbar .sub{font-size:13px}
 .tut-hl{position:relative; outline:2px solid var(--straw); outline-offset:3px; animation:tuthl 1.2s ease-in-out infinite}
 @keyframes tuthl{50%{outline-color:rgba(231,190,98,.25)}}
 @media (prefers-reduced-motion: reduce){ .tut-hl{animation:none} }
 .field input[type=range]{width:100%; accent-color:var(--straw); padding:0; border:0; background:none}
 /* Etap 3a: serwer i rankingi */
-.save-badge.offline, .save-badge.connecting{color:#c9a46a}
 .otable.rank td.oname small{display:block; font-size:11px; color:var(--ash); font-weight:400}
 /* Etap 3b: arena, przeniesienie konta, pochodzenie przedmiotów */
 .seg.seg4{margin:6px 0 4px}
@@ -342,8 +324,6 @@ a.linkbtn{display:inline-block}
 .confirm{display:flex; flex-direction:column; gap:8px; border:1px solid var(--blood); border-radius:10px; padding:10px 12px; font-size:13px}
 .btnrow{display:flex; gap:8px; flex-wrap:wrap}
 /* Etap 4a: czat, klany, nick */
-.top-btns{display:flex; gap:8px; align-items:center}
-@media (max-width:430px){ .top-btns:has(> :nth-child(2)) .qlabel{display:none} .top-btns:has(> :nth-child(2)) .quests{padding:8px 10px} }
 .seg.seg2{grid-template-columns:repeat(2, minmax(0,1fr))}
 .seg button{position:relative}
 .seg-badge{display:inline-block; min-width:16px; height:16px; margin-left:6px; padding:0 4px; border-radius:8px; background:var(--blood); color:#fff; font-size:10px; font-style:normal; line-height:16px; vertical-align:1px}
@@ -394,7 +374,6 @@ a.linkbtn{display:inline-block}
 @supports (image-rendering:pixelated){ .px{image-rendering:pixelated} }
 .ore .ore-ic{grid-row:1 / span 2; width:32px; height:32px}
 .chip .px{display:inline-block; vertical-align:-3px; margin-right:5px}
-.res b .px{display:inline-block; vertical-align:-2px; margin-right:4px}
 .row-ic{border-radius:8px}
 .skslot .px{margin-bottom:2px}
 .ore-fly img{position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; filter:drop-shadow(0 0 4px var(--c))}
@@ -691,20 +670,6 @@ a.linkbtn{display:inline-block}
 .sub.iline img{margin-top:1px}
 
 /* pasek zasobów: ciepłe żetony z ikonami */
-.res2{display:flex; gap:6px; width:100%; margin-top:2px}
-.hchip{position:relative; overflow:hidden; display:flex; align-items:center; gap:6px; min-width:0; padding:6px 7px; border-radius:12px;
-  background:linear-gradient(180deg, #33281f, var(--plate)); border:1px solid var(--rivet); box-shadow:inset 0 1px 0 rgba(255,230,190,.07), 0 2px 6px rgba(0,0,0,.25)}
-.hchip > div{display:flex; flex-direction:column; min-width:0; line-height:1.05}
-.hchip b{font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.hchip small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); font-weight:600}
-.hchip .px{flex:none}
-.hchip.gold b{color:var(--straw)}
-.hchip.books b{color:#d2c2ff}
-.hchip.forge .up{font-size:11px; color:var(--ember); margin-left:2px}
-.rmini{position:absolute; left:0; bottom:0; height:2px; background:var(--ember)}
-.hchip{flex:1 1 auto}
-@media (max-width:440px){ .hchip small{display:none} .hchip{padding:7px 8px; gap:5px} .hchip b{font-size:15px} }
-@media (max-width:370px){ .res2{display:grid; grid-template-columns:1fr 1fr} .hchip small{display:block} .hchip{padding:5px 8px} }
 @media (max-width:380px){ .land{font-size:21px} .arena .ghost{font-size:12px; padding:4px 9px} .arena-btns{gap:4px} }
 
 /* ---------- animacja wykuwania ---------- */
@@ -964,7 +929,6 @@ a.linkbtn{display:inline-block}
 .weak b{font-size:14px}
 
 /* Sklep, Klejnoty, Przepustka Kowala, reklamy */
-.shopbtn .gemn{font-size:13px; color:#ffb3cf; font-variant-numeric:tabular-nums}
 .badge.dotb{min-width:10px; width:10px; height:10px; padding:0; top:-2px; right:-2px}
 .gembal{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--plate-2); border:1px solid var(--rivet)}
 .gembal b{color:#ffb3cf; font-variant-numeric:tabular-nums}
@@ -1373,8 +1337,6 @@ a.linkbtn{display:inline-block}
 .lock-ic{flex:none; color:var(--ash)}
 .tab.locked{color:color-mix(in srgb, var(--ash) 60%, transparent)}
 .tab.locked .lock-ic{width:22px; height:22px; opacity:.8}
-.quests.locked{color:var(--ash); border-style:dashed}
-.quests.locked .lock-ic{width:16px; height:16px}
 .seg button.locked{color:color-mix(in srgb, var(--ash) 70%, transparent)}
 .seg button .lock-ic{width:12px; height:12px; margin-right:3px; vertical-align:-1px}
 .tab-dot.new, .badge.new{background:#7ad38a; animation:newdot 1.4s ease-in-out infinite}
@@ -1459,3 +1421,102 @@ a.linkbtn{display:inline-block}
 .tech-stages span.done b{color:var(--straw)}
 .tech-stages span.open{color:var(--frost)}
 .tech-stages span.shut{opacity:.6; border-style:dashed}
+
+/* ---------- układ „wariant B”: nagłówek, cel, dolny pasek z kowadłem i czatem, Menu ---------- */
+.app{padding-block:10px calc(var(--bottom-h, 150px) + 12px)}
+.hud{display:flex; align-items:center; gap:8px}
+.hud-chip{position:relative; display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:4px 12px 4px 8px; border-radius:999px;
+  background:linear-gradient(180deg, #33281f, var(--plate)); border:1px solid var(--rivet); box-shadow:inset 0 1px 0 rgba(255,230,190,.07);
+  font-size:16px; font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--frost)}
+.hud-chip .px{flex:none}
+.hud-chip.gold b{color:var(--straw)}
+.hud-chip.gems{padding-right:6px}
+.hud-chip.gems .plus{display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--straw); color:var(--straw-ink); font-style:normal; font-weight:800; font-size:16px; line-height:1}
+.hud-chip.gems.locked .lock-ic{width:16px; height:16px; color:var(--ash)}
+.hud-chip.moc{padding-right:10px; font-size:15px}
+.hud-gap{flex:1}
+.hud .speed-badge{margin-left:0}
+.net-pill{font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; white-space:nowrap; background:color-mix(in srgb, #c9a46a 18%, var(--plate)); color:#e6c98f; border:1px solid color-mix(in srgb, #c9a46a 45%, var(--rivet))}
+@media (max-width:380px){ .hud{gap:5px} .hud-chip{padding:3px 9px 3px 6px; font-size:14.5px; min-height:38px} .hud-chip.moc{font-size:14px} }
+
+.goal{display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 12px; border-radius:14px; cursor:pointer; color:var(--frost);
+  background:linear-gradient(90deg, rgba(231,190,98,.10), transparent 70%), var(--plate); border:1px solid var(--rivet); border-left:3px solid var(--straw)}
+.goal.tut{border-color:var(--straw); border-left-width:3px}
+.goal.ready{border-left-color:var(--good); background:linear-gradient(90deg, rgba(109,197,123,.14), transparent 70%), var(--plate)}
+.goal .px{flex:none}
+.goal-main{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px}
+.goal-main small{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); font-weight:600}
+.goal-main b{font-size:15px; line-height:1.2}
+.goal-d{font-size:13px; color:#d9cbb8; line-height:1.3}
+.goal-bar{display:block; height:5px; margin-top:3px; border-radius:3px; background:#3a2f25; overflow:hidden}
+.goal-bar i{display:block; height:100%; background:var(--straw); border-radius:inherit}
+.goal-go{flex:none; padding:7px 12px; border-radius:10px; background:var(--straw); color:var(--straw-ink); font-weight:700; font-size:13px}
+.goal.ready .goal-go{background:var(--good); color:#0d2412}
+.goal-num{flex:none; font-weight:700; font-size:14px; color:var(--straw); font-variant-numeric:tabular-nums}
+
+/* dolny pasek: kowadło (tylko w Kuźni), czat i cztery zakładki */
+.tabs{background:#1a140f}
+.tabs-wrap{max-width:560px; margin:0 auto}
+.tabs .tabs-in{max-width:none; grid-template-columns:repeat(4, minmax(0,1fr))}
+.tab{min-height:58px; padding:6px 0 8px; font-size:12px}
+.tab .tab-ic{display:grid; place-items:center; width:54px; height:30px; border-radius:15px; transition:background .15s}
+.tab.on .tab-ic{background:color-mix(in srgb, var(--straw) 18%, transparent)}
+.tab .tab-ic svg, .tab .tab-ic .lock-ic{width:22px; height:22px}
+.tab-dot{top:6px; left:calc(50% + 14px)}
+.tab-num{position:absolute; top:3px; left:calc(50% + 10px); min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:var(--blood); color:#fff;
+  font-size:10.5px; font-style:normal; font-weight:700; line-height:17px; text-align:center; box-shadow:0 0 0 2px var(--iron)}
+
+.dock{position:relative; display:flex; gap:8px; padding:8px 0}
+.dock-ore{flex:none; width:74px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:4px 0; border-radius:14px;
+  background:var(--plate); border:1px solid var(--rivet); color:var(--frost)}
+.dock-ore span{display:flex; align-items:center; gap:4px; font-size:13px; font-variant-numeric:tabular-nums}
+.dock-ore i{font-style:normal; color:var(--ash); font-size:11px}
+.btn.dock-go{flex:1; min-width:0; width:auto; display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; padding:6px 12px; border-radius:14px;
+  font-family:var(--f-ui); font-size:inherit; box-shadow:0 3px 0 #8a5d1e}
+.btn.dock-go[disabled]{box-shadow:none}
+.dock-go .dg-t{display:flex; flex-direction:column; align-items:flex-start; line-height:1.05; min-width:0}
+.dock-go b{font-family:var(--f-display); font-size:28px; font-weight:700; letter-spacing:.02em}
+.dock-go small{font-size:12.5px; font-weight:600; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%}
+.dock-go.decide{background:var(--ember); border-color:var(--ember)}
+.dock-auto{flex:none; width:58px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; border-radius:14px;
+  background:var(--plate); border:1px solid var(--rivet); color:var(--ash)}
+.dock-auto b{font-size:14px; color:var(--frost)}
+.dock-auto small{font-size:11px}
+.dock-auto.on{border-color:var(--good); background:color-mix(in srgb, var(--good) 14%, var(--plate))}
+.dock-auto.on small{color:var(--good); font-weight:700}
+.dock .sparks{position:absolute; inset:0; pointer-events:none}
+
+.chatline{position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:36px; padding:0 2px; background:none; border:0; border-top:1px solid #3a2f25;
+  color:var(--frost); font-size:13px; text-align:left}
+.chatline svg{flex:none; width:16px; height:16px; color:var(--ash)}
+.cl-t{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#d9cbb8}
+.cl-t.muted{color:var(--ash)}
+.cl-ch{color:#7fc8ff; margin-right:4px}
+.cl-n{color:var(--straw)}
+.chatline .badge{position:static; flex:none}
+.dock + .chatline, .tabs-wrap > .chatline:first-child{border-top:0}
+.chatline + .tabs-in{border-top:1px solid #3a2f25}
+.coach-pill.down{bottom:calc(var(--bottom-h, 84px) + 8px)}
+
+/* Przygoda (Krainy i Lochy) i widoki z Menu */
+.adv-seg button{font-size:14px; padding:10px 0}
+.view-head{display:flex; align-items:center; gap:12px}
+.view-head .vh-t{font-family:var(--f-display); font-size:24px; color:var(--straw); line-height:1}
+
+/* okna wysuwane z dołu: Menu i wybór rudy */
+.modal.sheet{place-items:end center; padding-bottom:0}
+.modal.sheet .modal-box{max-width:560px; border-radius:20px 20px 0 0; padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px)); animation:sheetUp .2s ease-out}
+@keyframes sheetUp{from{transform:translateY(24px); opacity:.6} to{transform:none; opacity:1}}
+.menu-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px}
+.mtile{position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; padding:14px 6px 12px; border-radius:16px;
+  background:var(--plate-2); border:1px solid var(--rivet); color:var(--frost)}
+.mtile b{font-size:15px}
+.mtile small{font-size:12px; color:var(--ash); text-align:center; line-height:1.2}
+.mtile.todo{border-color:color-mix(in srgb, var(--straw) 60%, var(--rivet))}
+.mtile .mt-svg{display:grid; place-items:center; width:36px; height:36px; color:var(--ash)}
+.mtile .mt-svg svg{width:32px; height:32px}
+.mtile .badge.new{right:auto; left:-4px}
+.menu-next{display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:1px dashed var(--rivet); border-radius:12px; background:none; color:var(--ash); font-size:13px; text-align:left}
+.menu-next b{color:var(--frost)}
+.ores-sheet .ores2{margin:4px 0 0}
+@media (prefers-reduced-motion: reduce){ .modal.sheet .modal-box{animation:none} }

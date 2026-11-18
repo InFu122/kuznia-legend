@@ -8,11 +8,13 @@ import { onProfile } from './profile';
 import { Toasts } from './Toasts';
 import { fmt } from './format';
 import { LockIcon, TabIcon, type Tab } from './icons';
+import { ADVENTURE, NAVS, NAV_OF, VIEW_NAME, reachText, reachTarget, type Nav } from './nav';
+import { ForgeDock } from './Dock';
+import { ChatLine, GoalStrip } from './Goal';
+import { menuTodo } from './Menu';
 import { Coach, type CoachMark } from './Coach';
 import { ClanPanel } from './panels/Clan';
-import { clanLife } from '../save/clanlife';
 import { CodexPanel } from './panels/Codex';
-import { getChat } from '../save/chat';
 import { resUrl } from '../art/render';
 import { Px } from './Px';
 import { DungeonPanel } from './panels/Dungeon';
@@ -20,8 +22,7 @@ import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
 import { ResearchPanel } from './panels/Research';
-import { shopTodo } from './panels/Shop';
-import { FEATURES, FEATURE_IDS, TUTORIAL, type FeatureId } from '../data';
+import { FEATURES, FEATURE_IDS, type FeatureId } from '../data';
 import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
@@ -31,11 +32,11 @@ import { runBack } from './back';
 
 /** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
 const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide']);
+/** Okna, przy których auto-wytop i walka idą dalej (nie czekają na decyzję gracza). */
+const NOT_BUSY = new Set<ModalData['kind']>(['chat', 'ranking', 'arena', 'menu', 'ores']);
 
-/** Zakładki odblokowywane z postępem (kłódka). */
+/** Widoki odblokowywane z postępem (kłódka). */
 const TAB_FEATURE: Partial<Record<Tab, FeatureId>> = { bohater: 'bohater', nauka: 'nauka', krainy: 'krainy', lochy: 'lochy', klan: 'klan' };
-const TAB_NAME: Record<Tab, string> = { kuznia: 'Kuźnia', bohater: 'Bohater', nauka: 'Nauka', krainy: 'Krainy', lochy: 'Lochy', klan: 'Klan', kodeks: 'Kodeks' };
-const TABS: [Tab, string][] = [['kuznia', 'Kuźnia'], ['bohater', 'Bohater'], ['nauka', 'Nauka'], ['krainy', 'Krainy'], ['lochy', 'Lochy'], ['klan', 'Klan'], ['kodeks', 'Kodeks']];
 
 export interface SaveInfo {
   mode: 'local' | 'cloud' | 'server' | 'connecting' | 'offline';
@@ -46,14 +47,6 @@ export interface SaveInfo {
   flush?: () => Promise<void>;               // zapisz teraz (np. przed odświeżeniem po aktualizacji)
   deleteAccount?: (confirm: string) => Promise<void>; // usuń konto na serwerze i zacznij od zera
 }
-
-const SAVE_LABEL: Record<SaveInfo['mode'], string> = {
-  local: 'Zapis w przeglądarce',
-  cloud: 'Zapis w chmurze',
-  server: 'Zapis na serwerze',
-  connecting: 'Łączenie z serwerem…',
-  offline: 'Brak serwera — zapis lokalny',
-};
 
 export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onReady?: () => void }) {
   const [tab, setTab] = useState<Tab>('kuznia');
@@ -109,8 +102,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   // Wstęp jest dla nowego gracza — znika, gdy z serwera przyszedł zapis z postępem.
   if (queue.current[0]?.kind === 'intro' && game.s.stats.smelted > 0) queue.current.shift();
   const modal = queue.current[0] ?? null;
-  // Okno z decyzją wstrzymuje auto-wytop; czat, rankingi i arena nie.
-  game.uiBusy = !!modal && modal.kind !== 'chat' && modal.kind !== 'ranking' && modal.kind !== 'arena';
+  // Okno z decyzją wstrzymuje auto-wytop; czat, rankingi, arena i menu nie.
+  game.uiBusy = !!modal && !NOT_BUSY.has(modal.kind);
   const close = () => { queue.current.shift(); force(x => x + 1); };
   const open = (m: ModalData) => { queue.current.unshift(m); force(x => x + 1); };
   const goTab = (t: Tab, scroll = false) => {
@@ -124,6 +117,25 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   tabRef.current = tab;
   const goTabRef = useRef(goTab);
   goTabRef.current = goTab;
+  /** Ostatnio oglądana część Przygody (przycisk na dole wraca do niej). */
+  const lastAdv = useRef<Tab>('krainy');
+  if (ADVENTURE.includes(tab)) lastAdv.current = tab;
+  const nav = NAV_OF[tab];
+  const goNav = (n: Nav) => {
+    if (n === 'menu') { open({ kind: 'menu' }); return; }
+    if (n === 'przygoda') { goTab(lastAdv.current); return; }
+    goTab(n);
+  };
+
+  // Wysokość dolnego paska (kowadło, czat, zakładki) — tyle miejsca zostawia strona pod treścią.
+  const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = bottomRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => document.documentElement.style.setProperty('--bottom-h', Math.ceil(el.getBoundingClientRect().height) + 'px'));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   /** „Pokaż” w pasku samouczka: znowu wskazuje palcem bieżący krok. */
   const showStep = () => { setCoachOff(''); setFeat(null); };
@@ -135,65 +147,55 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   };
   const isNew = (pred: (f: (typeof FEATURES)[FeatureId]) => boolean) => s.unlNew.some(id => FEATURES[id as FeatureId] && pred(FEATURES[id as FeatureId]));
   const s = game.s;
-  const nClaim = game.claimable();
-  const chat = getChat();
-  const unread = chat?.unreadTotal ?? 0;
-  const tabs = game.net ? TABS : TABS.filter(([id]) => id !== 'klan'); // klany i czat tylko z serwerem
+  const mt = menuTodo(game);
 
   // Wskazówka palcem: najpierw nowa funkcja (po „Pokaż” w ogłoszeniu), potem bieżący krok samouczka.
+  // `navHint` — wskazówka, jak dojść do miejsca (może świecić też nad otwartym Menu).
   let mark: (CoachMark & { key: string }) | null = null;
+  let navHint = false;
   if (feat) {
     const F = FEATURES[feat];
     const where = F.at.inTab;
-    mark = where && tab !== where
-      ? { key: `f:${feat}:tab`, target: `[data-tab="${where}"]`, title: `Nowość: ${F.n}`, text: `Znajdziesz to w zakładce ${TAB_NAME[where]}.` }
-      : { key: `f:${feat}`, target: F.target, title: `Nowość: ${F.n}`, text: F.d };
+    if (where && tab !== where) {
+      mark = { key: `f:${feat}:tab`, target: reachTarget(where), title: `Nowość: ${F.n}`, text: reachText(where) };
+      navHint = true;
+    } else if (F.at.tab) {
+      const deep = NAV_OF[F.at.tab] !== F.at.tab;
+      mark = { key: `f:${feat}`, target: reachTarget(F.at.tab), title: `Nowość: ${F.n}`, text: deep ? `${F.d} ${reachText(F.at.tab)}` : F.d };
+      navHint = true;
+    } else if (F.at.btn === 'zadania') {
+      mark = { key: `f:${feat}`, target: [F.target, '[data-tab="menu"]'], title: `Nowość: ${F.n}`, text: `${F.d} Otwórz Menu → Zadania.` };
+      navHint = true;
+    } else {
+      mark = { key: `f:${feat}`, target: F.target, title: `Nowość: ${F.n}`, text: F.d };
+    }
   } else if (step && coachOff !== step.id) {
-    mark = tab !== step.tab
-      ? { key: `${step.id}:tab`, target: `[data-tab="${step.tab}"]`, title: step.t, text: `Przejdź do zakładki ${TAB_NAME[step.tab]}.` }
-      : { key: step.id, target: step.target, title: step.t, text: step.d, act: step.act };
+    if (tab !== step.tab) {
+      mark = { key: `${step.id}:tab`, target: reachTarget(step.tab), title: step.t, text: reachText(step.tab) };
+      navHint = true;
+    } else mark = { key: step.id, target: step.target, title: step.t, text: step.d, act: step.act };
   }
-  // Nad oknami wskazówka tylko przy decyzji o pierwszej broni (krok „Załóż broń”).
-  const coachOn = !!mark && (!modal || (!feat && modal.kind === 'decide' && step?.id === 'equip1'));
+  // Nad oknami wskazówka tylko w Menu (droga do funkcji) i przy decyzji o pierwszej broni (krok „Załóż broń”).
+  const coachOn = !!mark && (!modal || (modal.kind === 'menu' && navHint) || (!feat && modal.kind === 'decide' && step?.id === 'equip1'));
   const hideCoach = () => { if (feat) setFeat(null); else if (step) setCoachOff(step.id); };
   const tapCoach = () => { if (feat && mark?.key === `f:${feat}`) setFeat(null); };
   return (
     <>
       <div class="app">
-        <header class="top">
-          <div class="top-row">
-            <div>
-              <div class="brand">Kuźnia Legend{s.speed > 1 && <span class="speed-badge" title="Tempo testowe">×{s.speed}</span>}</div>
-              <div class={`save-badge ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Serwer odrzucił zapis' : SAVE_LABEL[save.mode]}</div>
-            </div>
-            <div class="top-btns">
-              <button class={`quests shopbtn${game.unlocked('sklep') ? '' : ' locked'}`} data-btn="sklep" onClick={headBtn('sklep', () => open({ kind: 'shop' }))} aria-label={game.unlocked('sklep') ? `Sklep: ${fmt(s.gems)} Klejnotów` : 'Sklep: zablokowany'}>
-                {game.unlocked('sklep') ? <><Px src={resUrl('klejnot')} size={18} /><b class="gemn">{fmt(s.gems)}</b>{shopTodo(game) && <i class="badge dotb" aria-hidden="true" />}</>
-                  : <><LockIcon /><span class="qlabel">Sklep</span></>}
-                {s.unlNew.includes('sklep') && <i class="badge dotb new" aria-hidden="true" />}
-              </button>
-              {game.net && (
-                <button class={`quests${game.unlocked('czat') ? '' : ' locked'}`} data-chat data-btn="czat" onClick={headBtn('czat', () => open({ kind: 'chat' }))} aria-label={`Czat${unread ? `: ${unread} nowych` : ''}`}>
-                  {game.unlocked('czat') ? <TabIcon tab="czat" /> : <LockIcon />}<span class="qlabel">Czat</span>{game.unlocked('czat') && unread > 0 && <i class="badge">{unread > 99 ? '99+' : unread}</i>}
-                  {s.unlNew.includes('czat') && <i class="badge dotb new" aria-hidden="true" />}
-                </button>
-              )}
-              <button class={`quests${game.unlocked('zadania') ? '' : ' locked'}`} data-btn="zadania" onClick={headBtn('zadania', () => open({ kind: 'missions' }))} aria-label={`Zadania${nClaim ? `: ${nClaim} do odebrania` : ''}`}>
-                {game.unlocked('zadania') ? <TabIcon tab="kodeks" /> : <LockIcon />}<span class="qlabel">Zadania</span>{game.unlocked('zadania') && nClaim > 0 && <i class="badge">{nClaim}</i>}
-                {s.unlNew.includes('zadania') && <i class="badge dotb new" aria-hidden="true" />}
-              </button>
-            </div>
-          </div>
-          <div class="res2">
-            <div class="hchip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><div><b>{fmt(game.stats.power)}</b><small>Moc</small></div></div>
-            <div class="hchip gold" title="Złoto"><Px src={resUrl('zloto')} size={20} /><div><b>{fmt(s.gold)}</b><small>Złoto</small></div></div>
-            <div class="hchip forge" title={s.forge.up ? `Kuźnia: ulepszanie do ${s.forge.up}` : 'Poziom kuźni'}>
-              <Px src={resUrl('kowadlo')} size={20} />
-              <div><b>{s.forge.lvl}{s.forge.up ? <span class="up">→{s.forge.up}</span> : ''}</b><small>Kuźnia</small></div>
-              {s.forge.up > 0 && <i class="rmini" style={{ width: Math.max(0, (1 - s.forge.left / game.upgradeTotal()) * 100) + '%' }} />}
-            </div>
-            <div class="hchip books" title="Księgi Wiedzy"><Px src={resUrl('ksiega')} size={20} /><div><b>{fmt(s.books)}</b><small>Księgi</small></div></div>
-          </div>
+        <header class="hud">
+          <div class="hud-chip gold" title="Złoto"><Px src={resUrl('zloto')} size={22} /><b>{fmt(s.gold)}</b></div>
+          <button class={`hud-chip gems${game.unlocked('sklep') ? '' : ' locked'}`} data-btn="sklep" onClick={headBtn('sklep', () => open({ kind: 'shop', tab: 'klejnoty' }))}
+            aria-label={game.unlocked('sklep') ? `Klejnoty: ${fmt(s.gems)}. Kup w sklepie` : `Klejnoty: ${fmt(s.gems)}. Sklep zablokowany`}>
+            <Px src={resUrl('klejnot')} size={22} /><b>{fmt(s.gems)}</b>
+            {game.unlocked('sklep') ? <i class="plus" aria-hidden="true">+</i> : <LockIcon />}
+            {s.unlNew.includes('sklep') && <i class="badge dotb new" aria-hidden="true" />}
+          </button>
+          <span class="hud-gap" />
+          {s.speed > 1 && <span class="speed-badge" title="Tempo testowe">×{s.speed}</span>}
+          {(save.error || save.mode === 'offline' || save.mode === 'connecting') && (
+            <span class={`net-pill ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Zapis odrzucony' : save.mode === 'connecting' ? 'Łączenie…' : 'Offline'}</span>
+          )}
+          <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmt(game.stats.power)}</b></div>
         </header>
         {hasUpdate() && (
           <section class="updbar" role="status">
@@ -201,19 +203,31 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => location.reload()); }}>Odśwież</button>
           </section>
         )}
+        <GoalStrip game={game} step={step} onShow={showStep} onMissions={t => headBtn('zadania', () => open({ kind: 'missions', tab: t }))()} />
         <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} />
-        {step && (
-          <section class="tutbar" aria-label="Samouczek">
-            <div class="cmain">
-              <div class="eyebrow">Samouczek {game.s.tut + 1}/{TUTORIAL.length}</div>
-              <b>{step.t}</b>
-              <div class="sub">{step.d}</div>
-            </div>
-            <button class="btn small primary" onClick={showStep}>Pokaż</button>
-          </section>
-        )}
         <main class="panel" ref={panelRef}>
-          {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} onFound={() => open({ kind: 'found' })} onMix={what => open({ kind: 'mix', what })} onDecide={() => open({ kind: 'decide' })} />}
+          {nav === 'przygoda' && (
+            <div class="seg seg2 adv-seg" role="tablist" aria-label="Przygoda">
+              {ADVENTURE.map(t => {
+                const f = TAB_FEATURE[t]!;
+                const locked = !game.unlocked(f);
+                return (
+                  <button key={t} role="tab" data-tab={t} aria-selected={tab === t} class={`${tab === t ? 'on' : ''}${locked ? ' locked' : ''}`} onClick={() => goTab(t)}>
+                    {locked && <LockIcon />}{VIEW_NAME[t]}
+                    {t === 'lochy' && tab !== 'lochy' && game.eventTodo() > 0 && <i class="seg-badge">!</i>}
+                    {tab !== t && s.unlNew.includes(f) && <i class="tab-dot new" aria-label="nowe" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {nav === 'menu' && (
+            <div class="view-head">
+              <button class="modal-back" onClick={() => open({ kind: 'menu' })} aria-label="Wróć do Menu"><span aria-hidden="true">‹</span> Menu</button>
+              <span class="vh-t">{VIEW_NAME[tab]}</span>
+            </div>
+          )}
+          {tab === 'kuznia' && <ForgePanel game={game} onInfo={k => open({ kind: 'info', k })} onFound={() => open({ kind: 'found' })} onMix={what => open({ kind: 'mix', what })} onDecide={() => open({ kind: 'decide' })} onPick={() => open({ kind: 'ores' })} />}
           {tab === 'bohater' && <HeroPanel game={game} onItem={item => open({ kind: 'item', item })} />}
           {tab === 'nauka' && <ResearchPanel game={game} />}
           {tab === 'krainy' && <LandsPanel game={game} onInfo={land => open({ kind: 'landinfo', land })} />}
@@ -222,25 +236,33 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} onFeedback={() => open({ kind: 'feedback' })} />}
         </main>
       </div>
-      <nav class="tabs" aria-label="Zakładki">
-        <div class="tabs-in" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
-          {tabs.map(([id, n]) => {
-            const f = TAB_FEATURE[id];
-            const locked = !!f && !game.unlocked(f);
-            return (
-            <button key={id} data-tab={id} class={`tab${tab === id ? ' on' : ''}${locked ? ' locked' : ''}`} aria-current={tab === id ? 'page' : undefined}
-              aria-label={locked ? `${n}: zablokowane` : undefined} onClick={() => goTab(id)}>
-              {locked ? <LockIcon /> : <TabIcon tab={id} />}<span>{n}</span>
-              {tab !== id && isNew(F => F.at.tab === id || F.at.inTab === id) && <i class="tab-dot new" aria-label="nowe" />}
-              {id === 'klan' && tab !== 'klan' && clanLife.todo() > 0 && <i class="tab-dot" aria-label="w klanie coś czeka" />}
-              {id === 'lochy' && tab !== 'lochy' && game.eventTodo() > 0 && <i class="tab-dot" aria-label="nagrody wydarzenia do odebrania" />}
-            </button>
-            );
-          })}
+      <div class="tabs" ref={bottomRef}>
+        <div class="tabs-wrap">
+          {tab === 'kuznia' && <ForgeDock game={game} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} />}
+          <ChatLine game={game} onOpen={() => open({ kind: 'chat' })} />
+          <nav class="tabs-in" aria-label="Zakładki">
+            {NAVS.map(([id, n]) => {
+              const locked = id === 'bohater' ? !game.unlocked('bohater') : id === 'przygoda' ? !game.unlocked('krainy') && !game.unlocked('lochy') : false;
+              const on = id === 'menu' ? nav === 'menu' || modal?.kind === 'menu' : nav === id;
+              const fresh = nav !== id && (
+                id === 'menu' ? mt.fresh
+                  : id === 'przygoda' ? isNew(F => F.at.tab === 'krainy' || F.at.tab === 'lochy' || F.at.inTab === 'lochy')
+                    : isNew(F => F.at.tab === id || F.at.inTab === id));
+              return (
+                <button key={id} data-tab={id} class={`tab tab-${id}${on ? ' on' : ''}${locked ? ' locked' : ''}`} aria-current={on && id !== 'menu' ? 'page' : undefined}
+                  aria-haspopup={id === 'menu' ? 'dialog' : undefined} aria-label={locked ? `${n}: zablokowane` : undefined} onClick={() => goNav(id)}>
+                  <span class="tab-ic">{locked ? <LockIcon /> : <TabIcon tab={id} />}</span><span>{n}</span>
+                  {fresh && <i class="tab-dot new" aria-label="nowe" />}
+                  {id === 'przygoda' && tab !== 'lochy' && !fresh && game.eventTodo() > 0 && <i class="tab-dot" aria-label="nagrody wydarzenia do odebrania" />}
+                  {id === 'menu' && !fresh && (mt.n > 0 ? <i class="tab-num">{mt.n > 99 ? '99+' : mt.n}</i> : mt.dot && <i class="tab-dot" aria-label="w menu coś czeka" />)}
+                </button>
+              );
+            })}
+          </nav>
         </div>
-      </nav>
+      </div>
       {modal && (
-        <ModalShell locked={LOCKED.has(modal.kind)} onClose={close}>
+        <ModalShell locked={LOCKED.has(modal.kind)} onClose={close} cls={modal.kind === 'menu' ? 'sheet' : modal.kind === 'ores' ? 'sheet ores-sheet' : ''}>
           <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} onFeature={id => setFeat(id)} />
         </ModalShell>
       )}

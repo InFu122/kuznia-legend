@@ -1,12 +1,10 @@
-import { useRef } from 'preact/hooks';
 import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS, ORE_ORDER, rAt, rRank } from '../../data';
-import { batchOf, canSmelt, refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
+import { batchOf, refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
 import { SpeedupButton } from './Shop';
 import { JUMP_V, dist, itemName, jumpChances, maxJump, oreBase, oreNominal, pityAllowed } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
 import { Brag } from '../Decision';
-import { sparks } from '../fx';
 import { ClanHelpLine } from './ClanLife';
 import { Costs, Px } from '../Px';
 import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
@@ -33,19 +31,15 @@ export function OddsBar({ d, note, cls = '' }: { d: [number, number][]; note?: s
   );
 }
 
-export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
-  game: Game; onInfo: (k: 'forge' | 'level') => void; onFound: () => void; onMix: (what: 'el' | 'set') => void; onDecide: () => void;
+export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
+  game: Game; onInfo: (k: 'forge' | 'level') => void; onFound: () => void; onMix: (what: 'el' | 'set') => void; onDecide: () => void; onPick: () => void;
 }) {
   const s = game.s;
   const f = s.forge;
   const o = s.oreSel;
   const mj = maxJump(o);
-  const sparkRef = useRef<HTMLDivElement>(null);
-  const ok = canSmelt(game.ctx, o) && !s.pending;
   const set = uniqActive(s);
   const batch = game.batchActive();
-  const btnLabel = s.pending ? 'Najpierw zdecyduj o przedmiocie' : f.lvl < ORES[o].lvl ? `Wytop od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `Brak rudy: ${ORES[o].n}`
-    : batch > 1 ? `Przetop ×${Math.min(batch, s.ores[o])} · ${ORES[o].n}` : `Przetop · ${ORES[o].n}`;
   const rel = techMods(s).jumpRel;
   const n = f.lvl + 1;
   const cost = game.upgradeCost();
@@ -68,28 +62,51 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
 
   return (
     <>
+      <LastForge game={game} onDecide={onDecide} />
+
+      {s.found.length > 0 && (
+        <section class="card">
+          <div class="row">
+            <div><div class="eyebrow">Znaleziska czekają na decyzję</div><div class="h">Przedmioty: {s.found.length}</div></div>
+            <button class="btn primary small" onClick={onFound}>Przejrzyj</button>
+          </div>
+        </section>
+      )}
+
+      <section class="card forgeup" style={{ '--bg': `url(${dungeonBgUrl('ulepszenie')})` } as Record<string, string>}>
+        {f.lvl >= B.FORGE_MAX ? (
+          <div class="row"><div><LevelEyebrow text="Kuźnia" onInfo={onInfo} /><div class="h">Poziom {B.FORGE_MAX} — najwyższy</div><p class="sub">Kuźnia osiągnęła szczyt. Siłę bohatera rozwijaj teraz w Otchłani, Nauce, runach i legendach przedmiotów.</p></div></div>
+        ) : f.up ? (
+          <>
+            <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
+            <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
+            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
+            {game.net && <ClanHelpLine game={game} />}
+            <SpeedupButton game={game} what="forge" />
+          </>
+        ) : (
+          <div class="row">
+            <div>
+              <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
+              <div class="h">Ulepsz do poziomu {n}</div>
+              <p class="sub">Szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
+              {growing && <p class="sub rampnote">{ORES[o].n}: co najmniej <span class={`rt${nom}`}>{RAR[nom].n}</span> {pct(atLeast(f.lvl))} → <b>{pct(atLeast(n))}</b></p>}
+              <p class="sub upcost"><Costs items={[[resUrl('zloto'), `${fmt(cost)} złota`], [resUrl('czas'), tfmt(game.upgradeTime())]]} cls={s.gold < cost ? 'lack-0' : ''} /></p>
+            </div>
+            <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
+          </div>
+        )}
+      </section>
+
       <section class="card forge" aria-label="Kowadło">
         <div class="forge-banner" style={{ '--bg': `url(${dungeonBgUrl('kuznia')})` } as Record<string, string>}>
-          <Px src={resUrl('kowadlo')} size={30} />
+          <Px src={oreUrl(o)} size={32} />
           <div class="fb-txt">
-            <div class="eyebrow">Kuźnia · poziom {f.lvl}{f.up ? ' · trwa ulepszenie' : ''}</div>
-            <div class="h">Ruda do wytopu</div>
+            <div class="eyebrow">Wytop · kuźnia poziom {f.lvl}{f.up ? ' · trwa ulepszenie' : ''}</div>
+            <div class="h">{ORES[o].n}</div>
           </div>
+          <button class="btn small" onClick={onPick} aria-haspopup="dialog">Zmień rudę</button>
           <InfoBtn onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
-        </div>
-        <div class="ores2" role="radiogroup" aria-label="Ruda">
-          {ORE_ORDER.map(i => {
-            const x = ORES[i];
-            const locked = f.lvl < x.lvl;
-            return (
-              <button key={x.n} role="radio" aria-checked={i === o} class={`ore2 rb${rAt(oreNominal(i, Math.max(f.lvl, x.lvl)))}${i === o ? ' on' : ''}${locked ? ' locked' : ''}`}
-                aria-label={`${x.n}: ${s.ores[i]} sztuk, zwykle ${RAR[rAt(oreNominal(i, Math.max(f.lvl, x.lvl)))].n}${locked ? `, wytop od ${x.lvl}. poziomu kuźni` : ''}`} onClick={() => game.setOre(i)}>
-                <Px src={oreUrl(i)} size={32} />
-                <b class="cnt">{fmt(s.ores[i])}</b>
-                <span class="o2-n">{locked ? `poz. ${x.lvl}` : x.n}</span>
-              </button>
-            );
-          })}
         </div>
         <div class="o2-sel">
           <b>{ORES[o].n}</b> · bez przeskoku <span class={`rt${nom}`}>{RAR[nom].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
@@ -137,10 +154,6 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
           <p class="sub">Wytop seryjny: ×{BATCH_OPTIONS[1][0]} od {BATCH_OPTIONS[1][1]}. poziomu kuźni, ×{BATCH_OPTIONS[2][0]} od {BATCH_OPTIONS[2][1]}.</p>
         )}
         {s.batch > 1 && batch === 1 && (s.elSel || set) && <p class="sub">Wytop seryjny działa bez domieszki i rudy unikalnej — teraz kujesz pojedynczo.</p>}
-        <div class="anvil">
-          <button class="btn primary btn-forge" disabled={!ok} onClick={() => { const it = game.smeltManual(); if (it) sparks(sparkRef.current, it.r); }}>{btnLabel}</button>
-          <div class="sparks" ref={sparkRef} />
-        </div>
         {f.lvl >= B.AUTO_FORGE_LVL ? (
           <div class="auto2">
             <div class="row">
@@ -162,43 +175,8 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide }: {
         )}
       </section>
 
-      <LastForge game={game} onDecide={onDecide} />
 
       <Refine game={game} />
-
-      {s.found.length > 0 && (
-        <section class="card">
-          <div class="row">
-            <div><div class="eyebrow">Znaleziska czekają na decyzję</div><div class="h">Przedmioty: {s.found.length}</div></div>
-            <button class="btn primary small" onClick={onFound}>Przejrzyj</button>
-          </div>
-        </section>
-      )}
-
-      <section class="card forgeup" style={{ '--bg': `url(${dungeonBgUrl('ulepszenie')})` } as Record<string, string>}>
-        {f.lvl >= B.FORGE_MAX ? (
-          <div class="row"><div><LevelEyebrow text="Kuźnia" onInfo={onInfo} /><div class="h">Poziom {B.FORGE_MAX} — najwyższy</div><p class="sub">Kuźnia osiągnęła szczyt. Siłę bohatera rozwijaj teraz w Otchłani, Nauce, runach i legendach przedmiotów.</p></div></div>
-        ) : f.up ? (
-          <>
-            <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
-            <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
-            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
-            {game.net && <ClanHelpLine game={game} />}
-            <SpeedupButton game={game} what="forge" />
-          </>
-        ) : (
-          <div class="row">
-            <div>
-              <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
-              <div class="h">Ulepsz do poziomu {n}</div>
-              <p class="sub">Szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
-              {growing && <p class="sub rampnote">{ORES[o].n}: co najmniej <span class={`rt${nom}`}>{RAR[nom].n}</span> {pct(atLeast(f.lvl))} → <b>{pct(atLeast(n))}</b></p>}
-              <p class="sub upcost"><Costs items={[[resUrl('zloto'), `${fmt(cost)} złota`], [resUrl('czas'), tfmt(game.upgradeTime())]]} cls={s.gold < cost ? 'lack-0' : ''} /></p>
-            </div>
-            <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
-          </div>
-        )}
-      </section>
     </>
   );
 }

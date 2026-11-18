@@ -29,6 +29,12 @@ export function findTarget(target: string | string[]): HTMLElement | null {
 
 interface Box { x: number; y: number; w: number; h: number; off: boolean; fixed: boolean }
 
+/** Wysokość przypiętego dolnego paska (kowadło, czat, zakładki) — to, co jest pod nim, jest zasłonięte. */
+const bottomBar = () => {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bottom-h'));
+  return Number.isFinite(v) && v > 0 ? v : 80;
+};
+
 export function Coach({ mark, onHide, onTap }: { mark: CoachMark; onHide: () => void; onTap?: () => void }) {
   const [box, setBox] = useState<Box | null>(null);
   const scrolled = useRef('');
@@ -44,11 +50,11 @@ export function Coach({ mark, onHide, onTap }: { mark: CoachMark; onHide: () => 
           if (scrolled.current !== key) {
             scrolled.current = key;
             const r0 = el.getBoundingClientRect();
-            if (r0.top < 70 || r0.bottom > innerHeight - 90) el.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+            if (!el.closest('.tabs') && (r0.top < 70 || r0.bottom > innerHeight - bottomBar() - 10)) el.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
           }
           const r = el.getBoundingClientRect();
           const off = (el as HTMLButtonElement).disabled === true;
-          // Pasek zakładek na dole jest zawsze widoczny (nie przewija się).
+          // Dolny pasek (kowadło, czat, zakładki) jest zawsze widoczny (nie przewija się).
           const fixed = !!el.closest('.tabs');
           setBox(b => (b && Math.abs(b.x - r.left) < 1 && Math.abs(b.y - r.top) < 1 && Math.abs(b.w - r.width) < 1 && Math.abs(b.h - r.height) < 1 && b.off === off && b.fixed === fixed ? b : { x: r.left, y: r.top, w: r.width, h: r.height, off, fixed }));
         }
@@ -67,8 +73,8 @@ export function Coach({ mark, onHide, onTap }: { mark: CoachMark; onHide: () => 
 
   if (!box) return null;
   // Cel poza ekranem (gracz przewinął): bez przyciemnienia, tylko przycisk ze strzałką, który do niego przewija.
-  // (element pod paskiem zakładek też jest niewidoczny)
-  if (!box.fixed && (box.y + box.h < 8 || box.y > innerHeight - 80)) {
+  // (element pod dolnym paskiem też jest niewidoczny)
+  if (!box.fixed && (box.y + box.h < 8 || box.y > innerHeight - bottomBar())) {
     const up = box.y + box.h < 8;
     return (
       <div class="coach">
