@@ -1,6 +1,6 @@
 // Menu (czwarty przycisk na dole): wszystko, czego nie trzeba mieć pod kciukiem przez cały czas.
-// Zablokowane funkcje się tu nie pokazują (poza Czatem, który jest zawsze) — na dole jest tylko jedna podpowiedź,
-// co odblokuje się następne.
+// Widać wszystko od początku: zablokowane funkcje są wyblakłe, z kłódką, warunkiem i paskiem postępu,
+// a najbliższe odblokowanie jest podświetlone (i opisane na dole).
 import type { JSX } from 'preact';
 import { FEATURES, FEATURE_IDS, type FeatureId } from '../data';
 import type { Game } from '../engine/game';
@@ -11,9 +11,11 @@ import { getChat } from '../save/chat';
 import { resUrl } from '../art/render';
 import { Px } from './Px';
 import { LockIcon, TabIcon, type Tab } from './icons';
-import { CHAT_OFFLINE } from './Goal';
 import { toast } from '../engine/context';
 import { fmt } from './format';
+
+/** Funkcje tylko z serwerem (klan, czat, ranking) w wersji bez serwera. */
+const onlineOnly = (n: string) => `${n} działa tylko w grze połączonej z serwerem (aplikacja na telefonie). Ta wersja gra bez serwera.`;
 
 /** Funkcje, które mieszkają w Menu (znaczek „nowe” na przycisku Menu). */
 const MENU_FEATURES: FeatureId[] = ['nauka', 'zadania', 'klan', 'sklep', 'czat'];
@@ -43,6 +45,12 @@ interface TileDef {
   dot?: boolean;
   fresh?: boolean;
   attrs: Record<string, string>;
+  /** Zablokowany (wyblakły, z kłódką) albo niedostępny bez serwera. */
+  locked?: boolean;
+  /** Postęp do odblokowania 0–1. */
+  prog?: number;
+  /** Najbliższe odblokowanie. */
+  next?: boolean;
 }
 
 /** Następna funkcja do odblokowania: ta, do której gracz ma najbliżej. */
@@ -62,41 +70,48 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
   const show = (m: Parameters<Game['openModal']>[0]) => () => { close(); game.openModal(m); };
   const view = (t: Tab) => () => { close(); goTab?.(t); };
   const seen = (id: FeatureId, act: () => void) => () => { game.seenFeatures([id]); act(); };
-  const tiles: TileDef[] = [];
-  if (game.unlocked('nauka')) tiles.push({ key: 'nauka', n: 'Nauka', d: `Księgi: ${fmt(s.books)}`, ic: <Px src={resUrl('ksiega')} size={36} />, go: view('nauka'), fresh: s.unlNew.includes('nauka'), attrs: { 'data-tab': 'nauka' } });
-  if (game.unlocked('zadania')) {
-    const n = game.claimable();
-    tiles.push({ key: 'zadania', n: 'Zadania', d: n ? `${n} do odebrania` : 'dzienne i tygodniowe', ic: <Px src={resUrl('trofeum')} size={36} />, go: seen('zadania', show({ kind: 'missions' })), badge: n, fresh: s.unlNew.includes('zadania'), attrs: { 'data-btn': 'zadania' } });
-  }
-  if (game.unlocked('klan')) tiles.push({ key: 'klan', n: 'Klan', d: 'smok, wojna, boss', ic: <Px src={resUrl('moneta')} size={36} />, go: view('klan'), badge: clanLife.todo(), fresh: s.unlNew.includes('klan'), attrs: { 'data-tab': 'klan' } });
-  {
-    // Czat zawsze w Menu: bez serwera — wyjaśnienie, przed odblokowaniem — okno z kłódką.
-    const ic = <span class="mt-svg"><TabIcon tab="czat" /></span>;
-    if (!game.net) tiles.push({ key: 'czat', n: 'Czat', d: 'tylko w aplikacji z serwerem', ic, go: () => { close(); toast(game.ctx, CHAT_OFFLINE); }, attrs: { 'data-menu': 'czat' } });
-    else if (!game.unlocked('czat')) tiles.push({ key: 'czat', n: 'Czat', d: 'zablokowany', ic: <span class="mt-svg"><LockIcon /></span>, go: show({ kind: 'locked', id: 'czat' }), attrs: { 'data-menu': 'czat' } });
-    else {
-      const n = getChat()?.unreadTotal ?? 0;
-      tiles.push({ key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-btn': 'czat' } });
-    }
-  }
-  if (game.unlocked('sklep')) {
-    tiles.push({ key: 'sklep', n: 'Sklep', d: giftWaiting(game) ? 'prezent czeka' : 'klejnoty, pakiety', ic: <Px src={resUrl('klejnot')} size={36} />, go: seen('sklep', show({ kind: 'shop' })), dot: giftWaiting(game), fresh: s.unlNew.includes('sklep'), attrs: { 'data-menu': 'sklep' } });
-    if (s.pass) tiles.push({ key: 'pass', n: 'Przepustka', d: 'nagrody za postęp', ic: <Px src={resUrl('przepustka')} size={36} />, go: show({ kind: 'shop', tab: 'przepustka' }), dot: passWaiting(game), attrs: { 'data-menu': 'przepustka' } });
-  }
-  if (game.net) tiles.push({ key: 'ranking', n: 'Ranking', d: 'moc, wieża, arena', ic: <Px src={resUrl('puchar')} size={36} />, go: show({ kind: 'ranking' }), attrs: { 'data-menu': 'ranking' } });
-  tiles.push({ key: 'look', n: 'Wygląd', d: 'stroje i ramki', ic: <Px src={resUrl('runa')} size={36} />, go: show({ kind: 'look' }), attrs: { 'data-menu': 'look' } });
-  tiles.push({ key: 'kodeks', n: 'Kodeks', d: 'kolekcja, konto, ustawienia', ic: <span class="mt-svg"><TabIcon tab="ustawienia" /></span>, go: view('kodeks'), attrs: { 'data-tab': 'kodeks' } });
-
   const next = nextUnlock(game);
+  const tiles: TileDef[] = [];
+  /**
+   * Kafelek funkcji odblokowywanej z postępem: gdy zablokowana — wyblakły, z kłódką, warunkiem i paskiem postępu
+   * (dotknięcie: okno z kłódką); bez serwera (klan, czat) — wyblakły z informacją, że działa tylko online.
+   */
+  const add = (id: FeatureId | null, t: TileDef, online = false) => {
+    if (online && !game.net) {
+      tiles.push({ ...t, d: 'tylko w aplikacji z serwerem', badge: 0, dot: false, fresh: false, locked: true, go: () => { close(); toast(game.ctx, onlineOnly(t.n)); } });
+    } else if (id && !game.unlocked(id)) {
+      const [now, goal] = unlockProgress(s, id);
+      tiles.push({ ...t, d: unlockWhen(id), badge: 0, dot: false, fresh: false, locked: true, prog: now / Math.max(1, goal), next: id === next, go: show({ kind: 'locked', id }) });
+    } else tiles.push(t);
+  };
+  add('nauka', { key: 'nauka', n: 'Nauka', d: `Księgi: ${fmt(s.books)}`, ic: <Px src={resUrl('ksiega')} size={36} />, go: view('nauka'), fresh: s.unlNew.includes('nauka'), attrs: { 'data-tab': 'nauka' } });
+  {
+    const n = game.unlocked('zadania') ? game.claimable() : 0;
+    add('zadania', { key: 'zadania', n: 'Zadania', d: n ? `${n} do odebrania` : 'dzienne i tygodniowe', ic: <Px src={resUrl('trofeum')} size={36} />, go: seen('zadania', show({ kind: 'missions' })), badge: n, fresh: s.unlNew.includes('zadania'), attrs: { 'data-btn': 'zadania' } });
+  }
+  add('klan', { key: 'klan', n: 'Klan', d: 'smok, wojna, boss', ic: <Px src={resUrl('moneta')} size={36} />, go: view('klan'), badge: game.unlocked('klan') ? clanLife.todo() : 0, fresh: s.unlNew.includes('klan'), attrs: { 'data-tab': 'klan' } }, true);
+  {
+    const n = game.net && game.unlocked('czat') ? getChat()?.unreadTotal ?? 0 : 0;
+    add('czat', { key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic: <span class="mt-svg"><TabIcon tab="czat" /></span>, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-btn': 'czat' } }, true);
+  }
+  const shopOn = game.unlocked('sklep');
+  add('sklep', { key: 'sklep', n: 'Sklep', d: shopOn && giftWaiting(game) ? 'prezent czeka' : 'klejnoty, pakiety', ic: <Px src={resUrl('klejnot')} size={36} />, go: seen('sklep', show({ kind: 'shop' })), dot: shopOn && giftWaiting(game), fresh: s.unlNew.includes('sklep'), attrs: { 'data-menu': 'sklep' } });
+  if (s.pass || !shopOn) add('sklep', { key: 'pass', n: 'Przepustka', d: 'nagrody za postęp', ic: <Px src={resUrl('przepustka')} size={36} />, go: show({ kind: 'shop', tab: 'przepustka' }), dot: shopOn && passWaiting(game), attrs: { 'data-menu': 'przepustka' } });
+  add(null, { key: 'ranking', n: 'Ranking', d: 'moc, wieża, arena', ic: <Px src={resUrl('puchar')} size={36} />, go: show({ kind: 'ranking' }), attrs: { 'data-menu': 'ranking' } }, true);
+  add(null, { key: 'look', n: 'Wygląd', d: 'stroje i ramki', ic: <Px src={resUrl('runa')} size={36} />, go: show({ kind: 'look' }), attrs: { 'data-menu': 'look' } });
+  add(null, { key: 'kodeks', n: 'Kodeks', d: 'kolekcja, konto, ustawienia', ic: <span class="mt-svg"><TabIcon tab="ustawienia" /></span>, go: view('kodeks'), attrs: { 'data-tab': 'kodeks' } });
+
   return (
     <>
       <div class="h">Menu</div>
       <div class="menu-grid">
         {tiles.map(t => (
-          <button key={t.key} class={`mtile${t.badge || t.dot ? ' todo' : ''}`} onClick={t.go} {...t.attrs}>
-            {t.ic}
+          <button key={t.key} class={`mtile${t.badge || t.dot ? ' todo' : ''}${t.locked ? ' locked' : ''}${t.next ? ' next' : ''}`} onClick={t.go} {...t.attrs}
+            aria-label={t.locked ? `${t.n}: zablokowane — ${t.d}` : undefined}>
+            <span class="mt-ic">{t.ic}{t.locked && <i class="mt-lock" aria-hidden="true"><LockIcon /></i>}</span>
             <b>{t.n}</b>
             <small>{t.d}</small>
+            {t.prog !== undefined && <span class="mt-prog" aria-hidden="true"><i style={{ width: Math.min(100, t.prog * 100) + '%' }} /></span>}
             {t.badge ? <i class="badge">{t.badge > 99 ? '99+' : t.badge}</i> : t.dot ? <i class="badge dotb" aria-hidden="true" /> : null}
             {t.fresh && <i class="badge dotb new" aria-label="nowe" />}
           </button>

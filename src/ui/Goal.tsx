@@ -65,9 +65,6 @@ export function GoalStrip({ game, step, onShow, onMissions }: {
   );
 }
 
-/** Gra bez serwera (np. wersja w przeglądarce do testów): czatu, klanu i rankingu nie ma. */
-export const CHAT_OFFLINE = 'Czat działa tylko w grze połączonej z serwerem (aplikacja na telefonie). Ta wersja gra bez serwera, więc czatu tu nie ma.';
-
 /** Jak długo wiadomość wisi nad dolnym paskiem. */
 const POP_MS = 6000;
 /** Czas na zniknięcie (płynne wygaszenie). */

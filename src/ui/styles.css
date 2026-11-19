@@ -1551,4 +1551,16 @@ a.linkbtn{display:inline-block}
 .cp-t .cl-n{color:var(--straw)}
 .chatpop .badge{position:static; flex:none}
 @keyframes cpIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
-@media (prefers-reduced-motion: reduce){ .chatpop{animation:none; transition:none} }
+@media (prefers-reduced-motion: reduce){ .chatpop{animation:none; transition:none} }/* Menu: zablokowane funkcje widać od początku — wyblakłe, z kłódką, warunkiem i postępem */
+.mtile .mt-ic{position:relative; display:grid; place-items:center; height:38px}
+.mtile.locked{background:var(--plate)}
+.mtile.locked .mt-ic > :first-child{filter:grayscale(1) brightness(.8); opacity:.4}
+.mtile.locked b{color:var(--ash)}
+.mtile.locked small{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:11px}
+.mt-lock{position:absolute; right:-10px; bottom:-4px; display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:var(--iron); border:1px solid var(--rivet); color:var(--ash)}
+.mt-lock .lock-ic{width:12px; height:12px}
+.mt-prog{display:block; width:70%; height:4px; margin-top:3px; border-radius:2px; background:#3a2f25; overflow:hidden}
+.mt-prog i{display:block; height:100%; background:var(--straw); opacity:.75}
+.mtile.next{border-style:dashed; border-color:color-mix(in srgb, var(--straw) 55%, var(--rivet))}
+.mtile.next .mt-ic > :first-child{opacity:.7}
+.mtile.next b{color:var(--frost)}
