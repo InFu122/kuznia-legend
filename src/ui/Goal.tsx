@@ -5,7 +5,8 @@ import type { Mission } from '../engine/types';
 import { getChat, type ChatMsg } from '../save/chat';
 import { resUrl } from '../art/render';
 import { Px } from './Px';
-import { TabIcon } from './icons';
+import { LockIcon, TabIcon } from './icons';
+import { unlockWhen } from '../engine/unlocks';
 import { fmt } from './format';
 
 /** Zadanie do pokazania: niedokończone, najbliżej celu (najpierw dzienne). */
@@ -65,33 +66,44 @@ export function GoalStrip({ game, step, onShow, onMissions }: {
   );
 }
 
-/** Ostatnia wiadomość (bez wyciszonych graczy). */
-function lastMsg(): ChatMsg | null {
+/** Ostatnie wiadomości z obu kanałów (bez wyciszonych graczy), od najstarszej. */
+function lastMsgs(n: number): ChatMsg[] {
   const chat = getChat();
-  if (!chat) return null;
-  let last: ChatMsg | null = null;
-  for (const m of [...chat.msgs.global, ...chat.msgs.clan]) {
-    if (chat.muted.has(m.uid)) continue;
-    if (!last || m.time >= last.time) last = m;
-  }
-  return last;
+  if (!chat) return [];
+  return [...chat.msgs.global, ...chat.msgs.clan].filter(m => !chat.muted.has(m.uid)).sort((a, b) => a.time - b.time).slice(-n);
 }
 
 const msgText = (m: ChatMsg) => (m.k === 'drop' && m.it ? `wykuł(a) ${m.it.name}` : m.t);
 
-export function ChatLine({ game, onOpen }: { game: Game; onOpen: () => void }) {
-  if (!game.net || !game.unlocked('czat')) return null;
-  const m = lastMsg();
-  const unread = getChat()?.unreadTotal ?? 0;
+/**
+ * Czat nad dolnym paskiem: dwie ostatnie wiadomości (nowa wjeżdża z błyskiem) i licznik nieprzeczytanych.
+ * Tylko z serwerem — w wersji bez serwera czatu nie ma. Przed odblokowaniem: kłódka i kiedy się otworzy.
+ */
+export function ChatLine({ game, onOpen, onLocked }: { game: Game; onOpen: () => void; onLocked: () => void }) {
+  if (!game.net) return null;
+  if (!game.unlocked('czat')) {
+    return (
+      <button class="chatline locked" data-btn="czat" onClick={onLocked} aria-label="Czat: zablokowany">
+        <LockIcon />
+        <span class="cl-rows"><span class="cl-t muted">Czat otworzy się {unlockWhen('czat')}</span></span>
+      </button>
+    );
+  }
+  const chat = getChat();
+  const ms = lastMsgs(2);
+  const unread = chat?.unreadTotal ?? 0;
+  const last = ms[ms.length - 1];
   return (
-    <button class="chatline" data-chat data-btn="czat" onClick={onOpen} aria-label={`Czat${unread ? `: ${unread} nowych` : ''}`}>
+    <button class={`chatline${unread ? ' unread' : ''}`} data-chat data-btn="czat" onClick={onOpen} aria-label={`Czat${unread ? `: ${unread} nowych` : ''}. Otwórz`}>
       <TabIcon tab="czat" />
-      {m ? (
-        <span class="cl-t">
-          {m.ch === 'clan' && <b class="cl-ch">[Klan]</b>}
-          {m.k === 'sys' || m.k === 'ann' ? <i>{m.t}</i> : <><b class="cl-n">{m.n}:</b> {msgText(m)}</>}
-        </span>
-      ) : <span class="cl-t muted">Czat — napisz do innych kowali</span>}
+      <span class="cl-rows" key={last ? `${last.time}:${last.uid}` : 'none'}>
+        {ms.length ? ms.map((m, i) => (
+          <span key={i} class={`cl-t${i === ms.length - 1 ? ' last' : ''}`}>
+            {m.ch === 'clan' && <b class="cl-ch">[Klan]</b>}
+            {m.k === 'sys' || m.k === 'ann' ? <i>{m.t}</i> : <><b class="cl-n">{m.n}:</b> {msgText(m)}</>}
+          </span>
+        )) : <span class="cl-t muted">{chat && chat.state !== 'on' ? 'Łączenie z czatem…' : 'Czat — napisz do innych kowali'}</span>}
+      </span>
       {unread > 0 && <i class="badge">{unread > 99 ? '99+' : unread}</i>}
     </button>
   );

@@ -239,7 +239,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       <div class="tabs" ref={bottomRef}>
         <div class="tabs-wrap">
           {tab === 'kuznia' && <ForgeDock game={game} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} onAuto={() => open({ kind: 'auto' })} />}
-          <ChatLine game={game} onOpen={() => open({ kind: 'chat' })} />
+          <ChatLine game={game} onOpen={() => { game.seenFeatures(['czat']); open({ kind: 'chat' }); }} onLocked={() => open({ kind: 'locked', id: 'czat' })} />
           <nav class="tabs-in" aria-label="Zakładki">
             {NAVS.map(([id, n]) => {
               const locked = id === 'bohater' ? !game.unlocked('bohater') : id === 'przygoda' ? !game.unlocked('krainy') && !game.unlocked('lochy') : false;

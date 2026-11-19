@@ -1486,10 +1486,16 @@ a.linkbtn{display:inline-block}
 .dock-auto.on small.wait{color:var(--ember)}
 .dock .sparks{position:absolute; inset:0; pointer-events:none}
 
-.chatline{position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:36px; padding:0 2px; background:none; border:0; border-top:1px solid #3a2f25;
+.chatline{position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:44px; padding:4px 2px; background:none; border:0; border-top:1px solid #3a2f25;
   color:var(--frost); font-size:13px; text-align:left}
+.chatline.unread > svg{color:var(--straw)}
+.chatline.locked .lock-ic{flex:none; width:16px; height:16px; color:var(--ash)}
+.cl-rows{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; animation:clIn .5s ease-out}
+.cl-t:not(.last){opacity:.62}
+@keyframes clIn{from{transform:translateY(6px); opacity:.2; background:rgba(231,190,98,.18)} to{transform:none; opacity:1; background:transparent}}
+@media (prefers-reduced-motion: reduce){ .cl-rows{animation:none} }
 .chatline svg{flex:none; width:16px; height:16px; color:var(--ash)}
-.cl-t{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#d9cbb8}
+.cl-t{display:block; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#d9cbb8}
 .cl-t.muted{color:var(--ash)}
 .cl-ch{color:#7fc8ff; margin-right:4px}
 .cl-n{color:var(--straw)}

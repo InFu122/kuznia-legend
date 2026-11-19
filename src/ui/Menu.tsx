@@ -6,10 +6,10 @@ import type { Game } from '../engine/game';
 import { passUnclaimed } from '../engine/shop';
 import { unlockProgress, unlockWhen } from '../engine/unlocks';
 import { clanLife } from '../save/clanlife';
+import { getChat } from '../save/chat';
 import { resUrl } from '../art/render';
 import { Px } from './Px';
 import { TabIcon, type Tab } from './icons';
-import { showProfile } from './profile';
 import { fmt } from './format';
 
 /** Funkcje, które mieszkają w Menu (znaczek „nowe” na przycisku Menu). */
@@ -65,13 +65,16 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
     tiles.push({ key: 'zadania', n: 'Zadania', d: n ? `${n} do odebrania` : 'dzienne i tygodniowe', ic: <Px src={resUrl('trofeum')} size={36} />, go: seen('zadania', show({ kind: 'missions' })), badge: n, fresh: s.unlNew.includes('zadania'), attrs: { 'data-btn': 'zadania' } });
   }
   if (game.unlocked('klan')) tiles.push({ key: 'klan', n: 'Klan', d: 'smok, wojna, boss', ic: <Px src={resUrl('moneta')} size={36} />, go: view('klan'), badge: clanLife.todo(), fresh: s.unlNew.includes('klan'), attrs: { 'data-tab': 'klan' } });
+  if (game.unlocked('czat')) {
+    const n = getChat()?.unreadTotal ?? 0;
+    tiles.push({ key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic: <span class="mt-svg"><TabIcon tab="czat" /></span>, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-menu': 'czat' } });
+  }
   if (game.unlocked('sklep')) {
     tiles.push({ key: 'sklep', n: 'Sklep', d: giftWaiting(game) ? 'prezent czeka' : 'klejnoty, pakiety', ic: <Px src={resUrl('klejnot')} size={36} />, go: seen('sklep', show({ kind: 'shop' })), dot: giftWaiting(game), fresh: s.unlNew.includes('sklep'), attrs: { 'data-menu': 'sklep' } });
     if (s.pass) tiles.push({ key: 'pass', n: 'Przepustka', d: 'nagrody za postęp', ic: <Px src={resUrl('przepustka')} size={36} />, go: show({ kind: 'shop', tab: 'przepustka' }), dot: passWaiting(game), attrs: { 'data-menu': 'przepustka' } });
   }
   if (game.net) tiles.push({ key: 'ranking', n: 'Ranking', d: 'moc, wieża, arena', ic: <Px src={resUrl('puchar')} size={36} />, go: show({ kind: 'ranking' }), attrs: { 'data-menu': 'ranking' } });
   tiles.push({ key: 'look', n: 'Wygląd', d: 'stroje i ramki', ic: <Px src={resUrl('runa')} size={36} />, go: show({ kind: 'look' }), attrs: { 'data-menu': 'look' } });
-  tiles.push({ key: 'profil', n: 'Profil', d: 'sława kowala', ic: <Px src={resUrl('moc')} size={36} />, go: () => { close(); showProfile(null); }, attrs: { 'data-menu': 'profil' } });
   tiles.push({ key: 'kodeks', n: 'Kodeks', d: 'kolekcja, konto, ustawienia', ic: <span class="mt-svg"><TabIcon tab="ustawienia" /></span>, go: view('kodeks'), attrs: { 'data-tab': 'kodeks' } });
 
   const next = nextUnlock(game);
