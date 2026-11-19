@@ -79,4 +79,8 @@ Identyfikator produktu musi być **dokładnie** taki jak w tabeli (gra i serwer 
 | `gems_2600` | Kufer Klejnotów | 2000 + 600 gratis Klejnotów | 89,99 |
 | `gems_7000` | Skarbiec Klejnotów | 5000 + 2000 gratis Klejnotów | 219,99 |
 
+**Cenę dla Polski ustaw ręcznie** (produkt → opcja zakupu `kup` → Dostępność i ceny → ołówek przy „Polska”): ceny w UE są
+z VAT-em, a Google przelicza je z ceny domyślnej po swoim kursie i zaokrągla, więc samo z siebie wychodzi np. 6,09 zł
+zamiast 4,99 zł. Ceny w innych krajach mogą zostać przeliczone przez Google.
+
 Ceny w grze pokazują się z Google Play (w walucie gracza), więc możesz je zmienić w Play Console bez nowej wersji gry. Zawartość pakietów zmienia się w `src/data/shop.ts` (gra i serwer).
