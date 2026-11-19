@@ -16,7 +16,7 @@ import { toast } from '../engine/context';
 import { fmt } from './format';
 
 /** Funkcje, które mieszkają w Menu (znaczek „nowe” na przycisku Menu). */
-const MENU_FEATURES: FeatureId[] = ['nauka', 'zadania', 'klan', 'sklep'];
+const MENU_FEATURES: FeatureId[] = ['nauka', 'zadania', 'klan', 'sklep', 'czat'];
 
 const giftWaiting = (game: Game) => game.shopNow.gift !== game.shopNow.day;
 const passWaiting = (game: Game) => {
@@ -27,7 +27,8 @@ const passWaiting = (game: Game) => {
 /** Co czeka w Menu: liczba (nagrody z Zadań i sprawy klanu) i czy jest coś bez liczby (prezent, przepustka, nowość). */
 export function menuTodo(game: Game): { n: number; dot: boolean; fresh: boolean } {
   const n = (game.unlocked('zadania') ? game.claimable() : 0) + (game.unlocked('klan') ? clanLife.todo() : 0);
-  const dot = (game.unlocked('sklep') && (giftWaiting(game) || passWaiting(game)));
+  // Kropka: prezent w sklepie, przepustka albo nieprzeczytane w czacie klanu (świat bywa zbyt gadatliwy na kropkę).
+  const dot = (game.unlocked('sklep') && (giftWaiting(game) || passWaiting(game))) || (game.unlocked('czat') && (getChat()?.unread.clan ?? 0) > 0);
   const fresh = MENU_FEATURES.some(id => game.s.unlNew.includes(id));
   return { n, dot, fresh };
 }
@@ -75,7 +76,7 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
     else if (!game.unlocked('czat')) tiles.push({ key: 'czat', n: 'Czat', d: 'zablokowany', ic: <span class="mt-svg"><LockIcon /></span>, go: show({ kind: 'locked', id: 'czat' }), attrs: { 'data-menu': 'czat' } });
     else {
       const n = getChat()?.unreadTotal ?? 0;
-      tiles.push({ key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-menu': 'czat' } });
+      tiles.push({ key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-btn': 'czat' } });
     }
   }
   if (game.unlocked('sklep')) {

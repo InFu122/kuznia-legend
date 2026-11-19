@@ -1486,22 +1486,8 @@ a.linkbtn{display:inline-block}
 .dock-auto.on small.wait{color:var(--ember)}
 .dock .sparks{position:absolute; inset:0; pointer-events:none}
 
-.chatline{position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:44px; padding:4px 2px; background:none; border:0; border-top:1px solid #3a2f25;
-  color:var(--frost); font-size:13px; text-align:left}
-.chatline.unread > svg{color:var(--straw)}
-.chatline.locked .lock-ic{flex:none; width:16px; height:16px; color:var(--ash)}
-.cl-rows{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; animation:clIn .5s ease-out}
-.cl-t:not(.last){opacity:.62}
-@keyframes clIn{from{transform:translateY(6px); opacity:.2; background:rgba(231,190,98,.18)} to{transform:none; opacity:1; background:transparent}}
-@media (prefers-reduced-motion: reduce){ .cl-rows{animation:none} }
-.chatline svg{flex:none; width:16px; height:16px; color:var(--ash)}
-.cl-t{display:block; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#d9cbb8}
-.cl-t.muted{color:var(--ash)}
 .cl-ch{color:#7fc8ff; margin-right:4px}
 .cl-n{color:var(--straw)}
-.chatline .badge{position:static; flex:none}
-.dock + .chatline, .tabs-wrap > .chatline:first-child{border-top:0}
-.chatline + .tabs-in{border-top:1px solid #3a2f25}
 .coach-pill.down{bottom:calc(var(--bottom-h, 84px) + 8px)}
 
 /* Przygoda (Krainy i Lochy) i widoki z Menu */
@@ -1551,3 +1537,18 @@ a.linkbtn{display:inline-block}
   image-rendering:pixelated}
 .forge-banner .fb-side{display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:6px; align-self:stretch}
 .skslot .ghost{opacity:.22; filter:grayscale(1)}
+
+/* czat wyskakujący nad dolnym paskiem (na kilka sekund po nowej wiadomości) */
+.tabs-wrap{position:relative}
+.chatpop{position:absolute; left:0; right:0; bottom:calc(100% + 8px); display:flex; align-items:center; gap:10px; min-height:46px; padding:8px 12px; border-radius:14px;
+  background:rgba(34,27,22,.97); border:1px solid var(--rivet); border-left:3px solid #7fc8ff; box-shadow:0 10px 28px rgba(0,0,0,.55);
+  color:var(--frost); font-size:13.5px; text-align:left; animation:cpIn .25s ease-out; transition:opacity .4s, transform .4s}
+.chatpop.out{opacity:0; transform:translateY(8px); pointer-events:none}
+.chatpop svg{flex:none; width:18px; height:18px; color:#7fc8ff}
+.chatpop > span:first-child{display:contents}
+.cp-t{flex:1; min-width:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.3; color:#e6dccd}
+.cp-t .cl-ch{color:#7fc8ff; margin-right:4px}
+.cp-t .cl-n{color:var(--straw)}
+.chatpop .badge{position:static; flex:none}
+@keyframes cpIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion: reduce){ .chatpop{animation:none; transition:none} }

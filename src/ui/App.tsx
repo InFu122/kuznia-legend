@@ -11,7 +11,7 @@ import { LockIcon, TabIcon, type Tab } from './icons';
 import { toast } from '../engine/context';
 import { ADVENTURE, NAVS, NAV_OF, VIEW_NAME, reachText, reachTarget, type Nav } from './nav';
 import { ForgeDock } from './Dock';
-import { ChatLine, GoalStrip } from './Goal';
+import { ChatPop, GoalStrip } from './Goal';
 import { menuTodo } from './Menu';
 import { Coach, type CoachMark } from './Coach';
 import { ClanPanel } from './panels/Clan';
@@ -164,8 +164,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       const deep = NAV_OF[F.at.tab] !== F.at.tab;
       mark = { key: `f:${feat}`, target: reachTarget(F.at.tab), title: `Nowość: ${F.n}`, text: deep ? `${F.d} ${reachText(F.at.tab)}` : F.d };
       navHint = true;
-    } else if (F.at.btn === 'zadania') {
-      mark = { key: `f:${feat}`, target: [F.target, '[data-tab="menu"]'], title: `Nowość: ${F.n}`, text: `${F.d} Otwórz Menu → Zadania.` };
+    } else if (F.at.btn === 'zadania' || F.at.btn === 'czat') {
+      mark = { key: `f:${feat}`, target: [F.target, '[data-tab="menu"]'], title: `Nowość: ${F.n}`, text: `${F.d} Otwórz Menu → ${F.at.btn === 'czat' ? 'Czat' : 'Zadania'}.` };
       navHint = true;
     } else {
       mark = { key: `f:${feat}`, target: F.target, title: `Nowość: ${F.n}`, text: F.d };
@@ -242,8 +242,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       </div>
       <div class="tabs" ref={bottomRef}>
         <div class="tabs-wrap">
+          <ChatPop game={game} onOpen={ch => { game.seenFeatures(['czat']); open({ kind: 'chat', ch }); }} />
           {tab === 'kuznia' && <ForgeDock game={game} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} onAuto={() => open({ kind: 'auto' })} />}
-          <ChatLine game={game} onOpen={() => { game.seenFeatures(['czat']); open({ kind: 'chat' }); }} onLocked={() => open({ kind: 'locked', id: 'czat' })} />
           <nav class="tabs-in" aria-label="Zakładki">
             {NAVS.map(([id, n]) => {
               const locked = id === 'bohater' ? !game.unlocked('bohater') : id === 'przygoda' ? !game.unlocked('krainy') && !game.unlocked('lochy') : false;

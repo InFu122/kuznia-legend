@@ -31,6 +31,9 @@ export class ChatLink {
   unread: Record<ChatCh, number> = { global: 0, clan: 0 };
   /** Kanał, który gracz właśnie ogląda (jego wiadomości nie są „nieprzeczytane”). */
   viewing: ChatCh | null = null;
+  /** Ostatnia wiadomość od kogoś innego, która przyszła na żywo (nie z historii), i kiedy (czas tego urządzenia) — do wyskakującego paska. */
+  live: ChatMsg | null = null;
+  liveAt = 0;
   clanId: string | null = null;
   clanName = '';
   ann = '';
@@ -107,7 +110,10 @@ export class ChatLink {
     const msg = ch && this.parse(cm, ch);
     if (!ch || !msg) return;
     this.msgs[ch] = this.msgs[ch].concat(msg).slice(-HISTORY * 2);
-    if (this.viewing !== ch && !msg.mine && !this.muted.has(msg.uid)) this.unread[ch]++;
+    if (this.viewing !== ch && !msg.mine && !this.muted.has(msg.uid)) {
+      this.unread[ch]++;
+      if (msg.k === 'msg' || msg.k === 'ann') { this.live = msg; this.liveAt = Date.now(); }
+    }
     if (msg.k === 'ann') this.ann = msg.t;
     if (ch === 'global' && msg.k === 'drop' && msg.it && msg.it.r === R.BOSKI && !msg.mine && !this.muted.has(msg.uid)) this.onDivine?.(msg);
     this.changed();
@@ -165,6 +171,7 @@ export class ChatLink {
   restart(): void {
     this.msgs = { global: [], clan: [] };
     this.unread = { global: 0, clan: 0 };
+    this.live = null;
     this.clanId = null;
     if (this.ws) this.ws.close(); else void this.start();
   }
