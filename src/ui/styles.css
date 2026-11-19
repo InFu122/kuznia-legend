@@ -1483,7 +1483,7 @@ a.linkbtn{display:inline-block}
 .dock-auto b{font-size:14px; color:var(--frost)}
 .dock-auto small{font-size:11px}
 .dock-auto.on{border-color:var(--good); background:color-mix(in srgb, var(--good) 14%, var(--plate))}
-.dock-auto.on small{color:var(--good); font-weight:700}
+.dock-auto.on small.wait{color:var(--ember)}
 .dock .sparks{position:absolute; inset:0; pointer-events:none}
 
 .chatline{position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:36px; padding:0 2px; background:none; border:0; border-top:1px solid #3a2f25;
@@ -1520,3 +1520,12 @@ a.linkbtn{display:inline-block}
 .menu-next b{color:var(--frost)}
 .ores-sheet .ores2{margin:4px 0 0}
 @media (prefers-reduced-motion: reduce){ .modal.sheet .modal-box{animation:none} }
+/* wybór rudy jak dawniej na karcie kuźni (baner, siatka, szanse) i auto-wytop z rzadkością */
+.ores-sheet .forge-banner{margin:0; border:1px solid var(--rivet); border-radius:14px; min-height:72px}
+.ores-sheet .oddsbar{margin-top:2px}
+.dock-auto{width:66px; padding:0 2px}
+.dock-auto small{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10.5px}
+.dock-auto.on small{font-weight:700}
+/* Nauka: wybrane badanie nad drzewkiem, przypięte u góry przy przewijaniu */
+.tech-detail{position:sticky; top:calc(env(safe-area-inset-top, 0px) + 6px); z-index:5; box-shadow:0 10px 24px rgba(0,0,0,.55)}
+.btn.wide{width:100%}

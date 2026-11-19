@@ -24,7 +24,7 @@ const ROMAN = ['I', 'II', 'III', 'IV'];
 /** Jednostka efektu wzięta z opisu (np. „%” albo „ min”). */
 const unit = (id: TechId) => { const after = TECH[id].d.split('{v}')[1] ?? ''; return after.startsWith('%') ? '%' : after.startsWith(' min') ? ' min' : ''; };
 
-/** Węzeł drzewka: ikona, nazwa i poziom. Dotknięcie pokazuje szczegóły i przycisk badania. */
+/** Węzeł drzewka: ikona, nazwa i poziom. Dotknięcie pokazuje szczegóły i przycisk badania (karta nad drzewkiem, przypięta u góry ekranu). */
 function TechNode({ game, id, on, pick }: { game: Game; id: TechId; on: boolean; pick: (id: TechId) => void }) {
   const s = game.s;
   const T = TECH[id];
@@ -132,6 +132,12 @@ export function ResearchPanel({ game }: { game: Game }) {
         ) : <p class="sub">Jedno badanie naraz. Czas biegnie także, gdy nie grasz.</p>}
         <p class="sub" style={{ marginTop: '6px' }}>Księgi Wiedzy wypadają z bossów (najwięcej za pierwsze pokonanie), rzadko z fal wrogów i co 5 pięter Wieży Wyzwań.</p>
       </section>
+      {shown && (
+        <section class="card tech-detail">
+          <div class="eyebrow">{TECH_BRANCHES.find(b => b.id === TECH[shown].branch)?.n} · wybrane badanie</div>
+          <ul class="techs"><TechRow game={game} id={shown} /></ul>
+        </section>
+      )}
       <section class="card tech-tree" aria-label="Drzewka badań">
         <div class="tt-cols">
           {TECH_BRANCHES.map(br => (
@@ -144,12 +150,6 @@ export function ResearchPanel({ game }: { game: Game }) {
           ))}
         </div>
       </section>
-      {shown && (
-        <section class="card tech-detail">
-          <div class="eyebrow">{TECH_BRANCHES.find(b => b.id === TECH[shown].branch)?.n} · szczegóły</div>
-          <ul class="techs"><TechRow game={game} id={shown} /></ul>
-        </section>
-      )}
     </>
   );
 }

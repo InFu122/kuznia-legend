@@ -45,16 +45,14 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
   const cost = game.upgradeCost();
   const elOn = f.lvl >= B.ELEM_FORGE_LVL;
   const setOn = f.lvl >= SET_FORGE_LVL;
-  const targets = game.autoTargets();
-  const target = game.autoTarget();
   // Szansa na przeskok dla wybranej rudy (rzadsze wyniki są trudniejsze, a przeskok do Boskiego zależy od rudy).
   const jo = mj >= 1 ? o : -1;
   const jn = jo >= 0 ? ` (${ORES[jo].n})` : '';
   const [j1, j2] = jumpChances(f.lvl, rel, jo);
   const [k1, k2] = jumpChances(n, rel, jo);
-  // Ruda bez sztywnego minimum (zasady v6): wynik bez przeskoku teraz i jakość docelowa rudy.
+  // Ruda bez sztywnego minimum (zasady v6): wynik bez przeskoku teraz (do szansy „co najmniej” przy ulepszeniu).
   const at = Math.max(f.lvl, ORES[o].lvl);
-  const nom = rAt(oreNominal(o, at)), goal = rAt(Math.ceil(ORES[o].v6[1] - 1e-9));
+  const nom = rAt(oreNominal(o, at));
   const growing = oreBase(o, at) < ORES[o].v6[1] - 1e-9;
   const pityOk = pityAllowed(o, JUMP_V, f.lvl);
   /** Szansa (%) na co najmniej rzadkość `nom` z wybranej rudy na poziomie `lvl`. */
@@ -108,10 +106,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
           <button class="btn small" onClick={onPick} aria-haspopup="dialog">Zmień rudę</button>
           <InfoBtn onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
         </div>
-        <div class="o2-sel">
-          <b>{ORES[o].n}</b> · bez przeskoku <span class={`rt${nom}`}>{RAR[nom].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
-          {growing && <> · <span class="rampnote">jakość rośnie z poziomem kuźni — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></span></>}
-        </div>
+        <OreSummary game={game} />
         {(elOn || setOn || SET_IDS.some(k => (s.uniq[k] ?? 0) > 0)) && (
           <div class="mixrow">
             {elOn && (
@@ -131,14 +126,6 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
           </div>
         )}
         {set && <p class="sub">Następny wytop: część zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b>{pityOk ? ' z pewnym przeskokiem o co najmniej 1 rzadkość' : mj >= 1 ? ' (przeskok do Boskiego nigdy nie jest pewny)' : ''}.</p>}
-        <OddsBar d={dist(o, Math.max(f.lvl, ORES[o].lvl), rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && pityOk ? 'z zestawem bez najniższej' : undefined} />
-        {pityOk && (
-          <div class="pity">
-            <span>Gwarancja przeskoku</span>
-            <div class="bar"><i style={{ width: Math.min(100, (s.pity / B.PITY_MAX) * 100) + '%' }} /></div>
-            <span class="num">{s.pity}/{B.PITY_MAX}</span>
-          </div>
-        )}
         {f.lvl >= BATCH_OPTIONS[1][1] && (
           <div class="batch" role="radiogroup" aria-label="Wytop seryjny">
             <span>Wytop seryjny</span>
@@ -160,14 +147,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
               <div><b>Auto-wytop</b>{game.autoWaiting && <div class="tech-cost warn">{f.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `czeka na rudę: ${ORES[o].n}`}</div>}{game.autoPaused && <div class="tech-cost warn">czeka na twoją decyzję</div>}</div>
               <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />{s.auto ? 'Włączony' : 'Wyłączony'}</button>
             </div>
-            <div class="autostop" role="radiogroup" aria-label="Zatrzymaj auto-wytop na rzadkości">
-              <span>Zatrzymaj na:</span>
-              {targets.map(r => (
-                <button key={r} role="radio" aria-checked={r === target} class={`chip rchip r${r}${r === target ? ' on' : ''}`} onClick={() => game.setAutoStop(r)}>
-                  {RAR[r].n}{targets.length > 1 && rRank(r) < rRank(targets[targets.length - 1]) ? '+' : ''}
-                </button>
-              ))}
-            </div>
+            <AutoStop game={game} />
             <p class="sub">Słabsze przedmioty sprzedaje (do pustego miejsca zakłada). Gdy wykuje wybraną rzadkość albo część zestawu — gra i pokazuje przedmiot; po twojej decyzji kuje dalej.</p>
           </div>
         ) : (
@@ -178,6 +158,52 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
 
       <Refine game={game} />
     </>
+  );
+}
+
+/** Wybrana ruda: co z niej wychodzi bez przeskoku, pasek szans i gwarancja przeskoku. */
+export function OreSummary({ game }: { game: Game }) {
+  const s = game.s;
+  const f = s.forge;
+  const o = s.oreSel;
+  const mj = maxJump(o);
+  const set = uniqActive(s);
+  const rel = techMods(s).jumpRel;
+  const at = Math.max(f.lvl, ORES[o].lvl);
+  const nom = rAt(oreNominal(o, at)), goal = rAt(Math.ceil(ORES[o].v6[1] - 1e-9));
+  const growing = oreBase(o, at) < ORES[o].v6[1] - 1e-9;
+  const pityOk = pityAllowed(o, JUMP_V, f.lvl);
+  return (
+    <>
+      <div class="o2-sel">
+        <b>{ORES[o].n}</b> · bez przeskoku <span class={`rt${nom}`}>{RAR[nom].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
+        {growing && <> · <span class="rampnote">jakość rośnie z poziomem kuźni — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></span></>}
+      </div>
+      <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && pityOk ? 'z zestawem bez najniższej' : undefined} />
+      {pityOk && (
+        <div class="pity">
+          <span>Gwarancja przeskoku</span>
+          <div class="bar"><i style={{ width: Math.min(100, (s.pity / B.PITY_MAX) * 100) + '%' }} /></div>
+          <span class="num">{s.pity}/{B.PITY_MAX}</span>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Rzadkość, na której auto-wytop się zatrzymuje. `onPick` — po wyborze (np. zamknięcie okienka). */
+export function AutoStop({ game, onPick }: { game: Game; onPick?: (r: number) => void }) {
+  const targets = game.autoTargets();
+  const target = game.autoTarget();
+  return (
+    <div class="autostop" role="radiogroup" aria-label="Zatrzymaj auto-wytop na rzadkości">
+      <span>Zatrzymaj na:</span>
+      {targets.map(r => (
+        <button key={r} role="radio" aria-checked={r === target} class={`chip rchip r${r}${r === target ? ' on' : ''}`} onClick={() => { game.setAutoStop(r); onPick?.(r); }}>
+          {RAR[r].n}{targets.length > 1 && rRank(r) < rRank(targets[targets.length - 1]) ? '+' : ''}
+        </button>
+      ))}
+    </div>
   );
 }
 

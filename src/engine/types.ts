@@ -285,6 +285,7 @@ export type ModalData =
   | { kind: 'adOffer'; what: BuffId }
   | { kind: 'menu' }
   | { kind: 'ores' }
+  | { kind: 'auto' }
 
 export type GameEvent =
   | { t: 'toast'; msg: string; kind?: 'good' | 'bad' }

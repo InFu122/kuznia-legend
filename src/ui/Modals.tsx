@@ -35,7 +35,7 @@ import { DungInfoView } from './panels/Dungeon';
 import { FeedbackView } from './panels/Feedback';
 import { ChatView } from './panels/Chat';
 import { MenuView } from './Menu';
-import { OrePicker } from './Dock';
+import { AutoSheet, OrePicker } from './Dock';
 import type { Tab } from './icons';
 
 /**
@@ -304,6 +304,8 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       return <MenuView game={game} close={close} goTab={goTab} />;
     case 'ores':
       return <OrePicker game={game} close={close} />;
+    case 'auto':
+      return <AutoSheet game={game} close={close} />;
     case 'reset':
       return (
         <>

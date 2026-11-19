@@ -238,7 +238,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       </div>
       <div class="tabs" ref={bottomRef}>
         <div class="tabs-wrap">
-          {tab === 'kuznia' && <ForgeDock game={game} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} />}
+          {tab === 'kuznia' && <ForgeDock game={game} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} onAuto={() => open({ kind: 'auto' })} />}
           <ChatLine game={game} onOpen={() => open({ kind: 'chat' })} />
           <nav class="tabs-in" aria-label="Zakładki">
             {NAVS.map(([id, n]) => {
@@ -262,7 +262,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </div>
       </div>
       {modal && (
-        <ModalShell locked={LOCKED.has(modal.kind)} onClose={close} cls={modal.kind === 'menu' ? 'sheet' : modal.kind === 'ores' ? 'sheet ores-sheet' : ''}>
+        <ModalShell locked={LOCKED.has(modal.kind)} onClose={close} cls={modal.kind === 'menu' || modal.kind === 'auto' ? 'sheet' : modal.kind === 'ores' ? 'sheet ores-sheet' : ''}>
           <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} onFeature={id => setFeat(id)} />
         </ModalShell>
       )}
