@@ -1535,3 +1535,19 @@ a.linkbtn{display:inline-block}
 /* Nauka: wybrane badanie nad drzewkiem, przypięte u góry przy przewijaniu */
 .tech-detail{position:sticky; top:calc(env(safe-area-inset-top, 0px) + 6px); z-index:5; box-shadow:0 10px 24px rgba(0,0,0,.55)}
 .btn.wide{width:100%}
+/* Bohater: podzakładki z ikonkami, statystyki z pixelowymi ikonkami, sceny w nagłówkach */
+.seg.seg-ic button{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0 6px}
+.seg-ic .si-ic{position:relative; display:grid; place-items:center; height:30px}
+.seg-ic .si-ic .lock-ic{position:absolute; right:-9px; bottom:-2px; width:14px; height:14px; color:var(--ash)}
+.seg-ic button.locked .si-ic img{filter:grayscale(1) brightness(.7); opacity:.5}
+.seg-ic button.on .si-ic img{filter:drop-shadow(0 0 6px rgba(231,190,98,.55))}
+.seg-ic .si-n{max-width:100%; overflow:hidden; text-overflow:ellipsis}
+.stat.sti{display:flex; align-items:center; gap:8px}
+.stat.sti > span{min-width:0}
+.stat-ic{flex:none}
+.stat.moc{background:linear-gradient(90deg, rgba(231,190,98,.14), transparent 80%), var(--plate-2)}
+.eyebrow.ic{display:flex; align-items:center; gap:6px}
+.actor.doll.scene{background:radial-gradient(70% 60% at 50% 85%, rgba(255,141,79,.22), transparent 70%), linear-gradient(0deg, rgba(14,10,7,.55), transparent 55%), var(--bg) center 75% / cover;
+  image-rendering:pixelated}
+.forge-banner .fb-side{display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:6px; align-self:stretch}
+.skslot .ghost{opacity:.22; filter:grayscale(1)}

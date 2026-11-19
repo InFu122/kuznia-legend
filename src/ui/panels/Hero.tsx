@@ -5,7 +5,8 @@ import type { FoeType, Item } from '../../engine/types';
 import { useState } from 'preact/hooks';
 import { f1, fmt, pct } from '../format';
 import { LockIcon, SlotIcon } from '../icons';
-import { itemUrl } from '../../art/render';
+import { itemUrl, landBgUrl, resUrl } from '../../art/render';
+import { IconEyebrow, StatIcon } from '../Banner';
 import { Px } from '../Px';
 import { MountsView, PetsView, SkillsView } from './Companions';
 import { showProfile } from '../profile';
@@ -18,11 +19,17 @@ type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
 const SUB_FEATURE: Partial<Record<Sub, FeatureId>> = { skills: 'umiejetnosci', pets: 'chowance', mounts: 'wierzchowce' };
 const SUBS: [Sub, string][] = [['eq', 'Ekwipunek'], ['skills', 'Umiejętności'], ['pets', 'Chowaniec'], ['mounts', 'Wierzchowiec']];
 
+/** Ikonka podzakładki: broń bohatera (albo kowadło), zwój, łapa, siodło. */
+function subIcon(game: Game, id: Sub): string {
+  if (id === 'eq') { const w = game.s.eq.bron; return w ? itemUrl(w.kind, w.ore, w.r) : resUrl('kowadlo'); }
+  return resUrl(id === 'skills' ? 'zwoj' : id === 'pets' ? 'lapa' : 'siodlo');
+}
+
 export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
   const [sub, setSub] = useState<Sub>('eq');
   return (
     <>
-      <div class="seg" role="tablist" aria-label="Bohater">
+      <div class="seg seg-ic" role="tablist" aria-label="Bohater">
         {SUBS.map(([id, n]) => {
           const f = SUB_FEATURE[id];
           const locked = !!f && !game.unlocked(f);
@@ -30,7 +37,8 @@ export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => 
           return (
             <button key={id} role="tab" data-sub={id} aria-selected={sub === id} class={`${sub === id ? 'on' : ''}${locked ? ' locked' : ''}`}
               onClick={() => { setSub(id); if (f) game.seenFeatures([f]); }}>
-              {locked && <LockIcon />}{n}{fresh && <i class="tab-dot new" aria-label="nowe" />}
+              <span class="si-ic"><Px src={subIcon(game, id)} size={28} />{locked && <LockIcon />}</span>
+              <span class="si-n">{n}</span>{fresh && <i class="tab-dot new" aria-label="nowe" />}
             </button>
           );
         })}
@@ -46,9 +54,9 @@ export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => 
 function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
   const s = game.s;
   const c = game.stats;
-  const st: [string, string][] = [
-    ['Moc', fmt(c.power)], ['Obrażenia', fmt(c.dmg)], ['Zdrowie', fmt(c.hp)], ['Krytyk', pct(c.crit)], ['Obr. krytyczne', pct(c.critd)],
-    ['Szybkość ataku', '+' + pct(c.spd)], ['Kradzież życia', pct(c.ls)], ['Unik', pct(c.dodge)], ['Regeneracja', f1(c.regen) + '%/s'],
+  const st: [string, string, string][] = [
+    ['moc', 'Moc', fmt(c.power)], ['dmg', 'Obrażenia', fmt(c.dmg)], ['hp', 'Zdrowie', fmt(c.hp)], ['crit', 'Krytyk', pct(c.crit)], ['critd', 'Obr. krytyczne', pct(c.critd)],
+    ['spd', 'Szybkość ataku', '+' + pct(c.spd)], ['ls', 'Kradzież życia', pct(c.ls)], ['dodge', 'Unik', pct(c.dodge)], ['regen', 'Regeneracja', f1(c.regen) + '%/s'],
   ];
   const extra: string[] = [];
   if (c.boss + c.pog) extra.push(`+${f1(c.boss + c.pog)}% wobec bossów`);
@@ -60,7 +68,8 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
     <>
       <section class="card">
         <div class="hero-head">
-          <div class={`actor hero doll${rGe(bestRarity(s.eq), R.RZADKI) ? ' r' + bestRarity(s.eq) : ''}`} aria-hidden="true"><HeroSprite eq={s.eq} skin={s.look.skin} /></div>
+          <div class={`actor hero doll scene${rGe(bestRarity(s.eq), R.RZADKI) ? ' r' + bestRarity(s.eq) : ''}`} aria-hidden="true"
+            style={{ '--bg': `url(${landBgUrl(s.cur.land)})` } as Record<string, string>}><HeroSprite eq={s.eq} skin={s.look.skin} /></div>
           <div>
             <div class="eyebrow">Bohater</div>
             <div class="h">{s.name}</div>
@@ -69,7 +78,12 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
           </div>
         </div>
         <div class="stats" style={{ marginTop: '10px' }}>
-          {st.map(([k, v]) => <div class="stat" key={k}><small>{k}</small><b>{v}</b></div>)}
+          {st.map(([ic, k, v]) => (
+            <div class={`stat sti${ic === 'moc' ? ' moc' : ''}`} key={k}>
+              {ic === 'moc' ? <Px src={resUrl('moc')} size={18} cls="stat-ic" /> : <StatIcon k={ic} />}
+              <span><small>{k}</small><b>{v}</b></span>
+            </div>
+          ))}
         </div>
         {extra.length > 0 && <p class="sub" style={{ marginTop: '8px' }}>{extra.join(' · ')}</p>}
         {c.aura > 0 && (
@@ -81,7 +95,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
       </section>
       {c.sets.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Zestawy</div>
+          <IconEyebrow icon={<Px src={resUrl('pieczec')} size={16} />}>Zestawy</IconEyebrow>
           <ul class="sets">
             {c.sets.map(({ id, count }) => (
               <li key={id}>
@@ -94,7 +108,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
         </section>
       )}
       <section class="card">
-        <div class="row"><div class="eyebrow">Ekwipunek</div><span class="sub">Kropki = progi legendy{s.seals ? ` · Pieczęcie Legendy: ${s.seals}` : ''}</span></div>
+        <div class="row"><IconEyebrow icon={<Px src={resUrl('kowadlo')} size={16} />}>Ekwipunek</IconEyebrow><span class="sub">Kropki = progi legendy{s.seals ? ` · Pieczęcie Legendy: ${s.seals}` : ''}</span></div>
         <div class="slots" style={{ marginTop: '10px' }}>
           {SLOT_ORDER.map(slot => {
             const it = s.eq[slot];

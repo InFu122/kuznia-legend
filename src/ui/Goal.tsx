@@ -7,6 +7,7 @@ import { resUrl } from '../art/render';
 import { Px } from './Px';
 import { LockIcon, TabIcon } from './icons';
 import { unlockWhen } from '../engine/unlocks';
+import { toast } from '../engine/context';
 import { fmt } from './format';
 
 /** Zadanie do pokazania: niedokończone, najbliżej celu (najpierw dzienne). */
@@ -66,6 +67,9 @@ export function GoalStrip({ game, step, onShow, onMissions }: {
   );
 }
 
+/** Gra bez serwera (np. wersja w przeglądarce do testów): czatu, klanu i rankingu nie ma. */
+export const CHAT_OFFLINE = 'Czat działa tylko w grze połączonej z serwerem (aplikacja na telefonie). Ta wersja gra bez serwera, więc czatu tu nie ma.';
+
 /** Ostatnie wiadomości z obu kanałów (bez wyciszonych graczy), od najstarszej. */
 function lastMsgs(n: number): ChatMsg[] {
   const chat = getChat();
@@ -77,10 +81,17 @@ const msgText = (m: ChatMsg) => (m.k === 'drop' && m.it ? `wykuł(a) ${m.it.name
 
 /**
  * Czat nad dolnym paskiem: dwie ostatnie wiadomości (nowa wjeżdża z błyskiem) i licznik nieprzeczytanych.
- * Tylko z serwerem — w wersji bez serwera czatu nie ma. Przed odblokowaniem: kłódka i kiedy się otworzy.
+ * Bez serwera — informacja, że czat jest tylko w aplikacji z serwerem. Przed odblokowaniem: kłódka i kiedy się otworzy.
  */
 export function ChatLine({ game, onOpen, onLocked }: { game: Game; onOpen: () => void; onLocked: () => void }) {
-  if (!game.net) return null;
+  if (!game.net) {
+    return (
+      <button class="chatline off" data-btn="czat" onClick={() => toast(game.ctx, CHAT_OFFLINE)} aria-label="Czat: niedostępny w tej wersji">
+        <TabIcon tab="czat" />
+        <span class="cl-rows"><span class="cl-t muted">Czat działa w aplikacji z serwerem — ta wersja gra bez serwera</span></span>
+      </button>
+    );
+  }
   if (!game.unlocked('czat')) {
     return (
       <button class="chatline locked" data-btn="czat" onClick={onLocked} aria-label="Czat: zablokowany">

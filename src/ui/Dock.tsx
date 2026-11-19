@@ -1,6 +1,6 @@
 // Kowadło pod kciukiem: na zakładce Kuźnia ruda, przycisk Wytop i Auto są przypięte nad dolnym paskiem,
 // więc zawsze widać je bez przewijania. Rudę i auto-wytop (z rzadkością, na której ma się zatrzymać)
-// ustawia się w okienkach wysuwanych z dołu.
+// ustawia się w okienkach wysuwanych z dołu; włączony auto-wytop wyłącza jedno dotknięcie Auto.
 import { useRef } from 'preact/hooks';
 import { B, ORES, ORE_ORDER, RAR, rAt } from '../data';
 import { canSmelt } from '../engine/forge';
@@ -38,8 +38,8 @@ export function ForgeDock({ game, onPick, onDecide, onAuto }: { game: Game; onPi
         </button>
       )}
       {f.lvl >= B.AUTO_FORGE_LVL && (
-        <button class={`dock-auto${s.auto ? ' on' : ''}`} aria-haspopup="dialog" onClick={onAuto}
-          aria-label={`Auto-wytop: ${s.auto ? `włączony, zatrzyma się na: ${RAR[game.autoTarget()].n}` : 'wyłączony'}. Ustaw`}>
+        <button class={`dock-auto${s.auto ? ' on' : ''}`} aria-haspopup={s.auto ? undefined : 'dialog'} onClick={() => (s.auto ? game.toggleAuto() : onAuto())}
+          aria-label={s.auto ? `Auto-wytop włączony, zatrzyma się na: ${RAR[game.autoTarget()].n}. Wyłącz` : 'Auto-wytop wyłączony. Ustaw i włącz'}>
           <b>Auto</b>{s.auto && !game.autoPaused ? <small class={`rt${game.autoTarget()}`}>{RAR[game.autoTarget()].n}+</small> : <small class={s.auto ? 'wait' : ''}>{s.auto ? 'czeka' : 'wył.'}</small>}
         </button>
       )}
@@ -91,7 +91,7 @@ export function OrePicker({ game, close }: { game: Game; close: () => void }) {
   );
 }
 
-/** Auto-wytop: wybór rzadkości od razu włącza kucie; gdy już kuje — zmiana rzadkości albo wyłączenie. */
+/** Auto-wytop: wybór rzadkości, na której kuźnia się zatrzyma, i „Włącz”. (Wyłącza się jednym dotknięciem Auto na pasku.) */
 export function AutoSheet({ game, close }: { game: Game; close: () => void }) {
   const s = game.s;
   const o = s.oreSel;
@@ -100,10 +100,10 @@ export function AutoSheet({ game, close }: { game: Game; close: () => void }) {
     <>
       <div class="eyebrow">Kuźnia · poziom {s.forge.lvl}</div>
       <div class="h">Auto-wytop</div>
-      <p class="sub">{on ? 'Kuźnia kuje sama.' : 'Wybierz rzadkość — kuźnia od razu zacznie kuć sama.'} Słabsze przedmioty sprzedaje, do pustego miejsca zakłada. Gdy wykuje wybraną rzadkość (albo rzadszą) lub część zestawu, zatrzymuje się i czeka na twoją decyzję.</p>
+      <p class="sub">{on ? 'Kuźnia kuje sama.' : 'Wybierz rzadkość i naciśnij „Włącz” — kuźnia zacznie kuć sama.'} Słabsze przedmioty sprzedaje, do pustego miejsca zakłada. Gdy wykuje wybraną rzadkość (albo rzadszą) lub część zestawu, zatrzymuje się i czeka na twoją decyzję.</p>
       {on && game.autoWaiting && <p class="tech-cost warn">{s.forge.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `Czeka na rudę: ${ORES[o].n}`}</p>}
       {on && game.autoPaused && <p class="tech-cost warn">Czeka na twoją decyzję o przedmiocie.</p>}
-      <AutoStop game={game} onPick={() => { if (!game.s.auto) game.toggleAuto(); close(); }} />
+      <AutoStop game={game} />
       {on
         ? <button class="btn wide" onClick={() => { game.toggleAuto(); close(); }}>Wyłącz auto-wytop</button>
         : <button class="btn primary wide" onClick={() => { game.toggleAuto(); close(); }}>Włącz · zatrzymaj na: {RAR[game.autoTarget()].n}</button>}

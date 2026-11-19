@@ -1,4 +1,5 @@
-import { companionUrl, resUrl, skillUrl } from '../../art/render';
+import { companionUrl, dungeonBgUrl, landBgUrl, resUrl, skillUrl } from '../../art/render';
+import { Banner, IconEyebrow } from '../Banner';
 import { InfoBtn } from './Forge';
 import { Px } from '../Px';
 import {
@@ -23,30 +24,34 @@ const BestBtn = ({ onClick }: { onClick: () => void }) => <button class="btn sma
 export function SkillsView({ game }: { game: Game }) {
   const s = game.s;
   if (!skillsUnlocked(s)) {
-    return <section class="card"><div class="eyebrow">Umiejętności</div><p class="sub">Odblokujesz je na 5. etapie pierwszej krainy. Dostaniesz wtedy pierwsze Zwoje zaklęć.</p></section>;
+    return (
+      <section class="card">
+        <Banner bg={dungeonBgUrl('wieza')} icon={<Px src={resUrl('zwoj')} size={32} />} eyebrow="Umiejętności" title="Wkrótce" />
+        <p class="sub">Odblokujesz je na 5. etapie pierwszej krainy. Dostaniesz wtedy pierwsze Zwoje zaklęć.</p>
+      </section>
+    );
   }
   const owned = SKILL_IDS.filter(id => s.skills.lv[id]);
   const full = !s.skills.eq.includes(null);
   return (
     <>
       <section class="card">
-        <div class="row">
-          <div><div class="eyebrow">Umiejętności</div><div class="h">Zwoje zaklęć: {fmt(s.scrolls)}</div></div>
+        <Banner bg={dungeonBgUrl('wieza')} icon={<Px src={resUrl('zwoj')} size={32} />} eyebrow="Umiejętności" title={`Zwoje zaklęć: ${fmt(s.scrolls)}`}>
           <button class="btn primary small btn-scroll" disabled={s.scrolls < 1} onClick={() => game.openScroll()}>Otwórz Zwój</button>
-        </div>
+        </Banner>
         <p class="sub">Trzy umiejętności rzucają się same, gdy są gotowe. Kopie tej samej umiejętności podnoszą jej poziom.</p>
         <Odds />
         <div class="skslots">
           {s.skills.eq.map((id, i) => (
             <button key={i} class={`skslot${id ? ` r${SKILLS[id].r}` : ' empty'}`} disabled={!id} onClick={() => game.equipSkill(null, i)} aria-label={id ? `Zdejmij: ${SKILLS[id].n}` : 'Pusty slot'}>
-              {id ? <><Px src={skillUrl(id)} size={48} /><b>{SKILLS[id].n}</b><small>poz. {s.skills.lv[id]} · zdejmij</small></> : <small>pusty slot</small>}
+              {id ? <><Px src={skillUrl(id)} size={48} /><b>{SKILLS[id].n}</b><small>poz. {s.skills.lv[id]} · zdejmij</small></> : <><Px src={resUrl('zwoj')} size={32} cls="ghost" /><small>pusty slot</small></>}
             </button>
           ))}
         </div>
       </section>
       {owned.length > 0 && (
         <section class="card">
-          <div class="row"><div class="eyebrow">Twoje umiejętności</div><BestBtn onClick={() => game.equipBest('skills')} /></div>
+          <div class="row"><IconEyebrow icon={<Px src={resUrl('zwoj')} size={16} />}>Twoje umiejętności</IconEyebrow><BestBtn onClick={() => game.equipBest('skills')} /></div>
           <ul class="clist">
             {owned.map(id => {
               const S = SKILLS[id];
@@ -104,7 +109,7 @@ export function PetsView({ game }: { game: Game }) {
   if (!petsUnlocked(s)) {
     return (
       <section class="card comphead">
-        <div class="row"><div><div class="eyebrow">Chowańce</div><div class="h">Wkrótce</div></div><InfoBtn onClick={info} label="Jak działają chowańce" /></div>
+        <Banner bg={dungeonBgUrl('leza')} icon={<Px src={resUrl('lapa')} size={32} />} eyebrow="Chowańce" title="Wkrótce"><InfoBtn onClick={info} label="Jak działają chowańce" /></Banner>
         <p class="sub">Odblokujesz je w akcie II (kraina {PETS_UNLOCK_LAND + 1}). Pierwsze jajo da boss ostatniej krainy aktu I.</p>
       </section>
     );
@@ -116,10 +121,9 @@ export function PetsView({ game }: { game: Game }) {
   return (
     <>
       <section class="card comphead">
-        <div class="row">
-          <div><div class="eyebrow">Chowańce</div><div class="h">Inkubator</div></div>
-          <div class="row" style={{ gap: '8px' }}><StoneChip n={s.stones} /><InfoBtn onClick={info} label="Jak działają chowańce" /></div>
-        </div>
+        <Banner bg={dungeonBgUrl('leza')} icon={<Px src={resUrl('jajo2')} size={32} />} eyebrow="Chowańce" title="Inkubator">
+          <div class="fb-side"><InfoBtn onClick={info} label="Jak działają chowańce" /><StoneChip n={s.stones} /></div>
+        </Banner>
         <div class={`incub${h ? ` on r${h.r}` : ''}`}>
           <div class="incub-nest" aria-hidden="true">
             {h ? <Px src={resUrl('jajo' + Math.min(4, h.r))} size={56} cls="incub-egg" /> : <span class="incub-empty" />}
@@ -163,7 +167,7 @@ export function PetsView({ game }: { game: Game }) {
       )}
       {owned.length > 0 && (
         <section class="card">
-          <div class="row"><div class="eyebrow">Twoje chowańce</div><BestBtn onClick={() => game.equipBest('pet')} /></div>
+          <div class="row"><IconEyebrow icon={<Px src={resUrl('lapa')} size={16} />}>Twoje chowańce</IconEyebrow><BestBtn onClick={() => game.equipBest('pet')} /></div>
           <ul class="clist">
             {owned.map(id => <PetRow key={id} game={game} id={id} />)}
           </ul>
@@ -205,7 +209,7 @@ export function MountsView({ game }: { game: Game }) {
   if (!mountsUnlocked(s)) {
     return (
       <section class="card comphead">
-        <div class="row"><div><div class="eyebrow">Wierzchowce</div><div class="h">Wkrótce</div></div><InfoBtn onClick={info} label="Jak działają wierzchowce" /></div>
+        <Banner bg={landBgUrl(0)} icon={<Px src={resUrl('siodlo')} size={32} />} eyebrow="Wierzchowce" title="Wkrótce"><InfoBtn onClick={info} label="Jak działają wierzchowce" /></Banner>
         <p class="sub">Odblokujesz je w akcie III (kraina {MOUNTS_UNLOCK_LAND + 1}). Siodła dają bossowie aktu III i IV, Kopalnia Kryształów i Leża Bossów.</p>
       </section>
     );
@@ -216,10 +220,9 @@ export function MountsView({ game }: { game: Game }) {
   return (
     <>
       <section class="card comphead stable">
-        <div class="row">
-          <div><div class="eyebrow">Wierzchowce</div><div class="h">Stajnia</div></div>
-          <div class="row" style={{ gap: '8px' }}><StoneChip n={s.stones} /><InfoBtn onClick={info} label="Jak działają wierzchowce" /></div>
-        </div>
+        <Banner bg={landBgUrl(0)} icon={<Px src={resUrl('siodlo')} size={32} />} eyebrow="Wierzchowce" title="Stajnia">
+          <div class="fb-side"><InfoBtn onClick={info} label="Jak działają wierzchowce" /><StoneChip n={s.stones} /></div>
+        </Banner>
         <div class="saddle">
           <Px src={resUrl('siodlo')} size={40} />
           <div class="cmain"><b>Siodła: {fmt(s.saddles)}</b><small class="muted">Siodło losuje wierzchowca. Kopie dają gwiazdki.</small></div>
@@ -239,7 +242,7 @@ export function MountsView({ game }: { game: Game }) {
       )}
       {owned.length > 0 && (
         <section class="card">
-          <div class="row"><div class="eyebrow">Twoje wierzchowce</div><BestBtn onClick={() => game.equipBest('mount')} /></div>
+          <div class="row"><IconEyebrow icon={<Px src={resUrl('siodlo')} size={16} />}>Twoje wierzchowce</IconEyebrow><BestBtn onClick={() => game.equipBest('mount')} /></div>
           <ul class="clist">{owned.map(id => <MountRow key={id} game={game} id={id} />)}</ul>
           <Collection ids={MOUNT_IDS} have={id => !!s.mounts[id as MountId]} r={id => MOUNTS[id as MountId].r} label="Kolekcja wierzchowców" />
         </section>

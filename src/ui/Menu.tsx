@@ -1,5 +1,6 @@
 // Menu (czwarty przycisk na dole): wszystko, czego nie trzeba mieć pod kciukiem przez cały czas.
-// Zablokowane funkcje się tu nie pokazują — na dole jest tylko jedna podpowiedź, co odblokuje się następne.
+// Zablokowane funkcje się tu nie pokazują (poza Czatem, który jest zawsze) — na dole jest tylko jedna podpowiedź,
+// co odblokuje się następne.
 import type { JSX } from 'preact';
 import { FEATURES, FEATURE_IDS, type FeatureId } from '../data';
 import type { Game } from '../engine/game';
@@ -9,7 +10,9 @@ import { clanLife } from '../save/clanlife';
 import { getChat } from '../save/chat';
 import { resUrl } from '../art/render';
 import { Px } from './Px';
-import { TabIcon, type Tab } from './icons';
+import { LockIcon, TabIcon, type Tab } from './icons';
+import { CHAT_OFFLINE } from './Goal';
+import { toast } from '../engine/context';
 import { fmt } from './format';
 
 /** Funkcje, które mieszkają w Menu (znaczek „nowe” na przycisku Menu). */
@@ -65,9 +68,15 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
     tiles.push({ key: 'zadania', n: 'Zadania', d: n ? `${n} do odebrania` : 'dzienne i tygodniowe', ic: <Px src={resUrl('trofeum')} size={36} />, go: seen('zadania', show({ kind: 'missions' })), badge: n, fresh: s.unlNew.includes('zadania'), attrs: { 'data-btn': 'zadania' } });
   }
   if (game.unlocked('klan')) tiles.push({ key: 'klan', n: 'Klan', d: 'smok, wojna, boss', ic: <Px src={resUrl('moneta')} size={36} />, go: view('klan'), badge: clanLife.todo(), fresh: s.unlNew.includes('klan'), attrs: { 'data-tab': 'klan' } });
-  if (game.unlocked('czat')) {
-    const n = getChat()?.unreadTotal ?? 0;
-    tiles.push({ key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic: <span class="mt-svg"><TabIcon tab="czat" /></span>, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-menu': 'czat' } });
+  {
+    // Czat zawsze w Menu: bez serwera — wyjaśnienie, przed odblokowaniem — okno z kłódką.
+    const ic = <span class="mt-svg"><TabIcon tab="czat" /></span>;
+    if (!game.net) tiles.push({ key: 'czat', n: 'Czat', d: 'tylko w aplikacji z serwerem', ic, go: () => { close(); toast(game.ctx, CHAT_OFFLINE); }, attrs: { 'data-menu': 'czat' } });
+    else if (!game.unlocked('czat')) tiles.push({ key: 'czat', n: 'Czat', d: 'zablokowany', ic: <span class="mt-svg"><LockIcon /></span>, go: show({ kind: 'locked', id: 'czat' }), attrs: { 'data-menu': 'czat' } });
+    else {
+      const n = getChat()?.unreadTotal ?? 0;
+      tiles.push({ key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-menu': 'czat' } });
+    }
   }
   if (game.unlocked('sklep')) {
     tiles.push({ key: 'sklep', n: 'Sklep', d: giftWaiting(game) ? 'prezent czeka' : 'klejnoty, pakiety', ic: <Px src={resUrl('klejnot')} size={36} />, go: seen('sklep', show({ kind: 'shop' })), dot: giftWaiting(game), fresh: s.unlNew.includes('sklep'), attrs: { 'data-menu': 'sklep' } });

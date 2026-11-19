@@ -8,6 +8,7 @@ import { onProfile } from './profile';
 import { Toasts } from './Toasts';
 import { fmt } from './format';
 import { LockIcon, TabIcon, type Tab } from './icons';
+import { toast } from '../engine/context';
 import { ADVENTURE, NAVS, NAV_OF, VIEW_NAME, reachText, reachTarget, type Nav } from './nav';
 import { ForgeDock } from './Dock';
 import { ChatLine, GoalStrip } from './Goal';
@@ -193,7 +194,10 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           <span class="hud-gap" />
           {s.speed > 1 && <span class="speed-badge" title="Tempo testowe">×{s.speed}</span>}
           {(save.error || save.mode === 'offline' || save.mode === 'connecting') && (
-            <span class={`net-pill ${save.mode}`} title={save.error ?? save.reason}>{save.error ? 'Zapis odrzucony' : save.mode === 'connecting' ? 'Łączenie…' : 'Offline'}</span>
+            <button class={`net-pill ${save.mode}`} title={save.error ?? save.reason}
+              onClick={() => toast(game.ctx, save.error ? `Serwer odrzucił zapis: ${save.error}` : save.reason || (save.mode === 'connecting' ? 'Łączenie z serwerem…' : 'Brak połączenia z serwerem — gra zapisuje się na telefonie.'), save.error ? 'bad' : undefined)}>
+              {save.error ? 'Zapis odrzucony' : save.mode === 'connecting' ? 'Łączenie…' : 'Offline'}
+            </button>
           )}
           <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmt(game.stats.power)}</b></div>
         </header>
