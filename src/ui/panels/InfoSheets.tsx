@@ -58,7 +58,7 @@ export function RuneInfo({ game, close }: { game: Game; close: () => void }) {
         [resUrl('pieczec'), '3. Na zawsze', 'zostaje w slocie, gdy zmieniasz przedmiot'],
       ]}
       tips={[
-        [oreUrl(2), 'Brakuje rudy?', <>Gdy nie masz rudy z kosztu, płacisz tyle samo sztuk następnej lepszej rudy, której masz dość. Nadmiar słabszych rud zamienisz w Kuźni (Rafinacja).</>],
+        [oreUrl(2), 'Brakuje rudy?', <>Każdy slot płaci rudą ze swojego poziomu. Czego brakuje, dopłacasz tą samą liczbą sztuk lepszych zwykłych rud (najpierw najtańszej, aż do Smoczej Stali) — rud unikalnych i Boskiej Rudy runy nie ruszają. Nadmiar słabszych rud zamienisz w Kuźni (Rafinacja).</>],
         [itemUrl('Miecz', 3, 3), 'Co najpierw', <>Broń, Pierścień i Amulet dają obrażenia, reszta zdrowie. Runa mnoży główną statystykę, więc najwięcej daje w slocie z najsilniejszym przedmiotem.</>],
         [resUrl('zloto'), 'Złoto', <>Każdy poziom kosztuje też złoto — tym więcej, im wyższy poziom runy i im dalej jesteś w kampanii.</>],
         [resUrl('kowadlo'), `Przekuwanie · od ${B.REFORGE_FORGE_LVL}. poziomu`, <>W oknie założonego przedmiotu losujesz od nowa jedną statystykę dodatkową (za rudę przedmiotu i złoto) i wybierasz, którą wersję zostawić.</>],

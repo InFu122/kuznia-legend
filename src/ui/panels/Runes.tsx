@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks';
 import { B, ORES, SLOTS, SLOT_ORDER } from '../../data';
 import { itemUrl, oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
-import { reforgeBlock, reforgeCost, runeBlock, runeCost, runeLvl, runePay, subText } from '../../engine/runes';
+import { RUNE_LAST_ORE, reforgeBlock, reforgeCost, runeBlock, runeCost, runeLvl, runePay, subText } from '../../engine/runes';
 import type { Item, SlotId } from '../../engine/types';
 import { getLink } from '../../save/server';
 import { fmt } from '../format';
@@ -48,8 +48,9 @@ export function RunesCard({ game }: { game: Game }) {
           const it = s.eq[sl];
           const block = runeBlock(s, sl);
           const c = L < B.RUNE_MAX ? runePay(s, L + 1) : null;
-          const base = L < B.RUNE_MAX ? runeCost(s, L + 1) : null;
-          const lackOre = !!c && (s.ores[c.ore] ?? 0) < c.n;
+          const lackOre = !!c && !c.enough;
+          // Gdy płacisz czymś więcej niż samą rudą z kosztu — pokaż dokładnie czym.
+          const mixed = !!c && c.enough && (c.parts.length > 1 || c.parts[0]?.[0] !== c.ore);
           const lackGold = !!c && s.gold < c.gold;
           return (
             <li key={sl} class={L >= B.RUNE_MAX ? 'max' : ''}>
@@ -62,9 +63,13 @@ export function RunesCard({ game }: { game: Game }) {
                 <RuneBar s={s} lvl={L} />
                 {c ? (
                   <div class="rneed">
-                    <span class={lackOre ? 'lack' : ''}><Px src={oreUrl(c.ore)} size={14} />{fmt(c.n)} × {ORES[c.ore].n} <small>(masz {fmt(s.ores[c.ore] ?? 0)})</small></span>
+                    <span class={lackOre ? 'lack' : ''}><Px src={oreUrl(c.ore)} size={14} />{fmt(c.n)} × {ORES[c.ore].n}{c.ore < RUNE_LAST_ORE ? ' lub lepsza' : ''} <small>(masz {fmt(c.avail)})</small></span>
                     <span class={lackGold ? 'lack' : ''}><Px src={resUrl('zloto')} size={14} />{fmt(c.gold)} złota</span>
-                    {base && base.ore !== c.ore && <small class="muted">zamiast: {ORES[base.ore].n} (brakuje)</small>}
+                    {mixed && (
+                      <small class="rpay muted">zapłacisz: {c.parts.map(([o, n], i) => (
+                        <span key={o}>{i > 0 && ' + '}<Px src={oreUrl(o)} size={12} />{fmt(n)} {ORES[o].n}</span>
+                      ))}</small>
+                    )}
                   </div>
                 ) : <div class="rneed"><small class="muted">Maksymalny poziom</small></div>}
               </div>

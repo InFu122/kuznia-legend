@@ -21,12 +21,23 @@ describe('runy slotów', () => {
     expect(runeCost(s, 5)).toMatchObject({ ore: 0, n: 60 });
     expect(runeCost(s, 6)).toMatchObject({ ore: 1, n: 20 });
     expect(runeCost(s, 30).ore).toBe(5);
-    // brak Miedzi: płaci się tyle samo sztuk następnej rudy, której wystarczy
+    // brak Miedzi: najpierw cała Miedź, resztę dopłacają lepsze zwykłe rudy (najtańsze najpierw)
     s.ores[0] = 10; s.ores[1] = 5;
-    expect(runePay(s, 1)).toMatchObject({ ore: 2, n: 20 });
-    s.ores = s.ores.map(() => 0);
-    expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20 });
-    expect(runeBlock(s, 'bron')).toMatch(/Miedź/);
+    expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20, enough: true, parts: [[0, 10], [1, 5], [2, 5]] });
+    // koszt zależy tylko od poziomu runy w danym slocie — nie od innych slotów
+    expect(runePay(s, 6)).toMatchObject({ ore: 1, parts: [[1, 5], [2, 15]] });
+    // rudy unikalne i Boska nie płacą za runy
+    s.ores = s.ores.map(() => 0); s.ores[6] = 999; s.ores[7] = 999; s.ores[9] = 999;
+    expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20, enough: false, avail: 0 });
+    expect(runeBlock(s, 'bron')).toMatch(/Miedź lub lepszej/);
+  });
+
+  it('ulepszenie zabiera dokładnie to, co pokazuje runePay (Miedź i dopłata lepszą rudą)', () => {
+    const { g, s } = armed(7);
+    s.ores = [7, 0, 100, 0, 0, 0, 50, 50, 50, 50];
+    expect(g.upgradeRune('helm')).toBe(true);
+    expect(s.ores.slice(0, 3)).toEqual([0, 0, 87]);
+    expect(s.ores.slice(6)).toEqual([50, 50, 50, 50]);
   });
 
   it('runa podnosi główną statystykę przedmiotu w slocie, zostaje po zmianie przedmiotu i po Dziedzictwie', () => {

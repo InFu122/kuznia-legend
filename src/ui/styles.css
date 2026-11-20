@@ -1564,3 +1564,7 @@ a.linkbtn{display:inline-block}
 .mtile.next{border-style:dashed; border-color:color-mix(in srgb, var(--straw) 55%, var(--rivet))}
 .mtile.next .mt-ic > :first-child{opacity:.7}
 .mtile.next b{color:var(--frost)}
+/* runy: „zapłacisz: …” w osobnym wierszu pod kosztem */
+.rneed{flex-wrap:wrap}
+.rneed .rpay{flex-basis:100%; display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px}
+.rneed .rpay > span{display:inline-flex; align-items:center; gap:3px; white-space:nowrap}
