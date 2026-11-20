@@ -10,6 +10,7 @@ import { ServerError, ServerLink, serverConfig, setFlush, setLink } from './save
 import { clearLocal, connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
 import { initPwa } from './ui/pwa';
+import { initStoreUpdate } from './ui/storeupdate';
 import { recoverPurchases } from './ui/billing';
 import { gemsText } from './ui/texts';
 import { bootDone, bootStep } from './ui/boot';
@@ -247,6 +248,7 @@ function boot(hotData?: { s?: string }) {
   save.flush = persist;
   setFlush(persist);
   initPwa();
+  initStoreUpdate();
   watchErrors(game);
   window.claude?.hot?.snapshot?.(() => ({ s: JSON.stringify(game.s) }));
 }

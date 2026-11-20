@@ -10,6 +10,7 @@ import { ServerError, getLink } from '../../save/server';
 import { fmt } from '../format';
 import type { SaveInfo } from '../App';
 import { APP_VERSION, canInstall, install, isIOS, isNative, isStandalone, onPwa } from '../pwa';
+import { checkStoreUpdate, nativeVersion, onStoreUpdate, storeUpdateReady, updateFromStore } from '../storeupdate';
 import { CodexCard } from './Achievements';
 import { adsNative, privacyOptionsNeeded, showPrivacyOptions } from '../ads';
 
@@ -31,8 +32,18 @@ const pageUrl = (file: string) => {
 function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
   const [, force] = useState(0);
   const [msg, setMsg] = useState('');
+  const [nv, setNv] = useState<{ name: string; code: string } | null>(null);
   useEffect(() => onPwa(() => force(x => x + 1)), []);
+  useEffect(() => onStoreUpdate(() => force(x => x + 1)), []);
+  useEffect(() => { void nativeVersion().then(setNv); }, []);
   const url = publicUrl();
+  /** „Sprawdź aktualizację” (aplikacja): pyta Google Play. */
+  const check = async () => {
+    setMsg('Sprawdzam w Google Play…');
+    const r = await checkStoreUpdate();
+    setMsg(r === true ? 'Jest nowa wersja — naciśnij „Aktualizuj”.' : r === false ? 'Masz najnowszą wersję gry.'
+      : 'Nie udało się sprawdzić (gra nie jest zainstalowana ze Sklepu Play albo brak internetu).');
+  };
   const invite = async () => {
     const text = `Zagraj ze mną w Kuźnię Legend — wykuwamy legendarny ekwipunek! Mój nick: ${game.s.name}.`;
     try {
@@ -43,13 +54,17 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
   };
   return (
     <section class="card" aria-label="Aplikacja i test">
-      <div class="eyebrow">Aplikacja · wersja {APP_VERSION}</div>
+      <div class="eyebrow">Aplikacja · wersja {nv ? `${nv.name} (${nv.code})` : APP_VERSION}</div>
       <div class="h">Test gry</div>
       <div class="app-actions">
         {game.net && <button class="btn primary small" onClick={onFeedback}>Zgłoś uwagę lub błąd</button>}
         {url && <button class="btn small" onClick={invite}>Zaproś znajomych</button>}
         {canInstall() && <button class="btn small" onClick={() => void install()}>Zainstaluj grę</button>}
+        {isNative() && (storeUpdateReady()
+          ? <button class="btn small primary" onClick={() => void updateFromStore()}>Aktualizuj</button>
+          : <button class="btn small" onClick={() => void check()}>Sprawdź aktualizację</button>)}
       </div>
+      {nv && <p class="sub" style={{ marginTop: '8px' }}>Kompilacja gry: {APP_VERSION}</p>}
       {!isNative() && !isStandalone() && !canInstall() && (
         <p class="sub" style={{ marginTop: '8px' }}>
           {isIOS() ? 'Na iPhonie: w Safari stuknij „Udostępnij”, potem „Do ekranu początkowego” — gra otworzy się jak aplikacja.' : 'Grę możesz dodać do ekranu głównego z menu przeglądarki („Zainstaluj aplikację” albo „Dodaj do ekranu głównego”).'}

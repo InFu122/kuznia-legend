@@ -28,6 +28,7 @@ import { tutStep } from '../engine/tutorial';
 import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
 import { hasUpdate, onPwa } from './pwa';
+import { onStoreUpdate, storeUpdateReady, updateFromStore } from './storeupdate';
 import { initHistoryBack, initNative } from './native';
 import { runBack } from './back';
 
@@ -68,6 +69,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     });
     const id = setInterval(() => force(x => x + 1), 250);
     const offPwa = onPwa(() => force(x => x + 1));
+    const offStore = onStoreUpdate(() => force(x => x + 1));
     // Aplikacja na telefon: powiadomienia i „wstecz” (zamyka okno; okna z decyzją zostają, bez okna — gra chowa się).
     // Najpierw najwyższe okno (rejestrują się w ModalShell), potem powrót do Kuźni z innej zakładki.
     const back = () => {
@@ -86,7 +88,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     const unlock = () => { unlockAudio(); initMusic(); kickMusic(); };
     const evs = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
     for (const ev of evs) window.addEventListener(ev, unlock, { capture: true, passive: true });
-    return () => { off(); offPwa(); offHist(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
+    return () => { off(); offPwa(); offStore(); offHist(); clearInterval(id); for (const ev of evs) window.removeEventListener(ev, unlock, { capture: true }); };
   }, [game]);
 
   // Samouczek: bieżący krok i wskazówka „palcem” (ukryta przez gracza do następnego kroku).
@@ -201,7 +203,12 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           )}
           <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmt(game.stats.power)}</b></div>
         </header>
-        {hasUpdate() && (
+        {storeUpdateReady() ? (
+          <section class="updbar" role="status">
+            <span>Jest nowa wersja gry w Google Play.</span>
+            <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => void updateFromStore()); }}>Aktualizuj</button>
+          </section>
+        ) : hasUpdate() && (
           <section class="updbar" role="status">
             <span>Jest nowa wersja gry.</span>
             <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => location.reload()); }}>Odśwież</button>
