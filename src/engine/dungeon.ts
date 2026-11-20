@@ -7,7 +7,7 @@ import { Dstar, Hstar, early, goldWaveOf, legStage, todayStr } from './formulas'
 import { addFound, rollSubs } from './forge';
 import { addFame } from './legend';
 import { allMods } from './mods';
-import { obiegItem, takeObieg } from './obieg';
+import { ghostItem, takeGhost } from './armory';
 import { pick, ri } from './rng';
 import { fullStats, invalidate } from './stats';
 import { grant } from './reward';
@@ -264,10 +264,10 @@ export function dungFloor(ctx: Ctx): void {
       return;
     }
     case 'zbrojownia': {
-      // Z serwerem skrzynia kryje prawdziwy przedmiot z Obiegu (podpisany, więc bez zmian w statystykach);
-      // bez serwera albo przy pustej kolejce — przedmiot ducha, z szansą na wyższą rzadkość.
-      const real = ctx.net ? takeObieg(ctx) : null;
-      const it = real ?? obiegItem(ctx);
+      // Z serwerem skrzynia kryje przedmiot dawnego kowala podpisany przez serwer (więc bez zmian w statystykach);
+      // bez serwera albo przy pustym zapasie — przedmiot ducha tworzony na miejscu, z szansą na wyższą rzadkość.
+      const real = ctx.net ? takeGhost(ctx) : null;
+      const it = real ?? ghostItem(ctx);
       if (!real) {
         it.smith = d.ghost ?? it.smith;
         it.owners = [it.smith, ...it.owners.filter(o => o !== it.smith)].slice(0, 3);

@@ -105,7 +105,7 @@ export function migrate(raw: unknown, now: number): GameState {
   if (typeof out.sx !== 'number' || !(out.sx >= 0)) out.sx = 0;
   if (!Array.isArray(out.seeds)) out.seeds = [];
   if (!Array.isArray(out.obIn)) out.obIn = [];
-  if (!Array.isArray(out.obOut)) out.obOut = [];
+  out.obOut = []; // dawny Wielki Obieg — kolejka nieużywana
   if (typeof out.autoStop !== 'number') out.autoStop = 0;
   // Wytop seryjny: tylko dostępne mnożniki (dawne ×5 i ×10 → ×3).
   if (typeof out.batch !== 'number' || !(out.batch >= 1)) out.batch = 1;
@@ -170,5 +170,5 @@ export function newFx(): Fx {
 }
 
 export function newBattle(): Battle {
-  return { mode: 'camp', enemy: null, heroHp: 1, heroMax: 1, ht: 0, et: 0, pt: 0, pause: 0, dung: null, autoT: 0, obiegT: 75000, fx: newFx() };
+  return { mode: 'camp', enemy: null, heroHp: 1, heroMax: 1, ht: 0, et: 0, pt: 0, pause: 0, dung: null, autoT: 0, fx: newFx() };
 }

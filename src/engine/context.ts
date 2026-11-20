@@ -10,7 +10,7 @@ export interface Ctx {
   emit: (e: GameEvent) => void;
   cache: Stats | null;
   dirty: boolean;
-  /** Gra połączona z serwerem: prawdziwy Wielki Obieg zamiast symulowanego. */
+  /** Gra połączona z serwerem (ziarna wytopu, podpisane przedmioty Zbrojowni, rankingi). */
   net: boolean;
 }
 

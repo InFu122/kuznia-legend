@@ -136,7 +136,6 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
           <div class="eyebrow">Boss pokonany</div>
           <div class="h">{L.boss}</div>
           <RewardTiles r={{ ...m.extra, gold: m.gold, ores: { [L.rare]: m.n, ...m.extra?.ores }, books: m.books, uniq: set && m.uniq ? { [set]: m.uniq } : undefined }} />
-          {m.found && <p class="sub">Ze skrzyni bossa wypadł przedmiot z Wielkiego Obiegu — sprawdź go w Kuźni.</p>}
           {set && m.uniq > 0 && (
             <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej część zestawu <b>{SETS[set].n}</b>. Więcej dają Leża Bossów.</p>
           )}
@@ -356,7 +355,7 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
     [elemUrl('zar'), `Domieszki · od ${B.ELEM_FORGE_LVL}. poziomu`, <>Nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans.</>],
     [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Robią z przedmiotu część zestawu (premie za 2 i 4 części) i dają pewny przeskok o co najmniej 1 (ale nie na Boski).</>],
     [techUrl('k_hart'), `Hartowanie · od ${TECH_UNLOCK_FORGE}. poziomu`, <>Badanie w Nauce mnoży szanse na przeskok.{rel ? <> Twoja premia: <b>+{pct(rel)}</b>, już w paskach.</> : ''}</>],
-    [resUrl('zloto'), 'Sprzedaż', <>Niepotrzebny przedmiot sprzedajesz za złoto. Rzadkie i lepsze mogą trafić do Wielkiego Obiegu.</>],
+    [resUrl('zloto'), 'Sprzedaż', <>Niepotrzebny przedmiot sprzedajesz za złoto.</>],
   ];
   return (
     <>
@@ -506,7 +505,6 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
         {set && <li><Px src={setOreUrl(set)} size={24} /><span style={{ color: SETS[set].col }}>{SETS[set].ore}</span><b>{first ? `${B.UNIQ_BOSS_FIRST} (pierwsze)` : `1 · ${pct(B.UNIQ_BOSS_CHANCE * 100)}`}</b></li>}
         {land >= PETS_UNLOCK_LAND - 1 && <li><Px src={resUrl('jajo' + Math.max(0, Math.min(4, Math.floor((land - 3) / 3))))} size={24} /><span>Jajo chowańca</span><b>{first ? 'pewne' : pct(B.EGG_BOSS_CHANCE * 100)}</b></li>}
         {land >= MOUNTS_UNLOCK_LAND - 1 && <li><Px src={resUrl('siodlo')} size={24} /><span>Siodło</span><b>{first ? `${B.SADDLES_BOSS_FIRST} (pierwsze)` : pct(B.SADDLE_BOSS_CHANCE * 100)}</b></li>}
-        <li><span class="li-chest" aria-hidden="true">✦</span><span>Przedmiot z Wielkiego Obiegu (do decyzji)</span><b>{pct(B.OBIEG_FIND_FROM_BOSS * 100)}</b></li>
       </ul>
       <p class="sub">Zalecana Moc krainy: <b>{fmt(recPower(land))}</b> (twoja: {fmt(game.stats.power)}).{mods.rarePct ? ` Premia do rzadkich rud (+${pct(mods.rarePct)}) jest już wliczona.` : ''}</p>
       <Close onClose={close} label="Zamknij" />

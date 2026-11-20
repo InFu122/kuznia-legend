@@ -4,7 +4,6 @@ import { toast, type Ctx } from './context';
 import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreNominal, pityAllowed, sellPrice, smeltRarity, upCost, upTime } from './formulas';
 import { checkLegend } from './legend';
 import { allMods } from './mods';
-import { maybeObieg } from './obieg';
 import { track } from './missions';
 import { mulberry32, ri, rnd, shuffle, type Rng } from './rng';
 import { invalidate, powerDelta, stats } from './stats';
@@ -109,7 +108,7 @@ export function equip(ctx: Ctx, it: Item, quiet: boolean): void {
         it.kills[key] = (it.kills[key] ?? 0) + Math.floor((v ?? 0) * B.LEGEND_TRANSFER);
       }
       if (!quiet && t > 0) toast(ctx, `Przetopienie legendy: nowy przedmiot przejmuje ${t} Sławy Czynów`);
-    } else maybeObieg(ctx, old, quiet);
+    }
     s.gold += sellFor(s, old);
   }
   if (!it.owners.includes(s.name)) it.owners.push(s.name);
@@ -120,10 +119,9 @@ export function equip(ctx: Ctx, it: Item, quiet: boolean): void {
   ctx.dirty = true;
 }
 
-export function sell(ctx: Ctx, it: Item, quiet: boolean): void {
+export function sell(ctx: Ctx, it: Item, _quiet: boolean): void {
   ctx.s.gold += sellFor(ctx.s, it);
   track(ctx, 'sell');
-  maybeObieg(ctx, it, quiet);
   ctx.dirty = true;
 }
 

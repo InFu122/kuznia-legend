@@ -75,5 +75,5 @@ export const actName = (act: number) => (act >= 5 ? 'Otchłań' : `Akt ${ROMAN[a
 export const FOE_GENITIVE: Record<FoeType, string> = { Bestie: 'Bestii', Nieumarli: 'Umarłych', Demony: 'Demonów', Smoki: 'Smoków' };
 export const DUNGEON_FOES = ['Kopalniany golem', 'Jaskiniowy troll', 'Kamienny pełzacz', 'Kret olbrzymi'];
 
-/** Symulowani gracze Wielkiego Obiegu (do czasu podłączenia serwera). */
+/** Imiona dawnych kowali (duchy Zapomnianej Zbrojowni). */
 export const FAKE_PLAYERS = ['Marek_PL', 'Kasia.W', 'Bartek99', 'Zbyszko', 'Ola_Kowalka', 'Grzegorz_M', 'Wojtek_z_Gór', 'Iga_R', 'Kuba1987', 'Natalia_S', 'Piotrek_Młot', 'Ewa.Stal'];

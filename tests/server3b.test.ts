@@ -113,7 +113,7 @@ describe('wytop z ziarnem serwera', () => {
     expect(g.seedNeed()).toEqual({ from: 3, n: B.SEEDS_RESERVE - 3 });
   });
 
-  it('stary zapis (v5) dostaje puste ziarna i kolejki Obiegu', () => {
+  it('stary zapis (v5) dostaje puste ziarna i zapas Zbrojowni', () => {
     const s = migrate({ v: 5, name: 'Stary', stats: { smelted: 40 } }, 0);
     expect(s.sx).toBe(0);
     expect(s.seeds).toEqual([]);
@@ -122,47 +122,45 @@ describe('wytop z ziarnem serwera', () => {
   });
 });
 
-describe('Wielki Obieg z serwerem', () => {
+describe('Zbrojownia z serwerem (po usunięciu Wielkiego Obiegu)', () => {
   const netGame = () => {
     const h = makeGame(2);
     h.ctx.net = true;
     return h;
   };
 
-  it('sprzedany przedmiot z ziarnem czeka w kolejce do wysłania', () => {
+  it('sprzedany przedmiot nigdzie nie trafia (nie ma już Wielkiego Obiegu)', () => {
     const { ctx, s } = netGame();
     s.seeds = seedsFrom(0, 50);
     s.forge.lvl = 20; s.ores[3] = 50; s.stats.smelted = 5;
-    ctx.rng = constRng(0); // pewna szansa Obiegu
+    ctx.rng = constRng(0);
     const it = smelt({ ...ctx, rng: mulberry32(1) }, 3, null)!;
+    const fame = s.smith.fame;
     sell(ctx, it, true);
-    expect(s.obOut).toHaveLength(1);
+    expect(s.obOut).toHaveLength(0);
     expect(s.smith.sent).toHaveLength(0);
+    expect(s.smith.fame).toBe(fame);
   });
 
-  it('skrzynia bossa i Zbrojownia biorą prawdziwe znaleziska z zapasu, bez zmian w podpisanych polach', async () => {
+  it('Zbrojownia bierze podpisane przedmioty dawnych kowali z zapasu od serwera, bez zmian w podpisanych polach', async () => {
     const { g, s } = netGame();
     const real: Item = {
       id: 0, slot: 'helm', kind: 'Hełm', g: 'm', ore: 1, r: 2, lvl: 9, subs: [{ id: 'crit', v: 3 }], el: null, jump: 1, flvl: 4, forced: '',
       smith: 'Ola', land: 'Las', fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: ['Ola'], obieg: true, set: null, sig: 'abc',
     };
-    g.obiegIn([real], [{ who: 'Marek', n: 'Miecz', r: 3 }]);
+    expect(g.ghostNeed()).toBe(B.GHOST_STOCK);
+    g.ghostIn([real]);
     expect(s.obIn).toHaveLength(1);
-    expect(s.smith.fame).toBe(40);
-    const { takeObieg } = await import('../src/engine/obieg');
-    const got = takeObieg(g.ctx)!;
+    expect(g.ghostNeed()).toBe(B.GHOST_STOCK - 1);
+    const { takeGhost } = await import('../src/engine/armory');
+    const got = takeGhost(g.ctx)!;
     expect(got.sig).toBe('abc');
     expect(got.id).toBeGreaterThan(0);
-    expect(takeObieg(g.ctx)).toBeNull(); // pusty zapas: z serwerem nie ma symulowanych znalezisk
+    expect(takeGhost(g.ctx)).toBeNull(); // pusty zapas: Zbrojownia sama tworzy przedmiot ducha
   });
 
-  it('z serwerem nie ma symulowanych wieści, a tempo testowe tylko gdy pozwala serwer', async () => {
-    const { g, ctx, s } = netGame();
-    const { obiegEvent } = await import('../src/engine/obieg');
-    s.smith.sent.push({ n: 'Miecz', r: 3 });
-    s.smith.fame = 100;
-    obiegEvent(ctx);
-    expect(s.smith.fame).toBe(100);
+  it('tempo testowe tylko gdy pozwala serwer', () => {
+    const { g, s } = netGame();
     g.setMaxSpeed(1);                // serwer bez trybu testowego
     g.toggleSpeed();
     expect(s.speed).toBe(1);

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { B } from '../../src/data';
 import { smelt } from '../../src/engine/forge';
 import { upgradeTime } from '../../src/engine/forge';
-import { obiegItem } from '../../src/engine/obieg';
+import { ghostItem } from '../../src/engine/armory';
 import { makeGame } from '../../tests/helpers';
 import { seedOf, signItem } from '../src/common';
 import { paceProblem, powerOf, verifiedEq, type Proof } from '../src/save';
@@ -45,9 +45,9 @@ describe('serwer: pochodzenie przedmiotów', () => {
     expect(powerOf(s, v.eq)).toBeLessThan(powerOf(s, s.eq));
   });
 
-  it('uznaje znalezisko z Obiegu tylko z podpisem serwera', () => {
+  it('uznaje przedmiot dawnego kowala (Zbrojownia) tylko z podpisem serwera', () => {
     const { ctx, s, proof } = geared();
-    const found = obiegItem(ctx);
+    const found = ghostItem(ctx);
     found.slot = 'helm';
     found.sig = signItem(nk, SIGN, found);
     s.eq.helm = found;
@@ -112,14 +112,14 @@ describe('serwer: pochodzenie przedmiotów', () => {
     expect(normCode(5)).toBe('');
   });
 
-  it('kontrola zapisu sprawdza ziarna i kolejki Obiegu', () => {
+  it('kontrola zapisu sprawdza ziarna i zapas Zbrojowni', () => {
     const { s } = geared();
     s.seeds.push(-1);
     s.sx = 1.5;
-    s.obIn = Array.from({ length: B.OBIEG_STOCK + 5 }, () => s.eq.helm!);
+    s.obIn = Array.from({ length: B.GHOST_STOCK + 5 }, () => s.eq.helm!);
     const p = validateSave(s);
     expect(p).toContain('ziarna wytopu');
     expect(p).toContain('numer wytopu');
-    expect(p).toContain('zapas Obiegu');
+    expect(p).toContain('zapas Zbrojowni');
   });
 });

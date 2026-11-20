@@ -126,9 +126,7 @@ export const B = {
   ORE_DROP: 0.35,               // szansa, że fala zostawi rudę (złoto wypada zawsze)
   ORE_MAIN_MAX: 2,              // główna ruda krainy: 1–2 sztuki na drop (rzadsze po 1)
   ELEM_DROP: 0.04,
-  OBIEG_CHANCE: 0.3,
-  OBIEG_FIND_FROM_BOSS: 0.2,
-  OBIEG_STOCK: 6,               // tyle znalezisk z Obiegu gra trzyma w zapasie (z serwerem)
+  GHOST_STOCK: 6,               // tyle przedmiotów dawnych kowali (Zbrojownia) gra trzyma w zapasie od serwera
   SEEDS_RESERVE: 400,           // zapas ziaren wytopu od serwera (wystarcza na Skrzynię nocnej zmiany)
   SEEDS_REFILL: 300,            // poniżej tylu ziaren gra dobiera nowe
   ARENA_FIGHTS: 5,              // walki na arenie dziennie

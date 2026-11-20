@@ -1,6 +1,6 @@
 # Kuźnia Legend
 
-Mobilne idle RPG w klasycznym fantasy: bohater walczy sam, a gracz przetapia rudy zdobyte w walce na ekwipunek. Lepsza ruda daje rzadsze przedmioty (10 rzadkości, ruda „dojrzewa” z poziomem kuźni), kuźnia daje szansę na przeskok wyżej, a założone przedmioty zbierają Sławę Czynów i budzą się z własnym imieniem. Każdy przedmiot nosi podpis kowala (Piętno Kowala) i może trafić do innych graczy przez Wielki Obieg.
+Mobilne idle RPG w klasycznym fantasy: bohater walczy sam, a gracz przetapia rudy zdobyte w walce na ekwipunek. Lepsza ruda daje rzadsze przedmioty (10 rzadkości, ruda „dojrzewa” z poziomem kuźni), kuźnia daje szansę na przeskok wyżej, a założone przedmioty zbierają Sławę Czynów i budzą się z własnym imieniem. Każdy przedmiot nosi podpis kowala (Piętno Kowala).
 
 Pełny projekt gry (GDD): dokument „Kuźnia Legend — dokument projektowy gry” w claude.ai.
 
@@ -66,7 +66,7 @@ Tempo gry: kuźnia do 200. poziomu, czasy ulepszeń z `UPGRADE_MIN` — pierwsze
    - 2c: misje dzienne i tygodniowe ze skrzynią za komplet, kalendarz logowania (7. dnia epicki Zwój), samouczek pierwszych 15 minut, dźwięki syntezowane w Web Audio. *(gotowe)*
 3. **Serwer** — Nakama
    - 3a: Docker (Nakama 3.30 + PostgreSQL + gra w nginx), konta zakładane automatycznie, zapis na serwerze z kontrolą i wykrywaniem konfliktów, czas serwera, rankingi Mocy, Wieży i postępu. *(gotowe)*
-   - 3b: przenoszenie konta na inne urządzenie kodem, wytop z ziarnem serwera (bez cofania i powtarzania wytopów; serwer sprawdza przedmioty i tempo rozwoju kuźni), prawdziwy Wielki Obieg między graczami, arena z oceną i rankingiem. *(gotowe)*
+   - 3b: przenoszenie konta na inne urządzenie kodem, wytop z ziarnem serwera (bez cofania i powtarzania wytopów; serwer sprawdza przedmioty i tempo rozwoju kuźni), przedmioty dawnych kowali do Zbrojowni (Wielki Obieg usunięty w listopadzie 2026), arena z oceną i rankingiem. *(gotowe)*
 4. **Społeczność**
    - 4a: unikalne nicki (nadawane nowym graczom, zmiana w Kodeksie), klany do 30 osób z rolami (Przywódca, Zastępcy, Starsi), ogłoszenia, czat na żywo — globalny i klanowy — z filtrem wulgaryzmów, trybem wolnym, wyciszaniem i zgłaszaniem, karty Mitycznych i Boskich dropów na czacie. *(gotowe)*
    - 4b: Wspólna Kuźnia Klanu z 10 poziomami premii, boss klanowy ze skrzyniami dla atakujących, pomoc w ulepszeniach kuźni, prośby o rudę, Monety i sklep klanowy. *(gotowe)*

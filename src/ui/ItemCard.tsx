@@ -20,7 +20,7 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
       <div class="ihead">
         <div class="ico"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} alt="" /></div>
         <div>
-          <div class={`iname${it.aw ? ' aw' : ''}`}>{itemName(it)}{it.obieg && <span class="tag">Z Obiegu</span>}{it.set && <span class="tag">Zestaw</span>}</div>
+          <div class={`iname${it.aw ? ' aw' : ''}`}>{itemName(it)}{it.obieg && <span class="tag">Z historią</span>}{it.set && <span class="tag">Zestaw</span>}</div>
           <div class="irar">{it.aw || it.r === R.BOSKI ? baseName(it) + ' · ' : ''}{RAR[it.r].n} · poz. {it.lvl}</div>
         </div>
         {delta !== undefined && <div class={`delta ${delta >= 0 ? 'up' : 'down'}`}>{delta >= 0 ? '+' : '−'}{fmt(Math.abs(delta))}</div>}

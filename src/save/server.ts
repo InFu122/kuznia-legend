@@ -3,7 +3,7 @@
 import type { AdKind, ArenaShopId, GemItemId } from '../data';
 import type { ServerReward } from '../engine/clan';
 import type { ShopSync } from '../engine/game';
-import type { ElemKey, FoundEvent, GameState, Item, MountId, PetId, SkillId, SlotId } from '../engine/types';
+import type { ElemKey, GameState, Item, MountId, PetId, SkillId, SlotId } from '../engine/types';
 import type { FighterStats } from '../engine/duel';
 
 const DEVICE_KEY = 'kuznia-legend-device';
@@ -319,9 +319,9 @@ export class ServerLink {
     return this.rpc('seeds', { from, n });
   }
 
-  /** Wysyła sprzedane przedmioty do Obiegu, bierze znaleziska i wieści. */
-  obiegSync(out: Item[], want: number): Promise<{ accepted: number; items: Item[]; events: FoundEvent[]; real: number }> {
-    return this.rpc('obieg_sync', { out, want });
+  /** Przedmioty dawnych kowali do skrzyń Zbrojowni (tworzy i podpisuje serwer). Stara nazwa RPC zostaje dla zgodności. */
+  ghostItems(want: number): Promise<{ items: Item[] }> {
+    return this.rpc('obieg_sync', { out: [], want });
   }
 
   arenaList(refresh = false): Promise<ArenaState> { return this.rpc('arena_list', { refresh }); }

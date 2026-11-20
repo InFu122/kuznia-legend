@@ -1,5 +1,5 @@
 // Kontrola zapisu wysłanego przez klienta. Odrzuca wartości, których uczciwa gra nie może wytworzyć.
-// Pochodzenie przedmiotów (ziarno wytopu, podpis Obiegu) i tempo rozwoju kuźni sprawdza save.ts.
+// Pochodzenie przedmiotów (ziarno wytopu, podpis serwera na przedmiotach Zbrojowni) i tempo rozwoju kuźni sprawdza save.ts.
 import {
   ABYSS_FROM, ACHIEVEMENTS, B, CLAN, COMPANION_MAX, EVENT, EVENT_MILESTONES, FRAMES, FRAME_IDS, SKINS, SKIN_IDS, MOUNTS, ORES, PETS, RANK_MAX, RAR, SKILLS, SKILL_MAX, SLOTS, STARS_MAX, SUBS, TECH, FEATURE_IDS, rRank,
 } from '../../src/data';
@@ -62,10 +62,10 @@ export function validateSave(s: GameState): string[] {
   for (const it of s.found) checkItem(it, 'znalezisko', out);
   if (!Number.isInteger(s.sx) || s.sx < 0) bad('numer wytopu');
   if (!Array.isArray(s.seeds) || s.seeds.length > 2 * B.SEEDS_RESERVE || !s.seeds.every(x => Number.isInteger(x) && x >= 0 && x <= 0xffffffff)) bad('ziarna wytopu');
-  if (!Array.isArray(s.obIn) || s.obIn.length > B.OBIEG_STOCK + 4) bad('zapas Obiegu');
-  else s.obIn.forEach(it => checkItem(it, 'Obieg', out));
-  if (!Array.isArray(s.obOut) || s.obOut.length > 40) bad('kolejka Obiegu');
-  else s.obOut.forEach(it => checkItem(it, 'Obieg', out));
+  if (!Array.isArray(s.obIn) || s.obIn.length > B.GHOST_STOCK + 4) bad('zapas Zbrojowni');
+  else s.obIn.forEach(it => checkItem(it, 'Zbrojownia', out));
+  if (!Array.isArray(s.obOut) || s.obOut.length > 40) bad('dawna kolejka Obiegu');
+  else s.obOut.forEach(it => checkItem(it, 'dawny Obieg', out));
   if (typeof s.name !== 'string' || s.name.length > 16) bad('imię');
   if (!nonNeg(s.clanCoins)) bad('Monety klanowe');
   if (!Array.isArray(s.clanGot) || s.clanGot.length > 200 || !s.clanGot.every(x => typeof x === 'string' && x.length <= 40)) bad('nagrody klanu');

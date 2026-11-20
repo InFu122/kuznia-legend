@@ -68,7 +68,7 @@ function serverSecret(nk: nkruntime.Nakama, userId: string, key: string): string
 
 /** Sekret ziaren wytopu gracza — zna go tylko serwer. */
 export const smeltSecret = (nk: nkruntime.Nakama, userId: string) => serverSecret(nk, userId, 'smelt');
-/** Sekret serwera do podpisywania przedmiotów z Obiegu. */
+/** Sekret serwera do podpisywania przedmiotów (np. przedmiotów dawnych kowali ze Zbrojowni). */
 export const signSecret = (nk: nkruntime.Nakama) => serverSecret(nk, SYSTEM_USER, 'sign');
 
 /** Ziarno wytopu numer n (32 bity). */

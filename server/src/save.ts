@@ -55,7 +55,7 @@ export function smeltOk(p: Proof, it: Item, sxNext: number): boolean {
 }
 
 /**
- * Przedmioty ekwipunku, które serwer uznaje: wytopione z ziarna albo podpisane (z Obiegu).
+ * Przedmioty ekwipunku, które serwer uznaje: wytopione z ziarna albo podpisane przez serwer (Zbrojownia).
  * Pozostałe (sprzed aktualizacji, wytopione bez połączenia albo zmienione) działają w grze, ale nie liczą się do rankingu i areny.
  */
 export function verifiedEq(p: Proof, s: GameState, pity: number[]): { eq: GameState['eq']; bad: SlotId[]; pity: number[] } {

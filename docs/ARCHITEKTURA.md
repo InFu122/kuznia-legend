@@ -30,7 +30,6 @@ main.tsx ── pętla requestAnimationFrame ──► Game.tick(ms)
                                             ├─ tickResearch (badanie w Akademii)
                                             ├─ tickHatch    (wykluwanie jaja)
                                             ├─ tutTick      (kroki samouczka)
-                                            ├─ obiegEvent   (Wielki Obieg)
                                             ├─ auto-wytop
                                             ├─ dungTick     (czas Skarbca)
                                             └─ stepCombat   (fale, bossowie, lochy, umiejętności, chowaniec)
@@ -48,7 +47,7 @@ UI ──► akcje Game: smeltManual, equipPending, upgrade, research, goLand, s
 | `forge.ts` | wytop, gwarancja przeskoku, zakładanie, sprzedaż, ulepszanie kuźni |
 | `combat.ts` | fale, bossowie, przenoszenie między krainami |
 | `legend.ts` | Sława Czynów, progi legendy, przebudzenie |
-| `obieg.ts` | Piętno Kowala i Wielki Obieg (do etapu 4 symulowany) |
+| `armory.ts` | przedmioty dawnych kowali do Zapomnianej Zbrojowni (Wielki Obieg usunięty) |
 | `dungeon.ts` | 9 lochów (Skarbiec, Sztolnia, Wieża, Leża Bossów, Ołtarze, Kopalnia Kryształów, Labirynt, Zbrojownia, Krypta); klucze dzienne |
 | `tech.ts`, `mods.ts` | Akademia Kowalska: koszty i czas badań; `allMods` sumuje technologie, cechę chowańca i wierzchowca |
 | `missions.ts` | misje dzienne i tygodniowe (`track` liczy postęp), skrzynia za komplet, kalendarz logowania |
@@ -90,7 +89,7 @@ Stan gracza to jeden obiekt JSON (`GameState`). `SAVE_VERSION` rośnie przy każ
 - **Etap 3b (gotowe):** moduł serwera jest podzielony na pliki: `save.ts` (zapis, ziarna, sprawdzanie przedmiotów i tempa kuźni), `transfer.ts` (przenoszenie konta), `obieg.ts` (Wielki Obieg), `arena.ts`, `ranking.ts`, `common.ts`; `main.ts` tylko je rejestruje. Esbuild zostawia funkcje z modułów jako globalne deklaracje, więc Nakama je znajduje.
   - **Wytop z ziarnem.** Każdy wytop ma numer `sx` i własne ziarno = pierwsze 32 bity SHA-256(sekret gracza + numer). Sekret zna tylko serwer (magazyn bez odczytu dla gracza). Gra trzyma zapas ziaren (`s.seeds`, 400, dobiera po zapisie), więc wytapia bez czekania na serwer i także w trybie offline (Skrzynia nocnej zmiany). Losowania wytopu idą zawsze w tej samej kolejności (`smeltDraws`), dlatego serwer odtwarza wytop z ziarna (`src/engine/verify.ts`) i porównuje rzadkość, przeskok, miejsce, rodzaj, poziom i statystyki. Ten sam numer daje ten sam przedmiot, a zapis z cofniętym numerem przegrywa z serwerem — wytopu nie da się powtórzyć. Przedmioty bez dowodu pochodzenia (sprzed aktualizacji, bez połączenia, zmienione) działają w grze, ale nie liczą się do rankingu Mocy i na arenie.
   - **Tempo kuźni.** Serwer pamięta czas i poziom kuźni z pierwszego zapisu (`meta.t0`, `meta.f0`) i odrzuca zapis, w którym kuźnia urosła szybciej, niż pozwalają czasy ulepszeń. Z serwerem nie ma tempa testowego ×10.
-  - **Wielki Obieg.** Sprzedany przedmiot z ziarnem trafia do kolejki `s.obOut`; `obieg_sync` sprawdza go i dokłada do wspólnej puli. Ta sama funkcja oddaje znaleziska do zapasu `s.obIn` (przedmioty innych graczy na miarę kuźni, podpisane przez serwer; gdy ich brak — kowale-widma) oraz wieści „X znalazł twój przedmiot” (powiadomienia Nakamy). Skrzynie bossów i Zbrojownia biorą przedmioty z `s.obIn`.
+  - **Zbrojownia (dawny Wielki Obieg, usunięty w listopadzie 2026).** `obieg_sync` oddaje tylko przedmioty dawnych kowali (kowale-widma, podpisane przez serwer) do zapasu `s.obIn`; skrzynie Zapomnianej Zbrojowni biorą je stamtąd. `s.obOut` zostaje w zapisie dla zgodności, ale gra nic do niego nie dokłada.
   - **Arena.** Po każdym zapisie serwer trzyma kopię bohatera (statystyki z uznanych przedmiotów, umiejętności, chowaniec). `arena_fight` rozgrywa pojedynek (`src/engine/duel.ts`, z ziarnem), zmienia ocenę Elo obu stron i zwraca przebieg do odtworzenia. 5 walk dziennie (doba UTC); brakujących przeciwników zastępują duchy areny — przeskalowane kopie gracza.
   - **Przeniesienie konta.** `transfer_code` daje jednorazowy kod (8 znaków, 10 minut). `transfer_redeem` dołącza nowy identyfikator urządzenia do konta z kodu (`nk.linkDevice`); dotychczasowe konto tego urządzenia znika z rankingów.
 - **Etap 5 — test na znajomych (gotowe):** instrukcja w [TEST.md](TEST.md).

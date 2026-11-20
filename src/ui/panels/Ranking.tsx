@@ -50,7 +50,7 @@ function PlayerBoard({ board }: { board: BoardId }) {
   return (
     <>
       {board === 'wieza' && <p class="sub">Ranking Wieży Wyzwań zaczyna się od nowa w każdy poniedziałek.</p>}
-      {board === 'moc' && <p class="sub">Liczą się przedmioty, których pochodzenie sprawdził serwer (wytop z ziarnem serwera albo znalezisko z Obiegu).</p>}
+      {board === 'moc' && <p class="sub">Liczą się przedmioty, których pochodzenie sprawdził serwer (wytop z ziarnem serwera albo przedmiot ze Zbrojowni).</p>}
       {board === 'arena' && <p class="sub">Ocena rośnie za wygrane walki i spada za przegrane — także w obronie.</p>}
       {err && <p class="sub">{err}</p>}
       {!err && !data && <p class="sub">Wczytywanie…</p>}

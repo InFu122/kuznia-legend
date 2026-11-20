@@ -10,10 +10,9 @@ import { autoHandle, autoTarget, autoTargets, batchOf, batchSizes, canSmelt, equ
 import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
-import { applyFound, obiegEvent } from './obieg';
 import { checkUnlocks, isUnlocked, seenFeature } from './unlocks';
 import { applyOffline } from './offline';
-import { mulberry32, rnd, type Rng } from './rng';
+import { mulberry32, type Rng } from './rng';
 import { newBattle, newState } from './state';
 import { acceptReforge, payReforge, refundReforge, rerollSub, upgradeRune } from './runes';
 import { achCount, claimAch, discover } from './achievements';
@@ -25,7 +24,7 @@ import {
 } from './shop';
 import { claimEvent, dungName, eventUnclaimed, tickEvent } from './events';
 import { setFrame, setSkin } from './cosmetics';
-import type { DungId, ElemKey, EventTrack, FoundEvent, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
+import type { DungId, ElemKey, EventTrack, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
 
 /** Stan sklepu od serwera (odpowiedzi RPC sklepu i zapisu). */
 export interface ShopSync { gems?: number; shop?: ShopState; pass?: PassTrack | null; buffs?: Partial<Record<BuffId, number>>; boost?: { lvl: number; ms: number } | null; techDone?: boolean }
@@ -88,8 +87,6 @@ export class Game {
     if (tickResearch(ctx, ms)) this.changed();
     if (tickHatch(ctx, ms)) this.changed();
     if (tutTick(ctx)) this.changed();
-    ctx.b.obiegT -= ms;
-    if (ctx.b.obiegT <= 0) { ctx.b.obiegT = rnd(ctx.rng, 60000, 150000); obiegEvent(ctx); }
     if (ctx.s.auto && ctx.s.forge.lvl >= B.AUTO_FORGE_LVL && !this.uiBusy) {
       ctx.b.autoT -= ms;
       if (ctx.b.autoT <= 0) { ctx.b.autoT = this.autoInterval(); this.autoStep(); }
@@ -423,7 +420,7 @@ export class Game {
     this.changed();
   }
 
-  /* ---------- serwer: ziarna wytopu, Wielki Obieg, arena ---------- */
+  /* ---------- serwer: ziarna wytopu, przedmioty Zbrojowni, arena ---------- */
 
   /** Ile ziaren wytopu warto dobrać i od którego numeru. */
   seedNeed(): { from: number; n: number } {
@@ -437,15 +434,12 @@ export class Game {
     this.ctx.dirty = true;
     return true;
   }
-  /** Przedmioty do wysłania do Obiegu (zabiera je z kolejki). */
-  takeObOut(): Item[] { const out = this.s.obOut; this.s.obOut = []; if (out.length) this.ctx.dirty = true; return out; }
-  /** Ile znalezisk z Obiegu brakuje w zapasie. */
-  obNeed(): number { return Math.max(0, B.OBIEG_STOCK - this.s.obIn.length); }
-  /** Znaleziska z serwera do zapasu i wieści o twoich przedmiotach znalezionych przez innych. */
-  obiegIn(items: Item[], events: FoundEvent[]): void {
-    for (const it of items) if (this.s.obIn.length < B.OBIEG_STOCK) this.s.obIn.push(it);
-    applyFound(this.ctx, events);
-    if (items.length || events.length) { this.ctx.dirty = true; this.changed(); }
+  /** Ile przedmiotów dawnych kowali (Zbrojownia) brakuje w zapasie od serwera. */
+  ghostNeed(): number { return Math.max(0, B.GHOST_STOCK - this.s.obIn.length); }
+  /** Przedmioty dawnych kowali od serwera (podpisane) do zapasu Zbrojowni. */
+  ghostIn(items: Item[]): void {
+    for (const it of items) if (this.s.obIn.length < B.GHOST_STOCK) this.s.obIn.push(it);
+    if (items.length) { this.ctx.dirty = true; this.changed(); }
   }
   /** Nagroda z walki na arenie (liczy ją serwer). */
   arenaReward(gold: number): void {
@@ -506,7 +500,7 @@ export class Game {
   reset(): void {
     const old = this.s;
     this.ctx.s = newState(this.ctx.now());
-    // Imię, ziarna wytopu i kolejki Obiegu zostają: numer wytopu nigdy się nie cofa.
+    // Imię, ziarna wytopu i zapas Zbrojowni zostają: numer wytopu nigdy się nie cofa.
     // Poziom klanu i lista odebranych nagród klanu też zostają — należą do konta, nie do rozgrywki.
     // Klejnoty, przepustka, limity sklepu i wzmocnienia też należą do konta.
     Object.assign(this.ctx.s, {

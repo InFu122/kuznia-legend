@@ -5,7 +5,7 @@ Serwer to trzy kontenery uruchamiane jednym poleceniem:
 | Kontener | Co robi | Port |
 | --- | --- | --- |
 | `web` | gra w przeglądarce (nginx); przekazuje API Nakamy pod tym samym adresem | 8080 |
-| `nakama` | serwer gry Nakama 3.30.0 z modułem Kuźni Legend (konta, zapis, wytop, Wielki Obieg, arena, rankingi, klany, czat) | 7350 (API i czat), 7351 (konsola) |
+| `nakama` | serwer gry Nakama 3.30.0 z modułem Kuźni Legend (konta, zapis, wytop, Zbrojownia, arena, rankingi, klany, czat) | 7350 (API i czat), 7351 (konsola) |
 | `postgres` | baza danych PostgreSQL 16 | tylko wewnątrz Dockera |
 
 ## Pierwsze uruchomienie
@@ -93,7 +93,7 @@ Każdy gracz ma na serwerze unikalny nick — „Adam”, „adam” i „Ádam�
 
 Wynik każdego wytopu losuje się z ziarna, które wydaje serwer (gra trzyma zapas na kilkaset wytopów, więc kuje bez czekania i także bez połączenia). Ten sam wytop zawsze daje ten sam przedmiot — wczytanie starszego zapisu nie pozwala wylosować go jeszcze raz. Serwer odtwarza wytop z ziarna i sprawdza każdy założony przedmiot.
 
-Do rankingu Mocy i na arenę liczą się tylko przedmioty, których pochodzenie serwer potwierdził: wykute z ziarnem albo znalezione w Obiegu. Przedmioty wykute przed tą aktualizacją działają w grze normalnie, ale do rankingu się nie liczą, dopóki ich nie wymienisz — wykuj nowe, a liczą się od razu. Kodeks pokazuje w karcie **Serwer gry**, ile założonych przedmiotów się nie liczy.
+Do rankingu Mocy i na arenę liczą się tylko przedmioty, których pochodzenie serwer potwierdził: wykute z ziarnem albo przedmioty dawnych kowali ze Zbrojowni. Przedmioty wykute przed tą aktualizacją działają w grze normalnie, ale do rankingu się nie liczą, dopóki ich nie wymienisz — wykuj nowe, a liczą się od razu. Kodeks pokazuje w karcie **Serwer gry**, ile założonych przedmiotów się nie liczy.
 
 Z serwerem nie ma tempa testowego ×10.
 
@@ -104,9 +104,11 @@ Z serwerem nie ma tempa testowego ×10.
 
 Od tej chwili oba urządzenia grają tym samym kowalem. Postęp z drugiego urządzenia (sprzed połączenia) zostaje zastąpiony, a jego konto znika z rankingów. Najlepiej grać na jednym urządzeniu naraz — przy równoczesnej grze na dwóch urządzeniach gra zachowa postęp tylko z jednego z nich.
 
-### Wielki Obieg
+### Zapomniana Zbrojownia (dawny Wielki Obieg)
 
-Rzadkie i lepsze przedmioty, które sprzedajesz, z szansą 30% trafiają do wspólnej puli na serwerze. Skrzynie bossów i Zbrojownia innych graczy losują z niej przedmioty na miarę ich kuźni. Gdy ktoś znajdzie twój przedmiot, dostajesz Sławę kowala i wieść w Kodeksie. Gdy w puli brakuje przedmiotów innych graczy (np. grasz sam), skrzynie dostają przedmioty kowali-widm.
+Wielki Obieg (sprzedane przedmioty trafiające do innych graczy) jest usunięty. Serwer tworzy tylko przedmioty dawnych
+kowali do skrzyń Zbrojowni i je podpisuje, żeby liczyły się do rankingów (RPC `obieg_sync` pod starą nazwą; przedmioty
+wysyłane przez starsze wersje gry są ignorowane). Dawna pula w magazynie `obieg` nie jest już używana.
 
 ### Arena
 

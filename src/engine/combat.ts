@@ -5,8 +5,6 @@ import { dungFloor, dungEnd, spawnDung } from './dungeon';
 import { allMods } from './mods';
 import { Dstar, Hstar, curG, early, gOf, goldWaveOf } from './formulas';
 import { addFame } from './legend';
-import { takeObieg } from './obieg';
-import { addFound } from './forge';
 import { pick, ri, rnd } from './rng';
 import { invalidate, stats } from './stats';
 import { grant } from './reward';
@@ -259,9 +257,6 @@ function bossWon(ctx: Ctx, e: Enemy): void {
   if (set && uniq) s.uniq[set] = (s.uniq[set] ?? 0) + uniq;
   const extra = bossExtras(ctx, land, first);
   grant(ctx, extra);
-  const found = ctx.rng.next() < B.OBIEG_FIND_FROM_BOSS ? takeObieg(ctx) : null;
-  // Przedmiot ze skrzyni bossa czeka na decyzję gracza (auto-wytop nigdy go nie zakłada ani nie sprzedaje).
-  if (found) addFound(ctx, [found]);
   b.enemy = null;
   b.heroHp = b.heroMax;
   b.pause = 600;
@@ -275,8 +270,7 @@ function bossWon(ctx: Ctx, e: Enemy): void {
     s.frontStage = 1;
     s.bestG = Math.max(s.bestG, gOf(land + 1, 1));
     if (land + 1 === ABYSS_FROM) toast(ctx, 'Kampania ukończona! Przed bohaterem Otchłań — kręgi bez dna, coraz silniejsi wrogowie i lepsze łupy.', 'good');
-    ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, found: !!found, books, uniq, extra } });
-    if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });
+    ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, books, uniq, extra } });
   } else {
     s.cur.stage = 1;
     s.cur.wave = 1;
@@ -285,8 +279,7 @@ function bossWon(ctx: Ctx, e: Enemy): void {
     if (set && uniq) drops.push({ k: 'uniq', set, n: uniq });
     ctx.emit({ t: 'loot', drops, boss: true });
     toast(ctx, `Pokonano: ${L.boss} · +${fmtN(gold)} złota, ${n} × ${ORES[L.rare].n}` + (books ? ', Księga Wiedzy' : '') +
-      (uniq && set ? ` · ${SETS[set].ore}!` : '') + (found ? ' · przedmiot z Obiegu!' : ''), 'good');
-    if (found) ctx.emit({ t: 'modal', m: { kind: 'found' } });
+      (uniq && set ? ` · ${SETS[set].ore}!` : ''), 'good');
   }
   if (extra.ores?.[DIVINE_ORE]) {
     toast(ctx, `${ORES[DIVINE_ORE].n}! ${L.boss} zostawia bardzo rzadką rudę — największa szansa na Boski przedmiot.`, 'good');

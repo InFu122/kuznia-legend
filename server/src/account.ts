@@ -3,7 +3,7 @@
 // Kolejność: wiadomości gracza na czacie (pokój globalny i kanał klanu), wyjście z klanu (z przekazaniem
 // przywództwa albo rozwiązaniem pustego klanu), nick w rejestrze, kod przeniesienia, miejsce w grupie ligi,
 // wpisy w rankingach, zgłoszenia uwag i błędów — a na końcu samo konto Nakamy razem z zapisem gry, portfelem, urządzeniami i całym
-// magazynem gracza. Przedmioty, które gracz oddał wcześniej do Wielkiego Obiegu, zostają w grze innych graczy.
+// magazynem gracza.
 import { BOARDS } from './ranking';
 import { ROOMS } from './chat';
 import { clanOf, leaveClan } from './clan';

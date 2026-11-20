@@ -52,7 +52,7 @@ export function rewardList(game: Game, id: DungId): [string, string][] {
     case 'oltarze': { const el = elementOfDay(now); return [[elemUrl(el), `${ELEM[el].n} — żywioł dnia (${ELEM[el].el})`]]; }
     case 'kopalnia': return [[resUrl('kamien'), 'Kamienie z każdej fali'], [resUrl('siodlo'), 'Siodło za 10. falę (od aktu III)']];
     case 'labirynt': return [[oreUrl(Math.min(6, game.dungTier())), 'Rzadkie rudy'], [resUrl('ksiega'), 'Księgi Wiedzy'], [resUrl('zwoj'), 'Zwoje zaklęć']];
-    case 'zbrojownia': return [[itemUrl('Miecz', 3, 3), 'Przedmioty z historią z Wielkiego Obiegu (do decyzji)']];
+    case 'zbrojownia': return [[itemUrl('Miecz', 3, 3), 'Przedmioty z historią dawnych kowali (do decyzji)']];
     case 'krypta': return [[resUrl('pieczec'), 'Pieczęcie Legendy (+1000 Sławy Czynów)']];
     case 'sezon': {
       const ev = eventOf(now);

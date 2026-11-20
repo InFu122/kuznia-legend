@@ -41,7 +41,7 @@ Kuźnia Legend to RPG, w którym ty kujesz, a bohater walczy sam. Wrogowie zosta
 • klany ze Wspólną Kuźnią, bossem klanowym i wojnami klanów
 • arena i tygodniowe ligi
 • rankingi Mocy, postępu i Wieży
-• Wielki Obieg: sprzedane przez ciebie przedmioty trafiają do skrzyń innych graczy — z twoim nickiem
+• czat z innymi kowalami
 
 Gra jest darmowa. Możesz obejrzeć reklamę za nagrodę (tylko gdy sam wybierzesz) i kupić Klejnoty, ale wszystko zdobędziesz też grając.
 

@@ -18,8 +18,8 @@ import './ui/fonts.css';
 import './ui/styles.css';
 
 const RETRY_MS = 60000;
-/** Co ile gra łączy się z Wielkim Obiegiem (wysyłka, znaleziska, wieści). */
-const OBIEG_MS = 120000;
+/** Co ile gra uzupełnia u serwera zapas przedmiotów dawnych kowali (Zapomniana Zbrojownia). */
+const GHOST_MS = 120000;
 
 /** Czytelny powód braku połączenia z serwerem (widać go w Kodeksie). */
 function why(e: unknown): string {
@@ -128,8 +128,8 @@ function boot(hotData?: { s?: string }) {
     else if (cloud && !(await saveCloud(cloud.cloud, json))) { cloud = null; save.mode = 'local'; }
   };
 
-  /** Po zapisie: zapas ziaren wytopu i co jakiś czas Wielki Obieg. */
-  let lastObieg = 0;
+  /** Po zapisie: zapas ziaren wytopu i co jakiś czas zapas przedmiotów Zbrojowni. */
+  let lastGhost = 0;
   let syncing = false;
   const extras = async (l: ServerLink) => {
     if (syncing) return;
@@ -142,16 +142,10 @@ function boot(hotData?: { s?: string }) {
       }
       // Klan: nagrody do odebrania, pomoc w ulepszeniu kuźni, poziom klanu.
       if (Date.now() - clanLife.at >= CLAN_SYNC_MS) await clanLife.sync(game).catch(e => console.warn('Kuźnia Legend: klan —', e));
-      if (Date.now() - lastObieg >= OBIEG_MS || game.s.obOut.length >= 5) {
-        lastObieg = Date.now();
-        const out = game.takeObOut();
-        try {
-          const r = await l.obiegSync(out, game.obNeed());
-          game.obiegIn(r.items, r.events);
-        } catch (e) {
-          game.s.obOut.unshift(...out); // spróbujemy przy następnym połączeniu
-          throw e;
-        }
+      if (game.ghostNeed() > 0 && Date.now() - lastGhost >= GHOST_MS) {
+        lastGhost = Date.now();
+        const r = await l.ghostItems(game.ghostNeed());
+        game.ghostIn(r.items);
       }
     } catch (e) {
       console.warn('Kuźnia Legend: synchronizacja z serwerem nieudana —', e);

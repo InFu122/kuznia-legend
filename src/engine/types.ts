@@ -81,7 +81,7 @@ export interface Item {
   subs: Sub[];
   el: ElemKey | null;   // domieszka żywiołu
   jump: number;         // o ile rzadkości przeskoczył ponad minimum rudy
-  flvl: number;         // poziom kuźni w chwili wytopu (0 = nieznany, np. z Obiegu)
+  flvl: number;         // poziom kuźni w chwili wytopu (0 = nieznany, np. przedmiot dawnego kowala)
   forced: '' | 'tut' | 'pity' | 'set';
   jv?: number;          // wersja zasad przeskoku (brak = 1, przedmioty sprzed października 2026)
   smith: string;        // Piętno Kowala
@@ -92,15 +92,13 @@ export interface Item {
   ls: number;           // osiągnięty próg legendy 0–3
   aw: Awakening | null;
   owners: string[];
-  obieg: boolean;       // znaleziony w Wielkim Obiegu
+  obieg: boolean;       // przedmiot dawnego kowala (Zbrojownia; dawniej też Wielki Obieg)
   set: SetId | null;    // część zestawu (z rudy unikalnej)
   sx?: number;          // numer wytopu z ziarnem serwera (serwer może odtworzyć losowanie)
-  sig?: string;         // podpis serwera (przedmiot z Wielkiego Obiegu)
-  npc?: boolean;        // wykuł go kowal-widmo (serwer uzupełnia Obieg, gdy brakuje przedmiotów graczy)
+  sig?: string;         // podpis serwera (przedmiot dawnego kowala ze Zbrojowni)
+  npc?: boolean;        // wykuł go kowal-widmo (przedmiot Zbrojowni od serwera)
 }
 
-/** Wieść z serwera: inny gracz znalazł twój przedmiot w Wielkim Obiegu. */
-export interface FoundEvent { who: string; n: string; r: number }
 
 export interface Companion { lvl: number; stars: number }
 
@@ -158,8 +156,8 @@ export interface GameState {
   stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number; bestR: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów)
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
-  obIn: Item[];                                        // przedmioty z Obiegu od serwera, czekające na skrzynię bossa lub Zbrojownię
-  obOut: Item[];                                       // twoje przedmioty do wysłania do Obiegu
+  obIn: Item[];                                        // przedmioty dawnych kowali od serwera, czekające na skrzynie Zbrojowni
+  obOut: Item[];                                       // nieużywane (dawny Wielki Obieg); zostaje dla zgodności zapisów
   clanLvl: number;                                     // poziom klanu (ustawia serwer przy zapisie; 0 = bez klanu)
   clanCoins: number;                                   // Monety klanowe
   clanShop: { week: string; n: Partial<Record<ClanShopId, number>> }; // zakupy w sklepie klanowym w tym tygodniu
@@ -214,7 +212,6 @@ export interface Battle {
   pause: number;
   dung: DungRun | null;
   autoT: number;
-  obiegT: number;
   fx: Fx;
 }
 
@@ -259,7 +256,7 @@ export type ModalData =
   | { kind: 'intro' }
   | { kind: 'unlocked'; ids: FeatureId[] }
   | { kind: 'locked'; id: FeatureId }
-  | { kind: 'boss'; land: number; gold: number; n: number; found: boolean; books: number; uniq: number; extra: Reward }
+  | { kind: 'boss'; land: number; gold: number; n: number; books: number; uniq: number; extra: Reward }
   | { kind: 'awaken'; item: Item }
   | { kind: 'dungChoice'; floor: number; loot: Reward }
   | { kind: 'dungEnd'; id: DungId; lost: boolean; floor: number; reward: Reward; items: number; evp?: number }

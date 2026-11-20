@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { B, DIVINE_ORE, EVENT_MILESTONES, LANDS, ORES, ORE_ORDER, PASS_LEVELS, oreCap, oreRank, R } from '../src/data';
-import { obiegItem } from '../src/engine/obieg';
+import { ghostItem } from '../src/engine/armory';
 import { refineRatio, refineTo, rollSubs, smelt, smeltDraws } from '../src/engine/forge';
 import { JUMP_V, dist, divineName, itemLevelFor, itemName, oreFloor } from '../src/engine/formulas';
 import { mulberry32 } from '../src/engine/rng';
@@ -125,10 +125,10 @@ describe('Boskie przedmioty są wyjątkowe', () => {
     expect(two.dmg / noAura.dmg).toBeGreaterThan(1.05);
   });
 
-  it('Obieg nie rozdaje Boskich przedmiotów', () => {
+  it('dawni kowale (Zbrojownia) nie dają Boskich przedmiotów', () => {
     const { ctx, s } = makeGame(9);
     s.maxLand = 15; s.forge.lvl = 30;
-    for (let i = 0; i < 300; i++) expect(obiegItem(ctx).r).not.toBe(R.BOSKI);
+    for (let i = 0; i < 300; i++) expect(ghostItem(ctx).r).not.toBe(R.BOSKI);
   });
 
   it('Boska Ruda: w przepustce (złota ścieżka, poziom 30) i za ostatni próg wydarzenia', () => {

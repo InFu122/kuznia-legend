@@ -105,10 +105,9 @@ describe('Załóż najlepsze', () => {
 });
 
 import { migrate } from '../src/engine/state';
-import { maybeObieg } from '../src/engine/obieg';
-import { constRng } from './helpers';
 
-describe('Wieści z Obiegu', () => {
+
+describe('Dawne wieści z Obiegu w zapisie', () => {
   it('dawne wpisy „trafił do Obiegu” łączą się w jeden z licznikiem', () => {
     const log = [
       { t: '20:38', m: 'Topór_8537 znalazł(a) twój przedmiot: Żelazny Napierśnik. +30 Sławy kowala' },
@@ -119,18 +118,6 @@ describe('Wieści z Obiegu', () => {
     expect(s.smith.log[1]).toMatchObject({ k: 'sent', n: 12 });
   });
 
-  it('kolejne wysyłki do Obiegu zwiększają licznik zamiast dopisywać wiersze', () => {
-    const { ctx, s } = makeGame(2);
-    s.ores[1] = 20; s.stats.smelted = 10;
-    ctx.rng = constRng(0);
-    for (let i = 0; i < 5; i++) {
-      const it = smelt({ ...ctx, rng: makeGame(10 + i).ctx.rng }, 1, null)!;
-      it.r = 3;
-      maybeObieg(ctx, it, true);
-    }
-    expect(s.smith.log).toHaveLength(1);
-    expect(s.smith.log[0].n).toBe(5);
-  });
 });
 
 describe('wynik Zwoju', () => {

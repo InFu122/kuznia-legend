@@ -2,11 +2,10 @@ import { useEffect, useState } from 'preact/hooks';
 import { FRAME_IDS, LANDS, SKIN_IDS } from '../../data';
 import { Avatar } from '../Avatar';
 import { showProfile } from '../profile';
-import { nextSmithTitle, smithTitle } from '../../engine/formulas';
+import { smithTitle } from '../../engine/formulas';
 import { abyssCleared } from '../../engine/achievements';
 import { pl } from '../texts';
 import type { Game } from '../../engine/game';
-import type { GameState } from '../../engine/types';
 import { ServerError, getLink } from '../../save/server';
 import { fmt } from '../format';
 import type { SaveInfo } from '../App';
@@ -226,9 +225,7 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
 export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { game: Game; save: SaveInfo; onReset: () => void; onRanking: () => void; onFeedback: () => void }) {
   const saveMode = save.mode;
   const s = game.s;
-  const sm = s.smith;
-  const t = smithTitle(sm.fame);
-  const next = nextSmithTitle(sm.fame);
+  const t = smithTitle(s.smith.fame);
   return (
     <>
       <section class="card">
@@ -243,13 +240,6 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
             </div>
           </div>
         </div>
-        <p class="sub">Sława kowala: <b class="num">{fmt(sm.fame)}</b>{next ? ` · do tytułu ${next.n}: ${fmt(next.at - sm.fame)}` : ''}</p>
-        {next && <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.min(100, ((sm.fame - t.at) / (next.at - t.at)) * 100) + '%' }} /></div>}
-        <p class="sub" style={{ marginTop: '10px' }}>
-          {game.net
-            ? 'Rzadkie i lepsze przedmioty, które sprzedajesz, z szansą 30% trafiają do Wielkiego Obiegu — do skrzyń bossów i Zbrojowni innych graczy na tym serwerze. Gdy ktoś znajdzie twój przedmiot, dostajesz Sławę. Gdy w Obiegu brakuje przedmiotów graczy, skrzynie uzupełniają kowale-widma.'
-            : 'Rzadkie i lepsze przedmioty, które sprzedajesz, z szansą 30% trafiają do Wielkiego Obiegu. Gdy ktoś je znajdzie, dostajesz Sławę. Bez serwera gry inni gracze są symulowani.'}
-        </p>
       </section>
       {(saveMode === 'server' || saveMode === 'offline' || saveMode === 'connecting') && (
         <section class="card">
@@ -276,7 +266,6 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
       <CodexCard game={game} />
       <AppCard game={game} onFeedback={onFeedback} />
       {game.net && <AccountCard game={game} save={save} />}
-      <ObiegNews log={sm.log} />
       <section class="card">
         <div class="eyebrow">Statystyki</div>
         <div class="stats" style={{ marginTop: '8px' }}>
@@ -348,21 +337,3 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
   );
 }
 
-/** Wieści z Obiegu: kilka ostatnich, zwięźle; wpisy „trafił do Obiegu” połączone w jeden z licznikiem. */
-function ObiegNews({ log }: { log: GameState['smith']['log'] }) {
-  const [all, setAll] = useState(false);
-  const shown = all ? log : log.slice(0, 4);
-  const text = (l: GameState['smith']['log'][number]) =>
-    l.k === 'sent' ? ((l.n ?? 1) > 1 ? `Do Obiegu trafiło ${l.n} twoich przedmiotów (ostatni: ${l.m}).` : `${l.m} trafił do Wielkiego Obiegu.`) : l.m;
-  return (
-    <section class="card">
-      <div class="row">
-        <div class="eyebrow">Wieści z Obiegu</div>
-        {log.length > 4 && <button class="linkbtn" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Mniej' : `Wszystkie (${log.length})`}</button>}
-      </div>
-      {log.length ? (
-        <ul class="log compact">{shown.map((l, i) => <li key={i} class={l.k === 'sent' ? 'sent' : 'found'}><time>{l.t}</time><span>{text(l)}</span></li>)}</ul>
-      ) : <p class="sub">Jeszcze nic. Sprzedaj kilka Rzadkich przedmiotów.</p>}
-    </section>
-  );
-}

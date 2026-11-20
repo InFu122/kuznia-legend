@@ -161,7 +161,7 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
   const price = sellFor(s, it);
   const wear = () => { if (src === 'pending') game.equipPending(); else game.takeFound(0, true); setMore(false); };
   const sellIt = () => { if (src === 'pending') game.sellPending(); else game.takeFound(0, false); setMore(false); };
-  const head = src === 'found' ? (it.obieg ? 'Skrzynia · przedmiot z Wielkiego Obiegu' : 'Znalezisko') : it.forced === 'set' ? 'Wykuto część zestawu' : 'Wykuto';
+  const head = src === 'found' ? (it.obieg ? 'Skrzynia · przedmiot dawnego kowala' : 'Znalezisko') : it.forced === 'set' ? 'Wykuto część zestawu' : 'Wykuto';
   const left = src === 'found' ? s.found.length - 1 : 0;
   return (
     <div class={`dec r${it.r}`} key={it.id}>
