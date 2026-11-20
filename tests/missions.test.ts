@@ -3,6 +3,8 @@ import { DAILY_COUNT, SKILLS, TUTORIAL, WEEKLY_BOOKS, WEEKLY_COUNT } from '../sr
 import { smelt } from '../src/engine/forge';
 import { upTime } from '../src/engine/formulas';
 import { canClaimLogin, chestReady, claimChest, claimLogin, claimMission, ensureMissions, track } from '../src/engine/missions';
+import { dungKeys } from '../src/engine/dungeon';
+import { gearHint } from '../src/engine/tutorial';
 import { makeGame, simulate } from './helpers';
 
 describe('misje', () => {
@@ -87,6 +89,41 @@ describe('samouczek', () => {
     expect(s.tut).toBe(4);           // trzeci wytop i ulepszenie kuźni
     simulate(g, upTime(2) + 100);
     expect(s.forge.lvl).toBe(2);
+  });
+
+  it('krok „Pierwszy loch” kończy dopiero wejście do lochu, nie obejrzenie zakładki', () => {
+    const { g, s, ctx } = makeGame(1, undefined, { tutorial: true });
+    s.tut = TUTORIAL.findIndex(t => t.id === 'dung1');
+    s.cleared[0] = true; s.maxLand = 1;
+    dungKeys(ctx, 'skarbiec');        // zakładka Lochy odświeża klucze i dzień lochu
+    g.tick(16);
+    expect(s.tut).toBe(TUTORIAL.length - 1);
+    expect(g.startDung('skarbiec')).toBe(true);
+    g.tick(16);
+    expect(s.tut).toBe(TUTORIAL.length);
+  });
+
+  it('kilka kroków naraz to jeden komunikat', () => {
+    const { g, s, events } = makeGame(1, undefined, { tutorial: true });
+    s.stats.smelted = 3;
+    s.forge.lvl = 2; s.bestG = 4;
+    s.tut = TUTORIAL.findIndex(t => t.id === 'smelt3');
+    g.tick(16);
+    expect(s.tut).toBe(TUTORIAL.findIndex(t => t.id === 'stage5') + 1);
+    const done = events.flatMap(e => (e.t === 'toast' && e.msg.startsWith('Zrobione') ? [e.msg] : []));
+    expect(done).toEqual(['Zrobione: Kuj dalej, Ulepsz kuźnię i Naprzód']);
+  });
+
+  it('podpowiada wypełnienie ekwipunku, gdy bohater ma puste miejsca, a w kuźni jest ruda', () => {
+    const { s } = makeGame(1, undefined, { tutorial: true });
+    s.tut = TUTORIAL.findIndex(t => t.id === 'boss1');
+    s.oreSel = 1; s.ores[1] = 7;
+    expect(gearHint(s)).toEqual({ worn: 0, ore: 7 });
+    s.ores[1] = 0;
+    expect(gearHint(s)).toBeNull();
+    s.tut = TUTORIAL.length;
+    s.ores[1] = 7;
+    expect(gearHint(s)).toBeNull();
   });
 
   it('pierwsze ulepszenie kuźni trwa 30 sekund', () => {

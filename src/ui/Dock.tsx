@@ -21,6 +21,8 @@ export function ForgeDock({ game, onPick, onDecide, onAuto }: { game: Game; onPi
   const ok = canSmelt(game.ctx, o) && !s.pending;
   const sub = f.lvl < ORES[o].lvl ? `${ORES[o].n} od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `brak rudy: ${ORES[o].n}`
     : batch > 1 ? `×${Math.min(batch, s.ores[o])} · ${ORES[o].n}` : ORES[o].n;
+  // Wybrana ruda się skończyła, a w magazynie jest inna — przycisk otwiera wybór rudy zamiast stać wyszarzony.
+  const other = !ok && !s.pending ? ORE_ORDER.find(i => i !== o && s.ores[i] > 0 && f.lvl >= ORES[i].lvl) : undefined;
   return (
     <div class="dock">
       <button class="dock-ore" onClick={onPick} aria-haspopup="dialog" aria-label={`Ruda: ${ORES[o].n}, ${s.ores[o]} sztuk. Zmień rudę`}>
@@ -30,6 +32,11 @@ export function ForgeDock({ game, onPick, onDecide, onAuto }: { game: Game; onPi
       {s.pending ? (
         <button class="btn primary dock-go decide" onClick={onDecide}>
           <span class="dg-t"><b>Zdecyduj</b><small>nowy przedmiot czeka</small></span>
+        </button>
+      ) : other !== undefined ? (
+        <button class="btn primary btn-forge dock-go swap" onClick={onPick}>
+          <Px src={oreUrl(other)} size={28} />
+          <span class="dg-t"><b>Zmień rudę</b><small>brak: {ORES[o].n} · masz {ORES[other].n}</small></span>
         </button>
       ) : (
         <button class="btn primary btn-forge dock-go" disabled={!ok} onClick={() => { const it = game.smeltManual(); if (it) sparks(sparkRef.current, it.r); }}>
@@ -64,7 +71,8 @@ export function OreGrid({ game, onPicked }: { game: Game; onPicked?: () => void 
             onClick={() => { game.setOre(i); onPicked?.(); }}>
             <Px src={oreUrl(i)} size={32} />
             <b class="cnt">{fmt(s.ores[i])}</b>
-            <span class="o2-n">{locked ? `poz. ${x.lvl}` : x.n}</span>
+            <span class="o2-n">{x.n}</span>
+            {locked && <span class="o2-l">kuźnia {x.lvl}</span>}
           </button>
         );
       })}

@@ -108,7 +108,8 @@ export function equip(ctx: Ctx, it: Item, quiet: boolean): void {
         const key = k as keyof Item['kills'];
         it.kills[key] = (it.kills[key] ?? 0) + Math.floor((v ?? 0) * B.LEGEND_TRANSFER);
       }
-      if (!quiet && t > 0) toast(ctx, `Przetopienie legendy: nowy przedmiot przejmuje ${t} Sławy Czynów`);
+      // Komunikat tylko dla przedmiotu, który już przekroczył próg legendy — na początku gry to szum.
+      if (!quiet && t > 0 && (old.ls || 0) > 0) toast(ctx, `Przetopienie legendy: nowy przedmiot przejmuje ${t} Sławy Czynów`);
     }
     s.gold += sellFor(s, old);
   }

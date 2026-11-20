@@ -7,6 +7,7 @@ import { ForgeLevelInfo, MountsInfo, PetsInfo, RuneInfo } from './panels/InfoShe
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { LockIcon } from './icons';
 import { unlockProgress, unlockWhen } from '../engine/unlocks';
+import { tutStep } from '../engine/tutorial';
 import { onBack } from './back';
 import { JUMP_TO_MULT_RANK, baseName, dist, gOf, goldWaveOf, itemName, oreNominal, recPower } from '../engine/formulas';
 import { allMods } from '../engine/mods';
@@ -75,17 +76,21 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
   const s = game.s;
   switch (m.kind) {
     case 'unlocked': {
-      const first = m.ids[0];
+      // „Pokaż” prowadzi tam, dokąd i tak prowadzi samouczek (np. Lochy, nie Krainy), żeby wskazówki się nie kłóciły.
+      const st = tutStep(s);
+      const first = m.ids.find(id => !!st && (FEATURES[id].at.tab === st.tab || FEATURES[id].at.inTab === st.tab)) ?? m.ids[0];
       return (
         <>
           <div class="unl-burst" aria-hidden="true">{m.ids.slice(0, 5).map(id => <span key={id} class="unl-ic"><Px src={featureIcon(id)} size={40} /></span>)}</div>
           <div class="eyebrow">{m.ids.length > 1 ? 'Nowe funkcje' : 'Nowa funkcja'}</div>
           <div class="h">{m.ids.map(id => FEATURES[id].n).join(', ')}</div>
-          <ul class="unl-list">
-            {m.ids.map(id => (
-              <li key={id}><Px src={featureIcon(id)} size={28} /><div><b>{FEATURES[id].n}</b><p>{FEATURES[id].d}</p></div></li>
-            ))}
-          </ul>
+          {m.ids.length > 1 ? (
+            <ul class="unl-list">
+              {m.ids.map(id => (
+                <li key={id}><Px src={featureIcon(id)} size={28} /><div><b>{FEATURES[id].n}</b><p>{FEATURES[id].d}</p></div></li>
+              ))}
+            </ul>
+          ) : <p class="sub unl-one">{FEATURES[first].d}</p>}
           <div class="result-actions">
             <button class="btn primary" onClick={() => { close(); onFeature?.(first); }}>Pokaż{m.ids.length > 1 ? `: ${FEATURES[first].n}` : ''}</button>
             <button class="btn" onClick={close}>Później</button>
@@ -117,7 +122,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
         <>
           <div class="eyebrow">Spalona Wioska</div>
           <div class="h">Kuźnia Legend</div>
-          <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i trzy sztaby żelaza: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie — nie pozwól mu iść z gołymi rękami”.</p>
+          <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i worek rudy: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie — nie pozwól mu iść z gołymi rękami”.</p>
           <ul class="list">
             <li>Bohater walczy sam. Ty przetapiasz rudy, które wypadają z wrogów, na ekwipunek.</li>
             <li>Lepsza ruda to rzadsze przedmioty, a kuźnia daje szansę na przeskok o rzadkość wyżej. Z każdym poziomem kuźni wyniki są coraz lepsze.</li>
@@ -169,7 +174,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       );
     case 'dungEnd': {
       const halves = m.id === 'sztolnia' || m.id === 'oltarze';
-      const head = m.id === 'skarbiec' ? 'Czas minął' : m.id === 'wieza' ? (m.lost ? 'Strażnik cię zatrzymał' : 'Zejście z wieży') : m.lost ? 'Bohater padł' : 'Zwycięstwo';
+      const head = m.id === 'skarbiec' ? 'Łup zebrany' : m.id === 'wieza' ? (m.lost ? 'Strażnik cię zatrzymał' : 'Zejście z wieży') : m.lost ? 'Bohater padł' : 'Zwycięstwo';
       const where: Partial<Record<typeof m.id, string>> = {
         skarbiec: `pokonane gobliny: ${m.floor}`, wieza: `najwyżej: piętro ${m.floor}`, oltarze: `strażnicy: ${m.floor}/5`,
         sztolnia: `piętro ${m.floor}`, kopalnia: `fale: ${m.floor}/10`, labirynt: `komnaty: ${m.floor}/${LAB_ROOMS}`,

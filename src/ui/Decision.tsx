@@ -177,7 +177,7 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
         <div class="dec-name">{itemName(it)}</div>
         <div class="irar">{RAR[it.r].n} · poz. {it.lvl}{it.obieg ? ` · kowal: ${it.smith}` : ''}</div>
         {it.jump > 0 && <div class="jump">Przeskok +{it.jump}!</div>}
-        {it.jump < 0 && <div class="jump low">Kuźnia dopiero poznaje tę rudę — tym razem o rzadkość niżej</div>}
+        {it.jump < 0 && <div class="jump low">Kuźnia jeszcze nie opanowała tej rudy — tym razem o rzadkość niżej. Od {ORES[it.ore].v6[2]}. poziomu kuźni to się nie zdarza.</div>}
       </div>
       {src === 'pending' && game.lastBatch?.best === it && (
         <div class="batch-sum">

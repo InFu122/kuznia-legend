@@ -23,8 +23,9 @@ import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
 import { ResearchPanel } from './panels/Research';
-import { FEATURES, FEATURE_IDS, type FeatureId } from '../data';
-import { tutStep } from '../engine/tutorial';
+import { FEATURES, FEATURE_IDS, ORES, type FeatureId } from '../data';
+import { gearHint, tutStep } from '../engine/tutorial';
+import { bossWaiting } from '../engine/combat';
 import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
 import { hasUpdate, onPwa } from './pwa';
@@ -96,6 +97,9 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   const [coachOff, setCoachOff] = useState('');
   /** Wskazówka po ogłoszeniu nowej funkcji („Pokaż”). */
   const [feat, setFeat] = useState<FeatureId | null>(null);
+  /** Zakładka, w której gracz właśnie obejrzał nową funkcję — póki w niej jest, samouczek nie ciągnie go gdzie indziej. */
+  const [featTab, setFeatTab] = useState<Tab | null>(null);
+  useEffect(() => { if (featTab && tab !== featTab) setFeatTab(null); }, [tab]);
   // Nowe funkcje w otwartej zakładce: znika znaczek „nowe”.
   useEffect(() => { game.seenFeatures(FEATURE_IDS.filter(id => FEATURES[id].at.tab === tab)); }, [tab]);
   setSound(game.s.opts.sound, game.s.opts.vol);
@@ -173,15 +177,32 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       mark = { key: `f:${feat}`, target: F.target, title: `Nowość: ${F.n}`, text: F.d };
     }
   } else if (step && coachOff !== step.id) {
+    const gear = gearHint(s);
+    const waiting = step.id === 'boss1' && bossWaiting(game.ctx);
     if (tab !== step.tab) {
-      mark = { key: `${step.id}:tab`, target: reachTarget(step.tab), title: step.t, text: reachText(step.tab) };
-      navHint = true;
+      if (tab !== featTab) {
+        mark = { key: `${step.id}:tab`, target: reachTarget(step.tab), title: step.t, text: reachText(step.tab) };
+        navHint = true;
+      }
+    } else if (gear && !waiting) {
+      // Zamiast czekać na bohatera: kuj dalej, póki są puste miejsca i ruda.
+      mark = { key: `${step.id}:gear`, target: '.dock-go', title: 'Wypełnij ekwipunek',
+        text: `Bohater nosi ${gear.worn}/8 przedmiotów, a masz ${fmt(gear.ore)} × ${ORES[s.oreSel].n}. Kuj dalej — każdy nowy przedmiot to więcej Mocy na bossa.` };
+    } else if (step.id === 'boss1') {
+      // Przycisk bossa jest dopiero na 10. etapie — wcześniej tylko obwódka paska etapów, bez dłoni.
+      mark = waiting ? { key: 'boss1:go', target: '.arena-actions .btn', title: step.t, text: step.d }
+        : { key: 'boss1:look', target: '.arena .track', title: step.t, text: step.d, act: 'look' };
     } else mark = { key: step.id, target: step.target, title: step.t, text: step.d, act: step.act };
   }
   // Nad oknami wskazówka tylko w Menu (droga do funkcji) i przy decyzji o pierwszej broni (krok „Załóż broń”).
   const coachOn = !!mark && (!modal || (modal.kind === 'menu' && navHint) || (!feat && modal.kind === 'decide' && step?.id === 'equip1'));
   const hideCoach = () => { if (feat) setFeat(null); else if (step) setCoachOff(step.id); };
-  const tapCoach = () => { if (feat && mark?.key === `f:${feat}`) setFeat(null); };
+  const tapCoach = () => {
+    if (!feat || mark?.key !== `f:${feat}`) return;
+    const F = FEATURES[feat];
+    setFeat(null);
+    setFeatTab(F.at.inTab ?? F.at.tab ?? tab);
+  };
   return (
     <>
       <div class="app">

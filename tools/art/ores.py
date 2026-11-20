@@ -160,13 +160,53 @@ ORE_ICONS['Eteryt'] = eteryt
 ORE_ICONS['Boska Ruda'] = divine_ore
 
 # ---------- poprawki rud głównych ----------
-RUST_STONE = ['#8f7466', '#6d564b', '#4e3d35', '#342822']
-BLUE_STONE = ['#7d8796', '#5d6674', '#434a56', '#2e333c']
-def iron(): return nugget_ore(['#d9e0e8', '#9aa4b0', '#626b76', '#3a4049'], stone=RUST_STONE)
+# Trzy pierwsze rudy muszą się różnić już w 16 px (nagrody, licznik w kuźni): Miedź jest ruda/pomarańczowa
+# (z zielonymi plamkami patyny), Żelazo to chłodna, szaroniebieska kanciasta bryła ze stalowymi żyłami,
+# a Srebro — prawie czarna skała z dużymi, białymi bryłkami i iskrami dookoła.
+COPPER_STONE = ['#b07a52', '#8a5a3b', '#653f29', '#44291b']
+SLATE_STONE = ['#8f9aab', '#6b7688', '#4d5666', '#333a47']
+BLOCK = [
+    "................",
+    "................",
+    "....pppppppp....",
+    "...pppppppppp...",
+    "..pppppppppppp..",
+    ".pppppppppppppp.",
+    ".pppppppppppppp.",
+    ".pppppppppppppp.",
+    ".pppppppppppppp.",
+    ".pppppppppppppp.",
+    ".pppppppppppppp.",
+    "..pppppppppppp..",
+    "...pppppppppp...",
+    "....pppppppp....",
+    "................",
+    "................",
+]
+def copper():
+    r = list(ROCK)
+    cells = blob(3, 5, 4, 2) + blob(4, 4, 2, 1) + blob(9, 6, 4, 3) + blob(10, 5, 2, 1) + blob(3, 10, 3, 2) + blob(9, 11, 4, 1) + blob(10, 10, 2, 1)
+    rows = finish(stamp(r, cells, 'q'))
+    rows = stamp(rows, [(8, 4), (7, 12), (13, 9), (2, 8)], 'v')
+    rows = stamp(rows, [(4, 4), (10, 5)], 'w')
+    return rows, {**K, **ramp('p', COPPER_STONE), **ramp('q', ['#ffe0b8', '#ff9f52', '#d2622c', '#86351a']), 'v': '#53c98d'}
+def iron():
+    r = list(BLOCK)
+    # stalowe żyły biegnące ukośnie przez bryłę
+    cells = [(3, 5), (4, 5), (5, 6), (6, 6), (7, 7), (8, 7), (9, 8), (10, 8), (11, 9), (12, 9),
+             (4, 9), (5, 9), (6, 10), (7, 10), (8, 11), (9, 11), (9, 4), (10, 4), (11, 5), (12, 5)]
+    rows = finish(stamp(r, cells, 'q'))
+    rows = stamp(rows, [(4, 5), (9, 4)], 'w')
+    return rows, {**K, **ramp('p', SLATE_STONE), **ramp('q', ['#f2f6fa', '#c3ccd6', '#7d8794', '#454c57'])}
 def silver():
-    rows, pal = nugget_ore(['#ffffff', '#e2e9f2', '#a9b6c8', '#6a7690'], stone=BLUE_STONE)
-    rows = stamp(rows, [(11, 10), (3, 6)], 'w')
-    return rows, pal
+    r = list(ROCK)
+    cells = blob(3, 5, 4, 3) + blob(9, 6, 4, 3) + blob(5, 10, 4, 2)
+    rows = finish(stamp(r, cells, 'q'))
+    rows = stamp(rows, [(4, 5), (10, 6), (6, 10)], 'w')
+    # iskry dookoła (krzyżyki) — srebro błyszczy
+    rows = stamp(rows, [(14, 1), (13, 2), (15, 2), (14, 3), (1, 12), (0, 13), (2, 13), (1, 14)], 'x')
+    return rows, {**K, **ramp('p', ['#4f4a5c', '#3a3646', '#292633', '#1d1b24']), **ramp('q', ['#ffffff', '#e9eef6', '#b3bfd1', '#7381a0']), 'x': '#f4f8ff'}
+ORE_ICONS['Miedź'] = copper
 ORE_ICONS['Żelazo'] = iron
 ORE_ICONS['Srebro'] = silver
 

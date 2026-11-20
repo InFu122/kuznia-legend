@@ -29,13 +29,14 @@ function MissionRow({ m, reward, onClaim }: { m: Mission; reward: Reward; onClai
 }
 
 export function MissionsView({ game, initial, close }: { game: Game; initial?: Tab; close: () => void }) {
-  const [tab, setTab] = useState<Tab>(initial ?? 'daily');
   const ms = game.missions();
   const s = game.s;
   const dot = (t: Tab) => {
     const ready = (l: Mission[]) => l.some(m => m.n >= m.goal && !m.claimed);
     return t === 'daily' ? ready(ms.daily) || chestReady(s) : t === 'weekly' ? ready(ms.weekly) : t === 'ach' ? achCount(s) > 0 : canClaimLogin(game.ctx);
   };
+  // Bez wskazanej zakładki: pierwsza, w której jest coś do odebrania (inaczej „1 do odebrania” w Menu prowadzi w pustkę).
+  const [tab, setTab] = useState<Tab>(() => initial ?? TABS.find(([id]) => dot(id))?.[0] ?? 'daily');
   return (
     <>
       <div class="eyebrow">Zadania</div>
@@ -89,7 +90,7 @@ function LoginView({ game }: { game: Game }) {
           const r = loginReward(s, i);
           return (
             <div key={i} class={`calday ${state}${i === 6 ? ' big' : ''}`}>
-              <small>Dzień {i + 1}</small>
+              <small>Dzień {i + 1}{state === 'got' && <span class="cal-ok"> · ✓ odebrano</span>}</small>
               <b>{d.n}</b>
               <span>{i === 6 && !Object.keys(r).length ? <span class="rwi"><span class="rwc"><Px src={resUrl('zwoj')} size={16} /><span>Zwój zaklęć — epicki lub lepszy</span></span></span> : <RewardIcons r={r} size={16} />}</span>
             </div>

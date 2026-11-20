@@ -250,7 +250,7 @@ function EventBanner({ game, onOpen }: { game: Game; onOpen: () => void }) {
     <section class={`card arena-banner ev-banner ev-${ev.kind}${todo ? ' ready' : ''}`} aria-label={`Wydarzenie: ${ev.def.n}`} style={{ '--bg': `url(${dungeonBgUrl('ev_' + ev.kind)})` } as Record<string, string>}>
       <div class="ab-ic"><Px src={resUrl(eventIcon(ev.kind))} size={36} /></div>
       <div class="ab-main">
-        <div class="eyebrow">Wydarzenie · jeszcze {tfmt(ev.end - now)}</div>
+        <div class="eyebrow">Wydarzenie · jeszcze <span class="nw">{tfmt(ev.end - now)}</span></div>
         <div class="ab-name">{ev.def.n}</div>
         <div class="ab-sub"><b class="num">{evText(pts, ev.def)}</b>{next ? ` · następna nagroda: ${fmt(next.pts)}` : ' · wszystkie nagrody zdobyte'}</div>
         <div class="bar ev-bar"><i style={{ width: pct + '%' }} /></div>

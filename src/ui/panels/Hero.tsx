@@ -116,7 +116,8 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
             return (
               <button key={slot} class={`slot r${it.r}`} aria-label={itemName(it)} onClick={() => onItem(it)}>
                 <Px src={itemUrl(it.kind, it.ore, it.r)} size={36} />
-                <span>{itemName(it)}</span>
+                {/* Ucięta nazwa („Żelazna …”) nic nie mówi: zwykły przedmiot pokazuje poziom, przebudzony i Boski — imię. */}
+                <span>{it.aw || it.r === R.BOSKI ? itemName(it) : `poz. ${it.lvl}`}</span>
                 <div class="pips">{[1, 2, 3].map(i => <i key={i} class={(it.ls || 0) >= i ? 'on' : ''} />)}</div>
               </button>
             );

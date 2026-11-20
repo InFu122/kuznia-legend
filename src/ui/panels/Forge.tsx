@@ -176,8 +176,8 @@ export function OreSummary({ game }: { game: Game }) {
   return (
     <>
       <div class="o2-sel">
-        <b>{ORES[o].n}</b> · bez przeskoku <span class={`rt${nom}`}>{RAR[nom].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
-        {growing && <> · <span class="rampnote">jakość rośnie z poziomem kuźni — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></span></>}
+        <b>{ORES[o].n}</b> · zwykle <span class={`rt${nom}`}>{RAR[nom].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
+        {growing && <> · <span class="rampnote">na niskiej kuźni czasem o rzadkość niżej — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></span></>}
       </div>
       <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && pityOk ? 'z zestawem bez najniższej' : undefined} />
       {pityOk && (

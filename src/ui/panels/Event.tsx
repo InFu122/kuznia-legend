@@ -25,7 +25,7 @@ export function EventView({ game, close, onDung }: { game: Game; close: () => vo
   return (
     <>
       <div class="li-head" style={{ '--bg': `url(${dungeonBgUrl('ev_' + ev.kind)})` } as Record<string, string>}>
-        <div class="eyebrow">Wydarzenie · jeszcze {tfmt(ev.end - now)}</div>
+        <div class="eyebrow">Wydarzenie · jeszcze <span class="nw">{tfmt(ev.end - now)}</span></div>
         <div class="h">{ev.def.n}</div>
       </div>
       <div class="ev-total">

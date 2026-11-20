@@ -331,7 +331,7 @@ function onHeroDown(ctx: Ctx, e: Enemy): void {
   } else {
     if (s.cur.stage > 1) s.cur.stage--;
     s.cur.wave = 1;
-    toast(ctx, 'Bohater padł — cofasz się o jeden etap.', 'bad');
+    toast(ctx, 'Bohater padł — cofasz się o jeden etap. Wykuj lepszy sprzęt.', 'bad');
   }
   b.enemy = null;
   b.heroHp = b.heroMax;
