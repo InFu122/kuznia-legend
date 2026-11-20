@@ -1569,3 +1569,34 @@ a.linkbtn{display:inline-block}
 .rneed .rfarm small{color:var(--ash)}
 .rneed .rfarm b{color:var(--frost); font-weight:600}
 .rneed .rfarm .btn.small{padding:4px 10px; min-height:30px; font-size:12px}
+/* Osiągnięcia: nagłówek z tytułem kowala, numer progu cyframi rzymskimi, Sława za próg */
+.ach-head{display:flex; align-items:center; gap:12px; padding:12px; margin-bottom:8px; border-radius:14px; border:1px solid var(--rivet);
+  background:linear-gradient(90deg, rgba(231,190,98,.14), transparent 75%), var(--plate-2)}
+.ach-head .px{flex:none}
+.ah-main{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px}
+.ah-main .h{font-size:22px}
+.ah-main small{font-size:12px; color:var(--ash)}
+.ah-num{flex:none; font-size:12px; color:var(--ash); text-align:right}
+.ah-num b{display:block; font-size:22px; color:var(--straw); font-variant-numeric:tabular-nums}
+.ach-tier{display:inline-flex; align-items:baseline; margin-left:4px; padding:1px 7px; border-radius:999px; background:rgba(231,190,98,.16); color:var(--straw); font-family:var(--f-display); font-size:14px}
+.ach-tier small{font-family:var(--f-ui); font-size:10px; color:var(--ash)}
+.ach-fame{font-weight:700; color:var(--straw); white-space:nowrap}
+/* Lochy: jaśniejsze sceny, strażnik na każdym kafelku, zablokowane lochy jako wyblakłe kafelki z kłódką */
+.card.dung.tile::before{background-image:linear-gradient(rgba(14,10,7,.15), rgba(14,10,7,.05) 32%, rgba(14,10,7,.88) 80%), var(--bg)}
+.dt-foe{position:absolute; z-index:-1; right:-4px; top:28px; width:66px; height:66px; image-rendering:pixelated; filter:drop-shadow(0 3px 2px rgba(0,0,0,.6)); pointer-events:none}
+.dt-foe.shadow{filter:grayscale(1) brightness(.45) contrast(1.2); opacity:.75}
+button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:pointer; width:100%}
+.card.dung.tile.locked{border-style:dashed}
+.card.dung.tile.locked .dt-reward{opacity:.7}
+.card.dung.tile.locked .dt-name{color:var(--ash)}
+.dt-lock{display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:rgba(14,10,7,.75); border:1px solid var(--rivet); color:var(--ash)}
+.dt-lock .lock-ic{width:14px; height:14px}
+.dt-when{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.dung-headc{padding:0; overflow:hidden}
+.dung-headc .forge-banner{margin:0}
+.dung-headc .sub{padding:10px 14px}
+.dung-headc .dh-line{display:flex; align-items:center; gap:6px; padding:9px 14px; font-size:12px}
+@media (max-width:360px){ .dt-foe{width:60px; height:60px} }
+.ach-rew{display:flex; flex-wrap:wrap; align-items:center; gap:3px 8px; margin-top:3px}
+.ach-rew .rwi{display:contents}
+.ach-rew .tech-cost{margin:0}

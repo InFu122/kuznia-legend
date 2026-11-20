@@ -129,7 +129,7 @@ export interface GameState {
   oreSel: number;
   batch: number;                                       // wytop seryjny: ile wytopów jednym przyciskiem
   elSel: ElemKey | null;
-  smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string; k?: 'sent'; n?: number }[] };
+  smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string; k?: 'sent'; n?: number }[]; v?: number }; // v: 1 — Sława za dawniej odebrane progi osiągnięć już doliczona
   dungeons: Record<DungId, { day: string; keys: number; best: number }>;
   books: number;                              // Księgi Wiedzy
   uniq: Partial<Record<SetId, number>>;       // rudy unikalne
@@ -153,7 +153,7 @@ export interface GameState {
   unl: string[];                                       // odblokowane funkcje, które gra już ogłosiła (FeatureId)
   unlNew: string[];                                    // nowe funkcje ze znaczkiem „nowe” do pierwszego otwarcia
   opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean };
-  stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number; bestR: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów)
+  stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number; bestR: number; leg: number; missions: number; days: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów); leg: wytopy Legendarne+; missions: odebrane zadania; days: odebrane prezenty za logowanie
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
   obIn: Item[];                                        // przedmioty dawnych kowali od serwera, czekające na skrzynie Zbrojowni

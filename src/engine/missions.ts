@@ -79,6 +79,7 @@ export function claimMission(ctx: Ctx, scope: 'daily' | 'weekly', i: number): Re
   const m = ctx.s.missions[scope][i];
   if (!m || m.claimed || m.n < m.goal) return null;
   m.claimed = true;
+  ctx.s.stats.missions = (ctx.s.stats.missions || 0) + 1;
   const r = missionReward(ctx.s, scope);
   grant(ctx, r);
   ctx.emit({ t: 'sfx', k: 'claim' });
@@ -131,6 +132,7 @@ export function claimLogin(ctx: Ctx): { idx: number; reward: Reward; skill: { id
   grant(ctx, reward);
   const skill = idx === 6 && skillsUnlocked(s) ? drawSkill(ctx, 3) : null;
   s.login = { last: todayStr(ctx.now()), idx: (idx + 1) % LOGIN_DAYS.length };
+  s.stats.days = (s.stats.days || 0) + 1;
   ctx.emit({ t: 'sfx', k: idx === 6 ? 'rare' : 'claim', r: 3 });
   if (skill) toast(ctx, `Epicki Zwój: ${SKILLS[skill.id].n}${skill.dupe ? ' (kopia)' : ''}`, 'good');
   ctx.dirty = true;

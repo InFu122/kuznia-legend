@@ -6,16 +6,16 @@ import { audioCtx, audioUrl, setDuckHook } from './sound';
 
 export type Mood = 'camp' | 'dung' | 'boss';
 
-/** Spokojne — tylko w tle krain. */
+/** Spokojne (do zapętlenia) — jedyna muzyka w tle krain, także zaraz po włączeniu gry. */
 const CALM = ['simple-magic', 'legend', 'celtic-morning', 'celtic-sun', 'helpless-land', 'medieval-kingdom', 'medieval-castle', 'knight-of-flowers'];
-/** Dynamiczne — w tle krain, a do tego w ważniejszych walkach (lochy) i przy bossach. */
+/** Dynamiczne — tylko w ważniejszych walkach: lochy i bossowie. */
 const DYNAMIC = ['celtic-wild', 'mystical-fantasy', 'celtic-fantasy', 'naughty-princess'];
 /** Chóry — tylko walka z bossem. */
 const BOSS_ONLY = ['gregorian-choir', 'religious-choir'];
 
-/** Playlisty: w krainach spokojne i dynamiczne na zmianę, w lochach dynamiczne, przy bossach chóry i dynamiczne. */
+/** Playlisty: w krainach (i po włączeniu gry) tylko spokojne, w lochach dynamiczne, przy bossach chóry i dynamiczne. */
 export const PLAYLISTS: Record<Mood, string[]> = {
-  camp: [...CALM, ...DYNAMIC],
+  camp: [...CALM],
   dung: [...DYNAMIC],
   boss: [...BOSS_ONLY, ...DYNAMIC],
 };

@@ -13,6 +13,7 @@ export const SMITH_TITLES = [
   { n: 'Kowal', at: 200 },
   { n: 'Mistrz Kuźni', at: 1000 },
   { n: 'Arcymistrz Kuźni', at: 5000 },
+  { n: 'Kowal Legend', at: 8000 },
 ] as const;
 
 /** Szansa na przeskok o 1 i o 2 rzadkości (w %) na wybranych poziomach kuźni; pomiędzy liniowo. */

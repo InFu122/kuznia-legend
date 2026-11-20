@@ -1,5 +1,5 @@
 import { unlockedNow } from './unlocks';
-import { ACHIEVEMENTS, BATCH_OPTIONS, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
+import { ACHIEVEMENTS, BATCH_OPTIONS, achFame, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
@@ -30,14 +30,14 @@ export function newState(now: number): GameState {
     forge: { lvl: 1, up: 0, left: 0 }, pity: 0, eq: {}, pending: null,
     cur: { land: 0, stage: 1, wave: 1 }, maxLand: 0, frontStage: 1, cleared: LANDS.map(() => false), bestG: 0,
     auto: false, autoStop: 0, oreSel: 1, batch: 1, elSel: null,
-    smith: { fame: 0, sent: [], log: [] },
+    smith: { fame: 0, sent: [], log: [], v: 1 },
     dungeons: newDungeons(), books: 0, uniq: {}, uniqSel: null, tech: { lv: {}, cur: null },
     scrolls: 0, skills: { lv: {}, cards: {}, eq: Array(SKILL_SLOTS).fill(null) },
     eggs: [0, 0, 0, 0, 0], hatch: null, pets: {}, petSel: null,
     saddles: 0, mounts: {}, mountSel: null, stones: 0, seals: 0, found: [],
     missions: { day: '', daily: [], chest: false, week: '', weekly: [] }, login: { last: '', idx: 0 }, tut: 0, unl: [], unlNew: [],
     opts: { sound: true, vol: 0.6, music: true, mvol: 0.5, notify: true },
-    stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0, bestR: -1 },
+    stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0, bestR: -1, leg: 0, missions: 0, days: 0 },
     sx: 0, seeds: [], obIn: [], obOut: [],
     clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
     gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, event: null, look: { skin: 'zwykly', frame: 'prosta', skins: ['zwykly'], frames: ['prosta'] }, boost: { lvl: 0, ms: 0 },
@@ -69,7 +69,7 @@ export function migrate(raw: unknown, now: number): GameState {
   const fresh = newState(now);
   out.forge = Object.assign(fresh.forge, isObj(raw.forge) ? raw.forge : {});
   out.cur = Object.assign(fresh.cur, isObj(raw.cur) ? raw.cur : {});
-  out.smith = Object.assign(fresh.smith, isObj(raw.smith) ? raw.smith : {});
+  out.smith = Object.assign(fresh.smith, isObj(raw.smith) ? { v: 0, ...raw.smith } : {});
   if (!Array.isArray(out.smith.log)) out.smith.log = [];
   out.smith.log = mergeSentLog(out.smith.log);
   out.stats = Object.assign(fresh.stats, isObj(raw.stats) ? raw.stats : {});
@@ -137,6 +137,13 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!isObj(out.runes)) out.runes = {};
   if (!isObj(out.ach)) out.ach = {};
   for (const k of Object.keys(out.ach)) if (!(k in ACHIEVEMENTS)) delete out.ach[k as AchId]; // np. dawne „pokolenia”
+  // Sława kowala za progi osiągnięć odebrane, zanim progi dawały Sławę — doliczana raz.
+  if (!((out.smith.v ?? 0) >= 1)) {
+    for (const [k, n] of Object.entries(out.ach)) {
+      for (let t = 0; t < Math.min(Math.floor(n ?? 0), ACHIEVEMENTS[k as AchId].tiers.length); t++) out.smith.fame += achFame(t);
+    }
+    out.smith.v = 1;
+  }
   if (!Array.isArray(raw.codex)) {
     // Kolekcja Kowala w starym zapisie: modele przedmiotów, które gracz ma teraz
     const have = [...Object.values(out.eq), out.legacy?.item, ...(Array.isArray(out.found) ? out.found : [])].filter((x): x is NonNullable<typeof x> => !!x && typeof x.kind === 'string');

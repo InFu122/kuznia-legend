@@ -1,5 +1,5 @@
 // Osiągnięcia i Kolekcja Kowala. Postęp liczy się z liczników gry; nagrody to zasoby (bez Klejnotów).
-import { ABYSS_FROM, ACHIEVEMENTS, ACH_IDS, ORES, RAR, SLOTS, SLOT_ORDER, type AchId, rRank } from '../data';
+import { ABYSS_FROM, ACHIEVEMENTS, ACH_IDS, ORES, RAR, SLOTS, SLOT_ORDER, type AchId, achFame, rRank } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
 import { grant } from './reward';
@@ -49,6 +49,10 @@ export function achValue(s: GameState, id: AchId): number {
     case 'otchlan': return abyssCleared(s);
     case 'runy': return Object.values(s.runes || {}).reduce((a: number, b) => a + (b ?? 0), 0);
     case 'towarzysze': return Object.keys(s.pets).length + Object.keys(s.mounts).length;
+    case 'legendy': return s.stats.leg || 0;
+    case 'nauka': return Object.values(s.tech.lv || {}).reduce((a: number, b) => a + (b ?? 0), 0);
+    case 'zadania': return s.stats.missions || 0;
+    case 'dni': return s.stats.days || 0;
   }
 }
 
@@ -58,6 +62,16 @@ export const achClaimed = (s: GameState, id: AchId) => Math.max(0, Math.floor(s.
 export const achReady = (s: GameState, id: AchId) => achClaimed(s, id) < achReached(s, id);
 export const achCount = (s: GameState) => ACH_IDS.filter(id => achReady(s, id)).length;
 
+/** Numer progu cyframi rzymskimi (I–X). */
+export const roman = (n: number) => ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n] ?? String(n);
+
+/** Sława kowala ze wszystkich odebranych progów. */
+export const achFameTotal = (s: GameState) => ACH_IDS.reduce((sum, id) => {
+  let f = 0;
+  for (let t = 0; t < achClaimed(s, id); t++) f += achFame(t);
+  return sum + f;
+}, 0);
+
 /** Opis progu `t` (0 = pierwszy). */
 export function achGoalText(id: AchId, t: number): string {
   const A = ACHIEVEMENTS[id];
@@ -65,11 +79,11 @@ export function achGoalText(id: AchId, t: number): string {
   return A.d.replace('{n}', id === 'rzadkosc' ? RAR[n].n : n.toLocaleString('pl-PL'));
 }
 
-/** Nagroda za próg `t`: Księgi, Kamienie i złoto, wyżej także Zwoje i jaja. */
+/** Nagroda za próg `t`: Księgi, Kamienie i złoto, wyżej także Zwoje i jaja (do tego Sława kowala — `achFame`). */
 export function achReward(s: GameState, t: number): Reward {
   const r: Reward = {
-    books: [3, 6, 12, 25, 50, 80][t] ?? 80,
-    stones: [10, 25, 50, 100, 200, 300][t] ?? 300,
+    books: [3, 6, 12, 25, 50, 80, 120, 160][t] ?? 200,
+    stones: [10, 25, 50, 100, 200, 300, 400, 500][t] ?? 600,
     gold: goldWaveOf(s) * 50 * (t + 1),
   };
   if (t >= 2) r.scrolls = t - 1;
@@ -84,7 +98,8 @@ export function claimAch(ctx: Ctx, id: AchId): Reward | null {
   const t = achClaimed(s, id);
   const r = achReward(s, t);
   s.ach = { ...s.ach, [id]: t + 1 };
+  s.smith = { ...s.smith, fame: s.smith.fame + achFame(t) };
   grant(ctx, r);
-  toast(ctx, `Osiągnięcie: ${ACHIEVEMENTS[id].n} (${t + 1}/${ACHIEVEMENTS[id].tiers.length})`, 'good');
+  toast(ctx, `Osiągnięcie: ${ACHIEVEMENTS[id].n} ${roman(t + 1)} · +${achFame(t)} Sławy kowala`, 'good');
   return r;
 }

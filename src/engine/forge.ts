@@ -1,4 +1,4 @@
-import { B, BATCH_OPTIONS, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, RANK_MAX, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
+import { B, BATCH_OPTIONS, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, R, RANK_MAX, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
 import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreNominal, pityAllowed, sellPrice, smeltRarity, upCost, upTime } from './formulas';
@@ -90,6 +90,7 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   };
   if (sx !== undefined) it.sx = sx;
   if (rRank(it.r) > rRank(s.stats.bestR ?? -1)) s.stats.bestR = it.r;
+  if (rRank(it.r) >= rRank(R.LEGENDARNY)) s.stats.leg = (s.stats.leg || 0) + 1;
   discover(ctx, it);
   return it;
 }

@@ -1,7 +1,9 @@
 // Zakładka Lochy: na górze Arena (z serwerem), potem dostępne lochy jako kafelki z kluczami
 // i nagrodą, a na końcu te, które dopiero się odblokują. Szczegóły lochu — w oknie „i” (DungInfoView).
-import { B, DUNGEONS, DUNG_ORDER, ELEM, EVENT, EVENT_MILESTONES, KRYPTA_RULES, ORES, SETS, setOfLand, landDef } from '../../data';
-import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
+import { B, DUNGEONS, DUNGEON_FOES, DUNG_ORDER, ELEM, EVENT, EVENT_MILESTONES, KRYPTA_RULES, ORES, SETS, setOfLand, landDef } from '../../data';
+import { dungeonBgUrl, elemUrl, foeUrl, frameAt, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
+import { LockIcon } from '../icons';
+import { Banner } from '../Banner';
 import { dungUnlockText, elementOfDay, kryptaRule, lezaBosses } from '../../engine/dungeon';
 import { dungName, dungScene, eventFloorPts, eventIcon, eventOf, eventPts, eventReached, evText } from '../../engine/events';
 import type { Game } from '../../engine/game';
@@ -79,6 +81,44 @@ export function Keys({ game, id }: { game: Game; id: DungId }) {
 /** Do północy (klucze odnawiają się o północy). */
 export const untilMidnight = (now: number) => { const d = new Date(now); d.setHours(24, 0, 0, 0); return d.getTime() - now; };
 
+/** Strażnik lochu na kafelku: kto tam czeka (w Leżu — boss ostatnio pokonanej krainy, w lochu sezonowym — boss wydarzenia). */
+function guardian(game: Game, id: DungId): [string, string] {
+  const s = game.s;
+  switch (id) {
+    case 'skarbiec': return ['Goblin z workiem', 'Bestie'];
+    case 'sztolnia': return [DUNGEON_FOES[1], 'Bestie'];
+    case 'wieza': return ['Strażnik piętra', 'Demony'];
+    case 'leza': { const L = landDef(Math.max(0, Math.min(s.maxLand, 15) - 1)); return [L.boss, L.type]; }
+    case 'oltarze': return [`Strażnik: ${ELEM[elementOfDay(game.ctx.now())].el}`, 'Demony'];
+    case 'kopalnia': return ['Kryształowy golem', 'Bestie'];
+    case 'labirynt': return ['Minotaur', 'Bestie'];
+    case 'zbrojownia': return ['Duch dawnego kowala', 'Nieumarli'];
+    case 'krypta': return ['Strażnik Krypty', 'Nieumarli'];
+    case 'sezon': { const ev = eventOf(game.ctx.now()).def; return [ev.boss, ev.type]; }
+  }
+}
+
+/** Ruszający się strażnik (dwie klatki), przy zablokowanym lochu — sama sylwetka. */
+function Guardian({ game, id, locked = false }: { game: Game; id: DungId; locked?: boolean }) {
+  const [name, type] = guardian(game, id);
+  return <img class={`dt-foe${locked ? ' shadow' : ''}`} src={foeUrl(name, type, locked ? 0 : frameAt(game.ctx.now(), 520))} alt="" aria-hidden="true" />;
+}
+
+/** Zablokowany loch w siatce: wyblakły kafelek z sylwetką strażnika, kłódką i warunkiem. */
+function LockedTile({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: DungId) => void }) {
+  const n = dungName(id, game.ctx.now());
+  const [rn, ric] = reward(game, id);
+  return (
+    <button class="card dung tile locked" onClick={() => onInfo(id)} aria-label={`${n}: zablokowany — ${dungUnlockText(id)}`}
+      style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>}>
+      <Guardian game={game} id={id} locked />
+      <div class="dt-top"><span class="dt-reward"><Px src={ric} size={20} />{rn}</span><span class="dt-lock"><LockIcon /></span></div>
+      <div class="dt-name">{n}</div>
+      <div class="dt-meta dt-when">{dungUnlockText(id)}</div>
+    </button>
+  );
+}
+
 function DungTile({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: DungId) => void }) {
   const D = { ...DUNGEONS[id], n: dungName(id, game.ctx.now()) };
   const keys = game.dungKeys(id);
@@ -90,6 +130,7 @@ function DungTile({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: D
   const enter = () => { if (game.startDung(id)) window.scrollTo?.({ top: 0, behavior: 'smooth' }); };
   return (
     <section class={`card dung tile${here ? ' here' : ''}${blocked ? ' spent' : ''}${id === 'sezon' ? ' event' : ''}`} aria-label={D.n} style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>}>
+      <Guardian game={game} id={id} />
       <div class="dt-top">
         <span class="dt-reward"><Px src={ric} size={20} />{rn}</span>
         <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${D.n}`}>i</button>
@@ -131,30 +172,17 @@ export function DungeonPanel({ game, online = false, onArena, onInfo, onEvent }:
     <>
       {arena && <ArenaBanner game={game} online={online} onArena={onArena!} />}
       <EventBanner game={game} onOpen={onEvent} />
-      <div class="dung-head">
-        <div><div class="eyebrow">Lochy</div><div class="h">Wyprawy po łupy</div></div>
-        <span class="dh-reset"><Px src={resUrl('klucz')} size={18} />nowe klucze za {tfmt(untilMidnight(game.ctx.now()))}</span>
+      <section class="card dung-headc">
+        <Banner bg={dungeonBgUrl('sztolnia')} icon={<Px src={resUrl('klucz')} size={32} />} eyebrow={`Lochy · otwarte ${open.length}/${DUNG_ORDER.length}`} title="Wyprawy po łupy" />
+        <p class="sub dh-line">
+          {open.length === 0 ? 'Pierwszy loch otworzy się po pokonaniu bossa pierwszej krainy.'
+            : <><Px src={resUrl('klucz')} size={16} />Nowe klucze za {tfmt(untilMidnight(game.ctx.now()))} · rekordy i nagrody pod „i”</>}
+        </p>
+      </section>
+      <div class="dgrid">
+        {open.map(id => <DungTile key={id} game={game} id={id} onInfo={onInfo} />)}
+        {locked.map(id => <LockedTile key={id} game={game} id={id} onInfo={onInfo} />)}
       </div>
-      {open.length > 0 ? (
-        <div class="dgrid">{open.map(id => <DungTile key={id} game={game} id={id} onInfo={onInfo} />)}</div>
-      ) : <section class="card"><p class="sub">Pierwszy loch otworzy się po pokonaniu bossa pierwszej krainy.</p></section>}
-      {locked.length > 0 && (
-        <section class="card">
-          <div class="eyebrow">Do odblokowania</div>
-          <ul class="dlocked">
-            {locked.map(id => {
-              const [rn, ric] = reward(game, id);
-              return (
-                <li key={id}>
-                  <Px src={ric} size={24} />
-                  <div><b>{dungName(id, game.ctx.now())}</b><small>{rn} · {dungUnlockText(id)}</small></div>
-                  <button class="info" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${dungName(id, game.ctx.now())}`}>i</button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
     </>
   );
 }

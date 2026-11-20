@@ -62,3 +62,41 @@ describe('osiągnięcia', () => {
     expect(g.claimable()).toBe(c0 + 1);
   });
 });
+
+describe('osiągnięcia długoterminowe i Sława kowala', () => {
+  it('próg daje Sławę (wyższy próg — więcej), a Sława daje tytuły', () => {
+    const { g, s } = makeGame(11);
+    s.stats.smelted = 1000;
+    const f0 = s.smith.fame;
+    expect(g.claimAch('kowal')).not.toBeNull();
+    expect(s.smith.fame).toBe(f0 + 25);
+    expect(g.claimAch('kowal')).not.toBeNull();
+    expect(s.smith.fame).toBe(f0 + 25 + 50);
+  });
+
+  it('nowe osiągnięcia liczą wytopy Legendarne+, zadania, dni logowania i poziomy badań', () => {
+    const { s } = makeGame(12);
+    s.stats.leg = 12; s.stats.missions = 101; s.stats.days = 31;
+    s.tech.lv = { k_hart: 5, k_miech: 6 };
+    expect(achReached(s, 'legendy')).toBe(2);
+    expect(achReached(s, 'zadania')).toBe(2);
+    expect(achReached(s, 'dni')).toBe(2);
+    expect(achValue(s, 'nauka')).toBe(11);
+  });
+
+  it('stare progi zostają na swoich miejscach (nowe dopisane tylko na końcu)', () => {
+    expect(ACHIEVEMENTS.kowal.tiers.slice(0, 5)).toEqual([100, 1000, 10000, 50000, 200000]);
+    expect(ACHIEVEMENTS.bossowie.tiers.slice(0, 5)).toEqual([5, 16, 50, 150, 400]);
+    for (const A of Object.values(ACHIEVEMENTS)) for (let i = 1; i < A.tiers.length; i++) expect(A.tiers[i]).toBeGreaterThan(A.tiers[i - 1]);
+  });
+
+  it('stary zapis dostaje raz Sławę za już odebrane progi', () => {
+    const { s } = makeGame(13);
+    const raw = JSON.parse(JSON.stringify(s));
+    raw.ach = { kowal: 2, bossowie: 1 };
+    raw.smith = { fame: 100, sent: [], log: [] }; // bez znacznika v
+    const m = migrate(raw, T0);
+    expect(m.smith.fame).toBe(100 + 25 + 50 + 25);
+    expect(migrate(JSON.parse(JSON.stringify(m)), T0).smith.fame).toBe(m.smith.fame); // tylko raz
+  });
+});

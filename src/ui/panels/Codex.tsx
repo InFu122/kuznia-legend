@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { FRAME_IDS, LANDS, SKIN_IDS } from '../../data';
 import { Avatar } from '../Avatar';
 import { showProfile } from '../profile';
-import { smithTitle } from '../../engine/formulas';
+import { nextSmithTitle, smithTitle } from '../../engine/formulas';
 import { abyssCleared } from '../../engine/achievements';
 import { pl } from '../texts';
 import type { Game } from '../../engine/game';
@@ -241,6 +241,7 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
   const saveMode = save.mode;
   const s = game.s;
   const t = smithTitle(s.smith.fame);
+  const next = nextSmithTitle(s.smith.fame);
   return (
     <>
       <section class="card">
@@ -255,6 +256,9 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
             </div>
           </div>
         </div>
+        <p class="sub" style={{ marginTop: '8px' }}>
+          Sława kowala: <b class="num">{fmt(s.smith.fame)}</b>{next ? ` · do tytułu ${next.n}: ${fmt(next.at - s.smith.fame)}` : ''}. Sławę dają progi osiągnięć (Menu → Zadania → Osiągnięcia).
+        </p>
       </section>
       {(saveMode === 'server' || saveMode === 'offline' || saveMode === 'connecting') && (
         <section class="card">

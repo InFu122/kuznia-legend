@@ -1,8 +1,9 @@
 // Osiągnięcia (zakładka w oknie Zadań) i Kolekcja Kowala (karta w Kodeksie).
 import { useState } from 'preact/hooks';
-import { ACHIEVEMENTS, ACH_IDS, CODEX_PCT, ORES, ORE_ORDER, SLOTS, SLOT_ORDER } from '../../data';
-import { itemUrl, oreUrl } from '../../art/render';
-import { ALL_KINDS, CODEX_TOTAL, achClaimed, achGoalText, achReached, achReward, achValue, codexOre } from '../../engine/achievements';
+import { ACHIEVEMENTS, ACH_IDS, CODEX_PCT, ORES, ORE_ORDER, SLOTS, SLOT_ORDER, achFame } from '../../data';
+import { itemUrl, oreUrl, resUrl } from '../../art/render';
+import { nextSmithTitle, smithTitle } from '../../engine/formulas';
+import { ALL_KINDS, CODEX_TOTAL, achClaimed, achGoalText, achReached, achReward, achValue, codexOre, roman } from '../../engine/achievements';
 import { RewardIcons } from '../RewardIcons';
 import type { Game } from '../../engine/game';
 import { f1, fmt } from '../format';
@@ -14,9 +15,26 @@ export function AchievementsView({ game }: { game: Game }) {
     .sort((a, b) => Number(b.reached > b.got) - Number(a.reached > a.got) || Number(a.got >= a.A.tiers.length) - Number(b.got >= b.A.tiers.length));
   const done = ACH_IDS.reduce((n, id) => n + achClaimed(s, id), 0);
   const all = ACH_IDS.reduce((n, id) => n + ACHIEVEMENTS[id].tiers.length, 0);
+  const fame = s.smith.fame;
+  const title = smithTitle(fame);
+  const next = nextSmithTitle(fame);
   return (
     <>
-      <p class="sub">Długie cele na całą grę — kuźnia rośnie do 200. poziomu, a Otchłań nie ma dna. Zdobyte progi: <b class="num">{done}/{all}</b>.</p>
+      <div class="ach-head">
+        <Px src={resUrl('trofeum')} size={36} />
+        <div class="ah-main">
+          <div class="eyebrow">Piętno Kowala · Sława {fmt(fame)}</div>
+          <div class="h">{title.n}</div>
+          {next ? (
+            <>
+              <div class="bar thin"><i style={{ width: Math.min(100, ((fame - title.at) / (next.at - title.at)) * 100) + '%' }} /></div>
+              <small>do tytułu {next.n}: {fmt(next.at - fame)} Sławy</small>
+            </>
+          ) : <small>Najwyższy tytuł kowala</small>}
+        </div>
+        <span class="ah-num" aria-label={`Zdobyte progi: ${done} z ${all}`}><b>{done}</b>/{all}</span>
+      </div>
+      <p class="sub">Długie cele na całą grę. Każdy próg daje nagrodę i Sławę kowala (wyższe progi — więcej), a Sława daje tytuły.</p>
       <ul class="clist achlist">
         {list.map(({ id, got, reached, A }) => {
           const max = got >= A.tiers.length;
@@ -27,10 +45,10 @@ export function AchievementsView({ game }: { game: Game }) {
           return (
             <li key={id} class={ready ? 'ready' : max ? 'max' : ''}>
               <div class="cmain">
-                <div class="cname">{A.n} <span class="achpips" aria-label={`${got} z ${A.tiers.length}`}>{A.tiers.map((_, i) => <i key={i} class={i < got ? 'on' : i < reached ? 'ready' : ''} />)}</span></div>
+                <div class="cname">{A.n} <span class="ach-tier">{got ? roman(got) : '—'}<small>/{roman(A.tiers.length)}</small></span> <span class="achpips" aria-label={`${got} z ${A.tiers.length}`}>{A.tiers.map((_, i) => <i key={i} class={i < got ? 'on' : i < reached ? 'ready' : ''} />)}</span></div>
                 <div class="tech-cost">{max ? 'Wszystkie progi zdobyte' : `${achGoalText(id, t)} · ${id === 'rzadkosc' ? (v >= goal ? 'gotowe' : 'jeszcze nie') : `${fmt(Math.min(v, goal))}/${fmt(goal)}`}`}</div>
                 {!max && id !== 'rzadkosc' && <div class="bar thin"><i style={{ width: Math.min(100, (v / goal) * 100) + '%' }} /></div>}
-                {!max && <div class="tech-cost">Nagroda: <RewardIcons r={achReward(s, t)} size={16} /></div>}
+                {!max && <div class="ach-rew"><span class="tech-cost">Próg {roman(t + 1)}:</span><RewardIcons r={achReward(s, t)} size={16} /><span class="ach-fame">+{achFame(t)} Sławy</span></div>}
               </div>
               {ready && <button class="btn small primary" onClick={() => game.claimAch(id)}>Odbierz</button>}
             </li>
