@@ -49,7 +49,8 @@ function Message({ m, open, onMenu, onMute, onReport }: { m: ChatMsg; open: bool
 
 export function ChatView({ game, initial, close, goClan }: { game: Game; initial?: ChatCh; close: () => void; goClan: () => void }) {
   const chat = getChat();
-  const [ch, setCh] = useState<ChatCh>(initial ?? (chat?.clanId ? 'clan' : 'global'));
+  // Czat z Menu otwiera się na kanale globalnym; kanał klanu — z zakładki Klan albo z wiadomości klanu w wyskakującym pasku.
+  const [ch, setCh] = useState<ChatCh>(initial ?? 'global');
   const [, force] = useState(0);
   const [text, setText] = useState('');
   const [note, setNote] = useState('');

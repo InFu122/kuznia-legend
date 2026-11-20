@@ -218,7 +218,16 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {s.speed > 1 && <span class="speed-badge" title="Tempo testowe">×{s.speed}</span>}
           {(save.error || save.mode === 'offline' || save.mode === 'connecting') && (
             <button class={`net-pill ${save.mode}`} title={save.error ?? save.reason}
-              onClick={() => toast(game.ctx, save.error ? `Serwer odrzucił zapis: ${save.error}` : save.reason || (save.mode === 'connecting' ? 'Łączenie z serwerem…' : 'Brak połączenia z serwerem — gra zapisuje się na telefonie.'), save.error ? 'bad' : undefined)}>
+              onClick={() => {
+                if (save.error) { toast(game.ctx, `Serwer odrzucił zapis: ${save.error}`, 'bad'); return; }
+                if (save.mode === 'offline' && save.retry) {
+                  // Dotknięcie „Offline” od razu próbuje połączyć (gra i tak próbuje sama co kilka sekund).
+                  toast(game.ctx, `Łączę ponownie… ${save.reason ? `(${save.reason})` : ''}`.trim());
+                  save.retry();
+                  return;
+                }
+                toast(game.ctx, save.reason || (save.mode === 'connecting' ? 'Łączenie z serwerem…' : 'Brak połączenia z serwerem — gra zapisuje się na telefonie.'));
+              }}>
               {save.error ? 'Zapis odrzucony' : save.mode === 'connecting' ? 'Łączenie…' : 'Offline'}
             </button>
           )}

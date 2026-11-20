@@ -9,6 +9,10 @@ export const GLOBAL_ROOM = 'global-pl';
 const MUTED_KEY = 'kuznia-legend-muted';
 const HISTORY = 50;
 const RECONNECT_MS = 5000;
+/** Tyle czeka na otwarcie gniazda i na odpowiedź na „ping” — dłużej znaczy, że połączenie jest martwe. */
+const WAIT_MS = 10000;
+/** Co tyle (gdy gra jest na ekranie) gra sprawdza, czy połączenie z czatem żyje. */
+const PING_EVERY_MS = 60000;
 
 export interface DropCard { name: string; r: number; slot: SlotId; kind?: string; lvl: number; ore: number; subs: { id: SubId; v: number }[]; el: ElemKey | null; set: SetId | null }
 export interface ChatMsg {
@@ -54,33 +58,70 @@ export class ChatLink {
     if (this.ws || this.state === 'connecting') return;
     clearTimeout(this.retry);
     this.state = 'connecting';
+    this.watch();
     try {
       const token = await this.link.session();
       this.me = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).uid ?? '';
       const ws = new WebSocket(this.link.base.replace(/^http/, 'ws') + '/ws?status=false&token=' + encodeURIComponent(token));
       this.ws = ws;
       ws.onmessage = ev => this.receive(String(ev.data));
-      ws.onclose = () => {
-        this.ws = null;
-        this.state = 'off';
-        this.ids = {};
-        for (const p of this.pend.values()) p.no(new Error('Brak połączenia z czatem.'));
-        this.pend.clear();
-        this.changed();
-        this.retry = setTimeout(() => void this.start(), RECONNECT_MS);
-      };
-      await new Promise<void>((ok, no) => { ws.onopen = () => ok(); ws.onerror = () => no(new Error('czat niedostępny')); });
+      ws.onclose = () => this.drop(ws, RECONNECT_MS);
+      // Na telefonie gniazdo potrafi nie otworzyć się ani nie zgłosić błędu (zmiana sieci) — wtedy po 10 s od nowa.
+      await new Promise<void>((ok, no) => {
+        const t = setTimeout(() => no(new Error('czat nie odpowiada')), WAIT_MS);
+        ws.onopen = () => { clearTimeout(t); ok(); };
+        ws.onerror = () => { clearTimeout(t); no(new Error('czat niedostępny')); };
+      });
       this.state = 'on';
       await this.join('global', GLOBAL_ROOM, 1);
       if (this.clanId) await this.join('clan', this.clanId, 3);
       this.changed();
     } catch {
-      this.state = 'off';
-      this.ws?.close();
-      this.ws = null;
-      this.retry = setTimeout(() => void this.start(), RECONNECT_MS * 2);
-      this.changed();
+      const ws = this.ws;
+      if (ws) { ws.onclose = null; try { ws.close(); } catch { /* już zamknięte */ } this.drop(ws, RECONNECT_MS * 2); }
+      else { this.state = 'off'; this.retry = setTimeout(() => void this.start(), RECONNECT_MS * 2); this.changed(); }
     }
+  }
+
+  /** Zerwane połączenie: czyści stan i planuje następną próbę za `wait` ms. */
+  private drop(ws: WebSocket, wait: number): void {
+    if (this.ws !== ws) return;
+    this.ws = null;
+    this.state = 'off';
+    this.ids = {};
+    for (const p of this.pend.values()) p.no(new Error('Brak połączenia z czatem.'));
+    this.pend.clear();
+    this.changed();
+    clearTimeout(this.retry);
+    this.retry = setTimeout(() => void this.start(), wait);
+  }
+
+  /**
+   * Powrót do gry albo odzyskanie sieci: bez połączenia — próba od razu (bez czekania na następną);
+   * z połączeniem — „ping”, a gdy serwer nie odpowie w 10 s, gniazdo jest martwe i czat łączy się od nowa.
+   */
+  wake(): void {
+    if (!this.ws) {
+      if (this.state !== 'connecting') { clearTimeout(this.retry); void this.start(); }
+      return;
+    }
+    if (this.state !== 'on') return;
+    const ws = this.ws;
+    const t = setTimeout(() => {
+      if (this.ws !== ws) return;
+      ws.onclose = null;
+      try { ws.close(); } catch { /* już zamknięte */ }
+      this.drop(ws, 0);
+    }, WAIT_MS);
+    this.send({ ping: {} }).then(() => clearTimeout(t), () => clearTimeout(t));
+  }
+
+  /** Raz na minutę, gdy gra jest na ekranie: sprawdzenie, czy czat żyje. */
+  private watching = false;
+  private watch(): void {
+    if (this.watching || typeof document === 'undefined') return;
+    this.watching = true;
+    setInterval(() => { if (!document.hidden) this.wake(); }, PING_EVERY_MS);
   }
 
   private send(msg: Record<string, unknown>): Promise<Record<string, unknown>> {

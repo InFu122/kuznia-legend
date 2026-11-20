@@ -19,7 +19,11 @@ import { watchErrors } from './ui/report';
 import './ui/fonts.css';
 import './ui/styles.css';
 
-const RETRY_MS = 60000;
+/**
+ * Kolejne próby połączenia z serwerem po zerwaniu: szybko na początku, potem rzadziej (5 s, 10 s, 20 s, 40 s, dalej co minutę).
+ * Powrót do gry i odzyskanie sieci próbują od razu.
+ */
+const RETRY_STEPS = [5000, 10000, 20000, 40000, 60000];
 /** Co ile gra uzupełnia u serwera zapas przedmiotów dawnych kowali (Zapomniana Zbrojownia). */
 const GHOST_MS = 120000;
 
@@ -108,6 +112,7 @@ function boot(hotData?: { s?: string }) {
       game.setMaxSpeed(l.testSpeed);
       save.mode = 'server';
       save.error = undefined;
+      fails = 0;
       startChat(l);
       void extras(l);
       if (!recovered) { recovered = true; void finishPurchases(l); }
@@ -116,8 +121,7 @@ function boot(hotData?: { s?: string }) {
       l.online = false;
       save.mode = 'offline';
       save.reason = why(e);
-      clearTimeout(retry);
-      retry = setTimeout(() => void connect(l), RETRY_MS);
+      later(l);
     }
   };
 
@@ -160,7 +164,17 @@ function boot(hotData?: { s?: string }) {
   };
 
   let retry: ReturnType<typeof setTimeout> | undefined;
+  let fails = 0;
+  let connecting = false;
+  /** Następna próba połączenia — coraz rzadziej, im więcej nieudanych z rzędu. */
+  const later = (l: ServerLink) => {
+    clearTimeout(retry);
+    retry = setTimeout(() => void connect(l), RETRY_STEPS[Math.min(fails, RETRY_STEPS.length - 1)]);
+    fails++;
+  };
   const connect = async (l: ServerLink) => {
+    if (connecting) return;
+    connecting = true;
     clearTimeout(retry);
     try {
       bootStep(80, 'Łączenie z serwerem…');
@@ -174,13 +188,20 @@ function boot(hotData?: { s?: string }) {
       save.mode = 'offline';
       save.reason = why(e);
       console.warn('Kuźnia Legend: serwer niedostępny —', save.reason);
-      retry = setTimeout(() => void connect(l), RETRY_MS);
+      later(l);
     } finally {
+      connecting = false;
       bootDone();
     }
   };
+  /** Bez połączenia: spróbuj od razu (powrót do gry, odzyskana sieć, dotknięcie „Offline”). */
+  const reconnectNow = () => {
+    if (!link || link.online || connecting) return;
+    fails = 0;
+    void connect(link);
+  };
   if (link) {
-    save.retry = () => { save.mode = 'connecting'; void connect(link); };
+    save.retry = () => { save.mode = 'connecting'; reconnectNow(); };
     // Przeniesienie konta: to urządzenie dołącza do konta z kodu i przejmuje jego zapis.
     save.redeem = async (code: string) => {
       const remote = await link.redeem(code);
@@ -248,7 +269,14 @@ function boot(hotData?: { s?: string }) {
     game.takeDirty();
     void persist().finally(() => { refill = false; });
   }, 2000);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) void persist(); });
+  // Telefon w kieszeni: zapis przy wyjściu z gry. Po powrocie (i po odzyskaniu sieci) gra sama łączy się od nowa —
+  // zapis w tle często się nie udaje, bo system wstrzymuje sieć, a czekanie na następną próbę wyglądało jak rozłączenie.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { void persist(); return; }
+    reconnectNow();
+    chat?.wake();
+  });
+  window.addEventListener('online', () => { reconnectNow(); chat?.wake(); });
   save.flush = persist;
   setFlush(persist);
   initPwa();
