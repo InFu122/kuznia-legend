@@ -4,29 +4,23 @@
 import { FAKE_PLAYERS } from '../../src/data';
 import { pick, ri } from '../../src/engine/rng';
 import { EXHAUSTED, INVALID, PRECONDITION, SYSTEM_USER, err, parse, serverRng, userOf } from './common';
+import { NICK_NOUNS, nickFormatProblem, tidyName } from '../../src/engine/nick';
 import { fold, nameClean } from './filter';
 
-export const NAME_MIN = 3;
-export const NAME_MAX = 16;
+export { NAME_MAX, NAME_MIN, tidyName } from '../../src/engine/nick';
 /** Zmiana nicku najwyżej raz na dobę (pierwsza zmiana wygenerowanego nicku — od razu). */
 export const RENAME_COOLDOWN_MS = 24 * 3600000;
-const NAME_CHARS = /^[A-Za-z0-9ĄĆĘŁŃÓŚŹŻąćęłńóśźż _.\-]+$/;
 const RESERVED = ['kowal', 'duch', 'admin', 'administrator', 'moderator', 'mod', 'system', 'serwer', 'kuznialegend', 'gm', ...FAKE_PLAYERS];
-const NOUNS = ['Iskra', 'Młot', 'Kowadło', 'Miech', 'Żar', 'Stal', 'Ruda', 'Grot', 'Hart', 'Ogień', 'Kleszcze', 'Topór'];
 
 interface Mine { n: string; key: string; t: number; gen: boolean }
 
 /** Klucz w rejestrze: „Łukasz_K.” i „lukaszk” to ten sam nick. */
 export const nameKey = (n: string) => fold(n).replace(/[^a-z0-9]/g, '');
 
-/** Porządkuje nick: bez nadmiarowych spacji. */
-export const tidyName = (n: unknown) => (typeof n === 'string' ? n.replace(/\s+/g, ' ').trim() : '');
-
 /** Opis problemu z nickiem albo null, gdy nick można nadać. */
 export function nickProblem(n: string): string | null {
-  if (n.length < NAME_MIN || n.length > NAME_MAX) return `Nick musi mieć od ${NAME_MIN} do ${NAME_MAX} znaków.`;
-  if (!NAME_CHARS.test(n)) return 'Nick może zawierać litery, cyfry, spację oraz znaki _ . -';
-  if (!/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/.test(n)) return 'Nick musi zawierać co najmniej jedną literę.';
+  const bad = nickFormatProblem(n);
+  if (bad) return bad;
   const key = nameKey(n);
   if (key.length < 2) return 'Nick jest za krótki.';
   if (RESERVED.some(r => nameKey(r) === key)) return 'Tego nicku nie można użyć.';
@@ -64,7 +58,7 @@ function setMine(nk: nkruntime.Nakama, userId: string, mine: Mine): void {
 function generate(nk: nkruntime.Nakama, userId: string): string {
   const rng = serverRng(nk);
   for (let i = 0; i < 30; i++) {
-    const n = `${pick(rng, NOUNS)}_${ri(rng, i < 20 ? 100 : 10000, i < 20 ? 9999 : 99999)}`;
+    const n = `${pick(rng, NICK_NOUNS)}_${ri(rng, i < 20 ? 100 : 10000, i < 20 ? 9999 : 99999)}`;
     if (claim(nk, userId, n)) return n;
   }
   throw err('Nie udało się nadać nicku, spróbuj ponownie.', EXHAUSTED);

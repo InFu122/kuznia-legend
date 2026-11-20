@@ -34,7 +34,7 @@ import { initHistoryBack, initNative } from './native';
 import { runBack } from './back';
 
 /** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
-const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide']);
+const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide', 'intro']);
 /** Okna, przy których auto-wytop i walka idą dalej (nie czekają na decyzję gracza). */
 const NOT_BUSY = new Set<ModalData['kind']>(['chat', 'ranking', 'arena', 'menu', 'ores']);
 

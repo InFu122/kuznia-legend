@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import { DEFAULT_NAME } from './engine/nick';
 import { B, R, rGe } from './data';
 import { Game } from './engine/game';
 import { migrate, newState } from './engine/state';
@@ -60,9 +61,12 @@ function boot(hotData?: { s?: string }) {
   /** Nick nadaje serwer (unikalny); nowy gracz dowiaduje się, jak go zmienić. */
   const takeName = (r: { name?: string; newName?: boolean }) => {
     if (!r.name || r.name === game.s.name) return;
-    const generated = r.newName;
+    const wanted = game.s.name;
     game.applyServerName(r.name);
-    if (generated) toast(game.ctx, `Twój nick: ${r.name}. Zmienisz go w Kodeksie.`, 'good');
+    if (!r.newName) return;
+    // Nowy gracz jeszcze w oknie powitalnym (imię wybierze za chwilę) — bez komunikatu.
+    if (wanted === DEFAULT_NAME) { if (game.s.stats.smelted > 0) toast(game.ctx, `Twój nick: ${r.name}. Zmienisz go w Kodeksie.`, 'good'); }
+    else toast(game.ctx, `Imię „${wanted}” jest już zajęte — grasz jako ${r.name}. Zmienisz je w Kodeksie.`, 'good');
   };
 
   /** Czat i klan startują po pierwszym udanym połączeniu z serwerem. */

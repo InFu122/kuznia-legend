@@ -1610,3 +1610,7 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .ore2.locked{opacity:.55}
 .ore2.locked img{filter:grayscale(.6)}
 .dock-go.swap .dg-t small{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%}
+.intro-name{margin-top:12px; gap:6px}
+.intro-name label{font-weight:700; color:var(--frost)}
+.intro-name .btn.primary{margin-top:6px}
+.intro-name small.bad{color:var(--blood)}

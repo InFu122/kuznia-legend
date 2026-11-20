@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { LockIcon } from './icons';
 import { unlockProgress, unlockWhen } from '../engine/unlocks';
 import { tutStep } from '../engine/tutorial';
+import { DEFAULT_NAME, NAME_MAX, nickFormatProblem, suggestNick, tidyName } from '../engine/nick';
+import { ServerError, getLink } from '../save/server';
 import { onBack } from './back';
 import { JUMP_TO_MULT_RANK, baseName, dist, gOf, goldWaveOf, itemName, oreNominal, recPower } from '../engine/formulas';
 import { allMods } from '../engine/mods';
@@ -118,20 +120,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       );
     }
     case 'intro':
-      return (
-        <>
-          <div class="eyebrow">Spalona Wioska</div>
-          <div class="h">Kuźnia Legend</div>
-          <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i worek rudy: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie — nie pozwól mu iść z gołymi rękami”.</p>
-          <ul class="list">
-            <li>Bohater walczy sam. Ty przetapiasz rudy, które wypadają z wrogów, na ekwipunek.</li>
-            <li>Lepsza ruda to rzadsze przedmioty, a kuźnia daje szansę na przeskok o rzadkość wyżej. Z każdym poziomem kuźni wyniki są coraz lepsze.</li>
-            <li>Na początku masz tylko kuźnię i walkę — reszta odblokowuje się po kolei. Przy zablokowanych funkcjach zobaczysz kłódkę.</li>
-            <li>Założone przedmioty zbierają Sławę Czynów i w końcu budzą się z własnym imieniem.</li>
-          </ul>
-          <Close onClose={close} label="Rozpal kuźnię" />
-        </>
-      );
+      return <IntroView game={game} close={close} />;
     case 'boss': {
       const L = landDef(m.land);
       const next = landDef(m.land + 1);
@@ -565,3 +554,56 @@ function MixView({ game, what, close }: { game: Game; what: 'el' | 'set'; close:
   );
 }
 
+
+/**
+ * Powitanie nowego gracza: historia, zasady w czterech zdaniach i imię kowala, które jest też nickiem
+ * (podpis na przedmiotach, nazwa nad bohaterem, ranking i czat). Z serwerem nick od razu trafia do rejestru;
+ * zajęty albo niedozwolony — komunikat w oknie. Bez serwera (albo zanim powstało konto) imię zostaje w grze,
+ * a pierwszy zapis na serwerze zajmie je, jeśli jest wolne.
+ */
+function IntroView({ game, close }: { game: Game; close: () => void }) {
+  const [v, setV] = useState(() => (game.s.name !== DEFAULT_NAME ? game.s.name : suggestNick()));
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const go = async (e: Event) => {
+    e.preventDefault();
+    const n = tidyName(v);
+    const bad = nickFormatProblem(n);
+    if (bad) { setMsg(bad); return; }
+    const link = getLink();
+    if (!link || !game.net || n === game.s.name) { if (n !== game.s.name) game.setName(n); close(); return; }
+    setBusy(true);
+    try {
+      game.applyServerName((await link.nameSet(n)).name);
+    } catch (x) {
+      // Nick zajęty, zastrzeżony albo z niedozwolonym słowem — gracz wybiera inny.
+      if (x instanceof ServerError && !/Najpierw zapisz/.test(x.message)) { setMsg(x.message); setBusy(false); return; }
+      game.setName(n); // konto jeszcze bez zapisu albo brak sieci: nick zajmie pierwszy zapis
+    }
+    setBusy(false);
+    close();
+  };
+  return (
+    <>
+      <div class="eyebrow">Spalona Wioska</div>
+      <div class="h">Kuźnia Legend</div>
+      <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i worek rudy: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie — nie pozwól mu iść z gołymi rękami”.</p>
+      <ul class="list">
+        <li>Bohater walczy sam. Ty przetapiasz rudy, które wypadają z wrogów, na ekwipunek.</li>
+        <li>Lepsza ruda to rzadsze przedmioty, a kuźnia daje szansę na przeskok o rzadkość wyżej. Z każdym poziomem kuźni wyniki są coraz lepsze.</li>
+        <li>Na początku masz tylko kuźnię i walkę — reszta odblokowuje się po kolei. Przy zablokowanych funkcjach zobaczysz kłódkę.</li>
+        <li>Założone przedmioty zbierają Sławę Czynów i w końcu budzą się z własnym imieniem.</li>
+      </ul>
+      <form class="field intro-name" onSubmit={go}>
+        <label for="intro-nick">Jak się nazywasz, kowalu?</label>
+        <div class="chat-in">
+          <input id="intro-nick" maxLength={NAME_MAX} value={v} autoComplete="off" autoCapitalize="words" spellcheck={false}
+            onInput={e => { setV(e.currentTarget.value); setMsg(''); }} />
+          <button type="button" class="btn small" disabled={busy} onClick={() => { setV(suggestNick()); setMsg(''); }} aria-label="Wylosuj inne imię">Losuj</button>
+        </div>
+        <small class={msg ? 'bad' : 'muted'}>{msg || 'To twój nick: podpis na wykutych przedmiotach, imię w rankingach i na czacie. Zmienisz go później w Kodeksie.'}</small>
+        <button class="btn primary" disabled={busy}>{busy ? 'Chwila…' : 'Rozpal kuźnię'}</button>
+      </form>
+    </>
+  );
+}

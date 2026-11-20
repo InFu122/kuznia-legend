@@ -1,4 +1,5 @@
 import { AD, AD_BUFFS, B, DUNG_ORDER, ELEM, FEATURES, ORES, R, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, rGe, rTier, type AchId, type FeatureId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
+import { DEFAULT_NAME, NAME_MAX, tidyName } from './nick';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
@@ -384,7 +385,7 @@ export class Game {
   dungUnlocked(id: DungId): boolean { return dungUnlocked(this.ctx, id); }
   dungTier(): number { return dungTier(this.ctx); }
   setName(n: string): string {
-    this.s.name = n.trim().slice(0, 16) || 'Kowal';
+    this.s.name = tidyName(n).slice(0, NAME_MAX) || DEFAULT_NAME;
     this.ctx.dirty = true;
     this.changed();
     return this.s.name;
