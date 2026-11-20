@@ -211,7 +211,25 @@ function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
       timer = setTimeout(tick, STEP_MS);
     };
     let timer = setTimeout(tick, STEP_MS);
-    return () => clearTimeout(timer);
+    // Dotknięcie w dowolnym miejscu ekranu pomija animację. Kliknięcie, które z niego wynika, jest „zjadane”,
+    // żeby nie trafiło w przycisk Załóż/Sprzedaj, który pojawi się w tym samym miejscu.
+    let eat: ((ev: Event) => void) | null = null;
+    const skip = () => {
+      if (done.current) return;
+      eat = ev => { ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener('click', eat, true);
+      setTimeout(() => { if (eat) document.removeEventListener('click', eat, true); }, 450);
+      clearTimeout(timer);
+      finish();
+    };
+    const key = (ev: KeyboardEvent) => { if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Escape') { ev.preventDefault(); skip(); } };
+    document.addEventListener('pointerdown', skip, true);
+    document.addEventListener('keydown', key, true);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('pointerdown', skip, true);
+      document.removeEventListener('keydown', key, true);
+    };
   }, []);
   const st = steps[i];
   const climbed = st !== 'hot' && st > floor;
@@ -230,7 +248,7 @@ function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
           <i key={r} class={`rb-${r}${k < start || k > floor + mj ? ' out' : ''}${st !== 'hot' && k >= start && k <= st ? ' lit' : ''}`} />
         ))}
       </div>
-      <small class="fa-skip">dotknij, żeby pominąć</small>
+      <small class="fa-skip">dotknij gdziekolwiek, żeby pominąć</small>
     </div>
   );
 }

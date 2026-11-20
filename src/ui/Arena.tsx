@@ -2,7 +2,7 @@ import { dungScene } from '../engine/events';
 import { skinOr } from '../engine/cosmetics';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { AD_BUFFS, BUFF_IDS, ORES, SETS, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId, actName, landDef, rRank } from '../data';
-import { dungeonBgUrl, elemUrl, foeSize, foeUrl, frameAt, heroUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl } from '../art/render';
+import { companionUrl, dungeonBgUrl, elemUrl, foeSize, foeUrl, frameAt, heroUrl, itemUrl, landBgUrl, oreUrl, resUrl, setOreUrl, skillUrl } from '../art/render';
 import { passLevel, passUnclaimed } from '../engine/shop';
 import { foeTemplate } from '../art/actors';
 import { Px } from './Px';
@@ -100,6 +100,7 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
   const [loots, setLoots] = useState<Loot[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
   const foeRef = useRef<HTMLDivElement>(null);
+  const petRef = useRef<HTMLDivElement>(null);
   const lastFloat = useRef(0);
   const nextId = useRef(0);
 
@@ -123,6 +124,14 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
         setLoots(ls => [...ls.slice(-1), { id, drops: e.drops, boss: !!e.boss }]);
         setTimeout(() => setLoots(ls => ls.filter(x => x.id !== id)), e.boss ? 2600 : 1700);
       } else if (e.t === 'float') {
+        // Atak chowańca: skacze na wroga.
+        if (e.cls === 'pet' && petRef.current) {
+          const el = petRef.current;
+          el.classList.remove('lunge');
+          void el.offsetWidth;
+          el.classList.add('lunge');
+          setTimeout(() => el.classList.remove('lunge'), 360);
+        }
         const now = performance.now();
         if (!e.force && now - lastFloat.current < 110) return;
         lastFloat.current = now;
@@ -154,6 +163,8 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
   const shown = e ?? lastFoe.current?.e ?? null;
   const dead = !e || e.hp <= 0;
   const best = bestRarity(s.eq);
+  const pet = s.petSel && s.pets[s.petSel] ? s.petSel : null;
+  const mount = s.mountSel && s.mounts[s.mountSel] ? s.mountSel : null;
   const side = s.tut >= TUTORIAL.length && s.forge.lvl >= 3;
   const tnow = typeof performance !== 'undefined' ? performance.now() : 0;
   return (
@@ -178,10 +189,13 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
           })}
         </div>
       )}
-      <div class={`stage${e?.boss ? ' boss' : ''}${side ? ' has-side' : ''}`}>
+      <div class={`stage${e?.boss ? ' boss' : ''}${side ? ' has-side' : ''}${mount ? ' with-mount' : ''}${pet ? ' with-pet' : ''}`}>
         <div class={`st-tag${e?.boss ? ' boss' : ''}`}>{label}</div>
         <div class={`actor hero${best >= 2 ? ' r' + best : ''}${hp <= 0 ? ' dead' : ''}`} ref={heroRef}>
+          {/* Wierzchowiec stoi za bohaterem (rusza się razem z nim), chowaniec u jego stóp skacze na wroga przy ataku. */}
+          {mount && <img class="px comp-mount" src={companionUrl(mount, hp > 0 ? frameAt(tnow + 140, 600) : 0)} width={96} height={96} alt="" aria-hidden="true" draggable={false} />}
           <HeroSprite eq={s.eq} skin={s.look.skin} frame={hp > 0 ? frameAt(tnow, 520) : 0} />
+          {pet && <div class="comp-pet" ref={petRef}><img class="px" src={companionUrl(pet, frameAt(tnow + 300, 420))} width={56} height={56} alt="" aria-hidden="true" draggable={false} /></div>}
         </div>
         {shown && (
           <div key={lastFoe.current?.id} class={`actor foe tp-${foeTemplate(shown.name, shown.type)}${shown.boss ? ' boss' : ''}${dead ? ' dead' : ''}`} ref={foeRef}>
