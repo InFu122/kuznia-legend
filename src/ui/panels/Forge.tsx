@@ -234,7 +234,7 @@ function Refine({ game }: { game: Game }) {
   return (
     <section class="card refine" aria-label="Rafinacja rud">
       <div class="eyebrow">Rafinacja rud</div>
-      <p class="sub">Nadmiar słabszej rudy zamienisz na następną. Wytapianie rudy wprost zawsze daje więcej — rafinacja jest na zapasy, których już nie wytapiasz. Słabsze rudy są potrzebne też do run slotów.</p>
+      <p class="sub">Nadmiar słabszej rudy zamienisz na następną. Wytapianie rudy wprost zawsze daje więcej — rafinacja jest na zapasy, których już nie wytapiasz. Słabsze rudy są potrzebne też do run.</p>
       <ul class="rlist">
         {rows.map(i => {
           const k = refineRatio(s, i);

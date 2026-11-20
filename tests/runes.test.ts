@@ -96,3 +96,22 @@ describe('przekuwanie', () => {
     expect(B.REFORGE_FORGE_LVL).toBeLessThanOrEqual(15);
   });
 });
+
+describe('runy bohatera: ile dają', () => {
+  it('runeGain liczy zysk całych run, jednej runy i następnego poziomu', async () => {
+    const { runeGain } = await import('../src/engine/runes');
+    const { makeGame } = await import('./helpers');
+    const { g, s } = makeGame(4);
+    s.ores[1] = 5;
+    g.smeltManual(); g.equipPending();
+    const sl = Object.keys(s.eq).find(k => s.eq[k as keyof typeof s.eq])! as keyof typeof s.eq;
+    expect(runeGain(s).power).toBe(0);
+    s.runes = { [sl]: 7 };
+    const one = runeGain(s, sl);
+    expect(one.power).toBeGreaterThan(0);
+    expect(runeGain(s).power).toBeCloseTo(one.power);
+    const next = runeGain(s, sl, true);
+    expect(next.power).toBeGreaterThan(0);
+    expect(next.power).toBeLessThan(one.power); // jeden poziom mniej niż siedem
+  });
+});

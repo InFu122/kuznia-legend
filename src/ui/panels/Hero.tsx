@@ -12,7 +12,8 @@ import { MountsView, PetsView, SkillsView } from './Companions';
 import { showProfile } from '../profile';
 import { HeroSprite, bestRarity } from '../Arena';
 import { LegacyCard } from './Legacy';
-import { RunesCard } from './Runes';
+import { RuneBadge, RunesCard } from './Runes';
+import { runeLvl } from '../../engine/runes';
 
 type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
 /** Funkcje odblokowywane w podzakładkach (kłódka i znaczek „nowe”). */
@@ -112,9 +113,11 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
         <div class="slots" style={{ marginTop: '10px' }}>
           {SLOT_ORDER.map(slot => {
             const it = s.eq[slot];
-            if (!it) return <button key={slot} class="slot empty" disabled><SlotIcon slot={slot} /><span>{SLOTS[slot].n}</span><div class="pips" /></button>;
+            const rl = runeLvl(s, slot);
+            if (!it) return <button key={slot} class="slot empty" disabled><RuneBadge lvl={rl} cls="on-slot" /><SlotIcon slot={slot} /><span>{SLOTS[slot].n}</span><div class="pips" /></button>;
             return (
-              <button key={slot} class={`slot r${it.r}`} aria-label={itemName(it)} onClick={() => onItem(it)}>
+              <button key={slot} class={`slot r${it.r}`} aria-label={`${itemName(it)}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}`} onClick={() => onItem(it)}>
+                <RuneBadge lvl={rl} cls="on-slot" />
                 <Px src={itemUrl(it.kind, it.ore, it.r)} size={36} />
                 {/* Ucięta nazwa („Żelazna …”) nic nie mówi: zwykły przedmiot pokazuje poziom, przebudzony i Boski — imię. */}
                 <span>{it.aw || it.r === R.BOSKI ? itemName(it) : `poz. ${it.lvl}`}</span>

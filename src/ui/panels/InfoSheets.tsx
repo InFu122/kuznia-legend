@@ -1,5 +1,5 @@
 // Okna „i” w stylu „Jak działa wytop”: trzy kroki, tabelka z liczbami gry i krótkie karty z zasadami.
-// Runy slotów, chowańce i wierzchowce.
+// Runy bohatera, chowańce i wierzchowce.
 import type { ComponentChildren } from 'preact';
 import {
   B, COMPANION_MAX, DIVINE_ORE, DRAW_ODDS, DUPE_STONES, FORGE_UNLOCKS, HATCH_MS, MOUNTS, MOUNT_IDS, ORES, ORE_ORDER, PETS, PET_IDS, RAR, SLOTS, SLOT_ORDER,
@@ -51,11 +51,11 @@ export function RuneInfo({ game, close }: { game: Game; close: () => void }) {
   const weapon = s.eq.bron;
   return (
     <Sheet
-      eyebrow="Bohater · runy slotów" title="Jak działają runy" close={close}
+      eyebrow="Bohater · runy" title="Jak działają runy" close={close}
       steps={[
-        [weapon ? itemUrl(weapon.kind, weapon.ore, weapon.r) : itemUrl('Miecz', 1, 1), '1. Slot', 'runa siedzi w miejscu na ekwipunek, nie w przedmiocie'],
-        [resUrl('runa'), '2. Poziom', `+${B.RUNE_PCT}% głównej statystyki przedmiotu za każdy poziom (do ${B.RUNE_MAX})`],
-        [resUrl('pieczec'), '3. Na zawsze', 'zostaje w slocie, gdy zmieniasz przedmiot'],
+        [resUrl('runa'), '1. Miejsce, nie przedmiot', 'runa siedzi w miejscu ekwipunku (Broń, Hełm…), a nie w samym przedmiocie'],
+        [weapon ? itemUrl(weapon.kind, weapon.ore, weapon.r) : itemUrl('Miecz', 1, 1), '2. Wymiana nic nie zabiera', 'zakładasz nowy przedmiot — runa od razu działa na niego'],
+        [resUrl('moc'), '3. Cały bohater, na zawsze', `+${B.RUNE_PCT}% głównej statystyki za poziom (do ${B.RUNE_MAX}) — trwałe wzmocnienie do końca gry`],
       ]}
       tips={[
         [oreUrl(0), 'Brakuje rudy?', <>Każdy slot płaci dokładnie rudą ze swojego poziomu — po kolei Miedź, Żelazo, Srebro… Słabsze rudy farmisz we wcześniejszych krainach (karta runy podpowiada gdzie). Zanim zamienisz zapasy w Rafinacji, zostaw trochę na runy.</>],

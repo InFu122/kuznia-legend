@@ -1,9 +1,9 @@
-// Runy slotów (zakładka Bohater) i przekuwanie statystyk dodatkowych (okno założonego przedmiotu).
+// Runy bohatera (zakładka Bohater) i przekuwanie statystyk dodatkowych (okno założonego przedmiotu).
 import { useState } from 'preact/hooks';
 import { B, LANDS, ORES, SLOTS, SLOT_ORDER } from '../../data';
-import { itemUrl, oreUrl, resUrl } from '../../art/render';
+import { oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
-import { farmLandFor, reforgeBlock, reforgeCost, runeBlock, runeCost, runeLvl, runePay, subText } from '../../engine/runes';
+import { farmLandFor, reforgeBlock, reforgeCost, runeBlock, runeCost, runeGain, runeLvl, runePay, subText } from '../../engine/runes';
 import type { Item, SlotId } from '../../engine/types';
 import { getLink } from '../../save/server';
 import { fmt, pctS } from '../format';
@@ -28,20 +28,43 @@ function RuneBar({ s, lvl }: { s: Game['s']; lvl: number }) {
   );
 }
 
-/** Karta run slotów. */
+/** Odznaka runy na miejscu ekwipunku (karta run, siatka ekwipunku): ikona runy i poziom. */
+export const RuneBadge = ({ lvl, cls = '' }: { lvl: number; cls?: string }) =>
+  lvl > 0 ? <span class={`rune-badge ${cls}`} title={`Runa: +${lvl * B.RUNE_PCT}%`}><Px src={resUrl('runa')} size={12} />{lvl}</span> : null;
+
+const statWord = (sl: SlotId) => (SLOTS[sl].stat === 'dmg' ? 'obrażeń' : 'zdrowia');
+
+/**
+ * Karta run bohatera. Runa to stała premia miejsca w ekwipunku (Broń, Hełm…), nie przedmiotu: działa na każdy
+ * przedmiot założony w tym miejscu i zostaje przy każdej wymianie — gracz ma to zobaczyć od razu.
+ */
 export function RunesCard({ game }: { game: Game }) {
   const s = game.s;
   const any = SLOT_ORDER.some(sl => runeLvl(s, sl) > 0);
   if (s.forge.lvl < B.RUNE_FORGE_LVL && !any) return null;
   const locked = s.forge.lvl < B.RUNE_FORGE_LVL;
   const total = SLOT_ORDER.reduce((a, sl) => a + runeLvl(s, sl), 0);
+  const all = any ? runeGain(s) : null;
   return (
     <section class="card runes">
       <div class="row">
-        <div class="rhead"><Px src={resUrl('runa')} size={28} /><div><div class="eyebrow">Runy slotów</div><div class="h">+{B.RUNE_PCT}% za poziom</div></div></div>
+        <div class="rhead"><Px src={resUrl('runa')} size={30} /><div><div class="eyebrow">Runy bohatera · na zawsze</div><div class="h">Wzmocnienie miejsc ekwipunku</div></div></div>
         <InfoBtn onClick={() => game.openModal({ kind: 'info', k: 'runes' })} label="Jak działają runy" />
       </div>
-      <p class="sub">Runa wzmacnia główną statystykę przedmiotu w swoim slocie i zostaje w nim na zawsze. Razem: <b>{total}</b>/{B.RUNE_MAX * SLOT_ORDER.length} poziomów.{locked ? ` Ulepszanie od ${B.RUNE_FORGE_LVL}. poziomu kuźni.` : ''}</p>
+      <div class="rhow" aria-label="Jak działa runa">
+        <div><span class="rh-ic"><Px src={resUrl('runa')} size={22} /></span><small>Runa siedzi w <b>miejscu</b>, nie w przedmiocie</small></div>
+        <div><span class="rh-ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h12l-3-3M18 14H6l3 3" /></svg></span><small>Zmieniasz przedmiot — <b>premia zostaje</b></small></div>
+        <div><span class="rh-ic"><Px src={resUrl('moc')} size={22} /></span><small>Bohater silniejszy <b>do końca gry</b></small></div>
+      </div>
+      {all && all.power > 0 ? (
+        <div class="rsum">
+          <span>Runy dają teraz bohaterowi</span>
+          <b>{all.dmg > 0 && <>+{fmt(all.dmg)} obrażeń</>}{all.dmg > 0 && all.hp > 0 && ' · '}{all.hp > 0 && <>+{fmt(all.hp)} zdrowia</>}</b>
+          <small>= +{fmt(all.power)} Mocy · {total}/{B.RUNE_MAX * SLOT_ORDER.length} poziomów</small>
+        </div>
+      ) : (
+        <p class="sub">Każdy poziom runy to +{B.RUNE_PCT}% głównej statystyki dla <b>każdego</b> przedmiotu w tym miejscu — dziś i po każdej wymianie.{locked ? ` Ulepszanie od ${B.RUNE_FORGE_LVL}. poziomu kuźni.` : ''}</p>
+      )}
       <ul class="runelist">
         {SLOT_ORDER.map(sl => {
           const L = runeLvl(s, sl);
@@ -53,14 +76,20 @@ export function RunesCard({ game }: { game: Game }) {
           const farm = lackOre ? farmLandFor(s, c.ore) : null;
           const here = !!farm && farm.land === s.cur.land && game.b.mode === 'camp';
           const lackGold = !!c && s.gold < c.gold;
+          const now = L && it ? runeGain(s, sl) : null;
+          const nxt = c && it ? runeGain(s, sl, true) : null;
           return (
             <li key={sl} class={L >= B.RUNE_MAX ? 'max' : ''}>
-              <span class="rslot">{it ? <Px src={itemUrl(it.kind, it.ore, it.r)} size={28} /> : <SlotIcon slot={sl} />}<b class="rnum">{L}</b></span>
+              <span class={`rsock${L ? ' on' : ''}`} aria-hidden="true"><SlotIcon slot={sl} /><RuneBadge lvl={L} /></span>
               <div class="cmain">
                 <div class="rtop">
                   <b>{SLOTS[sl].n}</b>
                   <span class="rbonus">{L ? `+${L * B.RUNE_PCT}%` : 'bez runy'}{c && <> → <b>+{(L + 1) * B.RUNE_PCT}%</b></>}</span>
                 </div>
+                <small class="reff">
+                  {L ? <>+{L * B.RUNE_PCT}% {statWord(sl)} dla każdego przedmiotu w tym miejscu{now ? <> · teraz <b>+{fmt(SLOTS[sl].stat === 'dmg' ? now.dmg : now.hp)}</b></> : ' · działa, gdy coś założysz'}</>
+                    : <>+{B.RUNE_PCT}% {statWord(sl)} dla każdego przedmiotu w tym miejscu</>}
+                </small>
                 <RuneBar s={s} lvl={L} />
                 {c ? (
                   <div class="rneed">
@@ -80,7 +109,10 @@ export function RunesCard({ game }: { game: Game }) {
                   </div>
                 ) : <div class="rneed"><small class="muted">Maksymalny poziom</small></div>}
               </div>
-              <button class="btn small primary" disabled={!!block} title={block ?? undefined} onClick={() => game.upgradeRune(sl)}>{L >= B.RUNE_MAX ? 'maks.' : '+1'}</button>
+              <button class="btn small primary rup" disabled={!!block} title={block ?? undefined} onClick={() => game.upgradeRune(sl)}
+                aria-label={L >= B.RUNE_MAX ? 'Maksymalny poziom' : `Ulepsz runę: ${SLOTS[sl].n}${nxt ? `, +${fmt(nxt.power)} Mocy` : ''}`}>
+                {L >= B.RUNE_MAX ? 'maks.' : <>+1{nxt && nxt.power > 0 && <small>+{fmt(nxt.power)} Mocy</small>}</>}
+              </button>
             </li>
           );
         })}

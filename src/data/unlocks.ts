@@ -35,7 +35,7 @@ export const FEATURES: Record<FeatureId, FeatureDef> = {
   lochy: { n: 'Lochy', d: 'Codzienne lochy z kluczami: złoto, rudy, Księgi i przedmioty.', lands: 1, at: { tab: 'lochy' }, target: '[data-tab="lochy"]' },
   klan: { n: 'Klan', d: 'Wspólna kuźnia, boss klanowy, wojny i pomoc innych kowali.', lands: 1, net: true, at: { tab: 'klan' }, target: '[data-tab="klan"]' },
   czat: { n: 'Czat', d: 'Rozmowy z innymi graczami i ogłoszenia Boskich przedmiotów.', lands: 1, net: true, at: { btn: 'czat' }, target: '[data-btn="czat"]' },
-  runy: { n: 'Runy', d: 'Runa wzmacnia przedmiot w swoim miejscu i zostaje w nim na zawsze.', forge: B.RUNE_FORGE_LVL, at: { inTab: 'bohater' }, target: '.card.runes' },
+  runy: { n: 'Runy', d: 'Trwałe wzmocnienie bohatera: runa siedzi w miejscu ekwipunku i działa na każdy przedmiot, który tam założysz.', forge: B.RUNE_FORGE_LVL, at: { inTab: 'bohater' }, target: '.card.runes' },
   arena: { n: 'Arena', d: 'Pojedynki z bohaterami innych graczy i tygodniowe ligi.', lands: B.ARENA_UNLOCK_LAND, net: true, at: { inTab: 'lochy' }, target: '.arena-banner .btn' },
   chowance: { n: 'Chowańce', d: 'Towarzysz z jaja walczy u boku bohatera i daje premię.', lands: PETS_UNLOCK_LAND, at: { inTab: 'bohater' }, target: '[data-sub="pets"]' },
   wierzchowce: { n: 'Wierzchowce', d: 'Wierzchowiec z Siodła dodaje obrażeń i zdrowia.', lands: MOUNTS_UNLOCK_LAND, at: { inTab: 'bohater' }, target: '[data-sub="mounts"]' },

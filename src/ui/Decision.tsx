@@ -5,6 +5,7 @@ import { B, ELEM, ORES, R, RAR, RAR_ORDER, SETS, SLOTS, SLOT_ORDER, SUBS, rAt, r
 import { itemUrl, resUrl } from '../art/render';
 import { coinsToGold, flyToSlot, sparks } from './fx';
 import { buzz } from './haptics';
+import { runeLvl } from '../engine/runes';
 import { play } from './sound';
 import { sellFor } from '../engine/forge';
 import { dist, itemName, mainVal, maxJump, oreFloor, oreNominal } from '../engine/formulas';
@@ -347,6 +348,9 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
         </>
       )}
       <Stats cur={cur} it={it} />
+      {runeLvl(s, it.slot) > 0 && (
+        <p class="dec-rune"><Px src={resUrl('runa')} size={18} />Runa miejsca {SLOTS[it.slot].n} (+{runeLvl(s, it.slot) * B.RUNE_PCT}%) działa też na ten przedmiot — po wymianie nic nie tracisz.</p>
+      )}
       {empty && !big && <GearFill s={s} it={it} />}
       {!better && s.forge.lvl < B.AUTO_FORGE_LVL && <p class="sub dec-tip">Takie przedmioty od {B.AUTO_FORGE_LVL}. poziomu kuźni sprzedaje sam auto-wytop.</p>}
       <Brag game={game} it={it} />

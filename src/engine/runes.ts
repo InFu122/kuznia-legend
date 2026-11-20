@@ -10,12 +10,29 @@ import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
 import { allMods } from './mods';
 import { rnd, type Rng } from './rng';
-import { invalidate } from './stats';
+import { computeStats, extraOf, invalidate } from './stats';
 import type { GameState, Item, SlotId } from './types';
 
 export interface Cost { ore: number; n: number; gold: number }
 
 /* ---------- runy ---------- */
+
+/**
+ * Ile runy dają bohaterowi (obrażenia, zdrowie, Moc): różnica statystyk z runami i bez nich.
+ * `slot` — tylko runa tego miejsca; `next` — zysk z jeszcze jednego poziomu w tym miejscu.
+ */
+export function runeGain(s: GameState, slot?: SlotId, next = false): { dmg: number; hp: number; power: number } {
+  const extra = extraOf(s);
+  const mods = allMods(s);
+  const cur = { ...(s.runes ?? {}) };
+  const other = { ...cur };
+  if (next && slot) other[slot] = Math.min(B.RUNE_MAX, runeLvl(s, slot) + 1);
+  else if (slot) delete other[slot];
+  else for (const k of Object.keys(other) as SlotId[]) delete other[k];
+  const a = computeStats(s.eq, mods, { ...extra, runes: next ? other : cur });
+  const b = computeStats(s.eq, mods, { ...extra, runes: next ? cur : other });
+  return { dmg: a.dmg - b.dmg, hp: a.hp - b.hp, power: a.power - b.power };
+}
 
 export const runeLvl = (s: GameState, slot: SlotId) => Math.max(0, Math.min(B.RUNE_MAX, Math.floor(s.runes?.[slot] ?? 0)));
 
