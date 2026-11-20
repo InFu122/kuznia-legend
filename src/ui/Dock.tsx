@@ -2,33 +2,46 @@
 // więc zawsze widać je bez przewijania. Rudę i auto-wytop (z rzadkością, na której ma się zatrzymać)
 // ustawia się w okienkach wysuwanych z dołu; włączony auto-wytop wyłącza jedno dotknięcie Auto.
 import { useRef } from 'preact/hooks';
-import { B, ORES, ORE_ORDER, RAR, rAt } from '../data';
+import { B, ELEM, ORES, ORE_ORDER, RAR, rAt } from '../data';
 import { canSmelt } from '../engine/forge';
 import { oreNominal } from '../engine/formulas';
 import type { Game } from '../engine/game';
-import { dungeonBgUrl, oreUrl, resUrl } from '../art/render';
-import { AutoStop, InfoBtn, OreSummary } from './panels/Forge';
+import { dungeonBgUrl, elemUrl, oreUrl, resUrl } from '../art/render';
+import { AutoElem, AutoStop, InfoBtn, OreSummary } from './panels/Forge';
 import { sparks } from './fx';
 import { Px } from './Px';
 import { fmt } from './format';
 
-export function ForgeDock({ game, onPick, onDecide, onAuto }: { game: Game; onPick: () => void; onDecide: () => void; onAuto: () => void }) {
+export function ForgeDock({ game, onPick, onDecide, onAuto, onElem }: { game: Game; onPick: () => void; onDecide: () => void; onAuto: () => void; onElem: () => void }) {
   const s = game.s;
   const f = s.forge;
   const o = s.oreSel;
   const sparkRef = useRef<HTMLDivElement>(null);
-  const batch = game.batchActive();
   const ok = canSmelt(game.ctx, o) && !s.pending;
+  const el = s.elSel && (s.els[s.elSel] ?? 0) > 0 ? s.elSel : null;
   const sub = f.lvl < ORES[o].lvl ? `${ORES[o].n} od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `brak rudy: ${ORES[o].n}`
-    : batch > 1 ? `×${Math.min(batch, s.ores[o])} · ${ORES[o].n}` : ORES[o].n;
+    : ORES[o].n; // domieszka ma własny przycisk obok
+  /** Domieszka na pasku: od poziomu kuźni, na którym się otwiera (wcześniej była tylko w karcie kuźni). */
+  const elOn = f.lvl >= B.ELEM_FORGE_LVL;
   // Wybrana ruda się skończyła, a w magazynie jest inna — przycisk otwiera wybór rudy zamiast stać wyszarzony.
   const other = !ok && !s.pending ? ORE_ORDER.find(i => i !== o && s.ores[i] > 0 && f.lvl >= ORES[i].lvl) : undefined;
   return (
-    <div class="dock">
+    <div class={`dock${elOn ? ' with-el' : ''}`}>
       <button class="dock-ore" onClick={onPick} aria-haspopup="dialog" aria-label={`Ruda: ${ORES[o].n}, ${s.ores[o]} sztuk. Zmień rudę`}>
         <Px src={oreUrl(o)} size={30} />
         <span><b>{fmt(s.ores[o])}</b><i aria-hidden="true">▾</i></span>
       </button>
+      {elOn && (
+        <button class={`dock-el${el ? ' on' : ''}`} onClick={onElem} aria-haspopup="dialog"
+          aria-label={el ? `Domieszka: ${ELEM[el].n}, ${s.els[el]} sztuk. Zmień` : 'Bez domieszki. Wybierz domieszkę'}>
+          {el ? <Px src={elemUrl(el)} size={24} /> : (
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M11 3c3 4 6 7 6 10.5A6 6 0 0 1 5 13.5C5 10 8 7 11 3z" /><path d="M5 19 17 5" />
+            </svg>
+          )}
+          <span>{el ? fmt(s.els[el] ?? 0) : 'brak'}</span>
+        </button>
+      )}
       {s.pending ? (
         <button class="btn primary dock-go decide" onClick={onDecide}>
           <span class="dg-t"><b>Zdecyduj</b><small>nowy przedmiot czeka</small></span>
@@ -112,6 +125,7 @@ export function AutoSheet({ game, close }: { game: Game; close: () => void }) {
       {on && game.autoWaiting && <p class="tech-cost warn">{s.forge.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `Czeka na rudę: ${ORES[o].n}`}</p>}
       {on && game.autoPaused && <p class="tech-cost warn">Czeka na twoją decyzję o przedmiocie.</p>}
       <AutoStop game={game} />
+      <AutoElem game={game} />
       {on
         ? <button class="btn wide" onClick={() => { game.toggleAuto(); close(); }}>Wyłącz auto-wytop</button>
         : <button class="btn primary wide" onClick={() => { game.toggleAuto(); close(); }}>Włącz · zatrzymaj na: {RAR[game.autoTarget()].n}</button>}

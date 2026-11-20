@@ -1,5 +1,5 @@
-import { B, BATCH_OPTIONS, ELEM, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS, ORE_ORDER, rAt, rRank } from '../../data';
-import { batchOf, refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
+import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS, ORE_ORDER, rAt, rRank } from '../../data';
+import { refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
 import { SpeedupButton } from './Shop';
 import { JUMP_V, dist, itemName, jumpChances, maxJump, oreBase, oreNominal, pityAllowed } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
@@ -39,7 +39,6 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
   const o = s.oreSel;
   const mj = maxJump(o);
   const set = uniqActive(s);
-  const batch = game.batchActive();
   const rel = techMods(s).jumpRel;
   const n = f.lvl + 1;
   const cost = game.upgradeCost();
@@ -126,21 +125,6 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
           </div>
         )}
         {set && <p class="sub">Następny wytop: część zestawu <b style={{ color: SETS[set].col }}>{SETS[set].n}</b>{pityOk ? ' z pewnym przeskokiem o co najmniej 1 rzadkość' : mj >= 1 ? ' (przeskok do Boskiego nigdy nie jest pewny)' : ''}.</p>}
-        {f.lvl >= BATCH_OPTIONS[1][1] && (
-          <div class="batch" role="radiogroup" aria-label="Wytop seryjny">
-            <span>Wytop seryjny</span>
-            {BATCH_OPTIONS.map(([k, lvl]) => (
-              <button key={k} role="radio" aria-checked={batchOf(s) === k} disabled={f.lvl < lvl} class={`chip${batchOf(s) === k ? ' on' : ''}`}
-                title={f.lvl < lvl ? `Od ${lvl}. poziomu kuźni` : undefined} onClick={() => game.setBatch(k)}>
-                ×{k}{f.lvl < lvl ? <small> · {lvl}</small> : ''}
-              </button>
-            ))}
-          </div>
-        )}
-        {f.lvl >= 8 && f.lvl < BATCH_OPTIONS[1][1] && (
-          <p class="sub">Wytop seryjny: ×{BATCH_OPTIONS[1][0]} od {BATCH_OPTIONS[1][1]}. poziomu kuźni, ×{BATCH_OPTIONS[2][0]} od {BATCH_OPTIONS[2][1]}.</p>
-        )}
-        {s.batch > 1 && batch === 1 && (s.elSel || set) && <p class="sub">Wytop seryjny działa bez domieszki i rudy unikalnej — teraz kujesz pojedynczo.</p>}
         {f.lvl >= B.AUTO_FORGE_LVL ? (
           <div class="auto2">
             <div class="row">
@@ -148,6 +132,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
               <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />{s.auto ? 'Włączony' : 'Wyłączony'}</button>
             </div>
             <AutoStop game={game} />
+            <AutoElem game={game} />
             <p class="sub">Słabsze przedmioty sprzedaje (do pustego miejsca zakłada). Gdy wykuje wybraną rzadkość albo część zestawu — gra i pokazuje przedmiot; po twojej decyzji kuje dalej.</p>
           </div>
         ) : (
@@ -188,6 +173,32 @@ export function OreSummary({ game }: { game: Game }) {
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Domieszka auto-wytopu: osobno od ręcznego wytopu, żeby auto nie zużyło przypadkiem domieszek wybranych
+ * do pojedynczego wytopu. „Bez” — auto kuje bez domieszki; gdy wybranej zabraknie, kuje dalej bez niej.
+ */
+export function AutoElem({ game }: { game: Game }) {
+  const s = game.s;
+  if (s.forge.lvl < B.ELEM_FORGE_LVL) return null;
+  const keys = ELEM_KEYS.filter(k => (s.els[k] ?? 0) > 0 || s.autoEl === k);
+  return (
+    <div class="autoel" role="radiogroup" aria-label="Domieszka w auto-wytopie">
+      <span class="ae-l">Domieszka w auto-wytopie</span>
+      <div class="ae-chips">
+        <button role="radio" aria-checked={!s.autoEl} class={`chip${!s.autoEl ? ' on' : ''}`} onClick={() => game.setAutoEl(null)}>Bez</button>
+        {keys.map(k => (
+          <button key={k} role="radio" aria-checked={s.autoEl === k} class={`chip${s.autoEl === k ? ' on' : ''}`} onClick={() => game.setAutoEl(k)}
+            aria-label={`${ELEM[k].n}, masz ${s.els[k] ?? 0}`}>
+            <Px src={elemUrl(k)} size={16} />{ELEM[k].n}<small> · {fmt(s.els[k] ?? 0)}</small>
+          </button>
+        ))}
+      </div>
+      {keys.length === 0 && <small class="sub">Domieszki wypadają w krainach z żywiołem.</small>}
+      {s.autoEl && (s.els[s.autoEl] ?? 0) === 0 && <small class="sub">Ta domieszka się skończyła — auto kuje bez niej.</small>}
+    </div>
   );
 }
 

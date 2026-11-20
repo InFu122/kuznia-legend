@@ -143,3 +143,27 @@ describe('okno wytopu: rekordy i seria', () => {
     expect(g.streak).toBe(0);
   });
 });
+
+describe('domieszka auto-wytopu', () => {
+  it('auto-wytop używa własnej domieszki (osobno od ręcznego wytopu), bez niej kuje zwykle', async () => {
+    const { migrate } = await import('../src/engine/state');
+    const { g, s } = makeGame(11);
+    s.forge.lvl = B.ELEM_FORGE_LVL; s.stats.smelted = 10; s.ores[1] = 40;
+    s.els = { zar: 5, szron: 5 };
+    g.setElem('zar');            // ręczny wytop: Żar
+    g.setAutoEl('szron');        // auto: Szron
+    s.autoStop = 9;              // nie zatrzymuj się (najwyższa rzadkość)
+    g.toggleAuto();
+    for (let i = 0; i < 600 && s.els.szron! > 0; i++) { if (s.pending) g.sellPending(); g.tick(250); }
+    expect(s.els.szron).toBe(0);
+    expect(s.els.zar).toBe(5);   // ręcznej domieszki auto nie rusza
+    g.setAutoEl(null);
+    expect(s.autoEl).toBeNull();
+    // stary zapis: bez pola autoEl i z dawnym wytopem seryjnym
+    const old = { ...JSON.parse(JSON.stringify(s)), batch: 3 } as Record<string, unknown>;
+    delete old.autoEl;
+    const m = migrate(old, Date.now()) as unknown as Record<string, unknown>;
+    expect(m.autoEl).toBeNull();
+    expect('batch' in m).toBe(false);
+  });
+});

@@ -1,4 +1,4 @@
-import { B, BATCH_OPTIONS, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, R, RANK_MAX, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
+import { B, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, R, RANK_MAX, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
 import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreNominal, pityAllowed, sellPrice, smeltRarity, upCost, upTime } from './formulas';
@@ -167,50 +167,6 @@ export function autoHandle(ctx: Ctx, it: Item, quiet: boolean): 'stop' | 'equip'
   if (!s.eq[it.slot]) { equip(ctx, it, quiet); return 'equip'; }
   sell(ctx, it, quiet);
   return 'sell';
-}
-
-/** Wytopy seryjne dostępne na tym poziomie kuźni (np. [1, 2, 3]). */
-export const batchSizes = (s: GameState) => BATCH_OPTIONS.filter(([, lvl]) => s.forge.lvl >= lvl).map(([n]) => n);
-/** Wybrany wytop seryjny w granicach poziomu kuźni (np. wybrane ×3 przy kuźni 15 działa jak ×2). */
-export const batchOf = (s: GameState) => Math.max(1, ...batchSizes(s).filter(n => n <= s.batch));
-
-export interface BatchResult { best: Item; all: Item[]; count: number; sold: number; gold: number; equipped: number }
-
-/**
- * Wytop seryjny: do `n` wytopów jednym przyciskiem (tyle, ile starczy rudy). Najlepszy przedmiot — najwyższa
- * rzadkość, a przy remisie największy zysk Mocy — czeka na decyzję gracza; pozostałe gra zakłada, jeśli są lepsze
- * od założonych (albo miejsce jest puste), a resztę sprzedaje. Domieszek i rud unikalnych wytop seryjny nie używa.
- */
-export function smeltBatch(ctx: Ctx, ore: number, n: number): BatchResult | null {
-  const s = ctx.s;
-  const items: Item[] = [];
-  const keepUniq = s.uniqSel;
-  s.uniqSel = null; // ruda unikalna tylko przy pojedynczym wytopie
-  try {
-    for (let i = 0; i < n && canSmelt(ctx, ore); i++) {
-      const it = smelt(ctx, ore, null);
-      if (!it) break;
-      items.push(it);
-    }
-  } finally {
-    s.uniqSel = keepUniq;
-  }
-  if (!items.length) return null;
-  let best = items[0];
-  let bestD = powerDelta(ctx, best);
-  for (const it of items.slice(1)) {
-    const d = powerDelta(ctx, it);
-    if (rRank(it.r) > rRank(best.r) || (it.r === best.r && d > bestD)) { best = it; bestD = d; }
-  }
-  let sold = 0, equipped = 0;
-  const g0 = s.gold; // złoto ze sprzedaży (także zdjętych przedmiotów, gdy gra zakłada lepsze)
-  for (const it of items) {
-    if (it === best) continue;
-    if (decideAuto(ctx, it, true)) equipped++;
-    else sold++;
-  }
-  const gold = s.gold - g0;
-  return { best, all: items, count: items.length, sold, gold, equipped };
 }
 
 /** Rafinacja: ile sztuk rudy `from` trzeba na 1 sztukę następnej w kolejności rud (0 — nie da się). */

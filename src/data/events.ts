@@ -22,7 +22,7 @@ export interface EventDef {
 
 export const EVENTS: Record<EventKind, EventDef> = {
   kuznia: {
-    n: 'Festiwal Kuźni', cur1: 'Iskra', cur: 'Iskry', curGen: 'Iskier', d: 'Każdy wytop to Iskra (także auto-wytop i seryjny). Bossowie krain i klucze w lochach też sypią Iskrami.',
+    n: 'Festiwal Kuźni', cur1: 'Iskra', cur: 'Iskry', curGen: 'Iskier', d: 'Każdy wytop to Iskra (także auto-wytop). Bossowie krain i klucze w lochach też sypią Iskrami.',
     dung: 'Ognista Otchłań', foes: ['Ognisty chochlik', 'Lawowy golem', 'Salamandra', 'Żarzący się szkielet'], boss: 'Władca Płomieni', type: 'Demony', skin: 'ognisty', frame: 'iskra',
     w: { sm: 1, k: 0.02, b: 10, keys: 10, tw: 1 },
   },

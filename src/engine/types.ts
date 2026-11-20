@@ -127,8 +127,8 @@ export interface GameState {
   auto: boolean;
   autoStop: number;                                    // auto-wytop zatrzymuje się na tej rzadkości (albo wyższej)
   oreSel: number;
-  batch: number;                                       // wytop seryjny: ile wytopów jednym przyciskiem
   elSel: ElemKey | null;
+  autoEl: ElemKey | null;                              // domieszka używana przez auto-wytop (osobno od ręcznego wytopu)
   smith: { fame: number; sent: { n: string; r: number }[]; log: { t: string; m: string; k?: 'sent'; n?: number }[]; v?: number }; // v: 1 — Sława za dawniej odebrane progi osiągnięć już doliczona
   dungeons: Record<DungId, { day: string; keys: number; best: number }>;
   books: number;                              // Księgi Wiedzy

@@ -27,9 +27,8 @@ export const JUMP_TABLE: [number, number, number][] = [
 export const FORGE_UNLOCKS: Record<number, string> = {
   5: 'wytop Srebra, auto-wytop, rafinacja rud',
   10: 'domieszki żywiołów, runy slotów',
-  12: 'wytop Mithrilu, wytop seryjny ×2',
+  12: 'wytop Mithrilu',
   15: 'przekuwanie przedmiotów, rudy unikalne (zestawy)',
-  20: 'wytop seryjny ×3',
   25: 'wytop Adamantytu',
   30: 'badanie Mistrz run',
   40: 'wytop Obsydianu, II stopień badań',

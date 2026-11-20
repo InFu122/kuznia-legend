@@ -242,6 +242,8 @@ function ForgeAnim({ it, onDone }: { it: Item; onDone: () => void }) {
 export function DecisionView({ game, src, close }: { game: Game; src: 'pending' | 'found'; close: () => void }) {
   const s = game.s;
   const [more, setMore] = useState(false);
+  /** Potwierdzenie decyzji wbrew podpowiedzi: założenie słabszego albo sprzedaż lepszego przedmiotu. */
+  const [ask, setAsk] = useState<'wear' | 'sell' | null>(null);
   const it = src === 'pending' ? s.pending : s.found[0];
   const [anim, setAnim] = useState(() => !!it && src === 'pending' && !it.obieg && !animated.has(it.id));
   useEffect(() => { if (!it) close(); }, [it]);
@@ -282,6 +284,9 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
     if (src === 'pending') game.sellPending(); else game.takeFound(0, false);
     setMore(false);
   };
+  useEffect(() => setAsk(null), [it.id]);
+  const tryWear = () => (!empty && d < 0 ? setAsk('wear') : wear());
+  const trySell = () => (empty || d > 0 ? setAsk('sell') : sellIt());
   const head = src === 'found' ? (it.obieg ? 'Skrzynia · przedmiot dawnego kowala' : 'Znalezisko') : it.forced === 'set' ? 'Wykuto część zestawu' : 'Wykuto';
   const left = src === 'found' ? s.found.length - 1 : 0;
   const gainTxt = `${empty || d > 0 ? '▲ +' : d < 0 ? '▼ −' : '± '}${fmt(Math.abs(d))} Mocy`;
@@ -323,30 +328,37 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
           <Ladder it={it} cur={cur} />
         </>
       )}
-      {src === 'pending' && game.lastBatch?.best === it && (
-        <div class="batch-sum">
-          Wytop ×{game.lastBatch.count}: to najlepszy z nich.
-          {game.lastBatch.sold > 0 && <> Sprzedano {game.lastBatch.sold} (+{fmt(game.lastBatch.gold)} zł).</>}
-          {game.lastBatch.equipped > 0 && <> Założono {game.lastBatch.equipped} lepsze od dotychczasowych.</>}
-        </div>
-      )}
       <Stats cur={cur} it={it} />
       {empty && !big && <GearFill s={s} it={it} />}
       {!better && s.forge.lvl < B.AUTO_FORGE_LVL && <p class="sub dec-tip">Takie przedmioty od {B.AUTO_FORGE_LVL}. poziomu kuźni sprzedaje sam auto-wytop.</p>}
       <Brag game={game} it={it} />
-      <div class="result-actions dec-acts">
-        {better ? (
-          <>
-            <button class="btn primary dec-go" onClick={wear}>Załóż {gain}</button>
-            <button class="btn dec-alt" ref={sellBtn} onClick={sellIt}>Sprzedaj <Px src={resUrl('zloto')} size={16} /> {fmt(price)} zł</button>
-          </>
-        ) : (
-          <>
-            <button class="btn primary dec-go" ref={sellBtn} onClick={sellIt}>Sprzedaj <Px src={resUrl('zloto')} size={20} /> {fmt(price)} zł</button>
-            <button class="btn dec-alt" onClick={wear}>Załóż mimo to ({gainTxt})</button>
-          </>
-        )}
-      </div>
+      {ask ? (
+        <div class="result-actions dec-acts dec-ask" role="alertdialog" aria-labelledby="dec-ask-q">
+          <p id="dec-ask-q" class="ask-q">
+            {ask === 'sell'
+              ? <>Ten przedmiot jest <b class="good">lepszy</b>{empty ? ' i trafiłby na puste miejsce' : ''} — dałby <b>+{fmt(Math.abs(d))} Mocy</b>. Na pewno sprzedać?</>
+              : <>Ten przedmiot jest <b class="bad">słabszy</b> — Moc bohatera spadnie o <b>{fmt(Math.abs(d))}</b>. Na pewno założyć?</>}
+          </p>
+          <button class="btn primary" onClick={() => setAsk(null)}>{ask === 'sell' ? 'Nie, zostaw go' : 'Nie, nie zakładaj'}</button>
+          {ask === 'sell'
+            ? <button class="btn danger" ref={sellBtn} onClick={sellIt}>Tak, sprzedaj <Px src={resUrl('zloto')} size={16} /> {fmt(price)} zł</button>
+            : <button class="btn danger" onClick={wear}>Tak, załóż słabszy</button>}
+        </div>
+      ) : (
+        <div class="result-actions dec-acts">
+          {better ? (
+            <>
+              <button class="btn primary dec-go" onClick={wear}>Załóż {gain}</button>
+              <button class="btn dec-alt" ref={sellBtn} onClick={trySell}>Sprzedaj <Px src={resUrl('zloto')} size={16} /> {fmt(price)} zł</button>
+            </>
+          ) : (
+            <>
+              <button class="btn primary dec-go" ref={sellBtn} onClick={sellIt}>Sprzedaj <Px src={resUrl('zloto')} size={20} /> {fmt(price)} zł</button>
+              <button class="btn dec-alt" onClick={tryWear}>Załóż mimo to ({gainTxt})</button>
+            </>
+          )}
+        </div>
+      )}
       <div class="dec-more">
         <button class="linkbtn" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Ukryj szczegóły' : 'Szczegóły, szanse wytopu i historia ›'}</button>
         {src === 'found' && <button class="linkbtn" onClick={close}>Zdecyduję później</button>}
