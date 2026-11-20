@@ -106,3 +106,40 @@ describe('ulepszanie kuźni', () => {
     expect(s.forge.lvl).toBe(2);
   });
 });
+
+describe('okno wytopu: rekordy i seria', () => {
+  it('pierwszy w historii przedmiot danej rzadkości trafia do firsts', async () => {
+    const { buzzPattern } = await import('../src/ui/haptics');
+    const { g, s } = makeGame(3);
+    s.stats.bestR = -1;
+    s.ores[1] = 5;
+    const it = g.smeltManual()!;
+    expect(g.firsts.has(it.id)).toBe(true);
+    g.sellPending();
+    s.stats.bestR = 6; // Boski — kolejny nie może być „pierwszy”
+    const it2 = g.smeltManual()!;
+    expect(g.firsts.has(it2.id)).toBe(false);
+    expect(buzzPattern(0)).toEqual([]);
+    expect(buzzPattern(2).length).toBe(1);
+    expect(buzzPattern(9).length).toBeGreaterThan(buzzPattern(4).length);
+  });
+
+  it('trzy lepsze przedmioty z rzędu to seria; słabszy ją przerywa', () => {
+    const { g, s, events } = makeGame(5);
+    s.ores[1] = 50;
+    const msgs = () => events.flatMap(e => (e.t === 'toast' ? [e.msg] : []));
+    // puste miejsca: każdy nowy przedmiot jest lepszy
+    for (let i = 0; i < 3; i++) {
+      const it = g.smeltManual()!;
+      for (const k of Object.keys(s.eq)) delete (s.eq as Record<string, unknown>)[k];
+      void it;
+      g.equipPending();
+    }
+    expect(g.streak).toBe(3);
+    expect(msgs()).toContain('Seria: 3 lepsze z rzędu!');
+    const it = g.smeltManual()!;
+    s.eq[it.slot] = { ...it, id: 9999, lvl: it.lvl + 50 }; // założony dużo mocniejszy
+    g.sellPending();
+    expect(g.streak).toBe(0);
+  });
+});

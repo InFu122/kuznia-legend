@@ -336,6 +336,10 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
             <button class={`toggle${s.opts.notify ? ' on' : ''}`} aria-pressed={s.opts.notify} onClick={() => game.setNotify(!s.opts.notify)}><span class="knob" />Powiadomienia</button>
           </div>
         )}
+        <div class="row">
+          <span class="sub">Wibracje przy rzadkich wytopach (od Rzadkiego wzwyż).</span>
+          <button class={`toggle${s.opts.vibe !== false ? ' on' : ''}`} aria-pressed={s.opts.vibe !== false} onClick={() => game.setVibe(s.opts.vibe === false)}><span class="knob" />Wibracje</button>
+        </div>
         <p class="sub credits">Muzyka: eBunny, Sonican, Dummy Daniel · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
         {game.speeds.length > 1 && (
           <div class="speed-set">

@@ -1167,7 +1167,7 @@ a.linkbtn{display:inline-block}
 .card.forgeup .h{text-shadow:0 1px 0 rgba(0,0,0,.6)}
 .card.forgeup .upgrade-btn{box-shadow:0 0 14px -2px rgba(255,170,70,.55)}
 .rampnote{color:#e7b77a}
-.dec-title .jump.low{color:#e7b77a; background:none; font-family:var(--f-ui); font-size:12px; font-weight:600; line-height:1.35; margin:4px 10px 0; animation:none}
+.dec .jump.low{color:#e7b77a; background:none; font-family:var(--f-ui); font-size:12px; font-weight:600; line-height:1.35; margin:4px 10px 0; animation:none}
 .rwc > span{font-size:12px; color:var(--frost)}
 .rwc > span b{font-weight:800}
 .rwi.inline{display:inline-flex; vertical-align:-3px; gap:3px 6px}
@@ -1614,3 +1614,121 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .intro-name label{font-weight:700; color:var(--frost)}
 .intro-name .btn.primary{margin-top:6px}
 .intro-name small.bad{color:var(--blood)}
+
+/* ---------- okno decyzji: „starcie przedmiotów” (werdykt, dwie karty, drabinka rzadkości, zmiany statystyk) ---------- */
+.dv{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 0 8px; border-radius:16px}
+.dv b{display:inline-flex; align-items:baseline; gap:4px; font-size:42px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.01em; white-space:nowrap}
+.dv b .tri{width:.5em; height:.5em; align-self:center; margin-right:4px}
+.dv b small{margin-left:4px}
+.dv b small{font-size:20px; font-weight:700}
+.dv > span{font-size:14px; font-weight:600; text-align:center}
+.dv.up{background:radial-gradient(ellipse at 50% 60%, rgba(109,197,123,.22), rgba(109,197,123,0) 70%)}
+.dv.up b{color:var(--good)} .dv.up > span{color:#b9e7c0}
+.dv.down b{color:#c98a84; font-size:36px} .dv.down > span{color:var(--ash)}
+.dv.eq b{color:var(--ash); font-size:32px} .dv.eq > span{color:var(--ash)}
+.dv > .dv-new{font-family:var(--f-display); font-size:30px; font-weight:400; line-height:1; color:var(--straw); margin-bottom:4px}
+
+.dcards{display:grid; grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr); align-items:center; gap:6px}
+.dcard{--rc:var(--r0); position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 6px 10px; min-width:0;
+  background:var(--plate-2); border:1px solid var(--rivet); border-bottom:3px solid var(--rc); border-radius:14px; text-align:center}
+.dcard.r1{--rc:var(--r1)} .dcard.r2{--rc:var(--r2)} .dcard.r3{--rc:var(--r3)} .dcard.r4{--rc:var(--r4)} .dcard.r5{--rc:var(--r5)}
+.dcard.r6{--rc:var(--r6)} .dcard.r7{--rc:var(--r7)} .dcard.r8{--rc:var(--r8)} .dcard.r9{--rc:var(--r9)}
+.dcard:not(.win){opacity:.72}
+.dcard.win{border:2px solid var(--rc); background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--rc) 30%, transparent), var(--plate-2) 72%);
+  box-shadow:0 0 20px -4px var(--rc)}
+.dcard.new{animation:dcIn .6s cubic-bezier(.2,.9,.3,1.2) both}
+.dcard.new.win{animation:dcIn .6s cubic-bezier(.2,.9,.3,1.2) both, dcGlow 2.2s ease-in-out .6s infinite}
+.dcard.old:not(.win){animation:dcKnock .45s ease-out .38s both}
+.dcard.empty{border:2px dashed var(--rivet); background:none; min-height:150px; justify-content:center; color:#8a7c6c; opacity:1}
+.dcard.empty .dc-ico{opacity:.18; filter:grayscale(1)}
+.dc-ico{image-rendering:pixelated; filter:drop-shadow(0 3px 0 rgba(0,0,0,.4))}
+.dcard.win .dc-ico{filter:drop-shadow(0 3px 0 rgba(0,0,0,.4)) drop-shadow(0 0 8px var(--rc))}
+.dc-tag{font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--ash)}
+.dcard.new.win .dc-tag{padding:2px 8px; border-radius:999px; background:var(--rc); color:#10151c}
+.dc-name{font-size:14px; font-weight:700; line-height:1.15; color:var(--frost); overflow-wrap:anywhere}
+.dcard.win .dc-name{font-size:15px; font-weight:800}
+.dcard small{font-size:12px; font-weight:700}
+.dc-jump{font-family:var(--f-display); font-size:17px; color:var(--straw); animation:pulse .8s ease-out .5s both}
+.dc-first{display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; background:var(--straw); color:var(--straw-ink);
+  font-size:11px; font-weight:800; white-space:nowrap; animation:dcBadge .6s ease-out .55s both}
+.dc-first.big{position:absolute; z-index:2; top:10px; left:0; right:0; margin:0 auto; width:max-content; font-size:13px; padding:4px 10px}
+.dc-arrow{display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--plate-2); border:1px solid var(--rivet); color:var(--straw)}
+.dc-arrow.back{color:var(--ash); transform:scaleX(-1)}
+
+.dlad{display:flex; flex-direction:column; gap:6px}
+.dlad-h{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:13px}
+.dlad-h > span:first-child{color:var(--ash)}
+.dlad-h > span:last-child, .dlad-h > b{font-weight:700}
+.dl-tag{display:inline-block; margin-left:5px; padding:1px 7px; border-radius:999px; font-size:12px}
+.dl-tag.up{background:rgba(231,190,98,.16); color:var(--straw)}
+.dl-tag.down{background:rgba(227,90,82,.14); color:#f08a83}
+.dlad-bar{display:flex; gap:3px; align-items:flex-end; height:16px}
+.dlad-bar i{flex:1; height:8px; border-radius:3px; background:var(--c); opacity:.2}
+.dlad-bar i.on{opacity:1}
+.dlad-bar i.now{height:14px; box-shadow:0 0 10px var(--c)}
+.dlad-bar i.jumped, .dlad-bar i.now{animation:ladLit .5s ease-out var(--d) both; transform-origin:bottom}
+.dlad-bar i.was{outline:2px solid rgba(255,255,255,.55); outline-offset:1px}
+.dlad-f{font-size:12px; color:var(--ash)}
+
+.dstats{display:flex; flex-direction:column; gap:9px}
+.ds{display:grid; grid-template-columns:minmax(0,1fr) auto 66px; align-items:center; column-gap:10px; row-gap:4px; font-size:14px}
+.ds-n{color:var(--ash)}
+.ds-v{font-weight:700; font-variant-numeric:tabular-nums; text-align:right}
+.ds-old{color:var(--ash); font-weight:500}
+.ds.lost .ds-v{color:#8a7c6c; text-decoration:line-through; font-weight:600}
+.ds-chip{justify-self:end; padding:3px 9px; border-radius:999px; font-weight:800; font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; animation:dsPop .45s ease-out both}
+.ds-chip.up{background:rgba(109,197,123,.16); color:var(--good)}
+.ds-chip.down{background:rgba(227,90,82,.16); color:#f08a83}
+.ds-chip.eq{color:var(--ash); animation:none}
+.ds-chip.new{background:var(--straw); color:var(--straw-ink); font-size:11px; letter-spacing:.06em; padding:3px 7px}
+.ds-bar{grid-column:1 / -1; display:flex; height:4px; border-radius:2px; background:var(--plate-2); overflow:hidden}
+.ds-bar i{display:block; background:#6b5d4f}
+.ds-bar i.gain{background:var(--good); animation:dsGrow .5s ease-out both; transform-origin:left}
+.ds-bar i.loss{background:repeating-linear-gradient(90deg, var(--blood) 0 3px, transparent 3px 5px)}
+
+.dfill{display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:14px; background:var(--plate-2)}
+.dfill .good{color:var(--good)}
+.dfill-g{display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); gap:5px}
+.dfill-g .gi{width:auto; height:auto; aspect-ratio:1; border-radius:8px}
+.dfill-g .gi.empty{background:none; box-shadow:inset 0 0 0 1px var(--rivet)}
+.dfill-g .gi.now{animation:dfsLit .8s ease-out .45s both}
+
+.dv-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 12px; border-radius:14px; background:var(--plate-2)}
+.dv-row > span{display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--ash); min-width:0}
+.dv-row.up{background:radial-gradient(ellipse at 80% 50%, rgba(109,197,123,.2), var(--plate-2) 75%)}
+.dv-row .dv{padding:0; background:none; align-items:flex-end}
+.dv-row .dv b{font-size:28px} .dv-row .dv b small{font-size:15px}
+.dv-row .dv > span, .dv-row .dv-new{display:none}
+.dec.big .dec-drop{height:200px}
+.dec.big .dec-burst{display:block; opacity:.55; animation:decBurst 1.2s ease-out .25s both, rspin 12s linear 1.4s infinite}
+.dec.big .dec-ico{animation:decDrop .7s cubic-bezier(.2,.9,.3,1.25) both; filter:drop-shadow(0 6px 0 rgba(0,0,0,.45)) drop-shadow(0 0 14px var(--rc))}
+.dec.big .dec-title .jump{font-size:34px; text-shadow:0 2px 0 #5a3d10, 0 0 18px rgba(231,190,98,.6)}
+.dec-tip{margin:0; padding:10px 12px; border-radius:12px; background:var(--plate-2); font-size:13px}
+.dec .result-actions.dec-acts{display:flex; flex-direction:column; gap:8px}
+.dec-go{min-height:58px; font-size:19px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; gap:10px; animation:decPulse 1.6s ease-in-out infinite}
+.dec-go .pill{padding:3px 10px; border-radius:999px; background:rgba(42,26,6,.14); font-size:15px; white-space:nowrap}
+.dec-alt{min-height:44px; background:transparent; color:var(--ash); font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:6px}
+
+@keyframes dcIn{0%{transform:translateX(60px) scale(.9); opacity:0} 60%{transform:translateX(-6px) scale(1.04); opacity:1} 100%{transform:none}}
+@keyframes dcKnock{0%{transform:none} 35%{transform:translateX(-7px) rotate(-4deg)} 100%{transform:none}}
+@keyframes dcGlow{0%,100%{box-shadow:0 0 16px -4px var(--rc)} 50%{box-shadow:0 0 28px 0 var(--rc)}}
+@keyframes dcBadge{0%{transform:translateY(-10px) scale(.7); opacity:0} 70%{transform:translateY(1px) scale(1.08); opacity:1} 100%{transform:none}}
+@keyframes ladLit{0%{transform:scaleY(.3); opacity:.2} 60%{transform:scaleY(1.5); opacity:1} 100%{transform:none}}
+@keyframes dsPop{0%{transform:scale(.4); opacity:0} 70%{transform:scale(1.15); opacity:1} 100%{transform:none}}
+@keyframes dsGrow{from{transform:scaleX(0)} to{transform:none}}
+@keyframes dfsLit{0%{box-shadow:inset 0 -2px 0 var(--rc)} 50%{box-shadow:inset 0 -2px 0 var(--rc), 0 0 0 3px color-mix(in srgb, var(--rc) 40%, transparent), 0 0 14px var(--rc); transform:scale(1.12)} 100%{box-shadow:inset 0 -2px 0 var(--rc), 0 0 0 2px color-mix(in srgb, var(--rc) 30%, transparent)}}
+@keyframes decPulse{0%,100%{box-shadow:0 0 0 0 rgba(231,190,98,.5)} 50%{box-shadow:0 0 0 8px rgba(231,190,98,0)}}
+
+/* lot przedmiotu na miejsce, monety do złota, dymki nad licznikami */
+.fly-img{position:fixed; z-index:9999; pointer-events:none; image-rendering:pixelated; filter:drop-shadow(0 0 8px rgba(255,220,140,.8))}
+.fx-land{animation:fxLand .9s ease-out}
+.fx-bump{animation:fxBump .6s ease-out}
+.chip-pop{position:absolute; left:50%; top:100%; margin-top:4px; padding:2px 9px; border-radius:999px; font-weight:800; font-size:14px; white-space:nowrap;
+  pointer-events:none; z-index:50; animation:chipPop 1.3s ease-out both}
+.chip-pop.up{background:var(--good); color:#0f2414} .chip-pop.gold{background:var(--straw); color:var(--straw-ink)}
+@keyframes fxLand{0%{transform:scale(1)} 30%{transform:scale(1.45); box-shadow:inset 0 -2px 0 var(--rc), 0 0 0 4px color-mix(in srgb, var(--rc) 45%, transparent), 0 0 18px var(--rc)} 100%{transform:none}}
+@keyframes fxBump{0%{transform:none} 35%{transform:scale(1.18)} 100%{transform:none}}
+@keyframes chipPop{0%{opacity:0; transform:translate(-50%,8px) scale(.6)} 15%{opacity:1; transform:translate(-50%,0) scale(1.15)} 25%{transform:translate(-50%,0) scale(1)} 80%{opacity:1; transform:translate(-50%,10px)} 100%{opacity:0; transform:translate(-50%,16px)}}
+@media (prefers-reduced-motion: reduce){
+  .dcard, .dc-first, .dc-jump, .dlad-bar i, .ds-chip, .ds-bar i, .dfill-g .gi, .dec-go, .fx-land, .fx-bump, .chip-pop{animation:none !important}
+}

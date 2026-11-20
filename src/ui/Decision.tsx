@@ -1,9 +1,10 @@
 // Okno decyzji o nowym przedmiocie (wytop, zatrzymany auto-wytop, skrzynia bossa, Zbrojownia):
 // animacja dropu, nowy przedmiot obok założonego, różnice statystyk i przyciski Załóż / Sprzedaj.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { ELEM, ORES, R, RAR, RAR_ORDER, SETS, SLOTS, SUBS, rAt, rGe, rRank, rTier } from '../data';
+import { B, ELEM, ORES, R, RAR, RAR_ORDER, SETS, SLOTS, SLOT_ORDER, SUBS, rAt, rGe, rRank, rTier } from '../data';
 import { itemUrl, resUrl } from '../art/render';
-import { sparks } from './fx';
+import { coinsToGold, flyToSlot, sparks } from './fx';
+import { buzz } from './haptics';
 import { play } from './sound';
 import { sellFor } from '../engine/forge';
 import { dist, itemName, mainVal, maxJump, oreFloor, oreNominal } from '../engine/formulas';
@@ -32,45 +33,144 @@ export function Brag({ game, it }: { game: Game; it: Item }) {
 }
 
 const sign = (v: number, f: (n: number) => string = fmt) => (v > 0 ? '+' : v < 0 ? '−' : '±') + f(Math.abs(v));
-const Diff = ({ v, f, on = true }: { v: number; f?: (n: number) => string; on?: boolean }) => (!on || Math.abs(v) < 0.05 ? null : <small class={v > 0 ? 'up' : 'down'}>{sign(v, f)}</small>);
 
-/** Tabela: założony przedmiot obok nowego. */
-function Compare({ cur, it }: { cur: Item | undefined; it: Item }) {
-  const stat = SLOTS[it.slot].stat === 'dmg' ? 'Obrażenia' : 'Zdrowie';
-  const subIds = [...new Set([...(cur?.subs ?? []).map(x => x.id), ...it.subs.map(x => x.id)])] as SubId[];
-  const subOf = (x: Item | undefined, id: SubId) => x?.subs.find(s => s.id === id)?.v ?? 0;
-  const mv = mainVal(it), cv = cur ? mainVal(cur) : 0;
+/** Liczba nabijana od zera (werdykt Mocy); bez animacji przy „ogranicz ruch”. */
+function useCountUp(target: number, key: number, ms = 750, delay = 150): number {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) { setV(target); return; }
+    let raf = 0;
+    const t0 = performance.now() + delay;
+    const step = (t: number) => {
+      const k = Math.max(0, Math.min(1, (t - t0) / ms));
+      setV(Math.round(target * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, key]);
+  return v;
+}
+
+/** Trójkąt ▲/▼ rysowany (znak z czcionki zastępczej wychodził dużo większy od cyfr). */
+const Tri = ({ up }: { up: boolean }) => (
+  <svg class="tri" viewBox="0 0 10 10" aria-hidden="true"><path d={up ? 'M5 1 9.6 9H.4z' : 'M5 9 9.6 1H.4z'} fill="currentColor" /></svg>
+);
+
+/** Werdykt na górze okna: o ile zmieni się Moc bohatera. */
+function Verdict({ d, empty, id }: { d: number; empty: boolean; id: number }) {
+  const n = useCountUp(Math.abs(d), id);
+  const up = empty || d > 0;
+  if (!up && d === 0) return <div class="dv eq"><b>± 0 <small>Mocy</small></b><span>Tak samo mocny jak założony</span></div>;
   return (
-    <table class="cmp">
-      <thead>
-        <tr>
-          <th scope="col" />
-          <th scope="col">{cur ? <><Px src={itemUrl(cur.kind, cur.ore, cur.r)} size={18} />Założony</> : 'Puste miejsce'}</th>
-          <th scope="col"><Px src={itemUrl(it.kind, it.ore, it.r)} size={18} />Nowy</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><th scope="row">Rzadkość</th><td class={cur ? `rt${cur.r}` : ''}>{cur ? RAR[cur.r].n : '—'}</td><td class={`rt${it.r}`}>{RAR[it.r].n}</td></tr>
-        <tr><th scope="row">Poziom</th><td>{cur ? cur.lvl : '—'}</td><td>{it.lvl} <Diff v={it.lvl - (cur?.lvl ?? 0)} on={!!cur} /></td></tr>
-        <tr class="main"><th scope="row">{stat}</th><td>{cur ? fmt(cv) : '—'}</td><td>{fmt(mv)} <Diff v={mv - cv} on={!!cur} /></td></tr>
-        {subIds.map(id => {
-          const a = subOf(cur, id), b = subOf(it, id);
-          return (
-            <tr key={id}>
-              <th scope="row">{SUBS[id].n}</th>
-              <td>{a ? `+${f1(a)}${SUBS[id].u}` : '—'}</td>
-              <td>{b ? `+${f1(b)}${SUBS[id].u}` : '—'} <Diff v={b - a} f={n => f1(n) + SUBS[id].u} on={!!cur} /></td>
-            </tr>
-          );
-        })}
-        {(cur?.el || it.el) && <tr><th scope="row">Żywioł</th><td>{cur?.el ? ELEM[cur.el].el : '—'}</td><td>{it.el ? ELEM[it.el].el : '—'}</td></tr>}
-        {(cur?.set || it.set) && (
-          <tr><th scope="row">Zestaw</th><td>{cur?.set ? SETS[cur.set].n : '—'}</td><td style={it.set ? { color: SETS[it.set].col } : undefined}>{it.set ? SETS[it.set].n : '—'}</td></tr>
-        )}
-      </tbody>
-    </table>
+    <div class={`dv ${up ? 'up' : 'down'}`} role="status">
+      {empty && <span class="dv-new">Nowe miejsce!</span>}
+      <b><Tri up={up} />{up ? '+' : '−'}{fmt(n)} <small>Mocy</small></b>
+      {!empty && <span>{up ? 'Lepszy od założonego' : 'Słabszy od założonego — najlepiej sprzedać'}</span>}
+    </div>
   );
 }
+
+/** Karta przedmiotu w „starciu”: założony (stary) albo nowy. */
+function DCard({ it, tag, win, first, cls = '', iconRef }: { it: Item; tag: string; win: boolean; first?: boolean; cls?: string; iconRef?: { current: HTMLImageElement | null } }) {
+  return (
+    <div class={`dcard r${it.r}${win ? ' win' : ''} ${cls}`}>
+      {first ? <span class="dc-first"><Px src={resUrl('puchar')} size={16} />Pierwszy {RAR[it.r].n}!</span> : <span class="dc-tag">{tag}</span>}
+      <img ref={iconRef} class="px dc-ico" src={itemUrl(it.kind, it.ore, it.r)} width={win ? 72 : 52} height={win ? 72 : 52} alt="" draggable={false} />
+      <b class="dc-name">{itemName(it)}</b>
+      <small class={`rt${it.r}`}>{RAR[it.r].n} · poz. {it.lvl}</small>
+      {it.jump > 0 && <span class="dc-jump">Przeskok +{it.jump}!</span>}
+    </div>
+  );
+}
+
+/** Drabinka 10 rzadkości: zapalona aż do nowej, dawna zaznaczona obwódką. */
+function Ladder({ it, cur }: { it: Item; cur: Item | undefined }) {
+  const nr = rRank(it.r), or = cur ? rRank(cur.r) : -1;
+  const jv = it.jv ?? 1;
+  const nominal = jv >= 6 ? oreNominal(it.ore, it.flvl || 1) : rRank(oreFloor(it.ore, jv));
+  return (
+    <div class="dlad">
+      <div class="dlad-h">
+        <span>Rzadkość</span>
+        <span>
+          {cur && <><span class={`rt${cur.r}`}>{RAR[cur.r].n}</span> → </>}
+          <span class={`rt${it.r}`}>{RAR[it.r].n}</span>
+          {cur && nr > or && <span class="dl-tag up">▲ awans</span>}
+          {cur && nr < or && <span class="dl-tag down">▼ niżej</span>}
+        </span>
+      </div>
+      <div class="dlad-bar" aria-hidden="true">
+        {RAR_ORDER.map((r, k) => (
+          <i key={r} class={`${k <= nr ? 'on' : ''}${k === nr ? ' now' : ''}${k === or ? ' was' : ''}${k > nominal && k <= nr ? ' jumped' : ''}`}
+            style={{ '--c': `var(--r${r})`, '--d': `${Math.max(0, k - nominal) * 0.12}s` } as Record<string, string>} />
+        ))}
+      </div>
+      {it.jump > 0 && it.flvl > 0 && (
+        <div class="dlad-f">{ORES[it.ore].n} zwykle daje <b class={`rt${rAt(nominal)}`}>{RAR[rAt(nominal)].n}</b> — wyszło <b class={`rt${it.r}`}>{RAR[it.r].n}</b>, {it.jump} {it.jump === 1 ? 'szczebel' : 'szczeble'} wyżej</div>
+      )}
+    </div>
+  );
+}
+
+interface StatRow { k: string; n: string; a: number; b: number; f: (n: number) => string; txt?: [string, string] }
+
+/** Zmiany statystyk: „21 → 32” i znaczek różnicy; nowa cecha — NOWE, utracona — przekreślona. */
+function Stats({ cur, it }: { cur: Item | undefined; it: Item }) {
+  const subOf = (x: Item | undefined, id: SubId) => x?.subs.find(q => q.id === id)?.v ?? 0;
+  const rows: StatRow[] = [{ k: 'main', n: SLOTS[it.slot].stat === 'dmg' ? 'Obrażenia' : 'Zdrowie', a: cur ? mainVal(cur) : 0, b: mainVal(it), f: fmt }];
+  const ids = [...new Set([...it.subs.map(x => x.id), ...(cur?.subs ?? []).map(x => x.id)])] as SubId[];
+  for (const id of ids) rows.push({ k: id, n: SUBS[id].n, a: subOf(cur, id), b: subOf(it, id), f: v => '+' + f1(v) + SUBS[id].u });
+  if (cur?.el || it.el) rows.push({ k: 'el', n: 'Żywioł', a: cur?.el ? 1 : 0, b: it.el ? 1 : 0, f: () => '', txt: [cur?.el ? ELEM[cur.el].el : '', it.el ? ELEM[it.el].el : ''] });
+  if (cur?.set || it.set) rows.push({ k: 'set', n: 'Zestaw', a: cur?.set ? 1 : 0, b: it.set ? 1 : 0, f: () => '', txt: [cur?.set ? SETS[cur.set].n : '', it.set ? SETS[it.set].n : ''] });
+  return (
+    <div class="dstats">
+      {rows.map((r, i) => {
+        const fresh = r.b > 0 && r.a === 0, lost = r.a > 0 && r.b === 0;
+        const same = r.txt ? r.txt[0] === r.txt[1] : Math.abs(r.b - r.a) < 0.05;
+        const val = r.txt ? r.txt[1] || r.txt[0] : r.f(lost ? r.a : r.b);
+        const max = Math.max(r.a, r.b);
+        const delay = { animationDelay: `${0.35 + i * 0.08}s` };
+        return (
+          <div key={r.k} class={`ds${lost ? ' lost' : ''}`}>
+            <span class="ds-n">{r.n}</span>
+            <span class="ds-v">{!fresh && !lost && !same && <span class="ds-old">{r.txt ? r.txt[0] : r.f(r.a)} → </span>}{val}</span>
+            {fresh ? <span class="ds-chip new" style={delay}>NOWE</span>
+              : lost ? <span class="ds-chip down" style={delay}>{r.txt ? 'brak' : sign(-r.a, n => r.f(n).replace('+', ''))}</span>
+              : same ? <span class="ds-chip eq">=</span>
+              : r.txt ? <span class="ds-chip up" style={delay}>zmiana</span>
+              : <span class={`ds-chip ${r.b > r.a ? 'up' : 'down'}`} style={delay}>{sign(r.b - r.a, n => r.f(n).replace('+', ''))}</span>}
+            {!r.txt && r.a > 0 && r.b > 0 && !same && (
+              <span class="ds-bar" aria-hidden="true">
+                <i style={{ width: (Math.min(r.a, r.b) / max) * 100 + '%' }} />
+                <i class={r.b > r.a ? 'gain' : 'loss'} style={{ width: (Math.abs(r.b - r.a) / max) * 100 + '%', ...delay }} />
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Puste miejsce: pasek ośmiu miejsc ekwipunku z nowym zapalonym („3/8 → 4/8”). */
+function GearFill({ s, it }: { s: Game['s']; it: Item }) {
+  const worn = SLOT_ORDER.filter(k => !!s.eq[k]).length;
+  return (
+    <div class="dfill">
+      <div class="dlad-h"><span>Ekwipunek bohatera</span><b>{worn}/8 → <span class="good">{worn + 1}/8</span></b></div>
+      <div class="dfill-g">
+        {SLOT_ORDER.map(k => {
+          const x = k === it.slot ? it : s.eq[k];
+          return <span key={k} class={`gi${x ? ' r' + x.r : ' empty'}${k === it.slot ? ' now' : ''}`}>{x && <Px src={itemUrl(x.kind, x.ore, x.r)} size={22} />}</span>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Przedmioty, dla których telefon już zawibrował. */
+const buzzed = new Set<number>();
 
 /** Przedmioty, których animację wykuwania już pokazano (żeby nie powtarzać jej po ponownym otwarciu okna). */
 const animated = new Set<number>();
@@ -156,29 +256,73 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
     );
   }
   const cur = s.eq[it.slot];
-  const d = src === 'pending' ? game.pendingDelta() : game.foundDelta(0);
+  const d = Math.round(src === 'pending' ? game.pendingDelta() : game.foundDelta(0));
   const better = d >= 0;
+  const empty = !cur;
+  const first = game.firsts.has(it.id) && rGe(it.r, R.RZADKI);
+  // Wielka chwila: przeskok o 2+, Legendarny i wyżej albo pierwszy w historii Epicki+ — scena z promieniami.
+  const big = it.jump >= 2 || rGe(it.r, R.LEGENDARNY) || (first && rGe(it.r, R.EPICKI));
   const price = sellFor(s, it);
-  const wear = () => { if (src === 'pending') game.equipPending(); else game.takeFound(0, true); setMore(false); };
-  const sellIt = () => { if (src === 'pending') game.sellPending(); else game.takeFound(0, false); setMore(false); };
+  const icon = useRef<HTMLImageElement>(null);
+  const sellBtn = useRef<HTMLButtonElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (buzzed.has(it.id)) return;
+    buzzed.add(it.id);
+    void buzz(it.r, s.opts.vibe !== false);
+    if (big) sparks(stage.current, it.r);
+  }, [it.id]);
+  const wear = () => {
+    flyToSlot(icon.current, itemUrl(it.kind, it.ore, it.r), SLOT_ORDER.indexOf(it.slot), d > 0 || empty ? `▲ +${fmt(Math.abs(d))}` : `▼ −${fmt(Math.abs(d))}`);
+    if (src === 'pending') game.equipPending(); else game.takeFound(0, true);
+    setMore(false);
+  };
+  const sellIt = () => {
+    coinsToGold(sellBtn.current, resUrl('zloto'), `+${fmt(price)}`);
+    if (src === 'pending') game.sellPending(); else game.takeFound(0, false);
+    setMore(false);
+  };
   const head = src === 'found' ? (it.obieg ? 'Skrzynia · przedmiot dawnego kowala' : 'Znalezisko') : it.forced === 'set' ? 'Wykuto część zestawu' : 'Wykuto';
   const left = src === 'found' ? s.found.length - 1 : 0;
+  const gainTxt = `${empty || d > 0 ? '▲ +' : d < 0 ? '▼ −' : '± '}${fmt(Math.abs(d))} Mocy`;
+  const gain = <span class="pill">{gainTxt}</span>;
   return (
-    <div class={`dec r${it.r}`} key={it.id}>
+    <div class={`dec r${it.r}${big ? ' big' : ''}`} key={it.id}>
       <div class="row">
-        <div class="eyebrow">{head}{left > 0 ? ` · jeszcze ${left}` : ''}</div>
+        <div class="eyebrow">{head}{src === 'pending' ? ` · ${ORES[it.ore].n}` : ''}{left > 0 ? ` · jeszcze ${left}` : ''}</div>
         <span class="eyebrow">{SLOTS[it.slot].n}</span>
       </div>
-      <div class="dec-drop" aria-hidden="true">
-        <span class="dec-burst" />
-        <Px src={itemUrl(it.kind, it.ore, it.r)} size={72} cls="dec-ico" />
-      </div>
-      <div class="dec-title">
-        <div class="dec-name">{itemName(it)}</div>
-        <div class="irar">{RAR[it.r].n} · poz. {it.lvl}{it.obieg ? ` · kowal: ${it.smith}` : ''}</div>
-        {it.jump > 0 && <div class="jump">Przeskok +{it.jump}!</div>}
-        {it.jump < 0 && <div class="jump low">Kuźnia jeszcze nie opanowała tej rudy — tym razem o rzadkość niżej. Od {ORES[it.ore].v6[2]}. poziomu kuźni to się nie zdarza.</div>}
-      </div>
+      {big ? (
+        <>
+          <div class="dec-drop" ref={stage}>
+            <span class="dec-burst" />
+            <img ref={icon} class="px dec-ico" src={itemUrl(it.kind, it.ore, it.r)} width={104} height={104} alt="" draggable={false} />
+            {first && <span class="dc-first big"><Px src={resUrl('puchar')} size={18} />Pierwszy {RAR[it.r].n}!</span>}
+          </div>
+          <div class="dec-title">
+            {it.jump > 0 && <div class="jump">Przeskok +{it.jump}!</div>}
+            <div class="dec-name">{itemName(it)}</div>
+            <div class="irar">{RAR[it.r].n} · poz. {it.lvl}{it.obieg ? ` · kowal: ${it.smith}` : ''}</div>
+          </div>
+          <Ladder it={it} cur={undefined} />
+          <div class={`dv-row ${better || empty ? 'up' : 'down'}`}>
+            <span>{cur ? <><Px src={itemUrl(cur.kind, cur.ore, cur.r)} size={26} />zamiast: {itemName(cur)}</> : 'Nowe miejsce!'}</span>
+            <Verdict d={d} empty={empty} id={it.id} />
+          </div>
+        </>
+      ) : (
+        <>
+          <Verdict d={d} empty={empty} id={it.id} />
+          <div class="dcards">
+            {cur ? <DCard it={cur} tag={better ? 'Założony' : 'Założony · zostaje'} win={!better} cls="old" />
+              : <div class="dcard empty"><img class="px dc-ico" src={itemUrl(it.kind, it.ore, it.r)} width={52} height={52} alt="" /><small>Puste miejsce</small></div>}
+            <span class={`dc-arrow${better ? '' : ' back'}`} aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4" /></svg></span>
+            <DCard it={it} tag="Nowy" win={better} first={first} cls="new" iconRef={icon} />
+          </div>
+          {it.jump < 0 && <div class="jump low">Kuźnia jeszcze nie opanowała tej rudy — tym razem o rzadkość niżej. Od {ORES[it.ore].v6[2]}. poziomu kuźni to się nie zdarza.</div>}
+          <Ladder it={it} cur={cur} />
+        </>
+      )}
       {src === 'pending' && game.lastBatch?.best === it && (
         <div class="batch-sum">
           Wytop ×{game.lastBatch.count}: to najlepszy z nich.
@@ -186,26 +330,34 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
           {game.lastBatch.equipped > 0 && <> Założono {game.lastBatch.equipped} lepsze od dotychczasowych.</>}
         </div>
       )}
-      <div class={`dec-power ${better ? 'up' : 'down'}`}>
-        Moc bohatera: <b>{sign(Math.round(d))}</b>{better ? ' — lepszy od założonego' : ' — słabszy od założonego'}
+      <Stats cur={cur} it={it} />
+      {empty && !big && <GearFill s={s} it={it} />}
+      {!better && s.forge.lvl < B.AUTO_FORGE_LVL && <p class="sub dec-tip">Takie przedmioty od {B.AUTO_FORGE_LVL}. poziomu kuźni sprzedaje sam auto-wytop.</p>}
+      <Brag game={game} it={it} />
+      <div class="result-actions dec-acts">
+        {better ? (
+          <>
+            <button class="btn primary dec-go" onClick={wear}>Załóż {gain}</button>
+            <button class="btn dec-alt" ref={sellBtn} onClick={sellIt}>Sprzedaj <Px src={resUrl('zloto')} size={16} /> {fmt(price)} zł</button>
+          </>
+        ) : (
+          <>
+            <button class="btn primary dec-go" ref={sellBtn} onClick={sellIt}>Sprzedaj <Px src={resUrl('zloto')} size={20} /> {fmt(price)} zł</button>
+            <button class="btn dec-alt" onClick={wear}>Załóż mimo to ({gainTxt})</button>
+          </>
+        )}
       </div>
-      <Compare cur={cur} it={it} />
-      {cur && cur.fame > 0 && <p class="sub">Po zmianie połowa Sławy Czynów założonego przedmiotu ({fmt(cur.fame)}) przejdzie na nowy.</p>}
-      {src === 'pending' && !it.obieg && it.flvl > 0 && (
+      <div class="dec-more">
+        <button class="linkbtn" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Ukryj szczegóły' : 'Szczegóły, szanse wytopu i historia ›'}</button>
+        {src === 'found' && <button class="linkbtn" onClick={close}>Zdecyduję później</button>}
+      </div>
+      {more && cur && cur.fame > 0 && <p class="sub">Po zmianie połowa Sławy Czynów założonego przedmiotu ({fmt(cur.fame)}) przejdzie na nowy.</p>}
+      {more && src === 'pending' && !it.obieg && it.flvl > 0 && (
         <p class="sub dec-odds">
           Szanse tego wytopu ({ORES[it.ore].n}, kuźnia {it.flvl}): {dist(it.ore, it.flvl, techMods(s).jumpRel, it.jv ?? 1).map(([r, p], i) => <span key={r}>{i > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n} {pct(p)}</span></span>)}
           {it.forced === 'pity' ? ' · przeskok z gwarancji' : it.forced === 'tut' ? ' · pierwszy przeskok gwarantowany' : it.forced === 'set' ? ' · przeskok gwarantowany przez rudę unikalną' : ''}
         </p>
       )}
-      <Brag game={game} it={it} />
-      <div class="result-actions">
-        <button class={`btn${better ? ' primary' : ''}`} onClick={wear}>Załóż</button>
-        <button class={`btn${better ? '' : ' primary'}`} onClick={sellIt}>Sprzedaj · {fmt(price)} zł.</button>
-      </div>
-      <div class="dec-more">
-        <button class="linkbtn" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Ukryj szczegóły' : 'Szczegóły i historia przedmiotu'}</button>
-        {src === 'found' && <button class="linkbtn" onClick={close}>Zdecyduję później</button>}
-      </div>
       {more && <ItemCard it={it} history={it.obieg} />}
     </div>
   );

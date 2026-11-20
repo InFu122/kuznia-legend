@@ -18,7 +18,7 @@ export function discover(ctx: Ctx, it: Item): boolean {
   const k = codexKey(it);
   if (s.codex.includes(k)) return false;
   s.codex = [...s.codex, k];
-  if (rRank(it.r) > rRank(s.stats.bestR ?? -1)) s.stats.bestR = it.r;
+  if (rRank(it.r) > rRank(s.stats.bestR ?? -1)) { s.stats.bestR = it.r; ctx.emit({ t: 'first', id: it.id, r: it.r }); }
   ctx.cache = null;
   ctx.dirty = true;
   return true;

@@ -77,7 +77,20 @@ export class Game {
     this.listeners.add(fn);
     return () => { this.listeners.delete(fn); };
   }
-  private dispatch(e: GameEvent) { for (const fn of this.listeners) fn(e); }
+  private dispatch(e: GameEvent) {
+    if (e.t === 'first') this.firsts.add(e.id);
+    for (const fn of this.listeners) fn(e);
+  }
+  /** Przedmioty (id), które jako pierwsze w historii gracza osiągnęły swoją rzadkość — odznaka „Pierwszy …!”. */
+  readonly firsts = new Set<number>();
+  /** Ile lepszych przedmiotów z rzędu gracz założył (seria; zeruje ją słabszy przedmiot). */
+  streak = 0;
+  /** Seria lepszych przedmiotów: założenie lepszego ją wydłuża, słabszy (założony albo sprzedany) przerywa. */
+  private noteDecision(better: boolean, wear: boolean, name: string): void {
+    if (wear && better) this.streak++;
+    else if (!better) this.streak = 0;
+    if (wear) toast(this.ctx, this.streak >= 3 ? `Seria: ${this.streak} lepsze z rzędu!` : 'Założono: ' + name, this.streak >= 3 ? 'good' : undefined);
+  }
   private changed() { this.dispatch({ t: 'change' }); }
 
   /** Upływ `realMs` milisekund prawdziwego czasu (z uwzględnieniem tempa testowego). */
@@ -273,14 +286,16 @@ export class Game {
   equipPending(): void {
     const it = this.s.pending;
     if (!it) return;
+    const better = powerDelta(this.ctx, it) > 0;
     this.s.pending = null;
     equip(this.ctx, it, false);
-    toast(this.ctx, 'Założono: ' + itemName(it));
+    this.noteDecision(better, true, itemName(it));
     this.changed();
   }
   sellPending(): void {
     const it = this.s.pending;
     if (!it) return;
+    this.noteDecision(powerDelta(this.ctx, it) > 0, false, '');
     this.s.pending = null;
     const price = sellFor(this.s, it);
     sell(this.ctx, it, false);
@@ -361,16 +376,18 @@ export class Game {
   missions() { ensureMissions(this.ctx); return this.s.missions; }
   setSound(on: boolean, vol = this.s.opts.vol) { this.s.opts = { ...this.s.opts, sound: on, vol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
   setNotify(on: boolean) { this.s.opts = { ...this.s.opts, notify: on }; this.ctx.dirty = true; this.changed(); }
+  setVibe(on: boolean) { this.s.opts = { ...this.s.opts, vibe: on }; this.ctx.dirty = true; this.changed(); }
   setMusic(on: boolean, vol = this.s.opts.mvol) { this.s.opts = { ...this.s.opts, music: on, mvol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
 
   /** Decyzja o znalezisku ze Zbrojowni: załóż albo sprzedaj. */
   takeFound(i: number, wear: boolean): void {
     const it = this.s.found[i];
     if (!it) return;
+    const better = powerDelta(this.ctx, it) > 0;
     this.s.found.splice(i, 1);
     discover(this.ctx, it);
-    if (wear) { equip(this.ctx, it, false); toast(this.ctx, 'Założono: ' + itemName(it)); }
-    else { const p = sellFor(this.s, it); sell(this.ctx, it, true); toast(this.ctx, `Sprzedano za ${p.toLocaleString('pl-PL')} złota`); }
+    if (wear) { equip(this.ctx, it, false); this.noteDecision(better, true, itemName(it)); }
+    else { this.noteDecision(better, false, ''); const p = sellFor(this.s, it); sell(this.ctx, it, true); toast(this.ctx, `Sprzedano za ${p.toLocaleString('pl-PL')} złota`); }
     this.ctx.dirty = true;
     this.changed();
   }

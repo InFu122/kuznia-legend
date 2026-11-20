@@ -89,7 +89,7 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
     smith: s.name, land: landDef(s.cur.land).n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
   if (sx !== undefined) it.sx = sx;
-  if (rRank(it.r) > rRank(s.stats.bestR ?? -1)) s.stats.bestR = it.r;
+  if (rRank(it.r) > rRank(s.stats.bestR ?? -1)) { s.stats.bestR = it.r; ctx.emit({ t: 'first', id: it.id, r: it.r }); }
   if (rRank(it.r) >= rRank(R.LEGENDARNY)) s.stats.leg = (s.stats.leg || 0) + 1;
   discover(ctx, it);
   return it;
