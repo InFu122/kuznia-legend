@@ -1,12 +1,12 @@
 // Runy slotów (zakładka Bohater) i przekuwanie statystyk dodatkowych (okno założonego przedmiotu).
 import { useState } from 'preact/hooks';
-import { B, ORES, SLOTS, SLOT_ORDER } from '../../data';
+import { B, LANDS, ORES, SLOTS, SLOT_ORDER } from '../../data';
 import { itemUrl, oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
-import { RUNE_LAST_ORE, reforgeBlock, reforgeCost, runeBlock, runeCost, runeLvl, runePay, subText } from '../../engine/runes';
+import { farmLandFor, reforgeBlock, reforgeCost, runeBlock, runeCost, runeLvl, runePay, subText } from '../../engine/runes';
 import type { Item, SlotId } from '../../engine/types';
 import { getLink } from '../../save/server';
-import { fmt } from '../format';
+import { fmt, pctS } from '../format';
 import { SlotIcon } from '../icons';
 import { Px } from '../Px';
 import { Note, errText } from './ClanLife';
@@ -49,8 +49,9 @@ export function RunesCard({ game }: { game: Game }) {
           const block = runeBlock(s, sl);
           const c = L < B.RUNE_MAX ? runePay(s, L + 1) : null;
           const lackOre = !!c && !c.enough;
-          // Gdy płacisz czymś więcej niż samą rudą z kosztu — pokaż dokładnie czym.
-          const mixed = !!c && c.enough && (c.parts.length > 1 || c.parts[0]?.[0] !== c.ore);
+          // Brakuje rudy — gdzie ją farmić (kraina z największym udziałem tej rudy).
+          const farm = lackOre ? farmLandFor(s, c.ore) : null;
+          const here = !!farm && farm.land === s.cur.land && game.b.mode === 'camp';
           const lackGold = !!c && s.gold < c.gold;
           return (
             <li key={sl} class={L >= B.RUNE_MAX ? 'max' : ''}>
@@ -63,12 +64,18 @@ export function RunesCard({ game }: { game: Game }) {
                 <RuneBar s={s} lvl={L} />
                 {c ? (
                   <div class="rneed">
-                    <span class={lackOre ? 'lack' : ''}><Px src={oreUrl(c.ore)} size={14} />{fmt(c.n)} × {ORES[c.ore].n}{c.ore < RUNE_LAST_ORE ? ' lub lepsza' : ''} <small>(masz {fmt(c.avail)})</small></span>
+                    <span class={lackOre ? 'lack' : ''}><Px src={oreUrl(c.ore)} size={14} />{fmt(c.n)} × {ORES[c.ore].n} <small>(masz {fmt(c.avail)})</small></span>
                     <span class={lackGold ? 'lack' : ''}><Px src={resUrl('zloto')} size={14} />{fmt(c.gold)} złota</span>
-                    {mixed && (
-                      <small class="rpay muted">zapłacisz: {c.parts.map(([o, n], i) => (
-                        <span key={o}>{i > 0 && ' + '}<Px src={oreUrl(o)} size={12} />{fmt(n)} {ORES[o].n}</span>
-                      ))}</small>
+                    {lackOre && (
+                      <span class="rfarm">
+                        {farm ? (
+                          <>
+                            <small>{ORES[c.ore].n} najczęściej: <b>{LANDS[farm.land].n}</b> ({pctS(farm.pct)})</small>
+                            {here ? <small class="muted">· tu walczysz</small>
+                              : <button class="btn small" onClick={() => game.goLand(farm.land)}>Farmuj tam</button>}
+                          </>
+                        ) : <small class="muted">{ORES[c.ore].n} wypada w dalszych krainach</small>}
+                      </span>
                     )}
                   </div>
                 ) : <div class="rneed"><small class="muted">Maksymalny poziom</small></div>}

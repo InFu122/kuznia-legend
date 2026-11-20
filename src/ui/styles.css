@@ -1564,7 +1564,8 @@ a.linkbtn{display:inline-block}
 .mtile.next{border-style:dashed; border-color:color-mix(in srgb, var(--straw) 55%, var(--rivet))}
 .mtile.next .mt-ic > :first-child{opacity:.7}
 .mtile.next b{color:var(--frost)}
-/* runy: „zapłacisz: …” w osobnym wierszu pod kosztem */
-.rneed{flex-wrap:wrap}
-.rneed .rpay{flex-basis:100%; display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px}
-.rneed .rpay > span{display:inline-flex; align-items:center; gap:3px; white-space:nowrap}
+/* runy: gdzie farmić brakującą rudę — w osobnym wierszu pod kosztem */
+.rneed .rfarm{flex-basis:100%; display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px}
+.rneed .rfarm small{color:var(--ash)}
+.rneed .rfarm b{color:var(--frost); font-weight:600}
+.rneed .rfarm .btn.small{padding:4px 10px; min-height:30px; font-size:12px}

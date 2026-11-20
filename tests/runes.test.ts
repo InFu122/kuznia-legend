@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { B, SUBS, RAR, subMult } from '../src/data';
 import { equip, smelt } from '../src/engine/forge';
 import { mulberry32 } from '../src/engine/rng';
-import { reforgeBlock, reforgeCost, rerollSub, runeBlock, runeCost, runePay } from '../src/engine/runes';
+import { farmLandFor, reforgeBlock, reforgeCost, rerollSub, runeBlock, runeCost, runePay } from '../src/engine/runes';
 import { migrate } from '../src/engine/state';
 import { makeGame, T0 } from './helpers';
 
@@ -21,23 +21,26 @@ describe('runy slotów', () => {
     expect(runeCost(s, 5)).toMatchObject({ ore: 0, n: 60 });
     expect(runeCost(s, 6)).toMatchObject({ ore: 1, n: 20 });
     expect(runeCost(s, 30).ore).toBe(5);
-    // brak Miedzi: najpierw cała Miedź, resztę dopłacają lepsze zwykłe rudy (najtańsze najpierw)
-    s.ores[0] = 10; s.ores[1] = 5;
-    expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20, enough: true, parts: [[0, 10], [1, 5], [2, 5]] });
-    // koszt zależy tylko od poziomu runy w danym slocie — nie od innych slotów
-    expect(runePay(s, 6)).toMatchObject({ ore: 1, parts: [[1, 5], [2, 15]] });
-    // rudy unikalne i Boska nie płacą za runy
-    s.ores = s.ores.map(() => 0); s.ores[6] = 999; s.ores[7] = 999; s.ores[9] = 999;
-    expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20, enough: false, avail: 0 });
-    expect(runeBlock(s, 'bron')).toMatch(/Miedź lub lepszej/);
+    // zawsze dokładnie ruda z kosztu — lepsze rudy jej nie zastępują
+    s.ores[0] = 10; s.ores[1] = 5000; s.ores[2] = 5000;
+    expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20, avail: 10, enough: false });
+    expect(runeBlock(s, 'bron')).toMatch(/Miedź/);
+    s.ores[0] = 20;
+    expect(runePay(s, 1).enough).toBe(true);
+    expect(runeBlock(s, 'bron')).toBeNull();
+    // gdzie farmić: kraina z największym udziałem rudy spośród odblokowanych
+    s.maxLand = 6;
+    expect(farmLandFor(s, 0)).toEqual({ land: 0, pct: 95 });
+    expect(farmLandFor(s, 2)?.land).toBe(6);
+    expect(farmLandFor(s, 5)).toBeNull();
   });
 
-  it('ulepszenie zabiera dokładnie to, co pokazuje runePay (Miedź i dopłata lepszą rudą)', () => {
+  it('ulepszenie zabiera tylko rudę z kosztu', () => {
     const { g, s } = armed(7);
-    s.ores = [7, 0, 100, 0, 0, 0, 50, 50, 50, 50];
+    s.ores = [25, 0, 100, 0, 0, 0, 50, 50, 50, 50];
     expect(g.upgradeRune('helm')).toBe(true);
-    expect(s.ores.slice(0, 3)).toEqual([0, 0, 87]);
-    expect(s.ores.slice(6)).toEqual([50, 50, 50, 50]);
+    expect(s.ores).toEqual([5, 0, 100, 0, 0, 0, 50, 50, 50, 50]);
+    expect(g.upgradeRune('helm')).toBe(false); // poziom 2 kosztuje 30 Miedzi, a zostało 5
   });
 
   it('runa podnosi główną statystykę przedmiotu w slocie, zostaje po zmianie przedmiotu i po Dziedzictwie', () => {

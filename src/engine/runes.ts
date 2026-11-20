@@ -1,12 +1,11 @@
 // Runy slotów i przekuwanie statystyk dodatkowych — ujścia rudy i złota.
 // Runa: każdy z 8 slotów ma poziom 0–30; +1% głównej statystyki przedmiotu w tym slocie za poziom (działa na każdy założony przedmiot).
 // Koszt rośnie po pięć poziomów na każdą rudę: 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal.
-// Każdy slot płaci rudą ze swojego poziomu; czego brakuje, dopłaca się tą samą liczbą sztuk lepszych zwykłych rud
-// (najpierw najtańszą: Żelazo, Srebro … Smocza Stal) — gracz z dalszych krain nie ma już Miedzi. Rud unikalnych
-// (Obsydian, Eteryt, Gwiezdny Kruszec) i Boskiej Rudy runy nie ruszają.
+// Każdy slot płaci dokładnie rudą ze swojego poziomu — bez zamienników. Słabsze rudy zostają potrzebne przez całą grę,
+// więc opłaca się wracać do wcześniejszych krain i je farmić (karta runy podpowiada, gdzie dana ruda wypada najczęściej).
 // Przekuwanie: jedna statystyka dodatkowa przedmiotu losowana od nowa za rudę przedmiotu i złoto; gracz wybiera, którą wersję zatrzymać.
 // Z serwerem przekuwa serwer (server/src/runes.ts) i podpisuje przedmiot, żeby dalej liczył się do rankingów.
-import { B, DIVINE_ORE, ORES, RAR, SLOTS, SUBS, SUB_IDS, subMult } from '../data';
+import { B, DIVINE_ORE, LANDS, ORES, RAR, SLOTS, SUBS, SUB_IDS, subMult } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
 import { allMods } from './mods';
@@ -27,29 +26,30 @@ export function runeCost(s: GameState, lvl: number): Cost {
   return { ore: tier, n: Math.ceil((20 + 10 * ((lvl - 1) % 5)) * k), gold: Math.round(goldWaveOf(s) * 5 * lvl * k) };
 }
 
-/** Ostatnia zwykła ruda, którą można dopłacać za runy (Smocza Stal); dalej są rudy unikalne i Boska. */
-export const RUNE_LAST_ORE = 5;
-
 export interface RunePay extends Cost {
-  /** Czym dokładnie zapłacisz: [ruda, sztuki] — najpierw ruda z kosztu, brak dopłacany lepszymi zwykłymi rudami. */
-  parts: [number, number][];
-  /** Ile sztuk masz razem (ruda z kosztu i lepsze zwykłe). */
+  /** Ile masz tej rudy. */
   avail: number;
   enough: boolean;
 }
 
-/** Czym zapłacisz za poziom `lvl` runy: ruda z kosztu, a brak dopłacany tą samą liczbą sztuk lepszych zwykłych rud. */
+/** Czym zapłacisz za poziom `lvl` runy: zawsze ruda z kosztu (bez zamienników). */
 export function runePay(s: GameState, lvl: number): RunePay {
   const c = runeCost(s, lvl);
-  const parts: [number, number][] = [];
-  let left = c.n, avail = 0;
-  for (let o = c.ore; o <= RUNE_LAST_ORE; o++) {
-    const have = Math.max(0, Math.floor(s.ores[o] ?? 0));
-    avail += have;
-    const take = Math.min(left, have);
-    if (take > 0) { parts.push([o, take]); left -= take; }
+  const avail = Math.max(0, Math.floor(s.ores[c.ore] ?? 0));
+  return { ...c, avail, enough: avail >= c.n };
+}
+
+/**
+ * Gdzie farmić rudę `ore`: odblokowana kraina kampanii, w której ta ruda ma największy udział w dropach
+ * (przy remisie dalsza — więcej złota). `null`, gdy żadna odblokowana kraina jej nie daje.
+ */
+export function farmLandFor(s: GameState, ore: number): { land: number; pct: number } | null {
+  let best: { land: number; pct: number } | null = null;
+  for (let i = 0; i <= Math.min(s.maxLand, LANDS.length - 1); i++) {
+    const p = LANDS[i].drops.find(([o]) => o === ore)?.[1] ?? 0;
+    if (p > 0 && (!best || p >= best.pct)) best = { land: i, pct: p };
   }
-  return { ...c, parts, avail, enough: left === 0 };
+  return best;
 }
 
 export function runeBlock(s: GameState, slot: SlotId): string | null {
@@ -57,7 +57,7 @@ export function runeBlock(s: GameState, slot: SlotId): string | null {
   const L = runeLvl(s, slot);
   if (L >= B.RUNE_MAX) return 'maksymalny poziom';
   const c = runePay(s, L + 1);
-  if (!c.enough) return `za mało rudy: ${ORES[c.ore].n}${c.ore < RUNE_LAST_ORE ? ' lub lepszej' : ''}`;
+  if (!c.enough) return `za mało: ${ORES[c.ore].n}`;
   if (s.gold < c.gold) return 'za mało złota';
   return null;
 }
@@ -67,7 +67,7 @@ export function upgradeRune(ctx: Ctx, slot: SlotId): boolean {
   if (!SLOTS[slot] || runeBlock(s, slot)) return false;
   const L = runeLvl(s, slot) + 1;
   const c = runePay(s, L);
-  for (const [o, n] of c.parts) s.ores[o] -= n;
+  s.ores[c.ore] -= c.n;
   s.gold -= c.gold;
   s.runes = { ...s.runes, [slot]: L };
   invalidate(ctx);
