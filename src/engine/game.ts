@@ -361,6 +361,10 @@ export class Game {
   setSound(on: boolean, vol = this.s.opts.vol) { this.s.opts = { ...this.s.opts, sound: on, vol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
   setNotify(on: boolean) { this.s.opts = { ...this.s.opts, notify: on }; this.ctx.dirty = true; this.changed(); }
   setVibe(on: boolean) { this.s.opts = { ...this.s.opts, vibe: on }; this.ctx.dirty = true; this.changed(); }
+  /** Ekran nie gaśnie w czasie gry. */
+  setAwake(on: boolean) { this.s.opts = { ...this.s.opts, awake: on }; this.ctx.dirty = true; this.changed(); }
+  /** Tryb oszczędzania: przyciemnianie po minucie bez dotyku. */
+  setDim(on: boolean) { this.s.opts = { ...this.s.opts, dim: on }; this.ctx.dirty = true; this.changed(); }
   setMusic(on: boolean, vol = this.s.opts.mvol) { this.s.opts = { ...this.s.opts, music: on, mvol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
 
   /** Decyzja o znalezisku ze Zbrojowni: załóż albo sprzedaj. */

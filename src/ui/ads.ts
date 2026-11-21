@@ -6,6 +6,7 @@
 // formularz zgody (treść ustawiasz w AdMob → Prywatność i wiadomości). Zmiana decyzji: Kodeks → Prywatność reklam.
 import { isNative } from './pwa';
 import { holdMusic } from './music';
+import { holdDim } from './powersave';
 
 type AM = typeof import('@capacitor-community/admob');
 
@@ -65,6 +66,7 @@ export async function showRewarded(): Promise<AdResult> {
       if (finished) return;
       finished = true;
       holdMusic(false);
+      holdDim(false);
       for (const h of handles) void h.then(x => x.remove()).catch(() => {});
       resolve(r);
     };
@@ -72,6 +74,7 @@ export async function showRewarded(): Promise<AdResult> {
     handles.push(m.AdMob.addListener(E.Dismissed, () => finish(earned ? 'ok' : 'cancel')));
     handles.push(m.AdMob.addListener(E.FailedToShow, () => finish('fail')));
     holdMusic(true);
+    holdDim(true);
     m.AdMob.showRewardVideoAd().then(() => { earned = true; }, () => finish('fail'));
   });
 }

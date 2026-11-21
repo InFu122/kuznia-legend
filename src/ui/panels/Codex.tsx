@@ -340,6 +340,16 @@ export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { gam
           <span class="sub">Wibracje przy rzadkich wytopach (od Rzadkiego wzwyż).</span>
           <button class={`toggle${s.opts.vibe !== false ? ' on' : ''}`} aria-pressed={s.opts.vibe !== false} onClick={() => game.setVibe(s.opts.vibe === false)}><span class="knob" />Wibracje</button>
         </div>
+        <div class="row">
+          <span class="sub">Ekran nie gaśnie i telefon się nie blokuje, dopóki gra jest włączona.</span>
+          <button class={`toggle${s.opts.awake !== false ? ' on' : ''}`} aria-pressed={s.opts.awake !== false} onClick={() => game.setAwake(s.opts.awake === false)}><span class="knob" />Ekran nie gaśnie</button>
+        </div>
+        {s.opts.awake !== false && (
+          <div class="row">
+            <span class="sub">Po minucie bez dotyku gra się przyciemnia, ale dalej widać walkę. Dotknij, aby wrócić.</span>
+            <button class={`toggle${s.opts.dim !== false ? ' on' : ''}`} aria-pressed={s.opts.dim !== false} onClick={() => game.setDim(s.opts.dim === false)}><span class="knob" />Oszczędzanie</button>
+          </div>
+        )}
         <p class="sub credits">Muzyka: eBunny, Sonican, Dummy Daniel · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
         {game.speeds.length > 1 && (
           <div class="speed-set">

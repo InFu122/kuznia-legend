@@ -32,6 +32,7 @@ import { hasUpdate, onPwa } from './pwa';
 import { onStoreUpdate, storeUpdateReady, updateFromStore } from './storeupdate';
 import { initHistoryBack, initNative } from './native';
 import { runBack } from './back';
+import { PowerSave } from './PowerSave';
 
 /** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
 const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide', 'intro']);
@@ -279,6 +280,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           {tab === 'kodeks' && <CodexPanel game={game} save={save} onReset={() => open({ kind: 'reset' })} onRanking={() => open({ kind: 'ranking' })} onFeedback={() => open({ kind: 'feedback' })} />}
         </main>
       </div>
+      <PowerSave awake={s.opts.awake !== false} dim={s.opts.dim !== false} />
       <div class="tabs" ref={bottomRef}>
         <div class={`tabs-wrap${elTab ? ' el-tab' : ''}`}>
           <ChatPop game={game} onOpen={ch => { game.seenFeatures(['czat']); open({ kind: 'chat', ch }); }} />

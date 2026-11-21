@@ -152,7 +152,8 @@ export interface GameState {
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
   unl: string[];                                       // odblokowane funkcje, które gra już ogłosiła (FeatureId)
   unlNew: string[];                                    // nowe funkcje ze znaczkiem „nowe” do pierwszego otwarcia
-  opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean; vibe?: boolean }; // vibe: wibracje przy rzadkich wytopach (brak = włączone)
+  opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean; vibe?: boolean; awake?: boolean; dim?: boolean };
+  // vibe: wibracje przy rzadkich wytopach; awake: ekran nie gaśnie w czasie gry; dim: po minucie bez dotyku gra się przyciemnia (brak = włączone)
   stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number; bestR: number; leg: number; missions: number; days: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów); leg: wytopy Legendarne+; missions: odebrane zadania; days: odebrane prezenty za logowanie
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
