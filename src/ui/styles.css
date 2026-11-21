@@ -1738,12 +1738,6 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .ask-q{margin:0 0 2px; font-size:14px; line-height:1.4; text-align:center}
 .ask-q .good{color:var(--good)} .ask-q .bad{color:#f08a83}
 .dec-ask .btn{min-height:46px; display:inline-flex; align-items:center; justify-content:center; gap:6px}
-.dock-el{flex:none; width:50px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border-radius:14px;
-  background:var(--plate); border:1px solid var(--rivet); color:var(--ash); font:600 11px var(--f-ui); cursor:pointer}
-.dock-el.on{border-color:var(--straw); color:var(--frost); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--straw) 45%, transparent)}
-.dock-el span{font-size:12px; font-variant-numeric:tabular-nums}
-.dock.with-el .dock-ore{width:64px}
-.dock.with-el .dock-go > .px{display:none}
 .autoel{display:flex; flex-direction:column; gap:6px; margin-top:10px}
 .autoel .ae-l{font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ash)}
 .ae-chips{display:flex; flex-wrap:wrap; gap:6px}
@@ -1795,3 +1789,25 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .runelist li{align-items:flex-start}
 .runelist li .rsock{margin-top:2px}
 .runelist li .rup{align-self:center}
+
+/* dolny pasek, wariant A: domieszka jako „dobudówka” nad przyciskiem rudy; Wytop z ikoną rudy (i domieszki) pośrodku */
+.dock-mat{position:relative; flex:none; display:flex}
+.dock-mat .dock-ore{flex:1}
+.dock.with-el .dock-mat .dock-ore{width:76px; border-top-left-radius:0; border-top-right-radius:0}
+.dock-el{--ec:var(--straw); position:absolute; left:0; right:0; bottom:100%; height:30px; display:flex; align-items:center; justify-content:center; gap:4px;
+  padding:0 4px; background:var(--plate); border:1px dashed #7a6a58; border-bottom:0; border-radius:12px 12px 0 0; color:#c9b8a2;
+  font:700 12px var(--f-ui); white-space:nowrap; cursor:pointer}
+.dock-el.on{border:1px solid var(--ec); border-bottom:0; color:var(--frost); font-size:13px;
+  background:linear-gradient(color-mix(in srgb, var(--ec) 22%, var(--plate)), var(--plate)); animation:elGlow 2.2s ease-in-out infinite}
+.dock-el.on b{font-variant-numeric:tabular-nums}
+.dock.with-el .dock-el.on + .dock-ore{border-top-color:var(--ec, var(--rivet))}
+.app.el-tab{padding-bottom:calc(var(--bottom-h, 150px) + 44px)}
+.tabs-wrap.el-tab .chatpop{bottom:calc(100% + 40px)}
+.btn.dock-go{gap:10px}
+.btn.dock-go.mix{padding-block:4px}
+.dock-go.mix b{font-size:26px; line-height:1}
+.dock-go.mix small{font-size:11.5px; line-height:1.1}
+.alloy{position:relative; flex:none; display:inline-flex}
+.alloy .alloy-el{position:absolute; right:-7px; bottom:-5px; filter:drop-shadow(0 1px 0 rgba(42,26,6,.9))}
+@keyframes elGlow{0%,100%{box-shadow:0 -2px 10px -3px var(--ec)} 50%{box-shadow:0 -2px 16px -1px var(--ec)}}
+@media (prefers-reduced-motion: reduce){ .dock-el.on{animation:none} }

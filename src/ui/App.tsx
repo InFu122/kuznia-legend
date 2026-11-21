@@ -23,7 +23,7 @@ import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
 import { ResearchPanel } from './panels/Research';
-import { FEATURES, FEATURE_IDS, ORES, type FeatureId } from '../data';
+import { B, FEATURES, FEATURE_IDS, ORES, type FeatureId } from '../data';
 import { gearHint, tutStep } from '../engine/tutorial';
 import { bossWaiting } from '../engine/combat';
 import { play, setSound, unlockAudio } from './sound';
@@ -203,9 +203,11 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     setFeat(null);
     setFeatTab(F.at.inTab ?? F.at.tab ?? tab);
   };
+  const elTab = tab === 'kuznia' && s.forge.lvl >= B.ELEM_FORGE_LVL;
   return (
     <>
-      <div class="app">
+      {/* Na Kuźni od poziomu domieszek nad przyciskiem rudy wystaje „dobudówka” — treść i dymek czatu robią jej miejsce. */}
+      <div class={`app${elTab ? ' el-tab' : ''}`}>
         <header class="hud">
           <div class="hud-chip gold" title="Złoto"><Px src={resUrl('zloto')} size={22} /><b>{fmt(s.gold)}</b></div>
           <button class={`hud-chip gems${game.unlocked('sklep') ? '' : ' locked'}`} data-btn="sklep" onClick={headBtn('sklep', () => open({ kind: 'shop', tab: 'klejnoty' }))}
@@ -278,7 +280,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </main>
       </div>
       <div class="tabs" ref={bottomRef}>
-        <div class="tabs-wrap">
+        <div class={`tabs-wrap${elTab ? ' el-tab' : ''}`}>
           <ChatPop game={game} onOpen={ch => { game.seenFeatures(['czat']); open({ kind: 'chat', ch }); }} />
           {tab === 'kuznia' && <ForgeDock game={game} onElem={() => open({ kind: 'mix', what: 'el' })} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} onAuto={() => open({ kind: 'auto' })} />}
           <nav class="tabs-in" aria-label="Zakładki">
