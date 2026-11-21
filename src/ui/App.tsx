@@ -328,7 +328,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </ModalShell>
       )}
       {coachOn && mark && <Coach key={mark.key} mark={mark} onHide={hideCoach} onTap={tapCoach} />}
-      <Toasts game={game} />
+      <Toasts game={game} modal={!!modal} />
     </>
   );
 }

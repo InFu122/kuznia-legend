@@ -7,7 +7,7 @@ import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labC
 import { equipBestSkills, equipSkill, levelUp, openSaddle, openScroll, selectBestMount, selectBestPet, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
-import { autoHandle, autoTarget, autoTargets, canSmelt, equip, refine, sell, sellFor, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime, refineTo } from './forge';
+import { autoHandle, autoTarget, autoTargets, canSmelt, equip, refine, sell, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime, refineTo } from './forge';
 import { itemName } from './formulas';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
@@ -279,9 +279,8 @@ export class Game {
     if (!it) return;
     this.noteDecision(powerDelta(this.ctx, it) > 0, false, '');
     this.s.pending = null;
-    const price = sellFor(this.s, it);
+    // Bez powiadomienia: monety lecą do licznika złota z dymkiem „+N” (gdy licznika nie widać — okno pokazuje komunikat).
     sell(this.ctx, it, false);
-    toast(this.ctx, `Sprzedano za ${price.toLocaleString('pl-PL')} złota`);
     this.changed();
   }
   pendingDelta(): number { return this.s.pending ? powerDelta(this.ctx, this.s.pending) : 0; }
@@ -379,7 +378,7 @@ export class Game {
     this.s.found.splice(i, 1);
     discover(this.ctx, it);
     if (wear) { equip(this.ctx, it, false); this.noteDecision(better, true, itemName(it)); }
-    else { this.noteDecision(better, false, ''); const p = sellFor(this.s, it); sell(this.ctx, it, true); toast(this.ctx, `Sprzedano za ${p.toLocaleString('pl-PL')} złota`); }
+    else { this.noteDecision(better, false, ''); sell(this.ctx, it, true); }
     this.ctx.dirty = true;
     this.changed();
   }

@@ -11,6 +11,7 @@ import { sellFor } from '../engine/forge';
 import { dist, itemName, mainVal, maxJump, oreFloor, oreNominal } from '../engine/formulas';
 import type { Game } from '../engine/game';
 import { techMods } from '../engine/mods';
+import { toast } from '../engine/context';
 import type { Item, SubId } from '../engine/types';
 import { ServerError, getLink } from '../save/server';
 import { f1, fmt, pct } from './format';
@@ -299,7 +300,7 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
     setMore(false);
   };
   const sellIt = () => {
-    coinsToGold(sellBtn.current, resUrl('zloto'), `+${fmt(price)}`);
+    if (!coinsToGold(sellBtn.current, resUrl('zloto'), `+${fmt(price)}`)) toast(game.ctx, `Sprzedano za ${fmt(price)} złota`);
     if (src === 'pending') game.sellPending(); else game.takeFound(0, false);
     setMore(false);
   };

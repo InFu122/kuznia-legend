@@ -91,15 +91,17 @@ export function flyToSlot(icon: Element | null, src: string, slotIdx: number, de
 }
 
 /** Po „Sprzedaj”: kilka monet leci do licznika złota, który podskakuje. */
-export function coinsToGold(btn: Element | null, coin: string, text: string) {
+/** Zwraca false, gdy animacji nie było (licznika złota albo przycisku nie widać) — wtedy wołający pokazuje komunikat. */
+export function coinsToGold(btn: Element | null, coin: string, text: string): boolean {
   const from = visibleRect(btn);
   const chip = document.querySelector('.hud-chip.gold');
   const to = visibleRect(chip);
-  if (!from || !to) return;
+  if (!from || !to || calm()) return false;
   const n = 6;
   const done = Array.from({ length: n }, (_, i) => {
     const r = new DOMRect(from.left + from.width / 2 - 20 + Math.random() * 40, from.top + from.height / 2 - 8 + Math.random() * 16, 1, 1);
     return flyImg(coin, r, to, 22, 520, i * 55);
   });
   void Promise.all(done).then(() => { flash(chip, 'fx-bump', 600); chipPop(chip, text, 'gold'); });
+  return true;
 }
