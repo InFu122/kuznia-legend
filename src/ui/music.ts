@@ -19,6 +19,25 @@ export const PLAYLISTS: Record<Mood, string[]> = {
   dung: [...DYNAMIC],
   boss: [...BOSS_ONLY, ...DYNAMIC],
 };
+/** Utwory do wyboru (nutka obok Mocy): nazwa po polsku i rodzaj. */
+export const TRACKS: { id: string; n: string; g: 'calm' | 'dyn' | 'choir' }[] = [
+  { id: 'simple-magic', n: 'Prosta magia', g: 'calm' },
+  { id: 'legend', n: 'Legenda', g: 'calm' },
+  { id: 'celtic-morning', n: 'Celtycki poranek', g: 'calm' },
+  { id: 'celtic-sun', n: 'Celtyckie słońce', g: 'calm' },
+  { id: 'helpless-land', n: 'Bezradna kraina', g: 'calm' },
+  { id: 'medieval-kingdom', n: 'Średniowieczne królestwo', g: 'calm' },
+  { id: 'medieval-castle', n: 'Średniowieczny zamek', g: 'calm' },
+  { id: 'knight-of-flowers', n: 'Rycerz kwiatów', g: 'calm' },
+  { id: 'celtic-wild', n: 'Celtycki szał', g: 'dyn' },
+  { id: 'mystical-fantasy', n: 'Mistyczna baśń', g: 'dyn' },
+  { id: 'celtic-fantasy', n: 'Celtycka baśń', g: 'dyn' },
+  { id: 'naughty-princess', n: 'Psotna księżniczka', g: 'dyn' },
+  { id: 'gregorian-choir', n: 'Chór gregoriański', g: 'choir' },
+  { id: 'religious-choir', n: 'Chór świątynny', g: 'choir' },
+];
+export const trackName = (id: string) => TRACKS.find(t => t.id === id)?.n ?? id;
+
 /** Muzyka jest cichsza od efektów — ma być tłem. */
 const LEVEL = 0.55;
 const FADE = 2.5;        // s, przejście między utworami
@@ -38,10 +57,18 @@ let duckUntil = 0;
 /** Przeglądarka odmówiła odtwarzania (brak gestu gracza) — spróbujemy przy następnym dotknięciu. */
 let blocked = false;
 const lastTrack: Partial<Record<Mood, string>> = {};
+/** Utwór wybrany przez gracza (gra cały czas, w pętli) albo null — automatycznie według miejsca. */
+let fixed: string | null = null;
+const trackSubs = new Set<() => void>();
+/** Zmiana utworu (okno wyboru muzyki pokazuje, co teraz gra). */
+export function onTrack(f: () => void): () => void { trackSubs.add(f); return () => trackSubs.delete(f); }
+/** Co teraz gra (null — cisza albo muzyka jeszcze nie ruszyła). */
+export const nowPlaying = (): string | null => (on && playing && decks[active]?.track) || null;
 
 const level = () => vol * LEVEL;
 
 function pick(m: Mood): string {
+  if (fixed) return fixed;
   const list = PLAYLISTS[m];
   // Bez powtórki: ani poprzedni utwór tej playlisty, ani ten, który właśnie gra (utwory dynamiczne są na kilku listach).
   const now = decks[active]?.track;
@@ -69,7 +96,7 @@ function crossTo(m: Mood, fade = FADE) {
   const track = pick(m);
   to.track = track;
   to.handoff = false;
-  to.el.loop = m === 'boss';  // walka z bossem trwa różnie długo — jego utwór się zapętla
+  to.el.loop = m === 'boss' || !!fixed;  // walka z bossem trwa różnie długo, a wybrany utwór gra w kółko
   to.el.src = audioUrl(`m-${track}.mp3`);
   to.g.gain.value = 0;
   to.el.play()
@@ -80,6 +107,7 @@ function crossTo(m: Mood, fade = FADE) {
   setTimeout(() => { if (decks[active].el !== old) old.pause(); }, fade * 1000 + 100);
   active = 1 - active;
   playing = m;
+  trackSubs.forEach(f => f());
 }
 
 function stop(fade = FADE_FAST) {
@@ -88,6 +116,7 @@ function stop(fade = FADE_FAST) {
   ramp(d.g, 0, fade);
   setTimeout(() => { if (!on) for (const x of decks) x.el.pause(); }, fade * 1000 + 100);
   playing = null;
+  trackSubs.forEach(f => f());
 }
 
 function makeDeck(): Deck | null {
@@ -159,6 +188,8 @@ export function setMusic(enabled: boolean, volume: number): void {
 
 /** Gdzie jest gracz: kraina, loch czy walka z bossem. Wołane często — zmienia utwór tylko przy zmianie nastroju. */
 export function setMood(m: Mood): void {
+  // Wybrany utwór gra wszędzie — miejsce go nie zmienia.
+  if (fixed) { mood = m; if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; } return; }
   if (m === mood) { if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; } return; }
   if (mood === 'boss' && m !== 'boss') {
     // Po bossie chwilę czekamy — między falami nie ma wroga, a boss może zaraz wrócić (np. w Leżu).
@@ -169,6 +200,20 @@ export function setMood(m: Mood): void {
   if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; }
   mood = m;
   if (on && decks.length) crossTo(m, m === 'boss' ? FADE_FAST : FADE);
+}
+
+/** Wybór utworu: id — ten jeden w kółko, null — automatycznie według miejsca. Nieznany utwór = automatycznie. */
+export function setTrack(id: string | null): void {
+  const t = id && TRACKS.some(x => x.id === id) ? id : null;
+  if (t === fixed) return;
+  fixed = t;
+  if (on && decks.length) crossTo(mood, FADE_FAST);
+  else trackSubs.forEach(f => f());
+}
+
+/** „Następny utwór” w trybie automatycznym. */
+export function skipTrack(): void {
+  if (!fixed && on && decks.length) crossTo(mood, FADE_FAST);
 }
 
 /** Pauza muzyki na czas reklamy (reklama ma własny dźwięk); `false` — gra dalej. */

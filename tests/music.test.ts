@@ -1,7 +1,8 @@
 // Muzyka: każdy utwór z playlist ma plik, a podział zgadza się z opisem (spokojne / dynamiczne / tylko boss).
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PLAYLISTS } from '../src/ui/music';
+import { PLAYLISTS, TRACKS, trackName } from '../src/ui/music';
+import { makeGame } from './helpers';
 
 describe('muzyka', () => {
   it('każdy utwór z playlist ma plik w public/audio', () => {
@@ -14,5 +15,23 @@ describe('muzyka', () => {
       expect(PLAYLISTS.camp).not.toContain(t);
       for (const m of ['dung', 'boss'] as const) expect(PLAYLISTS[m]).toContain(t);
     }
+  });
+});
+
+describe('wybór muzyki (nutka obok Mocy)', () => {
+  it('każdy utwór z playlist jest na liście wyboru i ma polską nazwę', () => {
+    expect(new Set(TRACKS.map(t => t.id))).toEqual(new Set(Object.values(PLAYLISTS).flat()));
+    for (const t of TRACKS) expect(trackName(t.id)).not.toBe(t.id);
+  });
+
+  it('wybór utworu zapisuje się w ustawieniach i włącza muzykę; null wraca do automatycznej', () => {
+    const { g, s } = makeGame();
+    g.setMusic(false);
+    g.setTrack('legend');
+    expect(s.opts.track).toBe('legend');
+    expect(s.opts.music).toBe(true);
+    g.setTrack(null);
+    expect(s.opts.track).toBeNull();
+    expect(s.opts.music).toBe(true);
   });
 });

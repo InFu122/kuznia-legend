@@ -27,7 +27,8 @@ import { B, FEATURES, FEATURE_IDS, ORES, type FeatureId } from '../data';
 import { gearHint, tutStep } from '../engine/tutorial';
 import { bossWaiting } from '../engine/combat';
 import { play, setSound, unlockAudio } from './sound';
-import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
+import { initMusic, kickMusic, moodOf, setMood, setMusic, setTrack } from './music';
+import { NoteIcon } from './MusicSheet';
 import { hasUpdate, onPwa } from './pwa';
 import { onStoreUpdate, storeUpdateReady, updateFromStore } from './storeupdate';
 import { UpdateWall } from './UpdateWall';
@@ -105,6 +106,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   // Nowe funkcje w otwartej zakładce: znika znaczek „nowe”.
   useEffect(() => { game.seenFeatures(FEATURE_IDS.filter(id => FEATURES[id].at.tab === tab)); }, [tab]);
   setSound(game.s.opts.sound, game.s.opts.vol);
+  // Najpierw utwór, potem włączenie — wybór utworu przy wyłączonej muzyce od razu gra ten utwór (bez podwójnego przejścia).
+  setTrack(game.s.opts.track ?? null);
   setMusic(game.s.opts.music, game.s.opts.mvol);
   setMood(moodOf(game.b.mode, !!game.b.enemy?.boss));
 
@@ -235,6 +238,10 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
               {save.error ? 'Zapis odrzucony' : save.mode === 'connecting' ? 'Łączenie…' : 'Offline'}
             </button>
           )}
+          <button class={`hud-mus${s.opts.music ? '' : ' off'}`} data-btn="muzyka" onClick={() => open({ kind: 'music' })}
+            aria-label={s.opts.music ? 'Muzyka: wybierz utwór' : 'Muzyka wyłączona. Włącz albo wybierz utwór'}>
+            <NoteIcon off={!s.opts.music} />
+          </button>
           <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmt(game.stats.power)}</b></div>
         </header>
         <GoalStrip game={game} step={step} onShow={showStep} onMissions={t => headBtn('zadania', () => open({ kind: 'missions', tab: t }))()} />
@@ -307,7 +314,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </div>
       </div>
       {modal && (
-        <ModalShell locked={LOCKED.has(modal.kind)} onClose={close} cls={modal.kind === 'menu' || modal.kind === 'auto' ? 'sheet' : modal.kind === 'ores' ? 'sheet ores-sheet' : ''}>
+        <ModalShell locked={LOCKED.has(modal.kind)} onClose={close} cls={modal.kind === 'menu' || modal.kind === 'auto' || modal.kind === 'music' ? 'sheet' : modal.kind === 'ores' ? 'sheet ores-sheet' : ''}>
           <ModalView m={modal} game={game} close={close} goTab={t => goTab(t)} onFeature={id => setFeat(id)} />
         </ModalShell>
       )}
