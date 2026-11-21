@@ -43,19 +43,3 @@ describe('tryb oszczędzania — licznik bezczynności', () => {
   });
 });
 
-describe('blokada ekranu', () => {
-  it('włącza się i zdejmuje, powiadamiając interfejs', async () => {
-    const { lockScreen, onLock, screenLocked } = await import('../src/ui/powersave');
-    const f = vi.fn();
-    const off = onLock(f);
-    expect(screenLocked()).toBe(false);
-    lockScreen();
-    expect(screenLocked()).toBe(true);
-    lockScreen();               // drugi raz nic nie zmienia
-    expect(f).toHaveBeenCalledTimes(1);
-    lockScreen(false);
-    expect(screenLocked()).toBe(false);
-    expect(f).toHaveBeenCalledTimes(2);
-    off();
-  });
-});

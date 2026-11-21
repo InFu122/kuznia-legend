@@ -1,8 +1,6 @@
 // Ekran w czasie gry: nie gaśnie i telefon się nie blokuje (Keep Awake), a po chwili bez dotyku gra przechodzi
 // w tryb oszczędzania — przyciemnia się (w aplikacji także podświetlenie ekranu), ale dalej widać, jak bohater
 // walczy i kuźnia kuje. Dotknięcie przywraca jasność. Oba ustawienia są w Kodeksie (Ekran nie gaśnie, Oszczędzanie).
-// Blokada (Menu → Zablokuj ekran): to samo przyciemnienie, ale dotyk nic nie robi — odblokowuje przesunięcie palcem,
-// więc telefon w kieszeni niczego nie kliknie.
 import { isNative } from './pwa';
 
 /** Po ilu ms bez dotyku gra się przyciemnia. */
@@ -39,20 +37,6 @@ let current: Idle | null = null;
 export const setIdle = (i: Idle | null) => { current = i; };
 /** Wstrzymuje przyciemnianie (reklama na cały ekran); `false` — liczy od nowa. */
 export const holdDim = (on: boolean) => current?.hold(on);
-
-/* ---------- blokada ekranu ---------- */
-let locked = false;
-const lockSubs = new Set<() => void>();
-export const screenLocked = () => locked;
-export function onLock(f: () => void): () => void { lockSubs.add(f); return () => lockSubs.delete(f); }
-/** Włącza (albo zdejmuje) blokadę ekranu w grze. */
-export function lockScreen(on = true): void {
-  if (locked === on) return;
-  locked = on;
-  lockSubs.forEach(f => f());
-}
-/** Ile trzeba przesunąć suwak (część drogi), żeby odblokować. */
-export const UNLOCK_AT = 0.85;
 
 let awake: boolean | null = null;
 /** Ekran nie gaśnie, dopóki gra jest na wierzchu (`false` — telefon gasi ekran jak zwykle). */

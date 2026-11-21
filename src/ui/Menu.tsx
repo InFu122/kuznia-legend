@@ -13,7 +13,6 @@ import { Px } from './Px';
 import { LockIcon, TabIcon, type Tab } from './icons';
 import { toast } from '../engine/context';
 import { fmt } from './format';
-import { lockScreen } from './powersave';
 
 /** Funkcje tylko z serwerem (klan, czat, ranking) w wersji bez serwera. */
 const onlineOnly = (n: string) => `${n} działa tylko w grze połączonej z serwerem (aplikacja na telefonie). Ta wersja gra bez serwera.`;
@@ -118,10 +117,6 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
           </button>
         ))}
       </div>
-      <button class="menu-lock" data-menu="blokada" onClick={() => { close(); lockScreen(); }}>
-        <span class="ml-ic"><LockIcon /></span>
-        <span><b>Zablokuj ekran</b><small>gra działa dalej, dotyk wyłączony — np. przed schowaniem telefonu</small></span>
-      </button>
       {next && (
         <button class="menu-next" onClick={show({ kind: 'locked', id: next })}>
           <Px src={resUrl('klucz')} size={20} />
