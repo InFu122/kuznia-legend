@@ -14,3 +14,4 @@ export * from './arena';
 export * from './events';
 export * from './cosmetics';
 export * from './unlocks';
+export * from './changelog';

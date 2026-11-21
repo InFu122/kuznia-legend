@@ -1,5 +1,5 @@
 import { unlockedNow } from './unlocks';
-import { ACHIEVEMENTS, ELEM, achFame, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
+import { ACHIEVEMENTS, ELEM, LATEST_LOG, achFame, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
@@ -36,7 +36,8 @@ export function newState(now: number): GameState {
     eggs: [0, 0, 0, 0, 0], hatch: null, pets: {}, petSel: null,
     saddles: 0, mounts: {}, mountSel: null, stones: 0, seals: 0, found: [],
     missions: { day: '', daily: [], chest: false, week: '', weekly: [] }, login: { last: '', idx: 0 }, tut: 0, unl: [], unlNew: [],
-    opts: { sound: true, vol: 0.6, music: true, mvol: 0.5, notify: true },
+    // Nowy gracz nie ogląda „Co nowego” (nie ma z czym porównać) — dopiero po następnej aktualizacji.
+    opts: { sound: true, vol: 0.6, music: true, mvol: 0.5, notify: true, logSeen: LATEST_LOG },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0, bestR: -1, leg: 0, missions: 0, days: 0 },
     sx: 0, seeds: [], obIn: [], obOut: [],
     clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
@@ -101,6 +102,8 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!Array.isArray(out.missions.daily) || !Array.isArray(out.missions.weekly)) out.missions = fresh.missions;
   out.login = Object.assign(fresh.login, isObj(raw.login) ? raw.login : {});
   out.opts = Object.assign(fresh.opts, isObj(raw.opts) ? raw.opts : {});
+  // Zapis sprzed dziennika zmian: gracz jeszcze nic nie oglądał — pokaż mu najnowszy wpis.
+  if (typeof out.opts.logSeen !== 'string' || !isObj(raw.opts) || typeof raw.opts.logSeen !== 'string') out.opts.logSeen = '';
   if (typeof out.tut !== 'number') out.tut = 0;
   if (typeof out.sx !== 'number' || !(out.sx >= 0)) out.sx = 0;
   if (!Array.isArray(out.seeds)) out.seeds = [];

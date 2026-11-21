@@ -40,6 +40,7 @@ import { ChatView } from './panels/Chat';
 import { MenuView } from './Menu';
 import { AutoSheet, OrePicker } from './Dock';
 import { MusicSheet } from './MusicSheet';
+import { ChangelogView } from './Changelog';
 import type { Tab } from './icons';
 
 /**
@@ -302,6 +303,8 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       return <AutoSheet game={game} close={close} />;
     case 'music':
       return <MusicSheet game={game} />;
+    case 'changelog':
+      return <ChangelogView game={game} all={m.all} close={close} />;
     case 'reset':
       return (
         <>

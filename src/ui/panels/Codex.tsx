@@ -58,6 +58,7 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
       <div class="h">Test gry</div>
       <div class="app-actions">
         {game.net && <button class="btn primary small" onClick={onFeedback}>Zgłoś uwagę lub błąd</button>}
+        <button class="btn small" onClick={() => game.openModal({ kind: 'changelog', all: true })}>Co nowego</button>
         {url && <button class="btn small" onClick={invite}>Zaproś znajomych</button>}
         {canInstall() && <button class="btn small" onClick={() => void install()}>Zainstaluj grę</button>}
         {isNative() && (storeUpdateReady()

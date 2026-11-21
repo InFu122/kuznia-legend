@@ -23,7 +23,7 @@ import { ForgePanel } from './panels/Forge';
 import { HeroPanel } from './panels/Hero';
 import { LandsPanel } from './panels/Lands';
 import { ResearchPanel } from './panels/Research';
-import { B, FEATURES, FEATURE_IDS, ORES, type FeatureId } from '../data';
+import { B, FEATURES, FEATURE_IDS, LATEST_LOG, ORES, type FeatureId } from '../data';
 import { gearHint, tutStep } from '../engine/tutorial';
 import { bossWaiting } from '../engine/combat';
 import { play, setSound, unlockAudio } from './sound';
@@ -85,6 +85,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     const offHist = initHistoryBack(back);
     force(x => x + 1);
     onReady?.();
+    // Po aktualizacji „Co nowego” (raz na włączenie gry, dopóki gracz nie zaznaczy „Nie pokazuj ponownie”).
+    if (game.s.stats.smelted > 0 && LATEST_LOG && game.s.opts.logSeen !== LATEST_LOG) { queue.current.push({ kind: 'changelog' }); force(x => x + 1); }
     // Kalendarz logowania wita gracza, który już grał (nowy gracz ma najpierw wstęp i samouczek).
     if (game.s.stats.smelted > 0 && game.unlocked('zadania') && game.canClaimLogin()) { queue.current.push({ kind: 'missions', tab: 'login' }); force(x => x + 1); }
     // Na telefonie przeglądarka pozwala na dźwięk dopiero po puszczeniu palca (pointerup/touchend/click),

@@ -365,6 +365,8 @@ export class Game {
   setAwake(on: boolean) { this.s.opts = { ...this.s.opts, awake: on }; this.ctx.dirty = true; this.changed(); }
   /** Tryb oszczędzania: przyciemnianie po minucie bez dotyku. */
   setDim(on: boolean) { this.s.opts = { ...this.s.opts, dim: on }; this.ctx.dirty = true; this.changed(); }
+  /** „Nie pokazuj ponownie” w oknie Co nowego: id wpisu albo '' (pokaż przy następnym włączeniu). */
+  setLogSeen(id: string) { this.s.opts = { ...this.s.opts, logSeen: id }; this.ctx.dirty = true; this.changed(); }
   /** Wybór utworu (null — automatycznie według miejsca). Wybranie utworu włącza muzykę. */
   setTrack(id: string | null) { this.s.opts = { ...this.s.opts, track: id, music: id ? true : this.s.opts.music }; this.ctx.dirty = true; this.changed(); }
   setMusic(on: boolean, vol = this.s.opts.mvol) { this.s.opts = { ...this.s.opts, music: on, mvol: Math.max(0, Math.min(1, vol)) }; this.ctx.dirty = true; this.changed(); }
