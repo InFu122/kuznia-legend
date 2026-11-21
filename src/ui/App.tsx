@@ -30,6 +30,7 @@ import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, setMood, setMusic } from './music';
 import { hasUpdate, onPwa } from './pwa';
 import { onStoreUpdate, storeUpdateReady, updateFromStore } from './storeupdate';
+import { UpdateWall } from './UpdateWall';
 import { initHistoryBack, initNative } from './native';
 import { runBack } from './back';
 import { PowerSave } from './PowerSave';
@@ -236,17 +237,6 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           )}
           <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmt(game.stats.power)}</b></div>
         </header>
-        {storeUpdateReady() ? (
-          <section class="updbar" role="status">
-            <span>Jest nowa wersja gry w Google Play.</span>
-            <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => void updateFromStore()); }}>Aktualizuj</button>
-          </section>
-        ) : hasUpdate() && (
-          <section class="updbar" role="status">
-            <span>Jest nowa wersja gry.</span>
-            <button class="btn small primary" onClick={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}).finally(() => location.reload()); }}>Odśwież</button>
-          </section>
-        )}
         <GoalStrip game={game} step={step} onShow={showStep} onMissions={t => headBtn('zadania', () => open({ kind: 'missions', tab: t }))()} />
         <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} />
         <main class="panel" ref={panelRef}>
@@ -281,6 +271,16 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         </main>
       </div>
       <PowerSave awake={s.opts.awake !== false} dim={s.opts.dim !== false} />
+      {/* Nowa wersja gry: cały ekran prosi o aktualizację (przy każdej nowej wersji). */}
+      {(storeUpdateReady() || hasUpdate()) && (
+        <UpdateWall store={storeUpdateReady()}
+          onShow={() => { void (save.flush?.() ?? Promise.resolve()).catch(() => {}); }}
+          onUpdate={async () => {
+            await (save.flush?.() ?? Promise.resolve()).catch(() => {});
+            if (storeUpdateReady()) await updateFromStore();
+            else location.reload();
+          }} />
+      )}
       <div class="tabs" ref={bottomRef}>
         <div class={`tabs-wrap${elTab ? ' el-tab' : ''}`}>
           <ChatPop game={game} onOpen={ch => { game.seenFeatures(['czat']); open({ kind: 'chat', ch }); }} />

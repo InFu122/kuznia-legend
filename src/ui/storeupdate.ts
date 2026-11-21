@@ -1,14 +1,14 @@
 // Aktualizacja z Google Play: w aplikacji zainstalowanej ze sklepu gra pyta Google Play, czy jest nowsza wersja,
-// i pokazuje pasek „Nowa wersja w Google Play” z przyciskiem „Aktualizuj” — Google pobiera ją w grze
-// (ekran aktualizacji Google, potem gra sama się uruchamia ponownie) albo otwiera stronę gry w sklepie.
-// W aplikacji spoza sklepu (APK testowe z GitHub Actions) Google Play nic nie zwraca — wtedy paska nie ma.
+// i wtedy zasłania się ekranem „Zaktualizuj Kuźnię Legend” (UpdateWall) — przy każdej nowej wersji. „Aktualizuj”:
+// Google pobiera ją w grze (ekran aktualizacji Google, potem gra sama się uruchamia ponownie) albo otwiera sklep.
+// W aplikacji spoza sklepu (APK testowe z GitHub Actions) Google Play nic nie zwraca — wtedy ekranu nie ma.
 import { isNative } from './pwa';
 
 type Mod = typeof import('@capawesome/capacitor-app-update');
 
 /** Co ile sprawdzać przy otwartej grze i po powrocie do niej. */
-const CHECK_MS = 6 * 3600_000;
-const RESUME_MS = 30 * 60_000;
+const CHECK_MS = 30 * 60_000;
+const RESUME_MS = 60_000;
 
 let mod: Mod | null = null;
 let available = false;
@@ -30,7 +30,9 @@ export async function checkStoreUpdate(): Promise<boolean | null> {
   try {
     const m = await load();
     const r = await m.AppUpdate.getAppUpdateInfo();
-    const now = r.updateAvailability === m.AppUpdateAvailability.UPDATE_AVAILABLE;
+    // „W trakcie” — gracz zaczął aktualizację i wyszedł z gry: ekran zostaje, „Aktualizuj” ją wznawia.
+    const now = r.updateAvailability === m.AppUpdateAvailability.UPDATE_AVAILABLE
+      || r.updateAvailability === m.AppUpdateAvailability.UPDATE_IN_PROGRESS;
     immediate = !!r.immediateUpdateAllowed;
     if (now !== available) { available = now; notify(); }
     return now;
@@ -46,7 +48,7 @@ export async function updateFromStore(): Promise<void> {
     try {
       const r = await m.AppUpdate.performImmediateUpdate();
       if (r.code === m.AppUpdateResultCode.OK) return;
-      if (r.code === m.AppUpdateResultCode.CANCELED) return; // gracz sam zrezygnował — pasek zostaje
+      if (r.code === m.AppUpdateResultCode.CANCELED) return; // gracz sam zrezygnował — ekran aktualizacji zostaje
     } catch { /* spróbujemy przez sklep */ }
   }
   await m.AppUpdate.openAppStore();
