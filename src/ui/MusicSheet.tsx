@@ -1,5 +1,5 @@
 // Wybór muzyki (nutka obok Mocy): włącz/wyłącz, głośność i utwór — automatycznie według miejsca
-// (spokojna w krainach, szybsza w lochach, chóry przy bossach) albo jeden wybrany, grający w kółko.
+// (spokojna w krainach, szybsza w lochach, chóry przy bossach) albo jeden wybrany: gra do końca, potem wraca automat.
 import { useEffect, useState } from 'preact/hooks';
 import type { Game } from '../engine/game';
 import { TRACKS, nowPlaying, onTrack, skipTrack, trackName } from './music';
@@ -43,7 +43,7 @@ export function MusicSheet({ game }: { game: Game }) {
           </label>
         )}
       </div>
-      <p class="sub mus-now">{on ? (now ? <>Teraz gra: <b>{trackName(now)}</b></> : 'Muzyka zacznie grać po dotknięciu ekranu.') : 'Muzyka jest wyłączona — wybierz utwór, żeby ją włączyć.'}</p>
+      <p class="sub mus-now">{on ? (now ? <>Teraz gra: <b>{trackName(now)}</b>{cur ? ' — po nim muzyka wraca do automatycznej.' : ''}</> : 'Muzyka zacznie grać po dotknięciu ekranu.') : 'Muzyka jest wyłączona — wybierz utwór, żeby ją włączyć.'}</p>
       <div class="mus-list" role="radiogroup" aria-label="Utwór">
         <button role="radio" aria-checked={!cur} class={`mus-auto${!cur ? ' on' : ''}`} onClick={() => game.setTrack(null)}>
           <span class="mus-ic">{!cur && now ? <Eq /> : <NoteIcon />}</span>

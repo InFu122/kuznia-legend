@@ -27,7 +27,7 @@ import { B, FEATURES, FEATURE_IDS, ORES, type FeatureId } from '../data';
 import { gearHint, tutStep } from '../engine/tutorial';
 import { bossWaiting } from '../engine/combat';
 import { play, setSound, unlockAudio } from './sound';
-import { initMusic, kickMusic, moodOf, setMood, setMusic, setTrack } from './music';
+import { initMusic, kickMusic, moodOf, onTrackEnd, setMood, setMusic, setTrack } from './music';
 import { NoteIcon } from './MusicSheet';
 import { hasUpdate, onPwa } from './pwa';
 import { onStoreUpdate, storeUpdateReady, updateFromStore } from './storeupdate';
@@ -103,6 +103,8 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   /** Zakładka, w której gracz właśnie obejrzał nową funkcję — póki w niej jest, samouczek nie ciągnie go gdzie indziej. */
   const [featTab, setFeatTab] = useState<Tab | null>(null);
   useEffect(() => { if (featTab && tab !== featTab) setFeatTab(null); }, [tab]);
+  // Wybrany utwór się skończył — muzyka wraca do automatycznej i tak zostaje w ustawieniach.
+  useEffect(() => onTrackEnd(() => game.setTrack(null)), []);
   // Nowe funkcje w otwartej zakładce: znika znaczek „nowe”.
   useEffect(() => { game.seenFeatures(FEATURE_IDS.filter(id => FEATURES[id].at.tab === tab)); }, [tab]);
   setSound(game.s.opts.sound, game.s.opts.vol);

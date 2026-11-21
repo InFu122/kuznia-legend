@@ -43,6 +43,10 @@ const LEVEL = 0.55;
 const FADE = 2.5;        // s, przejście między utworami
 const FADE_FAST = 1.2;   // s, wejście i zejście muzyki bossa
 const LEAVE_BOSS_MS = 2500;
+/** Muzyka lochu i bossa gra co najmniej tyle (ms), nawet gdy walka skończy się szybciej. */
+export const MIN_INTENSE_MS = 15_000;
+/** Kolejność „intensywności”: przejście w górę od razu, w dół po odczekaniu. */
+const RANK: Record<Mood, number> = { camp: 0, dung: 1, boss: 2 };
 
 interface Deck { el: HTMLAudioElement; g: GainNode; track: string; handoff: boolean; unlocked: boolean }
 let decks: Deck[] = [];
@@ -52,18 +56,25 @@ let on = true;
 let vol = 0.5;
 let mood: Mood = 'camp';
 let playing: Mood | null = null;
-let leaveTimer = 0;
+let leaveTimer: ReturnType<typeof setTimeout> | 0 = 0;
+/** Dokąd wrócić po odczekaniu (gracz mógł w międzyczasie zmienić miejsce). */
+let want: Mood = 'camp';
+/** Kiedy zaczęła się muzyka obecnego miejsca (Date.now). */
+let since = 0;
 let duckUntil = 0;
 /** Przeglądarka odmówiła odtwarzania (brak gestu gracza) — spróbujemy przy następnym dotknięciu. */
 let blocked = false;
 const lastTrack: Partial<Record<Mood, string>> = {};
-/** Utwór wybrany przez gracza (gra cały czas, w pętli) albo null — automatycznie według miejsca. */
+/** Utwór wybrany przez gracza (gra raz do końca, potem wraca automat) albo null — automatycznie według miejsca. */
 let fixed: string | null = null;
 const trackSubs = new Set<() => void>();
 /** Zmiana utworu (okno wyboru muzyki pokazuje, co teraz gra). */
 export function onTrack(f: () => void): () => void { trackSubs.add(f); return () => trackSubs.delete(f); }
 /** Co teraz gra (null — cisza albo muzyka jeszcze nie ruszyła). */
 export const nowPlaying = (): string | null => (on && playing && decks[active]?.track) || null;
+const endSubs = new Set<() => void>();
+/** Wybrany utwór się skończył i muzyka wróciła do automatycznej (gra zapisuje to w ustawieniach). */
+export function onTrackEnd(f: () => void): () => void { endSubs.add(f); return () => endSubs.delete(f); }
 
 const level = () => vol * LEVEL;
 
@@ -96,7 +107,7 @@ function crossTo(m: Mood, fade = FADE) {
   const track = pick(m);
   to.track = track;
   to.handoff = false;
-  to.el.loop = m === 'boss' || !!fixed;  // walka z bossem trwa różnie długo, a wybrany utwór gra w kółko
+  to.el.loop = m === 'boss' && !fixed;  // walka z bossem trwa różnie długo; wybrany utwór gra raz (potem automat)
   to.el.src = audioUrl(`m-${track}.mp3`);
   to.g.gain.value = 0;
   to.el.play()
@@ -119,6 +130,15 @@ function stop(fade = FADE_FAST) {
   trackSubs.forEach(f => f());
 }
 
+/** Koniec utworu: następny z playlisty; po utworze wybranym przez gracza — powrót do automatycznego wyboru. */
+function next() {
+  if (fixed) {
+    fixed = null;
+    endSubs.forEach(f => f());
+  }
+  crossTo(mood);
+}
+
 function makeDeck(): Deck | null {
   const ac = audioCtx();
   if (!ac || !bus) return null;
@@ -131,9 +151,9 @@ function makeDeck(): Deck | null {
   // Przed końcem utworu (nie zapętlonego) zaczynamy następny, żeby nie było ciszy.
   el.addEventListener('timeupdate', () => {
     if (decks[active] !== d || el.loop || d.handoff || !playing || !Number.isFinite(el.duration)) return;
-    if (el.duration - el.currentTime < FADE) { d.handoff = true; crossTo(mood); }
+    if (el.duration - el.currentTime < FADE) { d.handoff = true; next(); }
   });
-  el.addEventListener('ended', () => { if (decks[active] === d && playing && !d.handoff) { d.handoff = true; crossTo(mood); } });
+  el.addEventListener('ended', () => { if (decks[active] === d && playing && !d.handoff) { d.handoff = true; next(); } });
   return d;
 }
 
@@ -188,21 +208,32 @@ export function setMusic(enabled: boolean, volume: number): void {
 
 /** Gdzie jest gracz: kraina, loch czy walka z bossem. Wołane często — zmienia utwór tylko przy zmianie nastroju. */
 export function setMood(m: Mood): void {
-  // Wybrany utwór gra wszędzie — miejsce go nie zmienia.
-  if (fixed) { mood = m; if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; } return; }
-  if (m === mood) { if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; } return; }
-  if (mood === 'boss' && m !== 'boss') {
-    // Po bossie chwilę czekamy — między falami nie ma wroga, a boss może zaraz wrócić (np. w Leżu).
+  // Wybrany utwór gra wszędzie — miejsce go nie zmienia (pamiętamy tylko, gdzie gracz jest, na powrót do automatu).
+  if (fixed) { mood = m; want = m; clearLeave(); return; }
+  if (m === mood) { want = m; clearLeave(); return; }
+  if (RANK[m] < RANK[mood]) {
+    // Spokojniej (po bossie, po lochu): muzyka lochu i bossa gra co najmniej 15 s — szybko ubity boss nie urywa jej
+    // po chwili — a po bossie i tak chwilę czekamy, bo między falami nie ma wroga, a boss może zaraz wrócić (Leże).
+    want = m;
     if (leaveTimer) return;
-    leaveTimer = window.setTimeout(() => { leaveTimer = 0; mood = m; if (on && decks.length) crossTo(m); }, LEAVE_BOSS_MS);
-    return;
+    const wait = Math.max(mood === 'boss' ? LEAVE_BOSS_MS : 0, MIN_INTENSE_MS - (Date.now() - since));
+    if (wait > 0) { leaveTimer = setTimeout(() => { leaveTimer = 0; go(want); }, wait); return; }
   }
-  if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; }
-  mood = m;
-  if (on && decks.length) crossTo(m, m === 'boss' ? FADE_FAST : FADE);
+  clearLeave();
+  go(m);
 }
 
-/** Wybór utworu: id — ten jeden w kółko, null — automatycznie według miejsca. Nieznany utwór = automatycznie. */
+function clearLeave() { if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = 0; } }
+function go(m: Mood) {
+  mood = m;
+  want = m;
+  since = Date.now();
+  if (on && decks.length) crossTo(m, m === 'boss' ? FADE_FAST : FADE);
+}
+/** Gdzie gra muzyka teraz (do testów). */
+export const moodNow = (): Mood => mood;
+
+/** Wybór utworu: id — ten jeden (raz, do końca; potem automat), null — automatycznie według miejsca. Nieznany = automatycznie. */
 export function setTrack(id: string | null): void {
   const t = id && TRACKS.some(x => x.id === id) ? id : null;
   if (t === fixed) return;

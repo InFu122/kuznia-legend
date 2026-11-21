@@ -1,6 +1,6 @@
 // Muzyka: każdy utwór z playlist ma plik, a podział zgadza się z opisem (spokojne / dynamiczne / tylko boss).
 import { existsSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PLAYLISTS, TRACKS, trackName } from '../src/ui/music';
 import { makeGame } from './helpers';
 
@@ -33,5 +33,36 @@ describe('wybór muzyki (nutka obok Mocy)', () => {
     g.setTrack(null);
     expect(s.opts.track).toBeNull();
     expect(s.opts.music).toBe(true);
+  });
+});
+
+describe('muzyka lochu i bossa gra co najmniej 15 s', () => {
+  it('szybko ubity boss: muzyka bossa zostaje do 15 s, potem wraca spokojna; nowy boss w tym czasie ją podtrzymuje', async () => {
+    vi.useFakeTimers();
+    try {
+      const { setMood, moodNow, MIN_INTENSE_MS } = await import('../src/ui/music');
+      setMood('camp');
+      setMood('boss');
+      expect(moodNow()).toBe('boss');
+      vi.advanceTimersByTime(5_000);          // boss padł po 5 s
+      setMood('camp');
+      expect(moodNow()).toBe('boss');
+      vi.advanceTimersByTime(MIN_INTENSE_MS - 5_000 - 1);
+      setMood('camp');                         // gra woła często — nic nie przyspiesza
+      expect(moodNow()).toBe('boss');
+      vi.advanceTimersByTime(1);
+      expect(moodNow()).toBe('camp');
+
+      setMood('dung');                         // do lochu — od razu
+      expect(moodNow()).toBe('dung');
+      vi.advanceTimersByTime(3_000);
+      setMood('boss');                         // boss w lochu — od razu
+      expect(moodNow()).toBe('boss');
+      vi.advanceTimersByTime(30_000);          // długa walka: po bossie tylko krótka chwila zapasu
+      setMood('dung');
+      expect(moodNow()).toBe('boss');
+      vi.advanceTimersByTime(2_500);
+      expect(moodNow()).toBe('dung');
+    } finally { vi.useRealTimers(); }
   });
 });
