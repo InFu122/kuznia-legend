@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks';
 import { B, LANDS, ORES, SLOTS, SLOT_ORDER } from '../../data';
 import { oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
-import { farmLandFor, reforgeBlock, reforgeCost, runeBlock, runeCost, runeGain, runeLvl, runePay, subText } from '../../engine/runes';
+import { farmLandFor, runeForAll, reforgeBlock, reforgeCost, runeBlock, runeCost, runeGain, runeLvl, runePay, runeStat, subText } from '../../engine/runes';
 import type { Item, SlotId } from '../../engine/types';
 import { getLink } from '../../save/server';
 import { fmt, pctS } from '../format';
@@ -32,7 +32,6 @@ function RuneBar({ s, lvl }: { s: Game['s']; lvl: number }) {
 export const RuneBadge = ({ lvl, cls = '' }: { lvl: number; cls?: string }) =>
   lvl > 0 ? <span class={`rune-badge ${cls}`} title={`Runa: +${lvl * B.RUNE_PCT}%`}><Px src={resUrl('runa')} size={12} />{lvl}</span> : null;
 
-const statWord = (sl: SlotId) => (SLOTS[sl].stat === 'dmg' ? 'obrażeń' : 'zdrowia');
 
 /**
  * Karta run bohatera. Runa to stała premia miejsca w ekwipunku (Broń, Hełm…), nie przedmiotu: działa na każdy
@@ -63,7 +62,7 @@ export function RunesCard({ game }: { game: Game }) {
           <small>= +{fmt(all.power)} Mocy · {total}/{B.RUNE_MAX * SLOT_ORDER.length} poziomów</small>
         </div>
       ) : (
-        <p class="sub">Każdy poziom runy to +{B.RUNE_PCT}% głównej statystyki dla <b>każdego</b> przedmiotu w tym miejscu — dziś i po każdej wymianie.{locked ? ` Ulepszanie od ${B.RUNE_FORGE_LVL}. poziomu kuźni.` : ''}</p>
+        <p class="sub">Każdy poziom runy to +{B.RUNE_PCT}% głównej statystyki dla <b>każdego</b> przedmiotu, który założysz w tym miejscu — dziś i po każdej wymianie.{locked ? ` Ulepszanie od ${B.RUNE_FORGE_LVL}. poziomu kuźni.` : ''}</p>
       )}
       <ul class="runelist">
         {SLOT_ORDER.map(sl => {
@@ -87,8 +86,8 @@ export function RunesCard({ game }: { game: Game }) {
                   <span class="rbonus">{L ? `+${L * B.RUNE_PCT}%` : 'bez runy'}{c && <> → <b>+{(L + 1) * B.RUNE_PCT}%</b></>}</span>
                 </div>
                 <small class="reff">
-                  {L ? <>+{L * B.RUNE_PCT}% {statWord(sl)} dla każdego przedmiotu w tym miejscu{now ? <> · teraz <b>+{fmt(SLOTS[sl].stat === 'dmg' ? now.dmg : now.hp)}</b></> : ' · działa, gdy coś założysz'}</>
-                    : <>+{B.RUNE_PCT}% {statWord(sl)} dla każdego przedmiotu w tym miejscu</>}
+                  {L ? <>+{L * B.RUNE_PCT}% {runeStat(sl)} dla {runeForAll(sl)}{now ? <> · teraz <b>+{fmt(SLOTS[sl].stat === 'dmg' ? now.dmg : now.hp)}</b></> : ' · działa, gdy coś założysz'}</>
+                    : <>+{B.RUNE_PCT}% {runeStat(sl)} za poziom — dla {runeForAll(sl)}</>}
                 </small>
                 <RuneBar s={s} lvl={L} />
                 {c ? (

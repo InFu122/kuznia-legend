@@ -349,7 +349,7 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
       )}
       <Stats cur={cur} it={it} />
       {runeLvl(s, it.slot) > 0 && (
-        <p class="dec-rune"><Px src={resUrl('runa')} size={18} />Runa miejsca {SLOTS[it.slot].n} (+{runeLvl(s, it.slot) * B.RUNE_PCT}%) działa też na ten przedmiot — po wymianie nic nie tracisz.</p>
+        <p class="dec-rune"><Px src={resUrl('runa')} size={18} />Runa {SLOTS[it.slot].n} (+{runeLvl(s, it.slot) * B.RUNE_PCT}%) działa na każdy przedmiot w tym miejscu, więc i na ten — po wymianie nic nie tracisz.</p>
       )}
       {empty && !big && <GearFill s={s} it={it} />}
       {!better && s.forge.lvl < B.AUTO_FORGE_LVL && <p class="sub dec-tip">Takie przedmioty od {B.AUTO_FORGE_LVL}. poziomu kuźni sprzedaje sam auto-wytop.</p>}

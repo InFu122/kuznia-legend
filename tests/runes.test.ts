@@ -115,3 +115,12 @@ describe('runy bohatera: ile dają', () => {
     expect(next.power).toBeLessThan(one.power); // jeden poziom mniej niż siedem
   });
 });
+
+describe('runy: opis dla gracza', () => {
+  it('mówi, że runa działa dla każdego przedmiotu w miejscu, z poprawną odmianą', async () => {
+    const { runeForAll } = await import('../src/engine/runes');
+    expect(runeForAll('bron')).toBe('każdej broni, którą założysz');
+    expect(runeForAll('helm')).toBe('każdego hełmu, który założysz');
+    expect(runeForAll('buty')).toBe('każdych butów, które założysz');
+  });
+});

@@ -34,6 +34,17 @@ export function runeGain(s: GameState, slot?: SlotId, next = false): { dmg: numb
   return { dmg: a.dmg - b.dmg, hp: a.hp - b.hp, power: a.power - b.power };
 }
 
+/** Dla kogo działa runa miejsca — w mowie gracza („dla każdej broni”), żeby było jasne, że nie dla jednego przedmiotu. */
+export const RUNE_FOR: Record<SlotId, string> = {
+  bron: 'każdej broni', helm: 'każdego hełmu', zbroja: 'każdego napierśnika', rekawice: 'każdych rękawic',
+  buty: 'każdych butów', pas: 'każdego pasa', pierscien: 'każdego pierścienia', amulet: 'każdego amuletu',
+};
+/** To samo ze zdaniem względnym: „dla każdej broni, którą założysz”. */
+export const runeForAll = (slot: SlotId) =>
+  `${RUNE_FOR[slot]}, ${slot === 'bron' ? 'którą' : slot === 'rekawice' || slot === 'buty' ? 'które' : 'który'} założysz`;
+/** „obrażeń” albo „zdrowia” — główna statystyka miejsca. */
+export const runeStat = (slot: SlotId) => (SLOTS[slot].stat === 'dmg' ? 'obrażeń' : 'zdrowia');
+
 export const runeLvl = (s: GameState, slot: SlotId) => Math.max(0, Math.min(B.RUNE_MAX, Math.floor(s.runes?.[slot] ?? 0)));
 
 /** Koszt wzmocnienia runy na poziom `lvl` (1–30). */
@@ -89,7 +100,7 @@ export function upgradeRune(ctx: Ctx, slot: SlotId): boolean {
   s.runes = { ...s.runes, [slot]: L };
   invalidate(ctx);
   ctx.dirty = true;
-  toast(ctx, `Runa: ${SLOTS[slot].n} — poziom ${L} (+${L * B.RUNE_PCT}%).`, 'good');
+  toast(ctx, `Runa ${SLOTS[slot].n} ${L}: +${L * B.RUNE_PCT}% ${runeStat(slot)} dla ${RUNE_FOR[slot]} — na zawsze.`, 'good');
   return true;
 }
 
