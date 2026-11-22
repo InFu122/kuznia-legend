@@ -1,5 +1,5 @@
-import { B, SLOTS, SLOT_ORDER, landDef, R, rGe, type FeatureId } from '../../data';
-import { itemName, smithTitle } from '../../engine/formulas';
+import { B, RAR, SLOTS, SLOT_ORDER, landDef, R, rGe, type FeatureId } from '../../data';
+import { itemName, mainVal, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { FoeType, Item } from '../../engine/types';
 import { useState } from 'preact/hooks';
@@ -12,28 +12,29 @@ import { MountsView, PetsView, SkillsView } from './Companions';
 import { showProfile } from '../profile';
 import { HeroSprite, bestRarity } from '../Arena';
 import { LegacyCard } from './Legacy';
-import { RuneBadge, RunesCard } from './Runes';
+import { RuneBadge, RunesTab } from './Runes';
 import { runeLvl } from '../../engine/runes';
 
-type Sub = 'eq' | 'skills' | 'pets' | 'mounts';
+type Sub = 'eq' | 'runes' | 'skills' | 'pets' | 'mounts';
 /** Funkcje odblokowywane w podzakładkach (kłódka i znaczek „nowe”). */
 const SUB_FEATURE: Partial<Record<Sub, FeatureId>> = { skills: 'umiejetnosci', pets: 'chowance', mounts: 'wierzchowce' };
-const SUBS: [Sub, string][] = [['eq', 'Ekwipunek'], ['skills', 'Umiejętności'], ['pets', 'Chowaniec'], ['mounts', 'Wierzchowiec']];
+// Runy mają własną zakładkę (Ekwipunek zostaje krótki); nazwy wszystkich pięciu mieszczą się w równych częściach.
+const SUBS: [Sub, string][] = [['eq', 'Ekwipunek'], ['runes', 'Runy'], ['skills', 'Umiejętności'], ['pets', 'Chowaniec'], ['mounts', 'Wierzchowiec']];
 
-/** Ikonka podzakładki: broń bohatera (albo kowadło), zwój, łapa, siodło. */
+/** Ikonka podzakładki: broń bohatera (albo kowadło), runa, zwój, łapa, siodło. */
 function subIcon(game: Game, id: Sub): string {
   if (id === 'eq') { const w = game.s.eq.bron; return w ? itemUrl(w.kind, w.ore, w.r) : resUrl('kowadlo'); }
-  return resUrl(id === 'skills' ? 'zwoj' : id === 'pets' ? 'lapa' : 'siodlo');
+  return resUrl(id === 'runes' ? 'runa' : id === 'skills' ? 'zwoj' : id === 'pets' ? 'lapa' : 'siodlo');
 }
 
 export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
   const [sub, setSub] = useState<Sub>('eq');
   return (
     <>
-      <div class="seg seg-ic" role="tablist" aria-label="Bohater">
+      <div class="seg seg-ic seg5" role="tablist" aria-label="Bohater">
         {SUBS.map(([id, n]) => {
           const f = SUB_FEATURE[id];
-          const locked = !!f && !game.unlocked(f);
+          const locked = (!!f && !game.unlocked(f)) || (id === 'runes' && game.s.forge.lvl < B.RUNE_FORGE_LVL && !SLOT_ORDER.some(sl => runeLvl(game.s, sl) > 0));
           const fresh = !!f && game.s.unlNew.includes(f);
           return (
             <button key={id} role="tab" data-sub={id} aria-selected={sub === id} class={`${sub === id ? 'on' : ''}${locked ? ' locked' : ''}`}
@@ -45,6 +46,7 @@ export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => 
         })}
       </div>
       {sub === 'eq' && <Equipment game={game} onItem={onItem} />}
+      {sub === 'runes' && <RunesTab game={game} />}
       {sub === 'skills' && <SkillsView game={game} />}
       {sub === 'pets' && <PetsView game={game} />}
       {sub === 'mounts' && <MountsView game={game} />}
@@ -129,27 +131,35 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
         <Bonuses c={c} />
       </section>
       <section class="card">
-        <div class="row"><IconEyebrow icon={<Px src={resUrl('kowadlo')} size={16} />}>Ekwipunek</IconEyebrow><span class="sub">Kropki = progi legendy (dotknij przedmiot){s.seals ? ` · Pieczęcie Legendy: ${s.seals}` : ''}</span></div>
-        <div class="slots" style={{ marginTop: '10px' }}>
+        <div class="row"><IconEyebrow icon={<Px src={resUrl('kowadlo')} size={16} />}>Ekwipunek</IconEyebrow>{s.seals > 0 && <span class="sub">Pieczęcie Legendy: {s.seals}</span>}</div>
+        {/* Karta każdej części: nazwa miejsca, przedmiot w kolorze rzadkości, poziom i główna statystyka; kropki — progi legendy. */}
+        <div class="eqcards" style={{ marginTop: '10px' }}>
           {SLOT_ORDER.map(slot => {
             const it = s.eq[slot];
             const rl = runeLvl(s, slot);
-            if (!it) return <button key={slot} class="slot empty" disabled><RuneBadge lvl={rl} cls="on-slot" /><SlotIcon slot={slot} /><span>{SLOTS[slot].n}</span><div class="pips" /></button>;
+            if (!it) return (
+              <button key={slot} class="eqc empty" disabled>
+                <span class="eqc-ic"><SlotIcon slot={slot} /><RuneBadge lvl={rl} cls="on-slot" /></span>
+                <span class="eqc-t"><small>{SLOTS[slot].n}</small><b>puste miejsce</b><span>wykuj przedmiot w Kuźni</span></span>
+              </button>
+            );
+            const dmg = SLOTS[slot].stat === 'dmg';
             return (
-              <button key={slot} class={`slot r${it.r}`} aria-label={`${itemName(it)}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}${it.aw && !it.awc ? ', możesz wybrać cechę' : ''}`} onClick={() => onItem(it)}>
-                <RuneBadge lvl={rl} cls="on-slot" />
-                {/* Przebudzony z niewybraną cechą (darmowy wybór) — kropka zachęca, żeby zajrzeć. */}
-                {it.aw && !it.awc && <i class="slot-aw" title="Wybierz cechę przebudzenia — za darmo" />}
-                <Px src={itemUrl(it.kind, it.ore, it.r)} size={36} />
-                {/* Ucięta nazwa („Żelazna …”) nic nie mówi: zwykły przedmiot pokazuje poziom, przebudzony i Boski — imię. */}
-                <span>{it.aw || it.r === R.BOSKI ? itemName(it) : `poz. ${it.lvl}`}</span>
-                <div class="pips">{[1, 2, 3].map(i => <i key={i} class={(it.ls || 0) >= i ? 'on' : ''} />)}</div>
+              <button key={slot} class={`eqc r${it.r}`} onClick={() => onItem(it)}
+                aria-label={`${SLOTS[slot].n}: ${itemName(it)}, ${RAR[it.r].n}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}${it.aw && !it.awc ? ', możesz wybrać cechę' : ''}`}>
+                <span class="eqc-ic"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} /><RuneBadge lvl={rl} cls="on-slot" />{it.aw && !it.awc && <i class="slot-aw" title="Wybierz cechę przebudzenia — za darmo" />}</span>
+                <span class="eqc-t">
+                  <small>{SLOTS[slot].n}</small>
+                  <b class={`rt${it.r}`}>{itemName(it)}</b>
+                  <span>{RAR[it.r].n} · poz. {it.lvl}</span>
+                  <span class="eqc-st">{dmg ? '⚔' : '♥'} {fmt(mainVal(it))} {dmg ? 'obr.' : 'zdr.'}</span>
+                </span>
+                <span class="pips">{[1, 2, 3].map(i => <i key={i} class={(it.ls || 0) >= i ? 'on' : ''} />)}</span>
               </button>
             );
           })}
         </div>
       </section>
-      <RunesCard game={game} />
       <LegacyCard game={game} onItem={onItem} />
     </>
   );

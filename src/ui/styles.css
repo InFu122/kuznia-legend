@@ -2160,3 +2160,33 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .opt-x span{font-size:12px; color:var(--ash); min-width:34px; text-align:right; font-variant-numeric:tabular-nums}
 .codex-credits{text-align:center; margin:2px 8px 0}
 .opt-group .speed-set{margin:6px 0 10px}
+
+/* Runy: krótsza lista w zakładce „Runy” */
+.runelist.compact li{padding:8px 10px}
+.runelist.compact .rbar{margin:4px 0 3px}
+.rnow{display:block; font-size:12px; color:var(--ash); margin-top:1px}
+.rnow b{color:var(--good)}
+/* Bohater: pięć podzakładek po równo — każda nazwa mieści się w całości */
+.seg.seg-ic.seg5{grid-template-columns:repeat(5, minmax(0,1fr)); gap:2px; padding:4px 3px}
+.seg.seg-ic.seg5 button{padding:8px 0 7px}
+.seg-ic.seg5 .si-n{font-size:11px; letter-spacing:-.01em; overflow:visible; text-overflow:clip; white-space:nowrap}
+.runelist.compact .btn.rup{width:86px; min-width:86px; flex:none}
+.runelist.compact .rbar i{background:linear-gradient(90deg, var(--c) calc(var(--f) * 100%), #3b3029 calc(var(--f) * 100%))}
+/* Ekwipunek: karty części w dwóch kolumnach */
+.eqcards{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px}
+.eqc{--rc:var(--rivet); position:relative; display:grid; grid-template-columns:44px minmax(0,1fr); column-gap:8px; align-items:center; padding:8px; text-align:left;
+  border-radius:12px; background:var(--plate-2); border:1px solid var(--rivet); border-left:3px solid var(--rc); color:var(--frost); min-width:0}
+.eqc.r0{--rc:var(--r0)} .eqc.r1{--rc:var(--r1)} .eqc.r2{--rc:var(--r2)} .eqc.r3{--rc:var(--r3)} .eqc.r4{--rc:var(--r4)} .eqc.r5{--rc:var(--r5)} .eqc.r6{--rc:var(--r6)} .eqc.r7{--rc:var(--r7)} .eqc.r8{--rc:var(--r8)} .eqc.r9{--rc:var(--r9)}
+.eqc:not(.empty){background:linear-gradient(90deg, color-mix(in srgb, var(--rc) 22%, var(--plate-2)), var(--plate-2) 60%)}
+.eqc-ic{position:relative; display:grid; place-items:center; width:44px; height:44px; border-radius:10px; background:#140f0c; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
+.eqc-ic svg{width:22px; height:22px; color:#5a4a3b}
+.eqc-ic .rune-badge.on-slot{left:auto; right:-6px; top:auto; bottom:-6px}
+.eqc-t{display:flex; flex-direction:column; min-width:0; line-height:1.2}
+.eqc-t small{font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ash)}
+.eqc-t b{font-size:12.5px; font-weight:700; line-height:1.15; margin:1px 0 2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.eqc-t span{font-size:11px; color:var(--ash); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.eqc-t .eqc-st{color:var(--frost); font-variant-numeric:tabular-nums}
+.eqc.empty .eqc-t b{color:var(--ash)}
+.eqc .pips{position:absolute; right:8px; top:9px; display:flex; gap:3px}
+.eqc .pips i{width:5px; height:5px; border-radius:50%; background:#4a3c30}
+.eqc .pips i.on{background:var(--straw)}
