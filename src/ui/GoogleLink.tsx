@@ -2,27 +2,42 @@
 // na nowym telefonie (okno powitalne). Tylko w aplikacji z Google Play.
 import { useState } from 'preact/hooks';
 import type { Game } from '../engine/game';
-import { GoogleCancelled, googleToken } from '../save/google';
+import { GoogleCancelled, GoogleError, googleToken } from '../save/google';
 import { ServerError, getLink, googleSwitch } from '../save/server';
 
 const errText = (e: unknown) => (e instanceof GoogleCancelled ? '' : e instanceof Error ? e.message : 'Coś poszło nie tak — spróbuj ponownie.');
+const errDiag = (e: unknown) => (e instanceof GoogleError ? e.detail : '');
+
+/** Szczegóły błędu Google (komunikat i SHA-1 podpisu aplikacji) — do porównania z Google Cloud. */
+function Diag({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  if (!text) return null;
+  const copy = () => { void navigator.clipboard?.writeText(text).then(() => setCopied(true), () => {}); };
+  return (
+    <div class="gl-diag">
+      <pre>{text}</pre>
+      <button type="button" class="btn small" onClick={copy}>{copied ? 'Skopiowano' : 'Kopiuj szczegóły'}</button>
+    </div>
+  );
+}
 
 /** Połącz postęp z kontem Google; gdy to konto Google ma już innego kowala — gracz wybiera, którego zatrzymać. */
 export function GoogleLinkBox({ game, online, onDone }: { game: Game; online: boolean; onDone?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [diag, setDiag] = useState('');
   const [clash, setClash] = useState<{ token: string; name: string; forge: number } | null>(null);
   const link = getLink();
   if (!link) return null;
 
   const connect = async () => {
-    setBusy(true); setMsg(''); setClash(null);
+    setBusy(true); setMsg(''); setDiag(''); setClash(null);
     try {
       const token = await googleToken();
       const r = await link.googleLink(token);
       if (r.linked) onDone?.(); // ramka sama pokaże „Połączono z Google”
       else if (r.conflict && r.other) setClash({ token, name: r.other.name || 'bez nicku', forge: r.other.forge });
-    } catch (e) { setMsg(errText(e)); } finally { setBusy(false); }
+    } catch (e) { setMsg(errText(e)); setDiag(errDiag(e)); } finally { setBusy(false); }
   };
   const take = async () => {
     if (!clash) return;
@@ -57,6 +72,7 @@ export function GoogleLinkBox({ game, online, onDone }: { game: Game; online: bo
         </div>
       )}
       {msg && <p class="sub" role="status">{msg}</p>}
+      <Diag text={diag} />
       {!online && <div class="lockline">Potrzebne połączenie z serwerem.</div>}
     </div>
   );
@@ -66,15 +82,17 @@ export function GoogleLinkBox({ game, online, onDone }: { game: Game; online: bo
 export function GoogleRestore() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [diag, setDiag] = useState('');
   const link = getLink();
   if (!link) return null;
   const go = async () => {
-    setBusy(true); setMsg('');
+    setBusy(true); setMsg(''); setDiag('');
     try {
       await googleSwitch(await googleToken());
       // Okno powitalne znika samo, gdy przyjdzie zapis z postępem.
     } catch (e) {
       setMsg(e instanceof ServerError && e.status === 404 ? e.message : errText(e));
+      setDiag(errDiag(e));
     } finally { setBusy(false); }
   };
   return (
@@ -82,6 +100,7 @@ export function GoogleRestore() {
       <span>Grasz już na innym telefonie?</span>
       <button type="button" class="btn small" disabled={busy || !link.online} onClick={go}>{busy ? 'Chwila…' : 'Zaloguj przez Google'}</button>
       {msg && <small class="bad" role="status">{msg}</small>}
+      <Diag text={diag} />
       {!link.online && <small class="muted">Logowanie zadziała po połączeniu z serwerem.</small>}
     </div>
   );

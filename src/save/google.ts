@@ -1,6 +1,7 @@
 // Logowanie przez Google na telefonie (Credential Manager przez wtyczkę @capgo/capacitor-social-login).
 // Gra potrzebuje tylko tokenu tożsamości — sprawdza go serwer i na tej podstawie łączy konto gry z kontem Google.
 // W przeglądarce logowania Google nie ma (zostaje kod przeniesienia).
+import { registerPlugin } from '@capacitor/core';
 import { isNative } from '../ui/pwa';
 
 /** Klient OAuth „Aplikacja internetowa” z Google Cloud (jawny; ten sam sprawdza serwer w server/src/google.ts). */
@@ -20,6 +21,32 @@ const plugin = () => (sl ??= import('@capgo/capacitor-social-login').then(async 
 /** Gracz przerwał wybór konta — bez komunikatu o błędzie. */
 export class GoogleCancelled extends Error {}
 
+/** Błąd Google z danymi do diagnozy (pełny komunikat Google i odciski SHA-1 podpisu aplikacji). */
+export class GoogleError extends Error {
+  constructor(message: string, readonly detail: string) { super(message); }
+}
+
+/** Własna wtyczka aplikacji (android/…/AppSigningPlugin.java): odciski SHA-1 certyfikatów podpisu. */
+const AppSigning = registerPlugin<{ sha1(): Promise<{ current: string[]; history: string[]; sdk: number }> }>('AppSigning');
+
+/** Tekst diagnozy: te odciski muszą być wpisane w Google Cloud jako klienci OAuth „Android”. */
+export async function signingInfo(): Promise<string> {
+  try {
+    const r = await AppSigning.sha1();
+    const past = r.history.filter(h => !r.current.includes(h));
+    return [
+      `SHA-1 aplikacji: ${r.current.join(', ') || '?'}`,
+      ...(past.length ? [`Wcześniejsze klucze: ${past.join(', ')}`] : []),
+      `Android API ${r.sdk}`,
+    ].join('\n');
+  } catch {
+    return 'SHA-1 aplikacji: nie udało się odczytać.';
+  }
+}
+
+/** Krótki komunikat Google z błędu wtyczki, np. „[16] Account reauth failed”. */
+export const googleDetail = (m: string) => (/\[\d+\][^.\n]*/.exec(m)?.[0] ?? m).slice(0, 160).trim();
+
 /** Okno wyboru konta Google → token tożsamości dla serwera. */
 export async function googleToken(): Promise<string> {
   const s = await plugin();
@@ -31,7 +58,10 @@ export async function googleToken(): Promise<string> {
     if (/cancel/i.test(m)) throw new GoogleCancelled('Anulowano.');
     // Numer błędu Google (np. 28444 — w Google Cloud nie zgadza się SHA-1 albo nazwa pakietu) pomaga znaleźć przyczynę.
     const code = /\[(\d+)\]/.exec(m)?.[1];
-    throw new Error(`Logowanie przez Google nie powiodło się${code ? ` (błąd ${code})` : ''}.`);
+    throw new GoogleError(
+      `Logowanie przez Google nie powiodło się${code ? ` (błąd ${code})` : ''}.`,
+      `Google: ${googleDetail(m)}\n${await signingInfo()}`,
+    );
   }
   const res = r.result as { idToken?: string | null };
   if (!res.idToken) throw new Error('Google nie przekazał danych logowania — spróbuj ponownie.');

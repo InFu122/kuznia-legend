@@ -1648,6 +1648,9 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .gl-restore{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px 10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--rivet); font-size:13px; color:var(--ash)}
 .gl-restore small{flex-basis:100%; text-align:center}
 .gl-restore small.bad{color:var(--blood)}
+.gl-diag{display:flex; flex-direction:column; align-items:flex-start; gap:6px; max-width:100%}
+.gl-restore .gl-diag{flex-basis:100%; align-items:center}
+.gl-diag pre{margin:0; max-width:100%; white-space:pre-wrap; word-break:break-all; font:11px/1.45 ui-monospace,Menlo,Consolas,monospace; color:var(--ash); text-align:left; background:color-mix(in srgb, var(--rivet) 35%, transparent); border-radius:8px; padding:6px 8px; user-select:all; -webkit-user-select:all}
 
 /* ---------- okno decyzji: „starcie przedmiotów” (werdykt, dwie karty, drabinka rzadkości, zmiany statystyk) ---------- */
 .dv{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 0 8px; border-radius:16px}
