@@ -428,7 +428,12 @@ a.linkbtn{display:inline-block}
 .slot.r5::before, .slot.r6::before{content:""; position:absolute; left:50%; top:26px; width:150px; height:150px; margin:-75px 0 0 -75px; z-index:-1; pointer-events:none;
   background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 45%, transparent) 0 14deg, transparent 14deg 36deg);
   animation:rspin 9s linear infinite}
-.slot.r6::before{background:repeating-conic-gradient(from 0deg, #ffe48f99 0 9deg, transparent 9deg 22deg, #fff7c466 22deg 27deg, transparent 27deg 40deg)}
+/* Boski: promienie zostają, ale w tle — słabsze, wolniejsze i wygaszone pod ikoną, żeby przedmiot było widać */
+.slot.r6::before{background:repeating-conic-gradient(from 0deg, #ffe48f3d 0 9deg, transparent 9deg 22deg, #fff7c428 22deg 27deg, transparent 27deg 40deg);
+  -webkit-mask:radial-gradient(circle, transparent 0 20px, #000 34px, #000 58%, transparent 72%); mask:radial-gradient(circle, transparent 0 20px, #000 34px, #000 58%, transparent 72%);
+  animation-duration:16s}
+.slot.r6 > .px{filter:drop-shadow(0 0 1px #2a1a06) drop-shadow(0 0 6px rgba(0,0,0,.65))}
+.slot.r6 > span{background:rgba(20,13,6,.55); padding:0 6px; border-radius:6px}
 .slot.r6:not(.empty){border-width:2px; border-color:transparent; box-shadow:0 0 14px -3px #ffd84a; animation:goldspin 4s linear infinite;
   background:radial-gradient(circle at 50% 30px, color-mix(in srgb, var(--r6) 34%, var(--plate-2)), var(--plate-2) 70%) padding-box,
     conic-gradient(from var(--ga), #7a4f10, #d8a537, #fff4c2, #ffd84a, #9a6a18, #ffe48f, #7a4f10) border-box}
