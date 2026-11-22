@@ -37,6 +37,7 @@ import { UpdateWall } from './UpdateWall';
 import { initHistoryBack, initNative } from './native';
 import { runBack } from './back';
 import { PowerSave } from './PowerSave';
+import { queueModal } from './modalQueue';
 
 /** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
 const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide', 'intro']);
@@ -68,7 +69,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   useEffect(() => {
     if (game.s.stats.smelted === 0) queue.current.push({ kind: 'intro' });
     const off = game.on(e => {
-      if (e.t === 'modal') { queue.current.push(e.m); force(x => x + 1); }
+      if (e.t === 'modal') { queueModal(queue.current, e.m); force(x => x + 1); }
       else if (e.t === 'change') force(x => x + 1);
       else if (e.t === 'sfx') play(e.k, e.r);
       else if (e.t === 'drop') play(e.rare ? 'dropRare' : 'drop');

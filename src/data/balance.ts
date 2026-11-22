@@ -28,7 +28,7 @@ export const FORGE_UNLOCKS: Record<number, string> = {
   5: 'wytop Srebra, auto-wytop, rafinacja rud',
   10: 'domieszki żywiołów, runy slotów',
   12: 'wytop Mithrilu',
-  15: 'przekuwanie przedmiotów, rudy unikalne (zestawy)',
+  15: 'przekuwanie przedmiotów, rudy unikalne (pewny przeskok)',
   25: 'wytop Adamantytu',
   30: 'badanie Mistrz run',
   40: 'wytop Obsydianu, II stopień badań',
@@ -157,7 +157,7 @@ export const B = {
   BOOK_DROP: 0.0005,            // szansa na Księgę Wiedzy z fali
   BOOKS_BOSS_FIRST: 3,          // pierwsze pokonanie bossa: 3 + numer krainy
   BOOKS_BOSS_CHANCE: 0.1,       // kolejne pokonania: szansa na 1 Księgę
-  UNIQ_BOSS_FIRST: 2,           // rudy unikalne za pierwsze pokonanie bossa z zestawem
+  UNIQ_BOSS_FIRST: 2,           // rudy unikalne za pierwsze pokonanie bossa z rudą unikalną
   UNIQ_BOSS_CHANCE: 0.05,       // szansa na rudę unikalną przy kolejnych pokonaniach
   RAMP_DROP: 50,                // nowa ruda wchodzi stopniowo: tyle % wytopów o rzadkość niżej na poziomie kuźni, na którym się odblokowuje…
   RAMP_LEVELS: 5,               // …i mniej z każdym poziomem — po tylu poziomach już zawsze pełne minimum

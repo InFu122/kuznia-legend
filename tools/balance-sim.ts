@@ -44,7 +44,7 @@ const TECH_PRIORITY: TechId[] = ['e_noc', 'w_ostrze', 'w_pancerz', 'k_hart', 'e_
 
 interface HourRow {
   run: number; h: number; land: string; stage: number; forge: number; power: number; rec: number; gold: number; earned: number; smelted: number; jumps: number; best: string; ore: number; pass: number;
-  books: number; tech: number; sets: string; tower: number; skills: string; pet: string; mount: string;
+  books: number; tech: number; tower: number; skills: string; pet: string; mount: string;
 }
 interface BossRow { run: number; land: string; boss: string; h: number; forge: number; power: number }
 
@@ -190,7 +190,7 @@ function runOnce(run: number, seed: number) {
         run, h: ms / 3600000, land: landDef(g.s.cur.land).n, stage: g.s.cur.stage, forge: g.s.forge.lvl, power: g.stats.power,
         rec: recPower(g.s.cur.land), gold: Math.round(g.s.gold), earned: Math.round(earned), smelted: g.s.stats.smelted, jumps: g.s.stats.jumps, ore: g.s.ores.reduce((x, y) => x + y, 0), pass: g.s.pass ? passXp(g.s.pass) : 0, best: bestR >= 0 ? RAR[bestR].n : '—',
         books: g.s.books, tech: TECH_IDS.reduce((a, id) => a + (g.s.tech.lv[id] ?? 0), 0),
-        sets: g.stats.sets.map(x => `${x.id}:${x.count}`).join(' '), tower: g.s.dungeons.wieza.best,
+        tower: g.s.dungeons.wieza.best,
         skills: g.s.skills.eq.filter(Boolean).map(id => `${id}${g.s.skills.lv[id!]}`).join(' '),
         pet: g.s.petSel ? `${g.s.petSel}${g.s.pets[g.s.petSel]!.lvl}` : '', mount: g.s.mountSel ? `${g.s.mountSel}${g.s.mounts[g.s.mountSel]!.lvl}` : '',
       });
@@ -212,7 +212,7 @@ async function main() {
     bosses.push(...res.bosses);
     samples.push(res.samples);
     const last = res.hours[res.hours.length - 1];
-    console.log(`Przebieg ${r}${PLAIN ? ' (plain)' : ''}: po ${HOURS} h — ${last.land}, etap ${last.stage}, kuźnia ${last.forge}, Moc ${last.power}, Księgi ${last.books}, badania ${last.tech}, zestawy [${last.sets}], wieża ${last.tower}, umiejętności [${last.skills}], chowaniec ${last.pet}, wierzchowiec ${last.mount}, bossowie: ${res.bosses.length}`);
+    console.log(`Przebieg ${r}${PLAIN ? ' (plain)' : ''}: po ${HOURS} h — ${last.land}, etap ${last.stage}, kuźnia ${last.forge}, Moc ${last.power}, Księgi ${last.books}, badania ${last.tech}, wieża ${last.tower}, umiejętności [${last.skills}], chowaniec ${last.pet}, wierzchowiec ${last.mount}, bossowie: ${res.bosses.length}`);
     console.log('  bossowie (' + (CASUAL ? 'dni' : 'h') + '): ' + res.bosses.map(b => (CASUAL ? b.h / 24 : b.h).toFixed(1)).join(' '));
   }
   console.log('Moc przy oczekiwanym poziomie kuźni / zalecana Moc krainy (średnio):');
@@ -239,7 +239,7 @@ async function main() {
     { header: 'Ruda w zapasie', key: 'ore', width: 14, fmt: '#,##0' }, { header: 'Punkty przepustki', key: 'pass', width: 16, fmt: '#,##0' },
     { header: 'Najlepsza rzadkość', key: 'best', width: 18 },
     { header: 'Księgi', key: 'books', width: 9 }, { header: 'Poziomy badań', key: 'tech', width: 14 },
-    { header: 'Zestawy', key: 'sets', width: 18 }, { header: 'Wieża', key: 'tower', width: 8 },
+    { header: 'Wieża', key: 'tower', width: 8 },
     { header: 'Umiejętności', key: 'skills', width: 26 }, { header: 'Chowaniec', key: 'pet', width: 14 }, { header: 'Wierzchowiec', key: 'mount', width: 14 },
   ]);
   hours.forEach((h, i) => { ws1.addRow(h); ws1.getCell(`H${i + 2}`).value = { formula: `F${i + 2}/G${i + 2}` }; });

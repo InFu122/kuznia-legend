@@ -297,7 +297,7 @@ export const ELEM_ICONS: Record<string, IconData> = {
   ], pal: {"k": "#17121c", "w": "#ffffff", "E": "#ffffff", "F": "#fff3c2", "G": "#e3c46a", "A": "#efe6cf", "B": "#cbbd9b", "C": "#9c8e6e", "D": "#6b6049"} },
 };
 
-/** Rudy unikalne zestawów. */
+/** Rudy unikalne (pewny przeskok rzadkości). */
 export const SET_ORE_ICONS: Record<string, IconData> = {
   'lowca': { rows: [
     '....kkkkk.......',

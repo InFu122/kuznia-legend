@@ -140,7 +140,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
           <div class="h">{L.boss}</div>
           <RewardTiles r={{ ...m.extra, gold: m.gold, ores: { [L.rare]: m.n, ...m.extra?.ores }, books: m.books, uniq: set && m.uniq ? { [set]: m.uniq } : undefined }} />
           {set && m.uniq > 0 && (
-            <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej część zestawu <b>{SETS[set].n}</b>. Więcej dają Leża Bossów.</p>
+            <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej przedmiot z pewnym przeskokiem o co najmniej 1 rzadkość. Więcej dają Leża Bossów.</p>
           )}
           {m.land + 1 === ABYSS_FROM && <p class="sub"><b>Kampania ukończona!</b> Dalej Otchłań — kręgi bez dna z coraz silniejszymi wrogami i rudami z końca gry.</p>}
           <p>Odblokowana kraina: <b>{next.n}</b> ({actName(next.act)}). Rudy: {next.drops.map(([o, p]) => `${ORES[o].n} ${pctS(p)}`).join(' · ')}.</p>
@@ -366,7 +366,7 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
     [oreUrl(4), 'Ruda dojrzewa z kuźnią', <>Ruda nie ma sztywnego minimum: tuż po odblokowaniu daje mieszankę dwóch sąsiednich rzadkości, a z każdym poziomem kuźni wyniki przesuwają się w górę — aż do jakości docelowej rudy (wyżej przełącz poziom, żeby to zobaczyć).</>],
     [oreUrl(DIVINE_ORE), 'Boski przedmiot', <>Żadna ruda nie daje go na pewno. Ma własne imię, złotą ramkę i Boską aurę (+{B.DIVINE_AURA}% obrażeń i zdrowia za każdy założony), a serwer ogłasza go na czacie. {ORES[DIVINE_ORE].n}: bossowie aktu IV, loch sezonowy, wydarzenia i Przepustka.</>],
     [elemUrl('zar'), `Domieszki · od ${B.ELEM_FORGE_LVL}. poziomu`, <>Nadają przedmiotowi żywioł i dodatkowy efekt. Nie zmieniają szans.</>],
-    [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Robią z przedmiotu część zestawu (premie za 2 i 4 części) i dają pewny przeskok o co najmniej 1 (ale nie na Boski).</>],
+    [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Dają wytopowi pewny przeskok o co najmniej 1 rzadkość (ale nie na Boski). Wypadają z bossów i Leży Bossów.</>],
     [techUrl('k_hart'), `Hartowanie · od ${TECH_UNLOCK_FORGE}. poziomu`, <>Badanie w Nauce mnoży szanse na przeskok.{rel ? <> Twoja premia: <b>+{pct(rel)}</b>, już w paskach.</> : ''}</>],
     [resUrl('zloto'), 'Sprzedaż', <>Niepotrzebny przedmiot sprzedajesz za złoto.</>],
   ];
@@ -598,19 +598,18 @@ function MixView({ game, what, close }: { game: Game; what: 'el' | 'set'; close:
   return (
     <>
       <div class="eyebrow">Ruda unikalna</div>
-      <div class="h">Część zestawu?</div>
-      <p class="sub">Ruda unikalna robi z wytopu część zestawu w miejscu, w którym jeszcze go nie nosisz, z pewnym przeskokiem o co najmniej 1 rzadkość. Każdy wytop zużywa jedną sztukę.</p>
+      <div class="h">Pewny przeskok?</div>
+      <p class="sub">Wytop z rudą unikalną przeskakuje na pewno o co najmniej 1 rzadkość (ale nie na Boski). Każdy wytop zużywa jedną sztukę.</p>
       <div class="mixlist">
-        <button class={`mixopt${!s.uniqSel ? ' on' : ''}`} onClick={() => pick(() => game.setUniq(null))}><span class="mx-n">Bez zestawu</span></button>
+        <button class={`mixopt${!s.uniqSel ? ' on' : ''}`} onClick={() => pick(() => game.setUniq(null))}><span class="mx-n">Bez rudy unikalnej</span></button>
         {keys.map(k => (
           <button key={k} class={`mixopt${s.uniqSel === k ? ' on' : ''}`} onClick={() => pick(() => game.setUniq(k))}>
             <Px src={setOreUrl(k)} size={32} />
             <span class="mx-n" style={{ color: SETS[k].col }}>{SETS[k].ore} <small>· masz {fmt(s.uniq[k] ?? 0)}</small></span>
-            <small class="mx-d">{SETS[k].n}: 2 części — {SETS[k].d2}; 4 części — {SETS[k].d4}</small>
           </button>
         ))}
       </div>
-      {keys.length === 0 && <p class="sub">Rudy unikalne dają bossowie krain z zestawem i Leża Bossów.</p>}
+      {keys.length === 0 && <p class="sub">Rudy unikalne dają niektórzy bossowie krain i Leża Bossów.</p>}
       <button class="btn" onClick={close}>Anuluj</button>
     </>
   );

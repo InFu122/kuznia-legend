@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SETS, SET_FORGE_LVL, TECH, TECH_IDS } from '../src/data';
+import { SET_FORGE_LVL, TECH, TECH_IDS } from '../src/data';
 import { equip, smelt, startUpgrade } from '../src/engine/forge';
 import { computeStats } from '../src/engine/stats';
 import { techBlock, techCost, techMods, tickResearch, techMaxAll } from '../src/engine/tech';
@@ -73,7 +73,7 @@ describe('zestawy', () => {
     expect(s.uniqSel).toBeNull();
   });
 
-  it('części zestawu trafiają w różne miejsca, a 2 i 4 części dają bonusy', () => {
+  it('przedmioty z rudy unikalnej trafiają w różne miejsca i nie dają już premii zestawu', () => {
     const { ctx, s } = makeGame(4);
     s.stats.smelted = 10;
     s.forge.lvl = SET_FORGE_LVL;
@@ -81,20 +81,18 @@ describe('zestawy', () => {
     s.uniq.straz = 4;
     s.uniqSel = 'straz';
     const slots = new Set<string>();
-    const base = computeStats(s.eq, techMods(s)).hp;
     for (let i = 0; i < 4; i++) {
       const it = smelt(ctx, 1, null)!;
+      expect(it.set).toBe('straz');
       slots.add(it.slot);
       equip(ctx, it, true);
     }
     expect(slots.size).toBe(4);
     const st = computeStats(s.eq, techMods(s));
-    expect(st.sets).toEqual([{ id: 'straz', count: 4 }]);
     const noSet = computeStats(Object.fromEntries(Object.entries(s.eq).map(([k, v]) => [k, { ...v!, set: null }])), techMods(s));
-    const hpPct = (SETS.straz.b2.hpPct ?? 0) + (SETS.straz.b4.hpPct ?? 0);
-    expect(st.hp / noSet.hp).toBeCloseTo(1 + hpPct / 100, 5);
-    expect(st.dodge - noSet.dodge).toBeCloseTo(SETS.straz.b4.dodge ?? 0, 5);
-    expect(base).toBeLessThan(st.hp);
+    expect(st.hp).toBeCloseTo(noSet.hp, 5);
+    expect(st.dmg).toBeCloseTo(noSet.dmg, 5);
+    expect(st.dodge).toBeCloseTo(noSet.dodge, 5);
   });
 });
 

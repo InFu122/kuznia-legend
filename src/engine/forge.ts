@@ -1,4 +1,4 @@
-import { B, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, R, RANK_MAX, RAR, REFINE, SETS, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
+import { B, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, R, RANK_MAX, RAR, REFINE, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
 import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreNominal, pityAllowed, sellPrice, smeltRarity, upCost, upTime } from './formulas';
@@ -6,11 +6,11 @@ import { checkLegend } from './legend';
 import { allMods } from './mods';
 import { track } from './missions';
 import { mulberry32, ri, rnd, shuffle, type Rng } from './rng';
-import { invalidate, powerDelta, stats } from './stats';
+import { invalidate, powerDelta } from './stats';
 import type { ElemKey, GameState, Item, SetId, SlotId } from './types';
 
 export const canSmelt = (ctx: Ctx, ore: number) => ctx.s.ores[ore] > 0 && ctx.s.forge.lvl >= ORES[ore].lvl;
-/** Czy przy następnym wytopie zostanie użyta ruda unikalna (część zestawu). */
+/** Czy przy następnym wytopie zostanie użyta ruda unikalna (pewny przeskok rzadkości). */
 export const uniqActive = (s: GameState): SetId | null =>
   s.uniqSel && s.forge.lvl >= SET_FORGE_LVL && (s.uniq[s.uniqSel] ?? 0) > 0 ? s.uniqSel : null;
 
@@ -20,7 +20,10 @@ export const sellFor = (s: GameState, it: Item) => Math.round(sellPrice(it) * (1
 export const upgradeCost = (s: GameState, n: number) => Math.round(upCost(n) * (1 - allMods(s).forgeCost / 100));
 export const upgradeTime = (s: GameState, n: number) => upTime(n) * (1 - allMods(s).forgeTime / 100);
 
-/** Część zestawu trafia w miejsce, w którym nie masz jeszcze tego zestawu. */
+/**
+ * Przedmiot z rudy unikalnej trafia w miejsce, w którym nie nosisz jeszcze przedmiotu z tej samej rudy
+ * (zasada z czasów zestawów — zostaje, bo serwer odtwarza nią dawne wytopy).
+ */
 function setSlot(s: GameState, set: SetId, u: number): SlotId {
   const free = SLOT_ORDER.filter(sl => s.eq[sl]?.set !== set);
   const list = free.length ? free : SLOT_ORDER;
@@ -127,17 +130,6 @@ export function sell(ctx: Ctx, it: Item, _quiet: boolean): void {
   ctx.dirty = true;
 }
 
-/** Czy założenie przedmiotu zwiększy liczbę noszonych części jego zestawu (do 4). */
-export function advancesSet(s: GameState, it: Item): boolean {
-  if (!it.set) return false;
-  const count = Object.values(s.eq).filter(x => x?.set === it.set).length;
-  return s.eq[it.slot]?.set !== it.set && count < 4;
-}
-
-/**
- * Auto-wytop: zakłada przedmiot, jeśli podnosi Moc; w przeciwnym razie sprzedaje.
- * Część zestawu, która przybliża premię za 2 lub 4 części, zostaje założona, jeśli traci najwyżej 5% Mocy.
- */
 /**
  * Rzadkości (indeksy, od najsłabszej), na których może zatrzymać się auto-wytop z rudy `ore` na kuźni `flvl`:
  * wyższe niż wynik bez przeskoku (gdy ruda bywa o rangę niżej — także sam wynik bez przeskoku).
@@ -158,7 +150,7 @@ export function autoTarget(s: GameState): number {
 }
 
 /**
- * Auto-wytop: przedmiot o rzadkości docelowej (albo wyższej) i część zestawu wstrzymują auto i czekają na decyzję gracza
+ * Auto-wytop: przedmiot o rzadkości docelowej (albo wyższej) i przedmiot z rudy unikalnej wstrzymują auto i czekają na decyzję gracza
  * (po decyzji auto-wytop jedzie dalej). Słabsze przedmioty są sprzedawane — chyba że miejsce jest puste (wtedy zakłada).
  */
 export function autoHandle(ctx: Ctx, it: Item, quiet: boolean): 'stop' | 'equip' | 'sell' {
@@ -190,9 +182,9 @@ export function refine(ctx: Ctx, from: number, times: number): number {
   return n;
 }
 
+/** Zakłada przedmiot, jeśli podnosi Moc; w przeciwnym razie sprzedaje. */
 export function decideAuto(ctx: Ctx, it: Item, quiet: boolean): boolean {
-  const d = powerDelta(ctx, it);
-  const better = d > 0 || (advancesSet(ctx.s, it) && d > -0.05 * stats(ctx).power);
+  const better = powerDelta(ctx, it) > 0;
   if (better) equip(ctx, it, quiet); else sell(ctx, it, quiet);
   return better;
 }
@@ -229,7 +221,6 @@ export function tickForge(ctx: Ctx, ms: number, quiet = false): boolean {
 }
 
 export const elemName = (k: ElemKey) => ELEM[k].n;
-export const setName = (id: SetId) => SETS[id].n;
 export { itemName };
 
 /** Najwięcej znalezisk czekających na decyzję; nadmiar (najstarsze) idzie na sprzedaż. */

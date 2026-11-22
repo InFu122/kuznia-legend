@@ -297,7 +297,7 @@ export class Game {
   /** Domieszka auto-wytopu (osobno od ręcznego wytopu; null — bez domieszki). */
   setAutoEl(k: ElemKey | null): void { this.s.autoEl = k && ELEM[k] ? k : null; this.ctx.dirty = true; this.changed(); }
   setUniq(k: SetId | null): void {
-    if (k && this.s.forge.lvl < SET_FORGE_LVL) { toast(this.ctx, `Zestawy: wytop od ${SET_FORGE_LVL}. poziomu kuźni.`, 'bad'); return; }
+    if (k && this.s.forge.lvl < SET_FORGE_LVL) { toast(this.ctx, `Ruda unikalna: wytop od ${SET_FORGE_LVL}. poziomu kuźni.`, 'bad'); return; }
     this.s.uniqSel = k && SETS[k] ? k : null;
     this.ctx.dirty = true;
     this.changed();

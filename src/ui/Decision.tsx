@@ -1,7 +1,7 @@
 // Okno decyzji o nowym przedmiocie (wytop, zatrzymany auto-wytop, skrzynia bossa, Zbrojownia):
 // animacja dropu, nowy przedmiot obok założonego, różnice statystyk i przyciski Załóż / Sprzedaj.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { B, ELEM, ORES, R, RAR, RAR_ORDER, SETS, SLOTS, SLOT_ORDER, SUBS, rAt, rGe, rRank, rTier } from '../data';
+import { B, ELEM, ORES, R, RAR, RAR_ORDER, SLOTS, SLOT_ORDER, SUBS, rAt, rGe, rRank, rTier } from '../data';
 import { itemUrl, resUrl } from '../art/render';
 import { coinsToGold, flyToSlot, sparks } from './fx';
 import { buzz } from './haptics';
@@ -124,7 +124,6 @@ function Stats({ cur, it }: { cur: Item | undefined; it: Item }) {
   const ids = [...new Set([...it.subs.map(x => x.id), ...(cur?.subs ?? []).map(x => x.id)])] as SubId[];
   for (const id of ids) rows.push({ k: id, n: SUBS[id].n, a: subOf(cur, id), b: subOf(it, id), f: v => '+' + f1(v) + SUBS[id].u });
   if (cur?.el || it.el) rows.push({ k: 'el', n: 'Żywioł', a: cur?.el ? 1 : 0, b: it.el ? 1 : 0, f: () => '', txt: [cur?.el ? ELEM[cur.el].el : '', it.el ? ELEM[it.el].el : ''] });
-  if (cur?.set || it.set) rows.push({ k: 'set', n: 'Zestaw', a: cur?.set ? 1 : 0, b: it.set ? 1 : 0, f: () => '', txt: [cur?.set ? SETS[cur.set].n : '', it.set ? SETS[it.set].n : ''] });
   return (
     <div class="dstats">
       {rows.map((r, i) => {
@@ -307,7 +306,7 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
   useEffect(() => setAsk(null), [it.id]);
   const tryWear = () => (!empty && d < 0 ? setAsk('wear') : wear());
   const trySell = () => (empty || d > 0 ? setAsk('sell') : sellIt());
-  const head = src === 'found' ? (it.obieg ? 'Skrzynia · przedmiot dawnego kowala' : 'Znalezisko') : it.forced === 'set' ? 'Wykuto część zestawu' : 'Wykuto';
+  const head = src === 'found' ? (it.obieg ? 'Skrzynia · przedmiot dawnego kowala' : 'Znalezisko') : it.forced === 'set' ? 'Wykuto z rudy unikalnej' : 'Wykuto';
   const left = src === 'found' ? s.found.length - 1 : 0;
   const gainTxt = `${empty || d > 0 ? '▲ +' : d < 0 ? '▼ −' : '± '}${fmt(Math.abs(d))} Mocy`;
   const gain = <span class="pill">{gainTxt}</span>;

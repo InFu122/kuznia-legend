@@ -25,7 +25,7 @@ const TIER_N = ['proste', 'zdobione', 'mistrzowskie'];
 
 const ores = ORES.map((o, i) => tile(ic(ORE_ICONS[String(i)]), o.n, `wytop od ${o.lvl}. poz. kuźni`)).join('');
 const elems = (Object.keys(ELEM) as (keyof typeof ELEM)[]).map(k => tile(ic(ELEM_ICONS[k]), ELEM[k].n, ELEM[k].el)).join('');
-const sets = (Object.keys(SETS) as (keyof typeof SETS)[]).map(k => tile(ic(SET_ORE_ICONS[k]), SETS[k].ore, SETS[k].n)).join('');
+const sets = (Object.keys(SETS) as (keyof typeof SETS)[]).map(k => tile(ic(SET_ORE_ICONS[k]), SETS[k].ore, 'ruda unikalna')).join('');
 const res = Object.keys(RES_ICONS).map(k => tile(ic(RES_ICONS[k]), RES_N[k] ?? k)).join('');
 const skills = (Object.keys(SKILLS) as (keyof typeof SKILLS)[]).map(k => tile(ic(SKILL_ICONS[k]), SKILLS[k].n, RAR[SKILLS[k].r].n, 24)).join('');
 const sceneImg = (px: Uint8ClampedArray, name: string, sub: string) =>

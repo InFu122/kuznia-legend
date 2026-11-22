@@ -95,7 +95,7 @@ export interface Item {
   awc?: number;
   owners: string[];
   obieg: boolean;       // przedmiot dawnego kowala (Zbrojownia; dawniej też Wielki Obieg)
-  set: SetId | null;    // część zestawu (z rudy unikalnej)
+  set: SetId | null;    // ruda unikalna, z której wykuto przedmiot (pewny przeskok; dawniej część zestawu)
   sx?: number;          // numer wytopu z ziarnem serwera (serwer może odtworzyć losowanie)
   sig?: string;         // podpis serwera (przedmiot dawnego kowala ze Zbrojowni)
   npc?: boolean;        // wykuł go kowal-widmo (przedmiot Zbrojowni od serwera)
@@ -223,7 +223,6 @@ export interface Stats {
   boss: number; eldmg: number; slow: number; holy: number; pog: number;
   abyss: number;       // premia do obrażeń wobec wrogów Otchłani (Zew Otchłani)
   vs: Partial<Record<FoeType, number>>;
-  sets: { id: SetId; count: number }[];
   aura: number;        // Boska aura: ile założonych przedmiotów Boskich (każdy daje B.DIVINE_AURA % obrażeń i zdrowia)
   petAtk: number;      // obrażenia chowańca na trafienie (wartość)
   petInt: number;      // odstęp ataków chowańca (ms), 0 = brak

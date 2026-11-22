@@ -1,4 +1,4 @@
-import { B, SETS, SLOTS, SLOT_ORDER, landDef, R, rGe, type FeatureId } from '../../data';
+import { B, SLOTS, SLOT_ORDER, landDef, R, rGe, type FeatureId } from '../../data';
 import { itemName, smithTitle } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import type { FoeType, Item } from '../../engine/types';
@@ -65,7 +65,7 @@ function Bonuses({ c }: { c: Game['stats'] }) {
   const [open, setOpen] = useState(false);
   const rows: { ic: string; v: string; n: string; d?: string; px?: boolean }[] = [];
   for (const [t, v] of Object.entries(c.vs) as [FoeType, number][]) {
-    if (v) rows.push({ ic: foeUrl(FOE_ICON[t][0], t), v: `+${f1(v)}%`, n: `Obrażenia wobec ${FOE_ICON[t][1]}`, d: 'cechy przebudzenia (Zguba …) i zestawy', px: true });
+    if (v) rows.push({ ic: foeUrl(FOE_ICON[t][0], t), v: `+${f1(v)}%`, n: `Obrażenia wobec ${FOE_ICON[t][1]}`, d: 'cechy przebudzenia (Zguba …)', px: true });
   }
   if (c.boss + c.pog) rows.push({ ic: techUrl('w_pogromca'), v: `+${f1(c.boss + c.pog)}%`, n: 'Obrażenia wobec bossów', d: c.pog ? `w tym +${f1(c.pog)}% z cechy Pogromca` : undefined });
   if (c.eldmg) rows.push({ ic: elemUrl('zar'), v: `+${f1(c.eldmg)}%`, n: 'Obrażenia z żywiołów', d: 'żywioły przedmiotów i badania' });
@@ -128,20 +128,6 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
         </div>
         <Bonuses c={c} />
       </section>
-      {c.sets.length > 0 && (
-        <section class="card">
-          <IconEyebrow icon={<Px src={resUrl('pieczec')} size={16} />}>Zestawy</IconEyebrow>
-          <ul class="sets">
-            {c.sets.map(({ id, count }) => (
-              <li key={id}>
-                <b style={{ color: SETS[id].col }}>{SETS[id].n}</b> · {count}/4 części
-                <div class={count >= 2 ? 'on' : 'off'}>2 części: {SETS[id].d2}</div>
-                <div class={count >= 4 ? 'on' : 'off'}>4 części: {SETS[id].d4}</div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
       <section class="card">
         <div class="row"><IconEyebrow icon={<Px src={resUrl('kowadlo')} size={16} />}>Ekwipunek</IconEyebrow><span class="sub">Kropki = progi legendy (dotknij przedmiot){s.seals ? ` · Pieczęcie Legendy: ${s.seals}` : ''}</span></div>
         <div class="slots" style={{ marginTop: '10px' }}>

@@ -1,8 +1,8 @@
-import { B, ELEM, PETS, SETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue, R } from '../data';
+import { B, ELEM, PETS, SKILLS, SLOTS, STAT_CAPS, petAtkPct, skillValue, R } from '../data';
 import type { Ctx } from './context';
 import { mainVal } from './formulas';
 import { allMods, techMods } from './mods';
-import type { FoeType, GameState, Item, Mods, SetId, SkillId, SlotId, Stats } from './types';
+import type { FoeType, GameState, Item, Mods, SkillId, SlotId, Stats } from './types';
 
 /** Chowaniec i umiejętności — liczą się do Mocy, ale nie są częścią ekwipunku. */
 export interface Extra { pet?: { atk: number; int: number } | null; skills?: { id: SkillId; lvl: number }[]; heir?: Item | null; runes?: Partial<Record<SlotId, number>> }
@@ -38,13 +38,6 @@ export function skillFactor(skills: Extra['skills'], spd: number): [number, numb
     }
   }
   return [d, h];
-}
-
-/** Ile części każdego zestawu jest założonych. */
-export function setCounts(eq: GameState['eq']): { id: SetId; count: number }[] {
-  const c: Partial<Record<SetId, number>> = {};
-  for (const it of Object.values(eq)) if (it?.set) c[it.set] = (c[it.set] ?? 0) + 1;
-  return (Object.entries(c) as [SetId, number][]).map(([id, count]) => ({ id, count }));
 }
 
 export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {}): Stats {
@@ -83,20 +76,10 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
     if (SLOTS[extra.heir.slot].stat === 'dmg') dmg += m; else hp += m;
     for (const s of extra.heir.subs) addSub(s.id, s.v * k);
   }
-  // zestawy: bonus za 2 i za 4 części
   let dmgPct = mods.dmgPct, hpPct = mods.hpPct;
   crit += mods.crit;
   boss += mods.bossPct;
   spd += mods.spd; ls += mods.ls; regen += mods.regen; eldmg += mods.eldmg;
-  const sets = setCounts(eq);
-  for (const { id, count } of sets) {
-    for (const b of [count >= 2 ? SETS[id].b2 : null, count >= 4 ? SETS[id].b4 : null]) {
-      if (!b) continue;
-      dmgPct += b.dmgPct ?? 0; hpPct += b.hpPct ?? 0; crit += b.crit ?? 0; spd += b.spd ?? 0;
-      ls += b.ls ?? 0; dodge += b.dodge ?? 0; boss += b.bossPct ?? 0;
-      for (const [t, v] of Object.entries(b.vs ?? {}) as [FoeType, number][]) vs[t] = (vs[t] ?? 0) + v;
-    }
-  }
   // Boska aura: każdy założony Boski przedmiot wzmacnia całego bohatera
   const aura = Object.values(eq).filter(it => it && it.r === R.BOSKI).length;
   dmgPct += aura * B.DIVINE_AURA; hpPct += aura * B.DIVINE_AURA;
@@ -111,7 +94,7 @@ export function computeStats(eq: GameState['eq'], mods: Mods, extra: Extra = {})
   const [sd, sh] = skillFactor(extra.skills, spd);
   const dps = dmg * (1 + (crit / 100) * (critd / 100)) * (1 + spd / 100) * (1 + eldmg / 100) + (petInt ? petAtk * 1000 / petInt : 0);
   const power = Math.round(dps * 4 * sd + (hp * 0.4 / (1 - dodge / 100)) * sh);
-  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, abyss: mods.abyssPct ?? 0, vs, sets, aura, petAtk, petInt, power };
+  return { dmg, hp, crit, critd, spd, ls, dodge, regen, boss, eldmg, slow, holy, pog, abyss: mods.abyssPct ?? 0, vs, aura, petAtk, petInt, power };
 }
 
 /** Ekwipunek, którym walczy bohater: w Krypcie Bohaterów tylko przedmioty z legendą. */
