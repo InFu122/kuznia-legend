@@ -4,7 +4,7 @@ import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
 import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labChoose, startDungeon } from './dungeon';
-import { equipBestSkills, equipSkill, levelUp, openSaddle, openScroll, selectBestMount, selectBestPet, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
+import { equipBestSkills, equipSkill, levelPreview, levelUp, openSaddle, openScroll, selectBestMount, selectBestPet, selectMount, selectPet, startHatch, tickHatch, useSeal } from './companions';
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
 import { autoHandle, autoTarget, autoTargets, canSmelt, equip, refine, sell, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime, refineTo } from './forge';
@@ -333,6 +333,8 @@ export class Game {
   openSaddle() { const r = openSaddle(this.ctx); if (r) this.dispatch({ t: 'modal', m: { kind: 'draw', what: 'mount', ...r } }); this.changed(); return r; }
   selectMount(id: MountId | null) { const ok = selectMount(this.ctx, id); this.changed(); return ok; }
   levelUp(kind: 'pet' | 'mount', id: PetId | MountId) { const ok = levelUp(this.ctx, kind, id); this.changed(); return ok; }
+  /** Moc teraz i po ulepszeniu towarzysza o poziom. */
+  levelPreview(kind: 'pet' | 'mount', id: PetId | MountId) { return levelPreview(this.ctx, kind, id); }
   useSeal(slot: SlotId) { const ok = useSeal(this.ctx, slot); this.changed(); return ok; }
   /** Wybór albo zmiana cechy przebudzenia założonego przedmiotu (pierwszy wybór darmowy, potem złoto). */
   setAwakening(slot: SlotId, key: AwKey) { const ok = setAwakening(this.ctx, slot, key); this.changed(); return ok; }

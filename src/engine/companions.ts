@@ -179,6 +179,15 @@ export function useSeal(ctx: Ctx, slot: SlotId): boolean {
   return true;
 }
 
+/** Moc bohatera teraz i po ulepszeniu towarzysza o poziom (okno ulepszenia pokazuje różnicę). */
+export function levelPreview(ctx: Ctx, kind: 'pet' | 'mount', id: PetId | MountId): { now: number; next: number } {
+  const s = ctx.s;
+  const c = kind === 'pet' ? s.pets[id as PetId] : s.mounts[id as MountId];
+  const now = fullStats(ctx).power;
+  if (!c || c.lvl >= COMPANION_MAX) return { now, next: now };
+  return { now, next: powerWith(ctx, () => { c.lvl++; }, () => { c.lvl--; }) };
+}
+
 /* ---------- „Załóż najlepsze” ---------- */
 
 /** Moc bohatera po chwilowej zmianie stanu (zmiana jest cofana). */

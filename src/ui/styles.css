@@ -1922,3 +1922,150 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .awc-tags i.cur{background:color-mix(in srgb, var(--straw) 22%, transparent); color:var(--straw)}
 
 .slot-aw{position:absolute; top:4px; right:4px; width:10px; height:10px; border-radius:50%; background:var(--good, #7ed957); box-shadow:0 0 0 2px var(--plate), 0 0 8px #7ed957}
+
+/* przekuwanie: potwierdzenie, przycisk z kowadłem, losowanie i jakość rzutu */
+.rf-how{margin:4px 0 0}
+.rf-cost{display:inline-flex; align-items:center; gap:4px; font-size:12.5px; white-space:nowrap}
+.rf-list li{flex-wrap:wrap; padding:6px 8px; border-radius:10px; background:rgba(255,255,255,.03)}
+.rf-list li.ask{background:color-mix(in srgb, #a77bff 10%, var(--plate)); box-shadow:inset 0 0 0 1px color-mix(in srgb, #a77bff 45%, transparent)}
+.rf-qs{color:var(--ash); font-size:11px; margin-left:4px}
+.btn.rf-go{display:inline-flex; align-items:center; gap:6px; color:#f3eaff; border-color:#8d63e6;
+  background:linear-gradient(180deg, #7f55d9, #5b37a8); box-shadow:0 2px 0 #3b2370, 0 0 12px -4px #a77bff}
+.btn.rf-go:disabled{filter:grayscale(.8); opacity:.6; box-shadow:none}
+.rf-ask{flex-basis:100%; display:flex; flex-direction:column; gap:8px; margin-top:4px}
+.rf-ask p{margin:0; font-size:13px; line-height:1.45}
+.rf-ask .rf-cost{vertical-align:-3px}
+.rf-ask-btns{display:flex; justify-content:flex-end; gap:6px}
+.rf-live{display:flex; flex-direction:column; gap:10px}
+.rf-reel{--qc:#8d63e6; position:relative; display:flex; flex-direction:column; gap:8px; padding:14px 14px 12px; border-radius:14px; cursor:pointer;
+  background:radial-gradient(120% 120% at 50% 0%, color-mix(in srgb, var(--qc) 22%, #15100c), #120d0a); border:1px solid color-mix(in srgb, var(--qc) 55%, var(--rivet));
+  overflow:hidden; transition:border-color .3s, background .3s}
+.rf-reel.spin .rf-slot{animation:rfJit .11s steps(2) infinite}
+.rf-slot{display:flex; align-items:baseline; justify-content:space-between; gap:10px}
+.rf-name{font:700 15px var(--f-ui); color:var(--frost)}
+.rf-val{font:800 26px var(--f-display); color:var(--frost); font-variant-numeric:tabular-nums; text-shadow:0 0 14px color-mix(in srgb, var(--qc) 70%, transparent)}
+.rf-reel.spin .rf-name, .rf-reel.spin .rf-val{opacity:.75; filter:blur(.3px)}
+.rf-q small{display:block; margin-top:4px; color:var(--ash); font-size:12px; min-height:1.2em}
+.rf-q small b{color:var(--qc)}
+.rf-qbar{height:8px; border-radius:4px; background:#2a221c; overflow:hidden}
+.rf-qbar i{display:block; height:100%; border-radius:4px; transition:background .2s; box-shadow:0 0 10px -2px currentColor}
+.rf-reel.t-low{--qc:#8a8178}
+.rf-reel.t-ok{--qc:#4aa3ff}
+.rf-reel.t-good{--qc:#a77bff}
+.rf-reel.t-top{--qc:#ffd35a; animation:rfTop 1.2s ease-out}
+.rf-reel.done::after{content:""; position:absolute; inset:-40%; background:radial-gradient(circle, color-mix(in srgb, var(--qc) 35%, transparent), transparent 60%); animation:rfBurst .9s ease-out forwards; pointer-events:none}
+.rf-cmp{margin:0}
+.rf-cmp .up{color:#7ed957}
+.rf-cmp .down{color:#f08a7a}
+@keyframes rfJit{0%{transform:translateY(-1px)} 100%{transform:translateY(1px)}}
+@keyframes rfBurst{from{opacity:1; transform:scale(.4)} to{opacity:0; transform:scale(1.2)}}
+@keyframes rfTop{0%{box-shadow:0 0 0 0 #ffd35a} 40%{box-shadow:0 0 28px 4px #ffd35a88} 100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion: reduce){ .rf-reel.spin .rf-slot, .rf-reel.t-top, .rf-reel.done::after{animation:none} }
+.rf-list li > span{flex:1; min-width:0}
+
+/* premie bojowe bohatera: zwinięte ikonki, po dotknięciu lista */
+.bonus{margin-top:10px; border-radius:12px; background:var(--plate-2, rgba(255,255,255,.03)); border:1px solid var(--rivet); overflow:hidden}
+.bonus-sum{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; background:none; border:0; color:var(--frost); cursor:pointer; text-align:left}
+.bonus-t{font:700 11px var(--f-ui); letter-spacing:.08em; text-transform:uppercase; color:var(--ash); flex:none}
+.bonus-chips{display:flex; flex-wrap:wrap; gap:5px; flex:1; min-width:0}
+.bchip{display:inline-flex; align-items:center; gap:4px; padding:2px 7px 2px 3px; border-radius:999px; background:rgba(255,255,255,.05); font:700 12px var(--f-ui); font-variant-numeric:tabular-nums}
+.bonus-chev{font-style:normal; color:var(--ash); transition:transform .2s; flex:none}
+.bonus.open .bonus-chev{transform:rotate(180deg)}
+.bonus-list{list-style:none; margin:0; padding:2px 10px 10px; display:flex; flex-direction:column; gap:6px; animation:tin .2s ease-out}
+.bonus-list li{display:flex; align-items:center; gap:10px}
+.bl-ic{display:grid; place-items:center; flex:none; width:34px; height:34px; border-radius:9px; background:rgba(255,255,255,.05)}
+.bl-t{display:flex; flex-direction:column; gap:1px; flex:1; min-width:0}
+.bl-t b{font-size:13px}
+.bl-t small{color:var(--ash); font-size:11.5px; line-height:1.3}
+.bl-v{font:800 15px var(--f-ui); color:var(--straw); font-variant-numeric:tabular-nums}
+
+/* umiejętności: zwoje, karty umiejętności */
+.scrollbox{display:flex; align-items:center; gap:12px; margin-top:10px; padding:10px 12px; border-radius:14px; background:var(--plate); border:1px solid var(--rivet)}
+.scrollbox.has{border-color:color-mix(in srgb, #a77bff 55%, var(--rivet)); background:radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, #a77bff 16%, var(--plate)), var(--plate))}
+.sb-ic{position:relative; flex:none; display:grid; place-items:center; width:54px; height:54px}
+.scrollbox.has .sb-ic{animation:sbBob 2.4s ease-in-out infinite}
+.sb-n{position:absolute; right:-4px; bottom:-2px; min-width:22px; padding:1px 6px; border-radius:999px; background:#a77bff; color:#1a0f2e; font:800 12px var(--f-ui); text-align:center}
+.scrollbox:not(.has) .sb-n{background:#4a3c30; color:var(--ash)}
+.scrollbox .cmain{display:flex; flex-direction:column; gap:2px; min-width:0}
+.btn.btn-scroll{display:inline-flex; align-items:center; gap:6px; flex:none; min-height:44px; padding:8px 14px; color:#f3eaff; border-color:#8d63e6;
+  background:linear-gradient(180deg, #7f55d9, #5b37a8); box-shadow:0 2px 0 #3b2370, 0 0 14px -4px #a77bff}
+.scrollbox.has .btn-scroll{animation:sbGlow 2.4s ease-in-out infinite}
+.btn.btn-scroll:disabled{filter:grayscale(.8); opacity:.55; box-shadow:none; animation:none}
+.skslot .sk-off{font-size:10px; opacity:.6}
+.sklist{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:8px}
+.skcard{--rc:var(--rivet); display:flex; align-items:flex-start; gap:10px; padding:10px; border-radius:12px; background:var(--plate-2, rgba(255,255,255,.03));
+  border:1px solid var(--rivet); border-left:3px solid var(--rc)}
+.skcard.r0{--rc:var(--r0)} .skcard.r1{--rc:var(--r1)} .skcard.r2{--rc:var(--r2)} .skcard.r3{--rc:var(--r3)} .skcard.r4{--rc:var(--r4)}
+.skcard.on{box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--straw) 40%, transparent)}
+.sk-ic{flex:none; display:grid; place-items:center; width:52px; height:52px; border-radius:12px; background:radial-gradient(circle, color-mix(in srgb, var(--rc) 30%, transparent), transparent 70%)}
+.skcard .cmain{display:flex; flex-direction:column; gap:3px; flex:1; min-width:0}
+.sk-top{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.sk-top b{font-size:14px}
+.sk-tag{font:700 10.5px var(--f-ui); padding:1px 7px; border-radius:999px; background:rgba(255,255,255,.06); color:var(--ash)}
+.sk-tag.k-atk{background:#e5604f2e; color:#f08a7a}
+.sk-tag.k-def{background:#4aa3ff2e; color:#8cc6ff}
+.sk-tag.k-heal{background:#7ed9572e; color:#9be37a}
+.sk-tag.k-buff{background:#ffd35a2e; color:#ffd35a}
+.sk-tag.k-ctl{background:#7fd6ff2e; color:#9adfff}
+.sk-main{display:flex; align-items:baseline; gap:5px; flex-wrap:wrap}
+.sk-main > b{font:800 18px var(--f-ui); color:var(--frost); font-variant-numeric:tabular-nums}
+.sk-main > small{color:var(--ash); font-size:12px}
+.sk-cd{margin-left:auto; font-size:11.5px; color:var(--ash); white-space:nowrap}
+.sk-d{color:var(--ash); font-size:12px; line-height:1.35}
+.sk-lvl{display:flex; align-items:center; gap:8px; margin-top:2px; font-size:11.5px; color:var(--ash)}
+.sk-lvl .bar{flex:1; max-width:110px}
+.sk-lvl small{white-space:nowrap}
+.sk-max{color:var(--straw)}
+@keyframes sbBob{0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-3px) rotate(3deg)}}
+@keyframes sbGlow{0%,100%{box-shadow:0 2px 0 #3b2370, 0 0 10px -4px #a77bff} 50%{box-shadow:0 2px 0 #3b2370, 0 0 20px 0 #a77bff}}
+
+/* otwieranie zwoju / siodła / jaja: napięcie (kolor rzadkości rośnie krok po kroku), potem odsłonięcie */
+.draw.opening{display:flex; flex-direction:column; align-items:center; gap:10px; padding-bottom:12px; cursor:pointer}
+.draw-open{--gc:var(--r0); position:relative; display:grid; place-items:center; width:180px; height:180px}
+.draw.opening.rs1 .draw-open{--gc:var(--r1)} .draw.opening.rs2 .draw-open{--gc:var(--r2)} .draw.opening.rs3 .draw-open{--gc:var(--r3)} .draw.opening.rs4 .draw-open{--gc:var(--r4)}
+.do-glow{position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--gc) 75%, transparent) 0%, transparent 65%);
+  animation:doPulse .38s ease-out infinite; transition:background .2s}
+.do-rays{position:absolute; inset:-20px; border-radius:50%; background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--gc) 30%, transparent) 0 8deg, transparent 8deg 24deg);
+  -webkit-mask:radial-gradient(circle, #000 20%, transparent 70%); mask:radial-gradient(circle, #000 20%, transparent 70%); animation:doSpin 3s linear infinite}
+.do-ic{position:relative; animation:doShake .38s ease-in-out infinite}
+.do-r{font:800 20px var(--f-display); transition:color .2s}
+.do-hint{color:var(--ash); font-size:12px}
+.draw.revealed .dec-ico{animation:doPop .55s cubic-bezier(.2,1.6,.4,1) both}
+.draw.revealed .dec-title{animation:tin .4s .15s ease-out both}
+@keyframes doPulse{0%{transform:scale(.85); opacity:.7} 60%{transform:scale(1.05); opacity:1} 100%{transform:scale(.95); opacity:.85}}
+@keyframes doSpin{to{transform:rotate(360deg)}}
+@keyframes doShake{0%,100%{transform:rotate(0) scale(1)} 25%{transform:rotate(-6deg) scale(1.04)} 75%{transform:rotate(6deg) scale(1.04)}}
+@keyframes doPop{0%{transform:scale(.2); opacity:0} 100%{transform:scale(1); opacity:1}}
+@media (prefers-reduced-motion: reduce){ .do-glow, .do-rays, .do-ic, .scrollbox.has .sb-ic, .scrollbox.has .btn-scroll, .draw.revealed .dec-ico{animation:none} }
+.draw-sk{display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; margin:4px 0 8px}
+.draw-sk .sk-main{justify-content:center}
+.draw-sk .sk-cd{margin-left:6px}
+
+/* ulepszenie towarzysza: przed → po, koszt, poziom podskakuje */
+.cup{display:flex; flex-direction:column; gap:10px}
+.cup-head{display:flex; align-items:center; gap:14px}
+.cup-port{position:relative; display:inline-flex}
+.cup-port.fx::after{content:""; position:absolute; inset:-30%; border-radius:50%; background:radial-gradient(circle, #ffd35a88, transparent 65%); animation:rfBurst .8s ease-out forwards; pointer-events:none}
+.cup-port.fx{animation:cupBounce .5s cubic-bezier(.2,1.6,.4,1)}
+.cup-lvl{display:flex; align-items:baseline; gap:6px; margin-top:4px; font:700 15px var(--f-ui)}
+.cup-lvl .cup-pop{animation:cupPop .6s cubic-bezier(.2,1.6,.4,1); color:var(--straw)}
+.cup-arr{color:var(--ash)}
+.cup-next{color:#9be37a}
+.cup-rows{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+.cup-rows li{display:grid; grid-template-columns:1fr auto auto auto; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:var(--plate); border:1px solid var(--rivet); font-size:14px}
+.cup-a{color:var(--ash); font-variant-numeric:tabular-nums}
+.cup-b{color:#9be37a; font-variant-numeric:tabular-nums}
+.cup-trait, .cup-pw{margin:0}
+.cup-pw b{color:#9be37a}
+.cup-cost{display:flex; align-items:center; gap:6px; font-size:14px}
+.cup-cost small{color:var(--ash)}
+.cup-cost.lack b{color:#f08a7a}
+@keyframes cupPop{0%{transform:scale(1)} 40%{transform:scale(1.35)} 100%{transform:scale(1)}}
+@keyframes cupBounce{0%{transform:scale(1)} 40%{transform:scale(1.12)} 100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){ .cup-port.fx, .cup-port.fx::after, .cup-lvl .cup-pop{animation:none} }
+.sk-btn{margin-left:auto}
+.scrollbox{flex-wrap:wrap}
+.scrollbox .cmain{flex:1}
+.scrollbox .btn-scroll{flex-basis:100%; justify-content:center; font-size:16px}
+.btn.cup-go{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; line-height:1.15}
+.btn.cup-go small{font-size:11.5px; font-weight:600; opacity:.8}

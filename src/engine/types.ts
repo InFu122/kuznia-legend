@@ -287,6 +287,7 @@ export type ModalData =
   | { kind: 'ores' }
   | { kind: 'auto' }
   | { kind: 'music' }
+  | { kind: 'compUp'; what: 'pet' | 'mount'; id: string }
   | { kind: 'changelog'; all?: boolean }
 
 export type GameEvent =

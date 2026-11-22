@@ -19,7 +19,12 @@ export function buzzPattern(rank: number): number[] {
 
 /** Wibracja dla przedmiotu o rzadkości `r` (indeks RAR). `on` — ustawienie gracza. */
 export async function buzz(r: number, on = true): Promise<void> {
-  const p = buzzPattern(rRank(r));
+  return buzzRank(rRank(r), on);
+}
+
+/** Wibracja według rangi 0–9 (np. jakość rzutu przy przekuwaniu, rzadkość umiejętności). */
+export async function buzzRank(rank: number, on = true): Promise<void> {
+  const p = buzzPattern(rank);
   if (!on || !p.length) return;
   try {
     if (isNative()) {

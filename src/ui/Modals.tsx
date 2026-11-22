@@ -1,7 +1,7 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
   B, DIVINE_JUMP, DIVINE_ORE, ELEM, ELEM_KEYS, EVENT, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, MOUNTS, ORES, PETS, RAR, SEAL_FAME, SETS, SET_FORGE_LVL,
-  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, FORGE_UNLOCKS, FEATURES, ORE_ORDER, rAt, rRank, type FeatureId, isRareOre, oreShares, setOfLand, skillValue, landDef, LEGEND, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, FORGE_UNLOCKS, FEATURES, ORE_ORDER, rAt, rRank, type FeatureId, isRareOre, oreShares, setOfLand, landDef, LEGEND, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
 import { ForgeLevelInfo, MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -27,9 +27,10 @@ import { hasProof } from '../engine/verify';
 import { f1, fmt, pct, pctS, tfmt } from './format';
 import { pl } from './texts';
 import { OddsBar } from './panels/Forge';
+import { CompUpgrade } from './panels/Companions';
 import { MissionsView } from './panels/Missions';
 import { AdOfferView, ShopView } from './panels/Shop';
-import { Reforge } from './panels/Runes';
+import { Reforge } from './Reforge';
 import { RankingView } from './panels/Ranking';
 import { ArenaView } from './panels/Pvp';
 import { EventView } from './panels/Event';
@@ -42,6 +43,9 @@ import { AutoSheet, OrePicker } from './Dock';
 import { MusicSheet } from './MusicSheet';
 import { ChangelogView } from './Changelog';
 import { AwakenBox, AwakenChoice } from './Awaken';
+import { skillFx } from './skillText';
+import { buzz } from './haptics';
+import { play } from './sound';
 import type { Tab } from './icons';
 
 /**
@@ -297,7 +301,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
     case 'chat':
       return <ChatView game={game} initial={m.ch} close={close} goClan={() => { close(); goTab?.('klan'); }} />;
     case 'draw':
-      return <DrawView m={m} close={close} />;
+      return <DrawView game={game} m={m} close={close} />;
     case 'menu':
       return <MenuView game={game} close={close} goTab={goTab} />;
     case 'ores':
@@ -306,6 +310,8 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       return <AutoSheet game={game} close={close} />;
     case 'music':
       return <MusicSheet game={game} />;
+    case 'compUp':
+      return <CompUpgrade game={game} what={m.what} id={m.id} close={close} />;
     case 'changelog':
       return <ChangelogView game={game} all={m.all} close={close} />;
     case 'reset':
@@ -426,10 +432,43 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
 }
 
 /** Wynik Zwoju, Jaja albo Siodła: ikona, rzadkość i co się zmieniło (nowość, poziom, gwiazdki). */
-function DrawView({ m, close }: { m: Extract<ModalData, { kind: 'draw' }>; close: () => void }) {
+/**
+ * Wynik zwoju, siodła albo jaja. Najpierw chwila napięcia: zwój/siodło drży, a poświata przechodzi przez kolejne
+ * rzadkości aż do wylosowanej (z dźwiękiem coraz wyższym); jajo pęka. Dotknięcie odsłania od razu.
+ */
+function DrawView({ game, m, close }: { game: Game; m: Extract<ModalData, { kind: 'draw' }>; close: () => void }) {
   const skill = m.what === 'skill' ? SKILLS[m.id as SkillId] : null;
   const def = skill ?? (m.what === 'pet' ? PETS[m.id as PetId] : MOUNTS[m.id as MountId]);
   const r = def.r;
+  const calmFx = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [phase, setPhase] = useState<'open' | 'reveal'>(calmFx ? 'reveal' : 'open');
+  const [step, setStep] = useState(m.what === 'pet' ? r : 0);
+  useEffect(() => {
+    if (phase !== 'open') return;
+    let k = m.what === 'pet' ? r : 0;
+    let t: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      setStep(k);
+      play('strike', k);
+      if (k >= r) { t = setTimeout(() => setPhase('reveal'), m.what === 'pet' ? 700 : 480); return; }
+      k++;
+      t = setTimeout(tick, 400);
+    };
+    t = setTimeout(tick, 380);
+    return () => clearTimeout(t);
+  }, [phase]);
+  useEffect(() => { if (phase === 'reveal') { play('jump', r); void buzz(r, game.s.opts.vibe !== false); } }, [phase]);
+  if (phase === 'open') {
+    const openIc = m.what === 'skill' ? resUrl('zwoj') : m.what === 'mount' ? resUrl('siodlo') : resUrl('jajo' + Math.min(4, r));
+    return (
+      <div class={`dec draw opening rs${Math.min(4, step)}`} onClick={() => setPhase('reveal')}>
+        <div class="eyebrow">{m.what === 'skill' ? 'Zwój zaklęć' : m.what === 'mount' ? 'Siodło' : 'Jajo się wykluwa'}</div>
+        <div class="draw-open" aria-hidden="true"><span class="do-rays" /><span class="do-glow" /><Px src={openIc} size={96} cls="do-ic" /></div>
+        <div class={`do-r rt${Math.min(4, step)}`}>{m.what === 'pet' ? 'Coś się rusza…' : `${RAR[step].n}${step >= r ? '!' : '…'}`}</div>
+        <small class="do-hint">dotknij, aby odsłonić</small>
+      </div>
+    );
+  }
   const icon = m.what === 'skill' ? skillUrl(m.id) : companionUrl(m.id); // nowy towarzysz: jego portret
   const from = m.from ?? 0, to = m.to ?? 0;
   const head = m.what === 'pet' ? 'Jajo się wykluło' : m.what === 'skill' ? 'Zwój zaklęć' : 'Siodło';
@@ -451,7 +490,7 @@ function DrawView({ m, close }: { m: Extract<ModalData, { kind: 'draw' }>; close
       : <div class="draw-tag up"><span class="stars">{stars(to, to - 1)}</span> {from} → <b>{to}</b> gwiazdek</div>;
   }
   return (
-    <div class={`dec draw r${r}`}>
+    <div class={`dec draw revealed r${r}`}>
       <div class="eyebrow">{head}</div>
       <div class="dec-drop" aria-hidden="true">
         <span class="dec-burst" />
@@ -462,7 +501,17 @@ function DrawView({ m, close }: { m: Extract<ModalData, { kind: 'draw' }>; close
         <div class="irar">{what} · {RAR[r].n}</div>
       </div>
       {change}
-      {skill && <p class="sub draw-eff">{skill.d.replace('{v}', to > from && from > 0 ? `${f1(skillValue(m.id as SkillId, from))} → ${f1(skillValue(m.id as SkillId, to))}` : f1(skillValue(m.id as SkillId, Math.max(1, to))))}</p>}
+      {skill && (() => {
+        const fx = skillFx(m.id as SkillId, Math.max(1, to));
+        const up = to > from && from > 0 ? skillFx(m.id as SkillId, from) : null;
+        return (
+          <div class="draw-sk">
+            <span class={`sk-tag k-${fx.kind}`}>{fx.tag}</span>
+            <div class="sk-main"><b>{up ? <>{up.main} → {fx.main}</> : fx.main}</b><small>{fx.label}</small><span class="sk-cd">⏱ co {f1(skill.cd / 1000)} s</span></div>
+            <small class="sk-d">{fx.text}</small>
+          </div>
+        );
+      })()}
       {m.what === 'pet' && <p class="sub draw-eff">{PETS[m.id as PetId].d.replace('{v}', String(PETS[m.id as PetId].tv))}</p>}
       {m.what === 'mount' && <p class="sub draw-eff">Bazowo: +{MOUNTS[m.id as MountId].dmg}% obrażeń, +{MOUNTS[m.id as MountId].hp}% zdrowia</p>}
       <Close onClose={close} label="Dalej" />

@@ -5,7 +5,7 @@ import type { FoeType, Item } from '../../engine/types';
 import { useState } from 'preact/hooks';
 import { f1, fmt, pct } from '../format';
 import { LockIcon, SlotIcon } from '../icons';
-import { itemUrl, landBgUrl, resUrl } from '../../art/render';
+import { elemUrl, foeUrl, itemUrl, landBgUrl, resUrl, techUrl } from '../../art/render';
 import { IconEyebrow, StatIcon } from '../Banner';
 import { Px } from '../Px';
 import { MountsView, PetsView, SkillsView } from './Companions';
@@ -52,6 +52,52 @@ export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => 
   );
 }
 
+/** Rodzaje wrogów — ikonka to typowy wróg danego rodzaju. */
+const FOE_ICON: Record<FoeType, [string, string]> = {
+  Bestie: ['Leśny wilk', 'Bestii'], Nieumarli: ['Szkielet', 'Nieumarłych'], Demony: ['Chochlik', 'Demonów'], Smoki: ['Młody smok', 'Smoków'],
+};
+
+/**
+ * Premie bojowe pod statystykami: zwinięte — rząd ikonek z wartościami; po dotknięciu — lista z opisami.
+ * Nie zajmują pół strony, a każda ma ikonkę zamiast samego tekstu.
+ */
+function Bonuses({ c }: { c: Game['stats'] }) {
+  const [open, setOpen] = useState(false);
+  const rows: { ic: string; v: string; n: string; d?: string; px?: boolean }[] = [];
+  for (const [t, v] of Object.entries(c.vs) as [FoeType, number][]) {
+    if (v) rows.push({ ic: foeUrl(FOE_ICON[t][0], t), v: `+${f1(v)}%`, n: `Obrażenia wobec ${FOE_ICON[t][1]}`, d: 'cechy przebudzenia (Zguba …) i zestawy', px: true });
+  }
+  if (c.boss + c.pog) rows.push({ ic: techUrl('w_pogromca'), v: `+${f1(c.boss + c.pog)}%`, n: 'Obrażenia wobec bossów', d: c.pog ? `w tym +${f1(c.pog)}% z cechy Pogromca` : undefined });
+  if (c.eldmg) rows.push({ ic: elemUrl('zar'), v: `+${f1(c.eldmg)}%`, n: 'Obrażenia z żywiołów', d: 'żywioły przedmiotów i badania' });
+  if (c.holy) rows.push({ ic: elemUrl('jasn'), v: `+${f1(c.holy)}%`, n: 'Światło: wobec Nieumarłych i Demonów' });
+  if (c.slow) rows.push({ ic: elemUrl('szron'), v: `−${f1(c.slow)}%`, n: 'Spowolnienie wrogów', d: 'wrogowie atakują wolniej' });
+  if (c.abyss) rows.push({ ic: techUrl('w_otchlan'), v: `+${f1(c.abyss)}%`, n: 'Obrażenia wobec wrogów Otchłani' });
+  if (c.aura > 0) rows.push({ ic: resUrl('klejnot'), v: `+${c.aura * B.DIVINE_AURA}%`, n: `Boska aura ×${c.aura}`, d: `obrażenia i zdrowie — po ${B.DIVINE_AURA}% za każdy założony Boski przedmiot` });
+  if (!rows.length) return null;
+  return (
+    <div class={`bonus${open ? ' open' : ''}`}>
+      <button class="bonus-sum" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        <span class="bonus-t">Premie</span>
+        <span class="bonus-chips">
+          {rows.map((r, i) => <span key={i} class="bchip" title={r.n}><Px src={r.ic} size={16} cls={r.px ? 'flip smooth' : ''} />{r.v}</span>)}
+        </span>
+        <i class="bonus-chev" aria-hidden="true">▾</i>
+      </button>
+      {open && (
+        <ul class="bonus-list">
+          {rows.map((r, i) => (
+            <li key={i}>
+              <span class="bl-ic"><Px src={r.ic} size={24} cls={r.px ? 'flip smooth' : ''} /></span>
+              <span class="bl-t"><b>{r.n}</b>{r.d && <small>{r.d}</small>}</span>
+              <b class="bl-v">{r.v}</b>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
   const s = game.s;
   const c = game.stats;
@@ -59,12 +105,6 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
     ['moc', 'Moc', fmt(c.power)], ['dmg', 'Obrażenia', fmt(c.dmg)], ['hp', 'Zdrowie', fmt(c.hp)], ['crit', 'Krytyk', pct(c.crit)], ['critd', 'Obr. krytyczne', pct(c.critd)],
     ['spd', 'Szybkość ataku', '+' + pct(c.spd)], ['ls', 'Kradzież życia', pct(c.ls)], ['dodge', 'Unik', pct(c.dodge)], ['regen', 'Regeneracja', f1(c.regen) + '%/s'],
   ];
-  const extra: string[] = [];
-  if (c.boss + c.pog) extra.push(`+${f1(c.boss + c.pog)}% wobec bossów`);
-  if (c.eldmg) extra.push(`+${f1(c.eldmg)}% obrażeń z żywiołów`);
-  if (c.holy) extra.push(`+${f1(c.holy)}% wobec nieumarłych i demonów`);
-  if (c.slow) extra.push(`wrogowie wolniejsi o ${f1(c.slow)}%`);
-  for (const [t, v] of Object.entries(c.vs) as [FoeType, number][]) extra.push(`+${v}% wobec: ${t.toLowerCase()}`);
   return (
     <>
       <section class="card">
@@ -86,13 +126,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
             </div>
           ))}
         </div>
-        {extra.length > 0 && <p class="sub" style={{ marginTop: '8px' }}>{extra.join(' · ')}</p>}
-        {c.aura > 0 && (
-          <div class="iaura" style={{ marginTop: '8px' }}>
-            <span aria-hidden="true">✦</span>
-            <span><b>Boska aura ×{c.aura}:</b> +{c.aura * B.DIVINE_AURA}% obrażeń i zdrowia (po {B.DIVINE_AURA}% za każdy założony Boski przedmiot).</span>
-          </div>
-        )}
+        <Bonuses c={c} />
       </section>
       {c.sets.length > 0 && (
         <section class="card">

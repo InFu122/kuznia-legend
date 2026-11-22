@@ -169,3 +169,21 @@ describe('zapis', () => {
     expect(s.v).toBe(SAVE_VERSION);
   });
 });
+
+describe('okno ulepszenia towarzysza', () => {
+  it('podgląd Mocy: rośnie tylko dla wybranego wierzchowca; podgląd niczego nie zmienia', () => {
+    const { g, s, ctx } = makeGame();
+    equip(ctx, smelt(ctx, 1, null)!, true);
+    const id = Object.keys(MOUNTS)[0] as keyof typeof MOUNTS;
+    s.mounts[id] = { lvl: 3, stars: 0 };
+    const off = g.levelPreview('mount', id);
+    expect(off.next).toBe(off.now);
+    s.mountSel = id;
+    s.forge.lvl = 60; s.ores[5] = 50;
+    for (let i = 0; i < 30; i++) equip(ctx, smelt(ctx, 5, null)!, true); // mocniejszy sprzęt — procent wierzchowca widać w Mocy
+    const on = g.levelPreview('mount', id);
+    expect(on.next).toBeGreaterThan(on.now);
+    expect(s.mounts[id]!.lvl).toBe(3);
+    expect(g.stats.power).toBe(on.now);
+  });
+});

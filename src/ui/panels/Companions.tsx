@@ -4,17 +4,20 @@ import { InfoBtn } from './Forge';
 import { Px } from '../Px';
 import {
   COMPANION_MAX, DRAW_ODDS, HATCH_MS, MOUNTS, MOUNTS_UNLOCK_LAND, MOUNT_IDS, PETS, PETS_UNLOCK_LAND, PET_IDS, RAR,
-  SKILLS, SKILL_IDS, SKILL_MAX, STARS_MAX, companionMult, petAtkPct, petTraitValue, skillValue,
+  SKILLS, SKILL_IDS, SKILL_MAX, STARS_MAX, companionMult, petAtkPct, petTraitValue,
 } from '../../data';
 import { mountsUnlocked, petsUnlocked, skillNeed, skillsUnlocked, upgradeCost } from '../../engine/companions';
 import type { Game } from '../../engine/game';
 import { mountBonus, petTrait } from '../../engine/mods';
-import type { MountId, PetId, SkillId } from '../../engine/types';
+import type { MountId, PetId } from '../../engine/types';
+import { useState } from 'preact/hooks';
 import { f1, fmt, pct, tfmt } from '../format';
+import { buzz } from '../haptics';
+import { play } from '../sound';
+import { skillFx } from '../skillText';
 
 const Stars = ({ n }: { n: number }) => (n > 0 ? <span class="stars" title={`Gwiazdki: ${n}/${STARS_MAX}`}>{'★'.repeat(n)}</span> : null);
 const Odds = () => <p class="sub">Szanse: {DRAW_ODDS.map((p, r) => <span key={r}>{r > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n} {p}%</span></span>)}</p>;
-const skillText = (id: SkillId, lvl: number) => SKILLS[id].d.replace('{v}', f1(skillValue(id, lvl)));
 
 /* ---------- umiejętności ---------- */
 
@@ -33,40 +36,59 @@ export function SkillsView({ game }: { game: Game }) {
   }
   const owned = SKILL_IDS.filter(id => s.skills.lv[id]);
   const full = !s.skills.eq.includes(null);
+  const n = s.scrolls;
   return (
     <>
       <section class="card">
-        <Banner bg={dungeonBgUrl('wieza')} icon={<Px src={resUrl('zwoj')} size={32} />} eyebrow="Umiejętności" title={`Zwoje zaklęć: ${fmt(s.scrolls)}`}>
-          <button class="btn primary small btn-scroll" disabled={s.scrolls < 1} onClick={() => game.openScroll()}>Otwórz Zwój</button>
-        </Banner>
-        <p class="sub">Trzy umiejętności rzucają się same, gdy są gotowe. Kopie tej samej umiejętności podnoszą jej poziom.</p>
+        <Banner bg={dungeonBgUrl('wieza')} icon={<Px src={resUrl('zwoj')} size={32} />} eyebrow="Umiejętności" title="Księga zaklęć" />
+        {/* Otwieranie zwoju — wyraźne wezwanie, a nie mały przycisk w nagłówku. */}
+        <div class={`scrollbox${n > 0 ? ' has' : ''}`}>
+          <span class="sb-ic"><Px src={resUrl('zwoj')} size={44} /><b class="sb-n">{fmt(n)}</b></span>
+          <div class="cmain">
+            <b>{n > 0 ? `Zwoje zaklęć: ${fmt(n)}` : 'Brak zwojów'}</b>
+            <small class="muted">{n > 0 ? 'Nowa umiejętność albo kopia, która podnosi jej poziom.' : 'Zwoje dają bossowie krain i lochy, osiągnięcia, wydarzenia, Przepustka i sklep.'}</small>
+          </div>
+          <button class="btn primary btn-scroll" disabled={n < 1} onClick={() => game.openScroll()}><Px src={resUrl('zwoj')} size={18} />Otwórz</button>
+        </div>
         <Odds />
         <div class="skslots">
           {s.skills.eq.map((id, i) => (
             <button key={i} class={`skslot${id ? ` r${SKILLS[id].r}` : ' empty'}`} disabled={!id} onClick={() => game.equipSkill(null, i)} aria-label={id ? `Zdejmij: ${SKILLS[id].n}` : 'Pusty slot'}>
-              {id ? <><Px src={skillUrl(id)} size={48} /><b>{SKILLS[id].n}</b><small>poz. {s.skills.lv[id]} · zdejmij</small></> : <><Px src={resUrl('zwoj')} size={32} cls="ghost" /><small>pusty slot</small></>}
+              {id ? <><Px src={skillUrl(id)} size={48} /><b>{SKILLS[id].n}</b><small>{skillFx(id, s.skills.lv[id] ?? 1).main} · poz. {s.skills.lv[id]}</small><small class="sk-off">zdejmij</small></> : <><Px src={resUrl('zwoj')} size={32} cls="ghost" /><small>pusty slot</small></>}
             </button>
           ))}
         </div>
+        <p class="sub" style={{ marginTop: '8px' }}>Trzy założone umiejętności rzucają się same, gdy są gotowe.</p>
       </section>
       {owned.length > 0 && (
         <section class="card">
           <div class="row"><IconEyebrow icon={<Px src={resUrl('zwoj')} size={16} />}>Twoje umiejętności</IconEyebrow><BestBtn onClick={() => game.equipBest('skills')} /></div>
-          <ul class="clist">
+          <ul class="sklist">
             {owned.map(id => {
               const S = SKILLS[id];
               const lvl = s.skills.lv[id] ?? 1;
               const on = s.skills.eq.includes(id);
+              const fx = skillFx(id, lvl);
+              const nx = lvl < SKILL_MAX ? skillFx(id, lvl + 1) : null;
+              const have = s.skills.cards[id] ?? 0;
+              const need = skillNeed(lvl);
               return (
-                <li key={id}>
-                  <Px src={skillUrl(id)} size={48} cls="row-ic" />
+                <li key={id} class={`skcard r${S.r}${on ? ' on' : ''}`}>
+                  <span class="sk-ic"><Px src={skillUrl(id)} size={44} /></span>
                   <div class="cmain">
-                    <div class="cname"><span class={`rt${S.r}`}>{S.n}</span> <span class="muted">· poz. {lvl}/{SKILL_MAX}</span></div>
-                    <div class="sub">{skillText(id, lvl)} · co {f1(S.cd / 1000)} s</div>
-                    {lvl < SKILL_MAX && <div class="tech-cost">Kopie do następnego poziomu: {s.skills.cards[id] ?? 0}/{skillNeed(lvl)}</div>}
+                    <div class="sk-top">
+                      <b class={`rt${S.r}`}>{S.n}</b><span class={`sk-tag k-${fx.kind}`}>{fx.tag}</span>
+                      {on ? <span class="tech-busy sk-btn">Założona</span>
+                        : <button class="btn small sk-btn" disabled={full} onClick={() => game.equipSkill(id, s.skills.eq.indexOf(null))}>{full ? 'Sloty pełne' : 'Załóż'}</button>}
+                    </div>
+                    <div class="sk-main"><b>{fx.main}</b><small>{fx.label}</small><span class="sk-cd" title="Odnowienie">⏱ co {f1(S.cd / 1000)} s</span></div>
+                    <small class="sk-d">{fx.text}</small>
+                    <div class="sk-lvl">
+                      <span>poz. {lvl}/{SKILL_MAX}</span>
+                      {nx ? <><div class="bar"><i style={{ width: Math.min(100, (have / need) * 100) + '%' }} /></div><small>kopie {have}/{need} → {nx.main}</small></>
+                        : <small class="sk-max">maksymalny poziom</small>}
+                    </div>
                   </div>
-                  {on ? <span class="tech-busy">Założona</span>
-                    : <button class="btn small" disabled={full} onClick={() => game.equipSkill(id, s.skills.eq.indexOf(null))}>{full ? 'Sloty pełne' : 'Załóż'}</button>}
                 </li>
               );
             })}
@@ -195,7 +217,7 @@ function PetRow({ game, id }: { game: Game; id: PetId }) {
       </div>
       <div class="cbtns">
         {on ? <span class="tech-busy">Walczy</span> : <button class="btn small" onClick={() => game.selectPet(id)}>Wybierz</button>}
-        {c.lvl < COMPANION_MAX && <button class="btn small primary" disabled={s.stones < cost} onClick={() => game.levelUp('pet', id)}>Ulepsz</button>}
+        {c.lvl < COMPANION_MAX && <button class="btn small primary" onClick={() => game.openModal({ kind: 'compUp', what: 'pet', id })}>Ulepsz</button>}
       </div>
     </li>
   );
@@ -268,8 +290,80 @@ function MountRow({ game, id }: { game: Game; id: MountId }) {
       </div>
       <div class="cbtns">
         {on ? <span class="tech-busy">Dosiadasz</span> : <button class="btn small" onClick={() => game.selectMount(id)}>Dosiądź</button>}
-        {c.lvl < COMPANION_MAX && <button class="btn small primary" disabled={s.stones < cost} onClick={() => game.levelUp('mount', id)}>Ulepsz</button>}
+        {c.lvl < COMPANION_MAX && <button class="btn small primary" onClick={() => game.openModal({ kind: 'compUp', what: 'mount', id })}>Ulepsz</button>}
       </div>
     </li>
+  );
+}
+
+/**
+ * Ulepszenie chowańca albo wierzchowca: co się zmieni (przed → po), ile Mocy doda, koszt w Kamieniach — i dopiero
+ * wtedy „Ulepsz”. Okno zostaje otwarte: po ulepszeniu poziom podskakuje i można ulepszać dalej.
+ */
+export function CompUpgrade({ game, what, id, close }: { game: Game; what: 'pet' | 'mount'; id: string; close: () => void }) {
+  const s = game.s;
+  const [pop, setPop] = useState(0);
+  const pet = what === 'pet';
+  const def = pet ? PETS[id as PetId] : MOUNTS[id as MountId];
+  const c = pet ? s.pets[id as PetId] : s.mounts[id as MountId];
+  if (!c) return null;
+  const max = c.lvl >= COMPANION_MAX;
+  const cost = upgradeCost(what, id as PetId | MountId, c.lvl, s);
+  const L = c.lvl, N = Math.min(COMPANION_MAX, c.lvl + 1);
+  const rows: [string, string, string][] = [];
+  let trait = '';
+  if (pet) {
+    const P = PETS[id as PetId];
+    rows.push(['Atak', pct(petAtkPct(id as PetId, L, c.stars)), pct(petAtkPct(id as PetId, N, c.stars))]);
+    // Cecha z jednostką z opisu („+{v}% zdrowia” → „+13,8%”), pełne zdanie pod spodem.
+    const pre = P.d.startsWith('+') ? '+' : '', unit = P.d.includes('{v}%') ? '%' : '';
+    rows.push(['Cecha', pre + f1(petTraitValue(id as PetId, L, c.stars)) + unit, pre + f1(petTraitValue(id as PetId, N, c.stars)) + unit]);
+    trait = P.d.replace('{v}', f1(petTraitValue(id as PetId, N, c.stars)));
+  } else {
+    const M = MOUNTS[id as MountId];
+    const k0 = companionMult(L, c.stars), k1 = companionMult(N, c.stars);
+    rows.push(['Obrażenia', `+${f1(M.dmg * k0)}%`, `+${f1(M.dmg * k1)}%`]);
+    rows.push(['Zdrowie', `+${f1(M.hp * k0)}%`, `+${f1(M.hp * k1)}%`]);
+  }
+  const active = pet ? s.petSel === id : s.mountSel === id;
+  const pw = max ? null : game.levelPreview(what, id as PetId | MountId);
+  const lack = s.stones < cost;
+  const up = () => {
+    if (!game.levelUp(what, id as PetId | MountId)) return;
+    setPop(p => p + 1);
+    play('levelup');
+    void buzz(Math.max(2, def.r), s.opts.vibe !== false);
+  };
+  return (
+    <div class={`cup r${def.r}`}>
+      <div class="eyebrow">Ulepszenie · {pet ? 'chowaniec' : 'wierzchowiec'}</div>
+      <div class="cup-head">
+        <span class={`cup-port${pop ? ' fx' : ''}`} key={pop}><CompPortrait id={id} r={def.r} size={72} /></span>
+        <div>
+          <div class="h"><span class={`rt${def.r}`}>{def.n}</span> <Stars n={c.stars} /></div>
+          <div class="cup-lvl">
+            <b class={pop ? 'cup-pop' : ''} key={'l' + pop}>Poziom {L}</b>
+            {!max && <><span class="cup-arr">→</span><b class="cup-next">{N}</b></>}
+          </div>
+        </div>
+      </div>
+      {max ? <p class="sub">Maksymalny poziom ({COMPANION_MAX}).</p> : (
+        <>
+          <ul class="cup-rows">
+            {rows.map(([n, a, b]) => <li key={n}><span>{n}</span><span class="cup-a">{a}</span><span class="cup-arr">→</span><b class="cup-b">{b}</b></li>)}
+          </ul>
+          {trait && <p class="sub cup-trait">Po ulepszeniu: {trait}</p>}
+          <p class="sub cup-pw">
+            {pw && active && pw.next > pw.now ? <>Moc bohatera: <b>+{fmt(pw.next - pw.now)}</b></>
+              : pet ? 'Moc wzrośnie, gdy ten chowaniec będzie walczył u twojego boku.' : 'Moc wzrośnie, gdy go dosiądziesz.'}
+          </p>
+          <div class={`cup-cost${lack ? ' lack' : ''}`}><Px src={resUrl('kamien')} size={18} /><b>{fmt(cost)}</b> Kamieni <small>(masz {fmt(s.stones)})</small></div>
+        </>
+      )}
+      <div class="result-actions">
+        <button class="btn" onClick={close}>{pop ? 'Gotowe' : 'Anuluj'}</button>
+        {!max && <button class="btn primary cup-go" disabled={lack} onClick={up}>{lack ? 'Za mało Kamieni' : <><b>Ulepsz</b><small>do poziomu {N}</small></>}</button>}
+      </div>
+    </div>
   );
 }
