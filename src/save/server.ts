@@ -138,6 +138,10 @@ export class ServerLink {
   offset = 0;
   /** Najwyższe tempo testowe, na które pozwala serwer (1 = tryb testowy wyłączony). */
   testSpeed = 1;
+  /** Konto dewelopera (plik sekrety/dev.txt na serwerze): narzędzia dewelopera w Kodeksie. */
+  dev = false;
+  /** Identyfikator konta na serwerze (Kodeks → ID konta; do pliku sekrety/dev.txt). */
+  uid: string | null = null;
 
   constructor(private readonly cfg: ServerConfig) {}
 
@@ -218,9 +222,11 @@ export class ServerLink {
       try { msg = (JSON.parse(text) as { message?: string }).message ?? text; } catch { /* zostaje surowy tekst */ }
       throw new ServerError(res.status, msg);
     }
-    const data = JSON.parse(text) as T & { serverTime?: number; testSpeed?: number };
+    const data = JSON.parse(text) as T & { serverTime?: number; testSpeed?: number; dev?: boolean; uid?: string };
     if (typeof data.serverTime === 'number') this.offset = data.serverTime - Date.now();
     if (typeof data.testSpeed === 'number') this.testSpeed = data.testSpeed;
+    if (typeof data.dev === 'boolean') this.dev = data.dev;
+    if (typeof data.uid === 'string') this.uid = data.uid;
     return data;
   }
 
@@ -261,6 +267,8 @@ export class ServerLink {
   clanDonate(up: number): Promise<ClanLife> { return this.rpc('clan_donate', { up }); }
   clanBossAttack(up: number): Promise<ClanLife> { return this.rpc('clan_boss_attack', { up }); }
   clanHelpAsk(up: number): Promise<ClanLife> { return this.rpc('clan_help_ask', { up }); }
+  /** Narzędzia dewelopera: Klejnoty prowadzi serwer, więc o nie trzeba go poprosić. */
+  devGems(n: number): Promise<{ gems: number }> { return this.rpc('dev_gems', { n }); }
   clanHelp(up: number, uid?: string): Promise<ClanLife> { return this.rpc('clan_help', uid ? { up, uid } : { up }); }
   clanOreAsk(up: number, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { up, ore }); }
   clanOreGive(up: number, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { up, id, n }); }

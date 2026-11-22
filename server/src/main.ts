@@ -19,6 +19,7 @@ import { createBoards, rpcRanking } from './ranking';
 import { createClanBoards, rpcClanRanking } from './clanrank';
 import { rpcPlayerProfile } from './profile';
 import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
+import { rpcDevGems } from './dev';
 import { rpcAccountDelete, rpcAccountDeleteAdmin } from './account';
 import { rpcAdReward, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
@@ -39,6 +40,7 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   }
   initializer.registerRpc('save_get', rpcSaveGet);
   initializer.registerRpc('save_put', rpcSavePut);
+  initializer.registerRpc('dev_gems', rpcDevGems);
   initializer.registerRpc('seeds', rpcSeeds);
   initializer.registerRpc('time', rpcTime);
   initializer.registerRpc('ranking', rpcRanking);

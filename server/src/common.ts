@@ -110,6 +110,21 @@ export function testSpeed(ctx: nkruntime.Context): number {
   return Number.isFinite(v) && v > 1 ? Math.min(100, v) : 1;
 }
 
+/** Plik z kontami deweloperów: identyfikatory kont (z Kodeksu, „ID konta”), po jednym w wierszu albo po przecinku. */
+export const DEV_FILE = 'sekrety/dev.txt';
+
+/**
+ * Konto dewelopera: identyfikator konta w pliku sekrety/dev.txt (katalog sekrety/ obok docker-compose.yml, poza
+ * repozytorium). Taki gracz ma w Kodeksie narzędzia dewelopera — serwer przyjmuje jego zapis bez sprawdzania
+ * i nie wpisuje go do rankingów, areny ani wojny klanów. Plik czytany przy każdym sprawdzeniu (zmiana bez restartu).
+ */
+export function isDev(nk: nkruntime.Nakama, userId: string): boolean {
+  if (!userId) return false;
+  let raw = '';
+  try { raw = nk.fileRead(DEV_FILE); } catch { return false; }
+  return raw.split(/[\s,;]+/).filter(Boolean).includes(userId);
+}
+
 /** Dzień według zegara serwera (UTC). */
 export const serverDay = (now: number) => new Date(now).toISOString().slice(0, 10);
 

@@ -1,4 +1,4 @@
-import { AD, AD_BUFFS, B, DUNG_ORDER, ELEM, FEATURES, ORES, R, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, rGe, rTier, type AchId, type FeatureId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
+import { ABYSS_FROM, AD, AD_BUFFS, B, DUNG_ORDER, ELEM, FEATURES, ORES, R, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, rGe, rTier, type AchId, type FeatureId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
 import { DEFAULT_NAME, NAME_MAX, tidyName } from './nick';
 import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
@@ -10,6 +10,7 @@ import { tutTick } from './tutorial';
 import { autoHandle, autoTarget, autoTargets, canSmelt, equip, refine, sell, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime, refineTo } from './forge';
 import { itemName, type AwKey } from './formulas';
 import { setAwakening } from './legend';
+import { devFinish, devForge, devLand, devMax, devResources } from './dev';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
 import { checkUnlocks, isUnlocked, seenFeature } from './unlocks';
@@ -333,6 +334,18 @@ export class Game {
   openSaddle() { const r = openSaddle(this.ctx); if (r) this.dispatch({ t: 'modal', m: { kind: 'draw', what: 'mount', ...r } }); this.changed(); return r; }
   selectMount(id: MountId | null) { const ok = selectMount(this.ctx, id); this.changed(); return ok; }
   levelUp(kind: 'pet' | 'mount', id: PetId | MountId) { const ok = levelUp(this.ctx, kind, id); this.changed(); return ok; }
+  /** Narzędzia dewelopera (Kodeks): przeskakiwanie etapów gry do testów. */
+  dev(what: 'max' | 'land' | 'lastLand' | 'forge10' | 'finish' | 'res'): void {
+    const c = this.ctx;
+    if (what === 'max') devMax(c);
+    else if (what === 'land') devLand(c, this.s.maxLand + 1);
+    else if (what === 'lastLand') devLand(c, ABYSS_FROM - 1); // ostatnia kraina kampanii (dalej Otchłań)
+    else if (what === 'forge10') devForge(c, 10);
+    else if (what === 'finish') devFinish(c);
+    else devResources(c);
+    c.dirty = true;
+    this.changed();
+  }
   /** Moc teraz i po ulepszeniu towarzysza o poziom. */
   levelPreview(kind: 'pet' | 'mount', id: PetId | MountId) { return levelPreview(this.ctx, kind, id); }
   useSeal(slot: SlotId) { const ok = useSeal(this.ctx, slot); this.changed(); return ok; }

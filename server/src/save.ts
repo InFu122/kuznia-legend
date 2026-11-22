@@ -9,7 +9,7 @@ import { verifySmelt } from '../../src/engine/verify';
 import { updateArenaHero } from './arena';
 import { announceDivine } from './chat';
 import {
-  INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, testSpeed, userOf,
+  INVALID, PRECONDITION, SAVE_COLLECTION, SAVE_KEY, err, parse, readSave, seedOf, signItem, signSecret, smeltSecret, testSpeed, userOf, isDev,
   type SaveMeta, type SaveValue,
 } from './common';
 import { clanOf } from './clan';
@@ -111,11 +111,13 @@ export function paceProblem(s: GameState, meta: SaveMeta, now: number, helped: R
 export function rpcSaveGet(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, _payload: string): string {
   const userId = userOf(ctx);
   const obj = readSave(nk, userId);
+  const dev = isDev(nk, userId);
   return JSON.stringify({
     state: obj ? obj.value.state : null,
     version: obj ? obj.version : null,
-    testSpeed: testSpeed(ctx),
+    testSpeed: dev ? 100 : testSpeed(ctx),
     serverTime: Date.now(),
+    dev, uid: userId,
   });
 }
 
@@ -138,11 +140,14 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   const now = Date.now();
   const s = migrate(raw, now);
   s.name = cleanName(s.name);
-  // Tempo testowe tylko na serwerze z włączonym trybem testowym (TEST_SPEED w .env).
-  const maxSpeed = testSpeed(ctx);
+  // Konto dewelopera (sekrety/dev.txt): zapis bez sprawdzania, poza rankingami i wojną klanów.
+  const dev = isDev(nk, userId);
+  // Tempo testowe tylko na serwerze z włączonym trybem testowym (TEST_SPEED w .env) — i dla dewelopera.
+  const maxSpeed = dev ? 100 : testSpeed(ctx);
   s.speed = Math.max(1, Math.min(maxSpeed, Math.floor(Number(s.speed)) || 1));
   const problems = validateSave(s);
-  if (problems.length) {
+  if (problems.length && dev) logger.info('Zapis dewelopera %s mimo uwag: %s', userId, problems.slice(0, 5).join('; '));
+  else if (problems.length) {
     logger.warn('Odrzucony zapis gracza %s: %s', userId, problems.slice(0, 5).join('; '));
     throw err('Zapis odrzucony: ' + problems.slice(0, 3).join('; '), INVALID);
   }
@@ -207,10 +212,11 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   } catch (_e) {
     return conflict(readSave(nk, userId), now);
   }
-  submitBoards(nk, logger, userId, ctx.username ?? '', s, power);
-  updateArenaHero(nk, logger, userId, ctx.username ?? '', s, ver.eq, power);
+  // Deweloper nie trafia do rankingów, na arenę ani do ogłoszeń — testy nie psują gry innym.
+  if (!dev) submitBoards(nk, logger, userId, ctx.username ?? '', s, power);
+  if (!dev) updateArenaHero(nk, logger, userId, ctx.username ?? '', s, ver.eq, power);
   // Nowy Boski przedmiot (założony albo czekający na decyzję) — ogłoszenie na czacie globalnym.
-  try {
+  if (!dev) try {
     const divine = Object.values(ver.eq).filter((it): it is Item => !!it);
     if (s.pending && s.pending.r === R.BOSKI && smeltOk(proof, s.pending, s.sx || 0)) divine.push(s.pending);
     announceDivine(nk, userId, ctx.username ?? '', divine);
@@ -218,9 +224,9 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   // Nagrody klanu zapisane w grze (numery w clanGot) znikają z kolejki do odebrania.
   try { ackRewards(nk, userId, s.clanGot); } catch (e) { logger.warn('Kolejka nagród klanu gracza %s: %s', userId, String(e)); }
   // Wojna klanów: punkty za aktywność dnia (kucie, walka, lochy) z różnicy liczników.
-  warOnSave(nk, logger, ctx, userId, clan, cur ? cur.value.state : null, s);
+  if (!dev) warOnSave(nk, logger, ctx, userId, clan, cur ? cur.value.state : null, s);
   return JSON.stringify({
-    version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, testSpeed: maxSpeed, serverTime: now,
+    version, power, unverified: ver.bad, name: s.name, newName: nick.fresh, clanLvl: s.clanLvl, testSpeed: maxSpeed, serverTime: now, dev,
     gems: s.gems, shop: s.shop, pass: s.pass, buffs: s.buffs, legacy: s.legacy,
   });
 }

@@ -37,6 +37,22 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
   useEffect(() => onStoreUpdate(() => force(x => x + 1)), []);
   useEffect(() => { void nativeVersion().then(setNv); }, []);
   const url = publicUrl();
+  const link = game.net ? getLink() : null;
+  // Narzędzia dewelopera: bez serwera 7 dotknięć wersji gry je włącza (jak na Androidzie); z serwerem — konto z sekrety/dev.txt.
+  const [taps, setTaps] = useState(0);
+  const [devLocal, setDevLocal] = useState(() => { try { return localStorage.getItem('kl-dev') === '1'; } catch { return false; } });
+  const devOn = game.net ? !!link?.dev : devLocal;
+  const tapVersion = () => {
+    const n = taps + 1;
+    setTaps(n);
+    if (n < 7) return;
+    setTaps(0);
+    if (game.net) { setMsg(link?.dev ? 'Narzędzia dewelopera są włączone (niżej).' : 'To konto nie jest kontem dewelopera: dopisz jego „ID konta” do pliku sekrety/dev.txt na serwerze.'); return; }
+    const on = !devLocal;
+    try { localStorage.setItem('kl-dev', on ? '1' : '0'); } catch { /* bez pamięci */ }
+    setDevLocal(on);
+    setMsg(on ? 'Narzędzia dewelopera włączone.' : 'Narzędzia dewelopera wyłączone.');
+  };
   /** „Sprawdź aktualizację” (aplikacja): pyta Google Play. */
   const check = async () => {
     setMsg('Sprawdzam w Google Play…');
@@ -54,7 +70,7 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
   };
   return (
     <section class="card" aria-label="Aplikacja i test">
-      <div class="eyebrow">Aplikacja · wersja {nv ? `${nv.name} (${nv.code})` : APP_VERSION}</div>
+      <div class="eyebrow" onClick={tapVersion}>Aplikacja · wersja {nv ? `${nv.name} (${nv.code})` : APP_VERSION}</div>
       <div class="h">Test gry</div>
       <div class="app-actions">
         {game.net && <button class="btn primary small" onClick={onFeedback}>Zgłoś uwagę lub błąd</button>}
@@ -72,9 +88,61 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
         </p>
       )}
       {isStandalone() && <p class="sub" style={{ marginTop: '8px' }}>Gra jest zainstalowana na tym urządzeniu.</p>}
+      {link?.uid && (
+        <p class="sub acc-id" style={{ marginTop: '8px' }}>
+          ID konta: <code>{link.uid}</code>
+          <button class="linkbtn" onClick={() => { void navigator.clipboard?.writeText(link.uid ?? '').then(() => setMsg('Skopiowano ID konta.')).catch(() => {}); }}>Kopiuj</button>
+        </p>
+      )}
       {msg && <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p>}
+      {devOn && <DevTools game={game} />}
       <PrivacyLinks />
     </section>
+  );
+}
+
+/**
+ * Narzędzia dewelopera: przeskakiwanie etapów gry do testów. Z serwerem tylko dla kont z pliku sekrety/dev.txt
+ * (serwer przyjmuje wtedy zapis bez sprawdzania i trzyma konto poza rankingami, areną i wojną klanów).
+ */
+function DevTools({ game }: { game: Game }) {
+  const [ask, setAsk] = useState(false);
+  const [note, setNote] = useState('');
+  const run = (what: Parameters<Game['dev']>[0], text: string) => { game.dev(what); setNote(text); };
+  const max = async () => {
+    setAsk(false);
+    game.dev('max');
+    setNote('Wszystko na maksimum.');
+    const l = game.net ? getLink() : null;
+    if (l?.dev) {
+      try { const r = await l.devGems(100000); game.s.gems = r.gems; game.dev('finish'); setNote(`Wszystko na maksimum · Klejnoty: ${r.gems.toLocaleString('pl-PL')}.`); }
+      catch { setNote('Wszystko na maksimum (Klejnotów serwer nie dopisał).'); }
+    }
+  };
+  return (
+    <div class="devtools">
+      <div class="eyebrow">Narzędzia dewelopera</div>
+      <p class="sub">Do testów: przeskakują etapy gry. {game.net ? 'To konto nie trafia do rankingów, na arenę ani do wojny klanów.' : 'Działają tylko w tej przeglądarce.'}</p>
+      {ask ? (
+        <div class="dev-ask">
+          <p class="sub">Wszystko na maksimum: kuźnia 200, ostatnia kraina kampanii, Boski ekwipunek z legendą, runy, badania, umiejętności, chowańce i wierzchowce na maks., dużo zasobów. Tego nie da się cofnąć.</p>
+          <div class="result-actions">
+            <button class="btn" onClick={() => setAsk(false)}>Anuluj</button>
+            <button class="btn danger" onClick={() => void max()}>Tak, wszystko na maks.</button>
+          </div>
+        </div>
+      ) : (
+        <div class="dev-grid">
+          <button class="btn danger small" onClick={() => setAsk(true)}>Wszystko na maks.</button>
+          <button class="btn small" onClick={() => run('land', `Kraina ${game.s.maxLand + 2} otwarta.`)}>Następna kraina</button>
+          <button class="btn small" onClick={() => run('lastLand', 'Ostatnia kraina kampanii otwarta.')}>Koniec kampanii</button>
+          <button class="btn small" onClick={() => run('forge10', `Kuźnia: poziom ${Math.min(200, game.s.forge.lvl + 10)}.`)}>Kuźnia +10</button>
+          <button class="btn small" onClick={() => run('finish', 'Ukończono ulepszenie, badanie i jajo.')}>Ukończ czekanie</button>
+          <button class="btn small" onClick={() => run('res', 'Dorzucono zasoby.')}>Dorzuć zasoby</button>
+        </div>
+      )}
+      {note && <p class="sub" role="status">{note}</p>}
+    </div>
   );
 }
 
