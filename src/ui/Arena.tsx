@@ -175,7 +175,7 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
           <div class="ameta">{dung ? runMeta(dung) : `${actName(L.act)} · etap ${s.cur.stage}/10${waiting ? ' · boss czeka' : ''}`}</div>
         </div>
         <div class="arena-btns">
-          {!dung && <button class="info" onClick={() => onInfo(s.cur.land)} aria-label={`Co wypada w krainie ${L.n} i z bossa`}>i</button>}
+          {!dung && <button class="info corner" onClick={() => onInfo(s.cur.land)} aria-label={`Co wypada w krainie ${L.n} i z bossa`}>i</button>}
           {dung
             ? <button class="ghost" onClick={() => game.dungExit()}>Wyjdź z lochu</button>
             : <button class="ghost" onClick={() => onTab('krainy')}>Zmień krainę</button>}

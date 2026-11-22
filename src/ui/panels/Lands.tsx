@@ -26,7 +26,7 @@ export function LandsPanel({ game, onInfo }: { game: Game; onInfo: (land: number
             <span class="ln">{L.n}</span>
             {s.cleared[i] ? <span class="lstat done">Pokonana</span> : i === s.maxLand ? <span class="lstat front">Front</span> : null}
           </div>
-          <button class="info" onClick={() => onInfo(i)} aria-label={`Co wypada: ${L.n}`}>i</button>
+          <button class="info corner" onClick={() => onInfo(i)} aria-label={`Co wypada: ${L.n}`}>i</button>
         </div>
         <div class="lc-bot">
           <div class="lc-info">

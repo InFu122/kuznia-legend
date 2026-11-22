@@ -14,6 +14,7 @@ import { HeroSprite, bestRarity } from '../Arena';
 import { LegacyCard } from './Legacy';
 import { RuneBadge, RunesTab } from './Runes';
 import { runeLvl } from '../../engine/runes';
+import { heroTodo } from '../todo';
 
 type Sub = 'eq' | 'runes' | 'skills' | 'pets' | 'mounts';
 /** Funkcje odblokowywane w podzakładkach (kłódka i znaczek „nowe”). */
@@ -29,18 +30,18 @@ function subIcon(game: Game, id: Sub): string {
 
 export function HeroPanel({ game, onItem }: { game: Game; onItem: (it: Item) => void }) {
   const [sub, setSub] = useState<Sub>('eq');
+  const todo = heroTodo(game);
   return (
     <>
       <div class="seg seg-ic seg5" role="tablist" aria-label="Bohater">
         {SUBS.map(([id, n]) => {
           const f = SUB_FEATURE[id];
           const locked = (!!f && !game.unlocked(f)) || (id === 'runes' && game.s.forge.lvl < B.RUNE_FORGE_LVL && !SLOT_ORDER.some(sl => runeLvl(game.s, sl) > 0));
-          const fresh = !!f && game.s.unlNew.includes(f);
           return (
             <button key={id} role="tab" data-sub={id} aria-selected={sub === id} class={`${sub === id ? 'on' : ''}${locked ? ' locked' : ''}`}
               onClick={() => { setSub(id); if (f) game.seenFeatures([f]); }}>
               <span class="si-ic"><Px src={subIcon(game, id)} size={28} />{locked && <LockIcon />}</span>
-              <span class="si-n">{n}</span>{fresh && <i class="tab-dot new" aria-label="nowe" />}
+              <span class="si-n">{n}</span>{sub !== id && todo[id] && <i class="tab-dot" aria-label="coś do otwarcia" />}
             </button>
           );
         })}

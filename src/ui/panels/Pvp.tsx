@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { DUEL_FRAME_MS } from '../../engine/duel';
 import type { Game } from '../../engine/game';
-import { AD, ARENA_SHOP, LEAGUES, type ArenaShopId } from '../../data';
-import { resUrl } from '../../art/render';
+import { AD, ARENA_SHOP, B, LEAGUES, landDef, type ArenaShopId } from '../../data';
+import { dungeonBgUrl, resUrl } from '../../art/render';
 import { Px } from '../Px';
 import { useAdWatch } from './Shop';
 import { clanLife } from '../../save/clanlife';
@@ -69,7 +69,28 @@ export function DuelReplay({ f, summary, title = 'Pojedynek', onDone }: { f: Due
 type ArenaTab = 'walki' | 'liga' | 'sklep';
 const TABS: [ArenaTab, string][] = [['walki', 'Walki'], ['liga', 'Liga'], ['sklep', 'Sklep areny']];
 
-export function ArenaView({ game, close }: { game: Game; close: () => void }) {
+/** Zakładka Arena w Przygodzie: baner i pojedynki na miejscu (bez osobnego okna). */
+export function ArenaPanel({ game, online }: { game: Game; online: boolean }) {
+  const open = game.s.maxLand >= B.ARENA_UNLOCK_LAND;
+  return (
+    <>
+      <section class="card arena-banner" aria-label="Arena" style={{ '--bg': `url(${dungeonBgUrl('arena')})` } as Record<string, string>}>
+        <div class="ab-ic"><Px src={resUrl('moc')} size={36} /></div>
+        <div class="ab-main">
+          <div class="eyebrow">Gracz kontra gracz</div>
+          <div class="ab-name">Arena</div>
+          <div class="ab-sub">{B.ARENA_FIGHTS} walk dziennie z kopiami bohaterów innych graczy · ligi tygodniowe, Żetony Areny i sklep</div>
+        </div>
+      </section>
+      {!game.net ? <section class="card"><p class="sub">Arena działa w aplikacji połączonej z serwerem gry.</p></section>
+        : !open ? <section class="card"><p class="sub">Odblokujesz po pokonaniu bossa krainy {landDef(B.ARENA_UNLOCK_LAND - 1)?.n ?? landDef(0).n}.</p></section>
+          : !online ? <section class="card"><div class="lockline">Brak połączenia z serwerem — arena wróci, gdy gra się połączy.</div></section>
+            : <section class="card arena-inline"><ArenaView game={game} close={() => {}} inline /></section>}
+    </>
+  );
+}
+
+export function ArenaView({ game, close, inline = false }: { game: Game; close: () => void; inline?: boolean }) {
   const [st, setSt] = useState<ArenaState | null>(null);
   const [lg, setLg] = useState<LeagueState | null>(null);
   const [tab, setTab] = useState<ArenaTab>('walki');
@@ -138,7 +159,7 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
   return (
     <>
       <div class="row">
-        <div class="eyebrow">Arena</div>
+        <div class="eyebrow">{inline ? 'Pojedynki' : 'Arena'}</div>
         {brief && (
           <span class="lgtop">
             <LeagueBadge tier={brief.tier} small />
@@ -208,7 +229,7 @@ export function ArenaView({ game, close }: { game: Game; close: () => void }) {
       {tab === 'liga' && lg && <LeagueTab lg={lg} now={Date.now()} />}
       {tab === 'sklep' && lg && <ArenaShopTab game={game} lg={lg} busy={busy} buy={buy} />}
       {note && tab === 'sklep' && <p class="sub" role="status">{note}</p>}
-      <button class="btn" onClick={close}>Zamknij</button>
+      {!inline && <button class="btn" onClick={close}>Zamknij</button>}
     </>
   );
 }

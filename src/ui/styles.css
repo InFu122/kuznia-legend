@@ -2190,3 +2190,134 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .eqc .pips{position:absolute; right:8px; top:9px; display:flex; gap:3px}
 .eqc .pips i{width:5px; height:5px; border-radius:50%; background:#4a3c30}
 .eqc .pips i.on{background:var(--straw)}
+/* Kuźnia: ulepszenie, fakty o rudzie, auto-wytop, rafinacja */
+.fu2 .fu-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+.lvl-badge{display:flex; flex-direction:column; align-items:center; min-width:62px; padding:6px 8px; border-radius:12px; background:rgba(14,10,7,.72); box-shadow:inset 0 0 0 1px var(--straw)}
+.lvl-badge small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash)}
+.lvl-badge b{font-family:var(--f-display); font-size:24px; line-height:1; color:var(--straw)}
+.fu-gains{list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:4px}
+.fu-gains li{display:grid; grid-template-columns:22px minmax(0,1fr) auto; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:rgba(14,10,7,.62); font-size:13px}
+.fu-gains li > span{color:var(--frost); min-width:0}
+.fu-gains li > b{font-size:13px; color:var(--ash); font-variant-numeric:tabular-nums; white-space:nowrap}
+.fu-gains li > b em{font-style:normal; color:var(--good)}
+.fu-gains li.unl{grid-template-columns:22px minmax(0,1fr)}
+.fu-gains .fu-star{color:var(--straw); text-align:center}
+.fu-buy{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px}
+.fu-buy .costs{display:flex; flex-wrap:wrap; gap:4px 12px; font-size:13px}
+.fu-buy .upgrade-btn{min-width:120px; justify-content:center}
+.fu-lack{display:block; margin-top:4px; font-size:12px; color:#ff8a7a; text-align:right}
+.ore-facts{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; margin-bottom:8px}
+.ore-facts > span{display:flex; flex-direction:column; padding:6px 10px; border-radius:10px; background:var(--plate-2)}
+.ore-facts small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash)}
+.ore-facts b{font-size:14px; font-variant-numeric:tabular-nums}
+.ore-note{margin:-2px 0 8px; font-size:12px}
+.auto-card .ac-top{display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; margin-bottom:8px}
+.auto-card .ac-t .h{font-size:19px; margin:0}
+.auto-card{display:flex; flex-direction:column; gap:8px}
+.auto-card .ac-note{font-size:12px}
+.auto-card .autoel{padding-top:2px}
+.toggle.sw{padding:4px}
+.refine .h{font-size:19px; margin:2px 0 2px}
+.rlist2{list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:6px}
+.rlist2 li{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto; align-items:center; gap:6px; padding:8px; border-radius:12px; background:var(--plate-2)}
+.rlist2 li.off{opacity:.55}
+.rf2-ore{display:flex; align-items:center; gap:6px; min-width:0}
+.rf2-ore > span{display:flex; flex-direction:column; min-width:0; line-height:1.15}
+.rf2-ore b{font-size:13px; font-variant-numeric:tabular-nums}
+.rf2-ore small{font-size:11px; color:var(--ash); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rf2-ar{display:flex; flex-direction:column; align-items:center; color:var(--straw); line-height:1}
+.rf2-ar small{font-size:10px; color:var(--ash); margin-bottom:2px}
+.rf2-ar i{font-style:normal; font-size:16px}
+.rf2-btns{display:flex; gap:4px}
+.rf2-btns .btn{padding:6px 9px}
+.auto-card .autostop > span:first-child{flex-basis:100%; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ash)}
+.auto-card .autoel{margin-top:2px}
+/* Przycisk „i”: zawsze w prawym górnym rogu karty, kafelka albo baneru — to samo miejsce i rozmiar w całej grze */
+.info.corner{position:absolute; top:10px; right:10px; z-index:3; width:28px; height:28px; margin:0}
+.card.has-info{position:relative}
+.card.has-info > .row:first-child, .card.has-info .fu-head{padding-right:36px}
+.forge-banner.fb-i{padding-right:48px}
+.forge-banner .fb-side{padding-top:34px}
+.arena-head{padding-right:34px}
+.lc-top{padding-right:34px}
+.card.dung.tile .dt-top{padding-right:32px; min-height:28px}
+.card.dung.tile .info.corner{width:28px; height:28px}
+.seg button .tab-dot{top:4px; left:auto; right:6px}
+/* Czerwona kropka „coś do odebrania / otwarcia”: lekko pulsuje (poświata), liczby zostają spokojne */
+@keyframes todo-dot{0%, 100%{transform:scale(1); filter:drop-shadow(0 0 0 rgba(224,72,60,0))} 50%{transform:scale(1.18); filter:drop-shadow(0 0 4px rgba(224,72,60,.85))}}
+.tab-dot:not(.new), .badge.dotb:not(.new), .dot{animation:todo-dot 1.8s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){ .tab-dot, .badge.dotb, .dot{animation:none} }
+/* Umiejętności: sloty jak karty ekwipunku, krótkie wiersze listy */
+.odds-mini{margin-top:8px; font-size:12px; color:var(--ash)}
+.odds-mini summary{cursor:pointer; list-style:none; color:var(--straw); font-weight:600}
+.odds-mini summary::-webkit-details-marker{display:none}
+.odds-mini summary::after{content:" ▾"}
+.odds-mini[open] summary::after{content:" ▴"}
+.odds-mini .sub{margin-top:4px}
+.skeq{display:flex; flex-direction:column; gap:6px; margin-top:10px}
+.eqc.skc{grid-template-columns:44px minmax(0,1fr) auto}
+.eqc.skc .eqc-t b{-webkit-line-clamp:1}
+.skc-k{font-weight:700}
+.skc-k.k-atk{color:#ff9a8a} .skc-k.k-def{color:#8fc7ff} .skc-k.k-heal{color:#8ee08a} .skc-k.k-buff{color:#ffd27a} .skc-k.k-ctl{color:#9fe0f0}
+.skc-off{align-self:center}
+.eqc.skc .ghost{opacity:.25; filter:grayscale(1)}
+.sk-hint{margin:6px 0 0; font-size:12px}
+.skrows{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:6px}
+.skrow{--rc:var(--rivet); display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px 8px; padding:6px 8px 6px 6px; border-radius:12px; background:var(--plate-2); border:1px solid var(--rivet); border-left:3px solid var(--rc)}
+.skrow.r0{--rc:var(--r0)} .skrow.r1{--rc:var(--r1)} .skrow.r2{--rc:var(--r2)} .skrow.r3{--rc:var(--r3)} .skrow.r4{--rc:var(--r4)}
+.skrow.on{background:linear-gradient(90deg, color-mix(in srgb, var(--rc) 16%, var(--plate-2)), var(--plate-2) 70%)}
+.skr-main{display:grid; grid-template-columns:40px minmax(0,1fr); align-items:center; gap:8px; background:none; border:0; padding:0; text-align:left; color:var(--frost); min-width:0}
+.skr-ic{display:grid; place-items:center; width:40px; height:40px; border-radius:10px; background:#140f0c; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
+.skr-t{display:flex; flex-direction:column; gap:2px; min-width:0}
+.skr-top{display:flex; align-items:center; gap:6px; min-width:0}
+.skr-top b{font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.skr-top .sk-tag{flex:none}
+.skr-fx{font-size:12px; color:var(--ash)}
+.skr-fx b{color:var(--frost); font-size:13px}
+.skr-lv{display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:6px; font-size:11px; color:var(--ash)}
+.skr-lv .bar{height:4px}
+.skr-on{font-size:12px; font-weight:700; color:var(--straw); padding:0 4px}
+.skr-btn{min-width:64px; justify-content:center}
+.skr-more{grid-column:1 / -1; font-size:12px; color:var(--ash); padding:6px 4px 2px 48px; border-top:1px solid var(--rivet)}
+.skr-more b{color:var(--good)}
+/* Lochy: szerokie karty jak Krainy, pasek kluczy, lista zamkniętych */
+.dstrip{display:flex; align-items:center; gap:10px; padding:10px 14px; font-size:13px; color:var(--ash)}
+.dstrip b{color:var(--frost)}
+.dungcard{margin-top:0; min-height:132px}
+.dungcard .dt-foe{position:absolute; right:14px; bottom:44px; width:64px; height:64px; z-index:-1; image-rendering:pixelated; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.dungcard .lc-top{padding-right:34px}
+.dungcard.spent::before{filter:grayscale(.6) brightness(.6)}
+.dungcard.event{border-color:color-mix(in srgb, var(--straw) 50%, var(--rivet))}
+.dc-reward{display:inline-flex; align-items:center; gap:8px; align-self:flex-start; margin-top:6px; padding:4px 10px 4px 6px; border-radius:10px; background:rgba(14,10,7,.72)}
+.dc-reward > span{display:flex; flex-direction:column; line-height:1.1}
+.dc-reward small{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash)}
+.dc-reward b{font-size:13px}
+.dungcard .lc-bot{margin-top:10px; align-items:center}
+.dc-info{display:flex; flex-direction:column; gap:3px}
+.dc-best{font-size:12px; color:#e0d4c4; text-shadow:0 1px 2px #000}
+.dc-best b{color:var(--frost)}
+.dlock2 ul{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:4px}
+.dlock2 li button{display:grid; grid-template-columns:22px minmax(0,1fr) auto; align-items:center; gap:10px; width:100%; padding:8px 10px; border-radius:10px; background:var(--plate-2); border:0; color:var(--frost); text-align:left}
+.dlock2 .dl-ic{color:var(--ash)} .dlock2 .dl-ic svg{width:16px; height:16px}
+.dlock2 .dl-t{display:flex; flex-direction:column; min-width:0}
+.dlock2 .dl-t b{font-size:13.5px}
+.dlock2 .dl-t small{font-size:11.5px; color:var(--ash)}
+.dlock2 .dl-r{display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--ash); white-space:nowrap}
+.dungcard{min-height:118px}
+/* Przygoda: wydarzenie i sezon nad zakładkami, w jednym stylu */
+.adv-banners{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px}
+.adv-banners:has(> :only-child){grid-template-columns:1fr}
+.adv-tile{position:relative; isolation:isolate; overflow:hidden; display:flex; flex-direction:column; align-items:flex-start; gap:3px; padding:10px 10px 10px; border-radius:14px; border:1px solid color-mix(in srgb, var(--straw) 45%, var(--rivet)); background:var(--plate); color:var(--frost); text-align:left; min-width:0}
+.adv-tile::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(180deg, rgba(14,10,7,.55), rgba(14,10,7,.92) 70%), var(--bg); background-size:cover; background-position:center 60%; image-rendering:pixelated}
+.adv-tile.season{border-color:color-mix(in srgb, #9a8aff 50%, var(--rivet))}
+.adv-tile.ready{border-color:var(--straw); box-shadow:0 0 0 1px var(--straw) inset}
+.adv-tile .at-top{display:flex; align-items:center; gap:6px; min-width:0}
+.adv-tile .at-top .eyebrow{font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.adv-tile .at-name{font-family:var(--f-display); font-size:18px; font-weight:500; line-height:1.05; text-shadow:0 1px 2px #000}
+.adv-tile .at-sub{font-size:11.5px; color:#e0d4c4; text-shadow:0 1px 2px #000}
+.adv-tile .at-sub b{color:var(--straw)}
+.adv-tile .bar{width:100%; margin-top:3px}
+.adv-tile.season .bar i{background:#b0a2ff}
+.adv-tile .at-btn{margin-top:6px; padding:5px 10px; border-radius:9px; font-size:12px; font-weight:700; background:rgba(14,10,7,.7); border:1px solid var(--rivet)}
+.adv-tile .at-btn.on{background:var(--straw); color:var(--straw-ink); border-color:var(--straw)}
+.adv-tile .tab-dot{top:8px; right:8px; left:auto}

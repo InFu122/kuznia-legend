@@ -29,6 +29,109 @@ const Odds = () => <p class="sub">Szanse: {DRAW_ODDS.map((p, r) => <span key={r}
 /** „Załóż najlepsze” — wybiera to, co daje najwięcej Mocy. */
 const BestBtn = ({ onClick }: { onClick: () => void }) => <button class="btn small primary best-btn" onClick={onClick}>Załóż najlepsze</button>;
 
+/** Zwój zaklęć do otwarcia (animacja i wygląd bez zmian). */
+function ScrollBox({ game }: { game: Game }) {
+  const n = game.s.scrolls;
+  return (
+    <div class={`scrollbox${n > 0 ? ' has' : ''}`}>
+      <span class="sb-ic"><Px src={resUrl('zwoj')} size={44} /><b class="sb-n">{fmt(n)}</b></span>
+      <div class="cmain">
+        <b>{n > 0 ? `Zwoje zaklęć: ${fmt(n)}` : 'Brak zwojów'}</b>
+        <small class="muted">{n > 0 ? 'Nowa umiejętność albo kopia, która podnosi jej poziom.' : 'Zwoje dają bossowie krain i lochy, osiągnięcia, wydarzenia, Przepustka i sklep.'}</small>
+      </div>
+      <button class="btn primary btn-scroll" disabled={n < 1} onClick={() => game.openScroll()}><Px src={resUrl('zwoj')} size={18} />Otwórz</button>
+    </div>
+  );
+}
+
+/** Umiejętności: zwój do otwarcia, założone sloty jak karty ekwipunku, pozostałe umiejętności w krótkich wierszach. */
+function SkillsBook({ game }: { game: Game }) {
+  const s = game.s;
+  const [open, setOpen] = useState<string | null>(null);
+  const owned = SKILL_IDS.filter(id => s.skills.lv[id]);
+  const rest = owned.filter(id => !s.skills.eq.includes(id));
+  const full = !s.skills.eq.includes(null);
+  return (
+    <>
+      <section class="card">
+        <Banner bg={dungeonBgUrl('wieza')} icon={<Px src={resUrl('zwoj')} size={32} />} eyebrow="Umiejętności" title="Księga zaklęć" />
+        <ScrollBox game={game} />
+        <details class="odds-mini">
+          <summary>Szanse ze zwoju</summary>
+          <Odds />
+        </details>
+      </section>
+      <section class="card">
+        <div class="row"><IconEyebrow icon={<Px src={resUrl('zwoj')} size={16} />}>Założone · rzucają się same</IconEyebrow>{owned.length > 0 && <BestBtn onClick={() => game.equipBest('skills')} />}</div>
+        <div class="skeq">
+          {s.skills.eq.map((id, i) => {
+            if (!id) return (
+              <div key={i} class="eqc empty skc">
+                <span class="eqc-ic"><Px src={resUrl('zwoj')} size={26} cls="ghost" /></span>
+                <span class="eqc-t"><small>Slot {i + 1}</small><b>pusty slot</b><span>wybierz umiejętność z listy niżej</span></span>
+              </div>
+            );
+            const S = SKILLS[id];
+            const lvl = s.skills.lv[id] ?? 1;
+            const fx = skillFx(id, lvl);
+            const have = s.skills.cards[id] ?? 0;
+            return (
+              <div key={i} class={`eqc skc r${S.r}`}>
+                <span class="eqc-ic"><Px src={skillUrl(id)} size={36} /></span>
+                <span class="eqc-t">
+                  <small>Slot {i + 1} · <span class={`skc-k k-${fx.kind}`}>{fx.tag}</span></small>
+                  <b class={`rt${S.r}`}>{S.n}</b>
+                  <span class="eqc-st">{fx.main} {fx.label}</span>
+                  <span>poz. {lvl}/{SKILL_MAX}{lvl < SKILL_MAX ? ` · kopie ${have}/${skillNeed(lvl)}` : ' · maks.'} · co {f1(S.cd / 1000)} s</span>
+                </span>
+                <button class="btn small skc-off" onClick={() => game.equipSkill(null, i)} aria-label={`Zdejmij: ${S.n}`}>Zdejmij</button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      {rest.length > 0 && (
+        <section class="card">
+          <div class="row"><IconEyebrow icon={<Px src={resUrl('zwoj')} size={16} />}>Pozostałe umiejętności · {rest.length}</IconEyebrow><span class="num sub">masz {owned.length}/{SKILL_IDS.length}</span></div>
+          <p class="sub sk-hint">{full ? 'Sloty pełne — zdejmij jedną wyżej, żeby założyć inną. ' : ''}Dotknij, żeby zobaczyć opis.</p>
+          <ul class="skrows">
+            {rest.map(id => {
+              const S = SKILLS[id];
+              const lvl = s.skills.lv[id] ?? 1;
+              const on = s.skills.eq.includes(id);
+              const fx = skillFx(id, lvl);
+              const nx = lvl < SKILL_MAX ? skillFx(id, lvl + 1) : null;
+              const have = s.skills.cards[id] ?? 0;
+              const need = skillNeed(lvl);
+              const isOpen = open === id;
+              return (
+                <li key={id} class={`skrow r${S.r}${on ? ' on' : ''}`}>
+                  <button class="skr-main" onClick={() => setOpen(isOpen ? null : id)} aria-expanded={isOpen}>
+                    <span class="skr-ic"><Px src={skillUrl(id)} size={36} /></span>
+                    <span class="skr-t">
+                      <span class="skr-top"><b class={`rt${S.r}`}>{S.n}</b><span class={`sk-tag k-${fx.kind}`}>{fx.tag}</span></span>
+                      <span class="skr-fx"><b>{fx.main}</b> {fx.label} · co {f1(S.cd / 1000)} s</span>
+                      <span class="skr-lv"><small>poz. {lvl}</small>{nx ? <><span class="bar"><i style={{ width: Math.min(100, (have / need) * 100) + '%' }} /></span><small>{have}/{need}</small></> : <small class="sk-max">maks.</small>}</span>
+                    </span>
+                  </button>
+                  {on ? <span class="skr-on">Założona</span>
+                    : !full && <button class="btn small skr-btn" onClick={() => game.equipSkill(id, s.skills.eq.indexOf(null))}>Załóż</button>}
+                  {isOpen && (
+                    <div class="skr-more">
+                      {fx.text}
+                      {nx && <> Następny poziom ({have}/{need} kopii): <b>{nx.main}</b>.</>}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+    </>
+  );
+}
+
 export function SkillsView({ game }: { game: Game }) {
   const s = game.s;
   if (!skillsUnlocked(s)) {
@@ -39,69 +142,7 @@ export function SkillsView({ game }: { game: Game }) {
       </section>
     );
   }
-  const owned = SKILL_IDS.filter(id => s.skills.lv[id]);
-  const full = !s.skills.eq.includes(null);
-  const n = s.scrolls;
-  return (
-    <>
-      <section class="card">
-        <Banner bg={dungeonBgUrl('wieza')} icon={<Px src={resUrl('zwoj')} size={32} />} eyebrow="Umiejętności" title="Księga zaklęć" />
-        {/* Otwieranie zwoju — wyraźne wezwanie, a nie mały przycisk w nagłówku. */}
-        <div class={`scrollbox${n > 0 ? ' has' : ''}`}>
-          <span class="sb-ic"><Px src={resUrl('zwoj')} size={44} /><b class="sb-n">{fmt(n)}</b></span>
-          <div class="cmain">
-            <b>{n > 0 ? `Zwoje zaklęć: ${fmt(n)}` : 'Brak zwojów'}</b>
-            <small class="muted">{n > 0 ? 'Nowa umiejętność albo kopia, która podnosi jej poziom.' : 'Zwoje dają bossowie krain i lochy, osiągnięcia, wydarzenia, Przepustka i sklep.'}</small>
-          </div>
-          <button class="btn primary btn-scroll" disabled={n < 1} onClick={() => game.openScroll()}><Px src={resUrl('zwoj')} size={18} />Otwórz</button>
-        </div>
-        <Odds />
-        <div class="skslots">
-          {s.skills.eq.map((id, i) => (
-            <button key={i} class={`skslot${id ? ` r${SKILLS[id].r}` : ' empty'}`} disabled={!id} onClick={() => game.equipSkill(null, i)} aria-label={id ? `Zdejmij: ${SKILLS[id].n}` : 'Pusty slot'}>
-              {id ? <><Px src={skillUrl(id)} size={48} /><b>{SKILLS[id].n}</b><small>{skillFx(id, s.skills.lv[id] ?? 1).main} · poz. {s.skills.lv[id]}</small><small class="sk-off">zdejmij</small></> : <><Px src={resUrl('zwoj')} size={32} cls="ghost" /><small>pusty slot</small></>}
-            </button>
-          ))}
-        </div>
-        <p class="sub" style={{ marginTop: '8px' }}>Trzy założone umiejętności rzucają się same, gdy są gotowe.</p>
-      </section>
-      {owned.length > 0 && (
-        <section class="card">
-          <div class="row"><IconEyebrow icon={<Px src={resUrl('zwoj')} size={16} />}>Twoje umiejętności</IconEyebrow><BestBtn onClick={() => game.equipBest('skills')} /></div>
-          <ul class="sklist">
-            {owned.map(id => {
-              const S = SKILLS[id];
-              const lvl = s.skills.lv[id] ?? 1;
-              const on = s.skills.eq.includes(id);
-              const fx = skillFx(id, lvl);
-              const nx = lvl < SKILL_MAX ? skillFx(id, lvl + 1) : null;
-              const have = s.skills.cards[id] ?? 0;
-              const need = skillNeed(lvl);
-              return (
-                <li key={id} class={`skcard r${S.r}${on ? ' on' : ''}`}>
-                  <span class="sk-ic"><Px src={skillUrl(id)} size={44} /></span>
-                  <div class="cmain">
-                    <div class="sk-top">
-                      <b class={`rt${S.r}`}>{S.n}</b><span class={`sk-tag k-${fx.kind}`}>{fx.tag}</span>
-                      {on ? <span class="tech-busy sk-btn">Założona</span>
-                        : <button class="btn small sk-btn" disabled={full} onClick={() => game.equipSkill(id, s.skills.eq.indexOf(null))}>{full ? 'Sloty pełne' : 'Załóż'}</button>}
-                    </div>
-                    <div class="sk-main"><b>{fx.main}</b><small>{fx.label}</small><span class="sk-cd" title="Odnowienie">⏱ co {f1(S.cd / 1000)} s</span></div>
-                    <small class="sk-d">{fx.text}</small>
-                    <div class="sk-lvl">
-                      <span>poz. {lvl}/{SKILL_MAX}</span>
-                      {nx ? <><div class="bar"><i style={{ width: Math.min(100, (have / need) * 100) + '%' }} /></div><small>kopie {have}/{need} → {nx.main}</small></>
-                        : <small class="sk-max">maksymalny poziom</small>}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-    </>
-  );
+  return <SkillsBook game={game} />;
 }
 
 /* ---------- chowańce ---------- */
@@ -136,7 +177,7 @@ export function PetsView({ game }: { game: Game }) {
   if (!petsUnlocked(s)) {
     return (
       <section class="card comphead">
-        <Banner bg={dungeonBgUrl('leza')} icon={<Px src={resUrl('lapa')} size={32} />} eyebrow="Chowańce" title="Wkrótce"><InfoBtn onClick={info} label="Jak działają chowańce" /></Banner>
+        <Banner bg={dungeonBgUrl('leza')} icon={<Px src={resUrl('lapa')} size={32} />} eyebrow="Chowańce" cls="fb-i" title="Wkrótce"><InfoBtn corner onClick={info} label="Jak działają chowańce" /></Banner>
         <p class="sub">Odblokujesz je w akcie II (kraina {PETS_UNLOCK_LAND + 1}). Pierwsze jajo da boss ostatniej krainy aktu I.</p>
       </section>
     );
@@ -148,8 +189,8 @@ export function PetsView({ game }: { game: Game }) {
   return (
     <>
       <section class="card comphead">
-        <Banner bg={dungeonBgUrl('leza')} icon={<Px src={resUrl('jajo2')} size={32} />} eyebrow="Chowańce" title="Inkubator">
-          <div class="fb-side"><InfoBtn onClick={info} label="Jak działają chowańce" /><StoneChip n={s.stones} /></div>
+        <Banner bg={dungeonBgUrl('leza')} icon={<Px src={resUrl('jajo2')} size={32} />} eyebrow="Chowańce" cls="fb-i" title="Inkubator">
+          <div class="fb-side"><InfoBtn corner onClick={info} label="Jak działają chowańce" /><StoneChip n={s.stones} /></div>
         </Banner>
         <div class={`incub${h ? ` on r${h.r}` : ''}`}>
           <div class="incub-nest" aria-hidden="true">
@@ -236,7 +277,7 @@ export function MountsView({ game }: { game: Game }) {
   if (!mountsUnlocked(s)) {
     return (
       <section class="card comphead">
-        <Banner bg={landBgUrl(0)} icon={<Px src={resUrl('siodlo')} size={32} />} eyebrow="Wierzchowce" title="Wkrótce"><InfoBtn onClick={info} label="Jak działają wierzchowce" /></Banner>
+        <Banner bg={landBgUrl(0)} icon={<Px src={resUrl('siodlo')} size={32} />} eyebrow="Wierzchowce" cls="fb-i" title="Wkrótce"><InfoBtn corner onClick={info} label="Jak działają wierzchowce" /></Banner>
         <p class="sub">Odblokujesz je w akcie III (kraina {MOUNTS_UNLOCK_LAND + 1}). Siodła dają bossowie aktu III i IV, Kopalnia Kryształów i Leża Bossów.</p>
       </section>
     );
@@ -247,8 +288,8 @@ export function MountsView({ game }: { game: Game }) {
   return (
     <>
       <section class="card comphead stable">
-        <Banner bg={landBgUrl(0)} icon={<Px src={resUrl('siodlo')} size={32} />} eyebrow="Wierzchowce" title="Stajnia">
-          <div class="fb-side"><InfoBtn onClick={info} label="Jak działają wierzchowce" /><StoneChip n={s.stones} /></div>
+        <Banner bg={landBgUrl(0)} icon={<Px src={resUrl('siodlo')} size={32} />} eyebrow="Wierzchowce" cls="fb-i" title="Stajnia">
+          <div class="fb-side"><InfoBtn corner onClick={info} label="Jak działają wierzchowce" /><StoneChip n={s.stones} /></div>
         </Banner>
         <div class="saddle">
           <Px src={resUrl('siodlo')} size={40} />

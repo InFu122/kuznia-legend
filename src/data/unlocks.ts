@@ -19,7 +19,7 @@ export interface FeatureDef {
   /** Tylko z połączeniem z serwerem. */
   net?: boolean;
   /** Gdzie jest: zakładka, przycisk w nagłówku albo część zakładki. */
-  at: { tab?: 'bohater' | 'nauka' | 'krainy' | 'lochy' | 'klan'; btn?: 'sklep' | 'zadania' | 'czat'; inTab?: 'kuznia' | 'bohater' | 'lochy' };
+  at: { tab?: 'bohater' | 'nauka' | 'krainy' | 'lochy' | 'arena' | 'klan'; btn?: 'sklep' | 'zadania' | 'czat'; inTab?: 'kuznia' | 'bohater' | 'lochy' };
   /** Selektor elementu do wskazania po odblokowaniu (samouczek); funkcja w zakładce — gdy ta zakładka jest otwarta. */
   target: string;
 }
@@ -29,14 +29,14 @@ export const FEATURES: Record<FeatureId, FeatureDef> = {
   zadania: { n: 'Zadania', d: 'Codzienne i tygodniowe zadania z nagrodami, kalendarz logowania i osiągnięcia.', forge: 2, at: { btn: 'zadania' }, target: '[data-btn="zadania"]' },
   nauka: { n: 'Nauka', d: 'Akademia Kowalska: badania za Księgi Wiedzy i złoto wzmacniają kuźnię, walkę i zarobki.', forge: TECH_UNLOCK_FORGE, at: { tab: 'nauka' }, target: '[data-tab="nauka"]' },
   sklep: { n: 'Sklep', d: 'Darmowy prezent dnia, nagrody za reklamy i towary za Klejnoty.', forge: 3, at: { btn: 'sklep' }, target: '[data-btn="sklep"]' },
-  auto: { n: 'Auto-wytop', d: 'Kuźnia kuje sama: słabsze sprzedaje, a na wybranej rzadkości czeka na twoją decyzję.', forge: B.AUTO_FORGE_LVL, at: { inTab: 'kuznia' }, target: '.auto2 .toggle' },
+  auto: { n: 'Auto-wytop', d: 'Kuźnia kuje sama: słabsze sprzedaje, a na wybranej rzadkości czeka na twoją decyzję.', forge: B.AUTO_FORGE_LVL, at: { inTab: 'kuznia' }, target: '.auto-card .toggle' },
   umiejetnosci: { n: 'Umiejętności', d: 'Zaklęcia ze Zwojów, które bohater rzuca sam w walce.', g: SKILLS_UNLOCK_G, at: { inTab: 'bohater' }, target: '[data-sub="skills"]' },
   krainy: { n: 'Krainy', d: 'Mapa kampanii: wracaj do pokonanych krain po ich rudy.', lands: 1, at: { tab: 'krainy' }, target: '[data-tab="krainy"]' },
   lochy: { n: 'Lochy', d: 'Codzienne lochy z kluczami: złoto, rudy, Księgi i przedmioty.', lands: 1, at: { tab: 'lochy' }, target: '[data-tab="lochy"]' },
   klan: { n: 'Klan', d: 'Wspólna kuźnia, boss klanowy, wojny i pomoc innych kowali.', lands: 1, net: true, at: { tab: 'klan' }, target: '[data-tab="klan"]' },
   czat: { n: 'Czat', d: 'Rozmowy z innymi graczami i ogłoszenia Boskich przedmiotów.', lands: 1, net: true, at: { btn: 'czat' }, target: '[data-btn="czat"]' },
-  runy: { n: 'Runy', d: 'Trwałe wzmocnienie bohatera: runa siedzi w miejscu ekwipunku i działa na każdy przedmiot, który tam założysz.', forge: B.RUNE_FORGE_LVL, at: { inTab: 'bohater' }, target: '.card.runes' },
-  arena: { n: 'Arena', d: 'Pojedynki z bohaterami innych graczy i tygodniowe ligi.', lands: B.ARENA_UNLOCK_LAND, net: true, at: { inTab: 'lochy' }, target: '.arena-banner .btn' },
+  runy: { n: 'Runy', d: 'Trwałe wzmocnienie bohatera: runa siedzi w miejscu ekwipunku i działa na każdy przedmiot, który tam założysz.', forge: B.RUNE_FORGE_LVL, at: { inTab: 'bohater' }, target: '[data-sub="runes"]' },
+  arena: { n: 'Arena', d: 'Pojedynki z bohaterami innych graczy i tygodniowe ligi.', lands: B.ARENA_UNLOCK_LAND, net: true, at: { tab: 'arena' }, target: '[data-tab="arena"]' },
   chowance: { n: 'Chowańce', d: 'Towarzysz z jaja walczy u boku bohatera i daje premię.', lands: PETS_UNLOCK_LAND, at: { inTab: 'bohater' }, target: '[data-sub="pets"]' },
   wierzchowce: { n: 'Wierzchowce', d: 'Wierzchowiec z Siodła dodaje obrażeń i zdrowia.', lands: MOUNTS_UNLOCK_LAND, at: { inTab: 'bohater' }, target: '[data-sub="mounts"]' },
 };

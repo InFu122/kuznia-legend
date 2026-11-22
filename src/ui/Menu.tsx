@@ -30,7 +30,8 @@ const passWaiting = (game: Game) => {
 export function menuTodo(game: Game): { n: number; dot: boolean; fresh: boolean } {
   const n = (game.unlocked('zadania') ? game.claimable() : 0) + (game.unlocked('klan') ? clanLife.todo() : 0);
   // Kropka: prezent w sklepie, przepustka albo nieprzeczytane w czacie klanu (świat bywa zbyt gadatliwy na kropkę).
-  const dot = (game.unlocked('sklep') && (giftWaiting(game) || passWaiting(game))) || (game.unlocked('czat') && (getChat()?.unread.clan ?? 0) > 0);
+  // Kropka tylko za rzeczy do odebrania (prezent, nagrody Przepustki); nowe wiadomości liczy kafelek Czat w Menu.
+  const dot = game.unlocked('sklep') && (giftWaiting(game) || passWaiting(game));
   const fresh = MENU_FEATURES.some(id => game.s.unlNew.includes(id));
   return { n, dot, fresh };
 }
@@ -113,7 +114,6 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
             <small>{t.d}</small>
             {t.prog !== undefined && <span class="mt-prog" aria-hidden="true"><i style={{ width: Math.min(100, t.prog * 100) + '%' }} /></span>}
             {t.badge ? <i class="badge">{t.badge > 99 ? '99+' : t.badge}</i> : t.dot ? <i class="badge dotb" aria-hidden="true" /> : null}
-            {t.fresh && <i class="badge dotb new" aria-label="nowe" />}
           </button>
         ))}
       </div>

@@ -125,13 +125,13 @@ export function OrePicker({ game, close }: { game: Game; close: () => void }) {
   const f = game.s.forge;
   return (
     <>
-      <div class="forge-banner" style={{ '--bg': `url(${dungeonBgUrl('kuznia')})` } as Record<string, string>}>
+      <div class="forge-banner fb-i" style={{ '--bg': `url(${dungeonBgUrl('kuznia')})` } as Record<string, string>}>
         <Px src={resUrl('kowadlo')} size={30} />
         <div class="fb-txt">
           <div class="eyebrow">Kuźnia · poziom {f.lvl}{f.up ? ' · trwa ulepszenie' : ''}</div>
           <div class="h">Ruda do wytopu</div>
         </div>
-        <InfoBtn onClick={() => { close(); game.openModal({ kind: 'info', k: 'forge' }); }} label="Jak działa kuźnia i jakie są szanse" />
+        <InfoBtn corner onClick={() => { close(); game.openModal({ kind: 'info', k: 'forge' }); }} label="Jak działa kuźnia i jakie są szanse" />
       </div>
       <OreGrid game={game} />
       <OreSummary game={game} />

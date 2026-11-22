@@ -81,10 +81,10 @@ export function RunesTab({ game }: { game: Game }) {
   const total = SLOT_ORDER.reduce((a, sl) => a + runeLvl(s, sl), 0);
   const all = any ? runeGain(s) : null;
   return (
-    <section class="card runes">
+    <section class="card runes has-info">
+      <InfoBtn corner onClick={() => game.openModal({ kind: 'info', k: 'runes' })} label="Jak działają runy" />
       <div class="row">
         <div class="rhead"><Px src={resUrl('runa')} size={30} /><div><div class="eyebrow">Runy bohatera · na zawsze</div><div class="h">Wzmocnienie miejsc ekwipunku</div></div></div>
-        <InfoBtn onClick={() => game.openModal({ kind: 'info', k: 'runes' })} label="Jak działają runy" />
       </div>
       {all && all.power > 0 ? (
         <div class="rsum">

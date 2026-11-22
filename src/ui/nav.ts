@@ -1,4 +1,4 @@
-// Nawigacja: na dole tylko cztery przyciski — Bohater, Kuźnia, Przygoda (Krainy i Lochy) i Menu
+// Nawigacja: na dole tylko cztery przyciski — Bohater, Kuźnia, Przygoda (Krainy, Lochy, Arena) i Menu
 // (Nauka, Klan, Kodeks z ustawieniami oraz okna: Zadania, Sklep, Przepustka, Ranking). Widok (`Tab`) to to, co jest na ekranie,
 // a przycisk na dole (`Nav`) — grupa, do której ten widok należy.
 import type { Tab } from './icons';
@@ -8,15 +8,15 @@ export type Nav = 'bohater' | 'kuznia' | 'przygoda' | 'menu';
 export const NAVS: [Nav, string][] = [['bohater', 'Bohater'], ['kuznia', 'Kuźnia'], ['przygoda', 'Przygoda'], ['menu', 'Menu']];
 
 export const NAV_OF: Record<Tab, Nav> = {
-  kuznia: 'kuznia', bohater: 'bohater', krainy: 'przygoda', lochy: 'przygoda', nauka: 'menu', klan: 'menu', kodeks: 'menu',
+  kuznia: 'kuznia', bohater: 'bohater', krainy: 'przygoda', lochy: 'przygoda', arena: 'przygoda', nauka: 'menu', klan: 'menu', kodeks: 'menu',
 };
 
 export const VIEW_NAME: Record<Tab, string> = {
-  kuznia: 'Kuźnia', bohater: 'Bohater', krainy: 'Krainy', lochy: 'Lochy', nauka: 'Nauka', klan: 'Klan', kodeks: 'Kodeks',
+  kuznia: 'Kuźnia', bohater: 'Bohater', krainy: 'Krainy', lochy: 'Lochy', arena: 'Arena', nauka: 'Nauka', klan: 'Klan', kodeks: 'Kodeks',
 };
 
 /** Widoki w Przygodzie (podzakładki). */
-export const ADVENTURE: Tab[] = ['krainy', 'lochy'];
+export const ADVENTURE: Tab[] = ['krainy', 'lochy', 'arena'];
 
 /** Jak dojść do widoku — tekst wskazówki samouczka („Otwórz Menu → Nauka”). */
 export function reachText(t: Tab): string {

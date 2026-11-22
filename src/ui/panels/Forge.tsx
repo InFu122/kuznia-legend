@@ -14,8 +14,9 @@ export const Dist = ({ d }: { d: [number, number][] }) => (
   <>{d.map(([r, p], i) => <span key={r}>{i > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n}&nbsp;{pct(p)}</span></span>)}</>
 );
 
-export const InfoBtn = ({ onClick, label }: { onClick: () => void; label: string }) => (
-  <button class="info" onClick={onClick} aria-label={label}>i</button>
+/** Przycisk „i”. `corner` — zawsze w prawym górnym rogu karty, kafelka albo baneru (jedno miejsce w całej grze). */
+export const InfoBtn = ({ onClick, label, corner }: { onClick: () => void; label: string; corner?: boolean }) => (
+  <button class={`info${corner ? ' corner' : ''}`} onClick={onClick} aria-label={label}>i</button>
 );
 
 /** Pasek szans wytopu: segmenty w kolorach rzadkości, z procentami pod spodem. */
@@ -28,6 +29,65 @@ export function OddsBar({ d, note, cls = '' }: { d: [number, number][]; note?: s
         {note && <span class="ob-note">{note}</span>}
       </div>
     </div>
+  );
+}
+
+/** Wybrana ruda w skrócie: co zwykle wychodzi, jak daleko przeskakuje, ile jej masz; niżej uwaga o niskiej kuźni. */
+function OreFacts({ game }: { game: Game }) {
+  const s = game.s;
+  const f = s.forge;
+  const o = s.oreSel;
+  const mj = maxJump(o);
+  const at = Math.max(f.lvl, ORES[o].lvl);
+  const nom = rAt(oreNominal(o, at)), goal = rAt(Math.ceil(ORES[o].v6[1] - 1e-9));
+  const growing = oreBase(o, at) < ORES[o].v6[1] - 1e-9;
+  return (
+    <>
+      <div class="ore-facts">
+        <span><small>Zwykle</small><b class={`rt${nom}`}>{RAR[nom].n}</b></span>
+        <span><small>Przeskok</small><b>{mj === 0 ? 'brak' : mj === 1 ? 'do +1' : 'do +2'}</b></span>
+        <span><small>Masz</small><b>{fmt(s.ores[o])}</b></span>
+      </div>
+      {(ORES[o].d || growing) && (
+        <p class="sub ore-note">
+          {ORES[o].d}{ORES[o].d && growing ? ' · ' : ''}
+          {growing && <>na niskiej kuźni czasem o rzadkość niżej — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></>}
+        </p>
+      )}
+    </>
+  );
+}
+
+/** Rafinacja: skąd → dokąd, ile wyjdzie, „+1” i „Wszystko” (np. 600 Miedzi —8:1→ +75 Żelaza). */
+function Refine({ game }: { game: Game }) {
+  const s = game.s;
+  if (s.forge.lvl < B.REFINE_FORGE_LVL) return null;
+  const rows = ORE_ORDER.filter(i => refineRatio(s, i) > 0);
+  if (!rows.length) return null;
+  return (
+    <section class="card refine" aria-label="Rafinacja rud">
+      <div class="eyebrow">Rafinacja rud</div>
+      <div class="h">Zamień nadmiar na lepszą rudę</div>
+      <p class="sub">Na zapasy, których już nie wytapiasz — wytop rudy wprost daje więcej. Słabsze rudy przydają się też do run.</p>
+      <ul class="rlist2">
+        {rows.map(i => {
+          const k = refineRatio(s, i);
+          const to = refineTo(i);
+          const max = Math.floor(s.ores[i] / k);
+          return (
+            <li key={i} class={max ? '' : 'off'}>
+              <span class="rf2-ore"><Px src={oreUrl(i)} size={26} /><span><b>{fmt(s.ores[i])}</b><small>{ORES[i].n}</small></span></span>
+              <span class="rf2-ar" aria-label={`${k} za 1`}><small>{k} : 1</small><i aria-hidden="true">→</i></span>
+              <span class="rf2-ore"><Px src={oreUrl(to)} size={26} /><span><b>{max ? `+${fmt(max)}` : '—'}</b><small>{ORES[to].n}</small></span></span>
+              <span class="rf2-btns">
+                <button class="btn small" disabled={max < 1} onClick={() => game.refine(i, 1)}>+1</button>
+                <button class="btn small primary" disabled={max < 1} onClick={() => game.refine(i, max)}>Wszystko</button>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -60,7 +120,6 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
   return (
     <>
       <LastForge game={game} onDecide={onDecide} />
-
       {s.found.length > 0 && (
         <section class="card">
           <div class="row">
@@ -69,77 +128,101 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
           </div>
         </section>
       )}
-
-      <section class="card forgeup" style={{ '--bg': `url(${dungeonBgUrl('ulepszenie')})` } as Record<string, string>}>
-        {f.lvl >= B.FORGE_MAX ? (
-          <div class="row"><div><LevelEyebrow text="Kuźnia" onInfo={onInfo} /><div class="h">Poziom {B.FORGE_MAX} — najwyższy</div><p class="sub">Kuźnia osiągnęła szczyt. Siłę bohatera rozwijaj teraz w Otchłani, Nauce, runach i legendach przedmiotów.</p></div></div>
-        ) : f.up ? (
-          <>
-            <div class="row"><div><LevelEyebrow text="Ulepszanie kuźni" onInfo={onInfo} /><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
-            <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
-            <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
-            {game.net && <ClanHelpLine game={game} />}
-            <SpeedupButton game={game} what="forge" />
-          </>
-        ) : (
-          <div class="row">
+      {f.lvl < B.FORGE_MAX && !f.up ? (
+        <section class="card forgeup fu2 has-info" style={{ '--bg': `url(${dungeonBgUrl('ulepszenie')})` } as Record<string, string>}>
+          <InfoBtn corner onClick={() => onInfo('level')} label="Jak działa poziom kuźni" />
+          <div class="fu-head">
             <div>
-              <LevelEyebrow text={`Kuźnia · poziom ${f.lvl}`} onInfo={onInfo} />
+              <div class="eyebrow">Kuźnia</div>
               <div class="h">Ulepsz do poziomu {n}</div>
-              <p class="sub">Szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b> (+{pct(k1 + k2 - j1 - j2)}){FORGE_UNLOCKS[n] ? ` · odblokowuje: ${FORGE_UNLOCKS[n]}` : ''}</p>
-              {growing && <p class="sub rampnote">{ORES[o].n}: co najmniej <span class={`rt${nom}`}>{RAR[nom].n}</span> {pct(atLeast(f.lvl))} → <b>{pct(atLeast(n))}</b></p>}
-              <p class="sub upcost"><Costs items={[[resUrl('zloto'), `${fmt(cost)} złota`], [resUrl('czas'), tfmt(game.upgradeTime())]]} cls={s.gold < cost ? 'lack-0' : ''} /></p>
             </div>
-            <button class="btn primary small upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
+            <span class="lvl-badge"><small>poziom</small><b>{f.lvl}</b></span>
           </div>
-        )}
-      </section>
+          <ul class="fu-gains">
+            <li><Px src={resUrl('kowadlo')} size={20} /><span>Szansa na przeskok{jn}</span><b>{pct(j1 + j2)} → <em>{pct(k1 + k2)}</em></b></li>
+            {growing && <li><Px src={oreUrl(o)} size={20} /><span>{ORES[o].n}: co najmniej <span class={`rt${nom}`}>{RAR[nom].n}</span></span><b>{pct(atLeast(f.lvl))} → <em>{pct(atLeast(n))}</em></b></li>}
+            {FORGE_UNLOCKS[n] && <li class="unl"><span class="fu-star" aria-hidden="true">✦</span><span>Odblokowuje: <b>{FORGE_UNLOCKS[n]}</b></span></li>}
+          </ul>
+          <div class="fu-buy">
+            <Costs items={[[resUrl('zloto'), fmt(cost)], [resUrl('czas'), tfmt(game.upgradeTime())]]} cls={s.gold < cost ? 'lack-0' : ''} />
+            <button class="btn primary upgrade-btn" disabled={s.gold < cost} onClick={() => game.upgrade()}>Ulepsz</button>
+          </div>
+          {s.gold < cost && <small class="fu-lack">Brakuje {fmt(cost - s.gold)} złota</small>}
+        </section>
+      ) : (
+        <section class="card forgeup has-info" style={{ '--bg': `url(${dungeonBgUrl('ulepszenie')})` } as Record<string, string>}>
+          <InfoBtn corner onClick={() => onInfo('level')} label="Jak działa poziom kuźni" />
+          {f.lvl >= B.FORGE_MAX ? (
+            <div class="row"><div><div class="eyebrow">Kuźnia</div><div class="h">Poziom {B.FORGE_MAX} — najwyższy</div><p class="sub">Kuźnia osiągnęła szczyt. Siłę bohatera rozwijaj teraz w Otchłani, Nauce, runach i legendach przedmiotów.</p></div></div>
+          ) : (
+            <>
+              <div class="row"><div><div class="eyebrow">Ulepszanie kuźni</div><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
+              <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
+              <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{f.up && FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
+              {game.net && <ClanHelpLine game={game} />}
+              <SpeedupButton game={game} what="forge" />
+            </>
+          )}
+        </section>
+      )}
 
-      <section class="card forge" aria-label="Kowadło">
-        <div class="forge-banner" style={{ '--bg': `url(${dungeonBgUrl('kuznia')})` } as Record<string, string>}>
+      <section class="card forge" aria-label="Wytop">
+        <div class="forge-banner fb-i" style={{ '--bg': `url(${dungeonBgUrl('kuznia')})` } as Record<string, string>}>
           <Px src={oreUrl(o)} size={32} />
           <div class="fb-txt">
-            <div class="eyebrow">Wytop · kuźnia poziom {f.lvl}{f.up ? ' · trwa ulepszenie' : ''}</div>
+            <div class="eyebrow">Wytop{f.up ? ' · trwa ulepszenie kuźni' : ''}</div>
             <div class="h">{ORES[o].n}</div>
           </div>
           <button class="btn small" onClick={onPick} aria-haspopup="dialog">Zmień rudę</button>
-          <InfoBtn onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
+          <InfoBtn corner onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
         </div>
-        <OreSummary game={game} />
+        <OreFacts game={game} />
+        <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && pityOk ? 'z rudą unikalną bez najniższej' : undefined} />
+        {pityOk && (
+          <div class="pity">
+            <span>Gwarancja przeskoku</span>
+            <div class="bar"><i style={{ width: Math.min(100, (s.pity / B.PITY_MAX) * 100) + '%' }} /></div>
+            <span class="num">{s.pity}/{B.PITY_MAX}</span>
+          </div>
+        )}
         {(elOn || setOn || SET_IDS.some(k => (s.uniq[k] ?? 0) > 0)) && (
           <div class="mixrow">
             {elOn && (
               <button class={`mixbtn${s.elSel ? ' on' : ''}`} onClick={() => onMix('el')} aria-haspopup="dialog">
                 <small>Domieszka</small>
-                <span>{s.elSel ? <><Px src={elemUrl(s.elSel)} size={16} />{ELEM[s.elSel].n} · {s.els[s.elSel] ?? 0}</> : 'brak'}</span>
+                <span>{s.elSel ? <><Px src={elemUrl(s.elSel)} size={16} />{ELEM[s.elSel].n} · {s.els[s.elSel] ?? 0}</> : 'brak — wybierz'}</span>
                 <i class="caret" aria-hidden="true">▾</i>
               </button>
             )}
             {setOn ? (
               <button class={`mixbtn${s.uniqSel ? ' on' : ''}`} onClick={() => onMix('set')} aria-haspopup="dialog">
                 <small>Ruda unikalna</small>
-                <span>{s.uniqSel ? <><Px src={setOreUrl(s.uniqSel)} size={16} /><b style={{ color: SETS[s.uniqSel].col }}>{SETS[s.uniqSel].ore}</b> · {s.uniq[s.uniqSel] ?? 0}</> : 'brak'}</span>
+                <span>{s.uniqSel ? <><Px src={setOreUrl(s.uniqSel)} size={16} /><b style={{ color: SETS[s.uniqSel].col }}>{SETS[s.uniqSel].ore}</b> · {s.uniq[s.uniqSel] ?? 0}</> : 'brak — wybierz'}</span>
                 <i class="caret" aria-hidden="true">▾</i>
               </button>
             ) : SET_IDS.some(k => (s.uniq[k] ?? 0) > 0) && <span class="sub">Rudy unikalne wytopisz od {SET_FORGE_LVL}. poziomu kuźni.</span>}
           </div>
         )}
-        {set && <p class="sub">Następny wytop z rudą unikalną <b style={{ color: SETS[set].col }}>{SETS[set].ore}</b>{pityOk ? ': pewny przeskok o co najmniej 1 rzadkość' : mj >= 1 ? ' (przeskok do Boskiego nigdy nie jest pewny)' : ''}.</p>}
-        {f.lvl >= B.AUTO_FORGE_LVL ? (
-          <div class="auto2">
-            <div class="row">
-              <div><b>Auto-wytop</b>{game.autoWaiting && <div class="tech-cost warn">{f.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `czeka na rudę: ${ORES[o].n}`}</div>}{game.autoPaused && <div class="tech-cost warn">czeka na twoją decyzję</div>}</div>
-              <button class={`toggle${s.auto ? ' on' : ''}`} aria-pressed={s.auto} onClick={() => game.toggleAuto()}><span class="knob" />{s.auto ? 'Włączony' : 'Wyłączony'}</button>
-            </div>
-            <AutoStop game={game} />
-            <AutoElem game={game} />
-            <p class="sub">Słabsze przedmioty sprzedaje (do pustego miejsca zakłada). Gdy wykuje wybraną rzadkość albo przedmiot z rudy unikalnej — gra i pokazuje przedmiot; po twojej decyzji kuje dalej.</p>
-          </div>
-        ) : (
-          <div class="auto"><span>Auto-wytop odblokujesz na {B.AUTO_FORGE_LVL}. poziomie kuźni.</span></div>
-        )}
+        {set && <p class="sub" style={{ marginTop: '8px' }}>Następny wytop z rudą unikalną <b style={{ color: SETS[set].col }}>{SETS[set].ore}</b>{pityOk ? ': pewny przeskok o co najmniej 1 rzadkość' : mj >= 1 ? ' (przeskok do Boskiego nigdy nie jest pewny)' : ''}.</p>}
+        {f.lvl < B.AUTO_FORGE_LVL && <div class="auto"><span>Auto-wytop odblokujesz na {B.AUTO_FORGE_LVL}. poziomie kuźni.</span></div>}
       </section>
 
+      {f.lvl >= B.AUTO_FORGE_LVL && (
+        <section class="card auto-card">
+          <div class="ac-top">
+            <Px src={resUrl('kowadlo')} size={28} />
+            <div class="ac-t">
+              <div class="eyebrow">Auto-wytop</div>
+              <div class="h">{!s.auto ? 'Wyłączony' : game.autoPaused ? 'Czeka na twoją decyzję' : game.autoWaiting ? 'Czeka na rudę' : `Kuje: ${ORES[o].n}`}</div>
+            </div>
+            <button class={`toggle sw${s.auto ? ' on' : ''}`} role="switch" aria-checked={s.auto} aria-label="Auto-wytop" onClick={() => game.toggleAuto()}><span class="knob" /></button>
+          </div>
+          {game.autoWaiting && <div class="tech-cost warn">{f.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `skończyła się ruda: ${ORES[o].n}`}</div>}
+          <AutoStop game={game} />
+          <AutoElem game={game} />
+          <p class="sub ac-note">Słabsze przedmioty sprzedaje, do pustych miejsc zakłada. Zatrzymuje się na wybranej rzadkości i na przedmiocie z rudy unikalnej.</p>
+        </section>
+      )}
 
       <Refine game={game} />
     </>
@@ -215,44 +298,6 @@ export function AutoStop({ game, onPick }: { game: Game; onPick?: (r: number) =>
         </button>
       ))}
     </div>
-  );
-}
-
-const LevelEyebrow = ({ text, onInfo }: { text: string; onInfo: (k: 'level') => void }) => (
-  <div class="row" style={{ justifyContent: 'flex-start', gap: '8px' }}>
-    <span class="eyebrow">{text}</span>
-    <InfoBtn onClick={() => onInfo('level')} label="Jak działa poziom kuźni" />
-  </div>
-);
-
-/** Rafinacja: nadmiar słabszej rudy zamieniany na następną (np. 10 Żelaza → 1 Srebro). */
-function Refine({ game }: { game: Game }) {
-  const s = game.s;
-  if (s.forge.lvl < B.REFINE_FORGE_LVL) return null;
-  const rows = ORE_ORDER.filter(i => refineRatio(s, i) > 0);
-  if (!rows.length) return null;
-  return (
-    <section class="card refine" aria-label="Rafinacja rud">
-      <div class="eyebrow">Rafinacja rud</div>
-      <p class="sub">Nadmiar słabszej rudy zamienisz na następną. Wytapianie rudy wprost zawsze daje więcej — rafinacja jest na zapasy, których już nie wytapiasz. Słabsze rudy są potrzebne też do run.</p>
-      <ul class="rlist">
-        {rows.map(i => {
-          const k = refineRatio(s, i);
-          const max = Math.floor(s.ores[i] / k);
-          return (
-            <li key={i} class={max ? '' : 'off'}>
-              <span class="rf-from"><Px src={oreUrl(i)} size={24} /><b>{fmt(s.ores[i])}</b></span>
-              <span class="rf-ratio">{k} → 1</span>
-              <span class="rf-to"><Px src={oreUrl(refineTo(i))} size={24} />{ORES[refineTo(i)].n}</span>
-              <span class="rf-btns">
-                <button class="btn small" disabled={max < 1} onClick={() => game.refine(i, 1)}>+1</button>
-                <button class="btn small primary" disabled={max < 1} onClick={() => game.refine(i, max)}>+{fmt(max)}</button>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }
 
