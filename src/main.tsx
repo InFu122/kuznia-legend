@@ -7,7 +7,7 @@ import type { GameState } from './engine/types';
 import { toast } from './engine/context';
 import { ChatLink, setChat } from './save/chat';
 import { CLAN_SYNC_MS, clanLife } from './save/clanlife';
-import { ServerError, ServerLink, serverConfig, setFlush, setLink } from './save/server';
+import { ServerError, ServerLink, serverConfig, setFlush, setGoogleSwitch, setLink } from './save/server';
 import { clearLocal, connectArtifactCloud, loadLocal, saveCloud, saveLocal } from './save/storage';
 import { App, type SaveInfo } from './ui/App';
 import { initPwa } from './ui/pwa';
@@ -202,9 +202,8 @@ function boot(hotData?: { s?: string }) {
   };
   if (link) {
     save.retry = () => { save.mode = 'connecting'; reconnectNow(); };
-    // Przeniesienie konta: to urządzenie dołącza do konta z kodu i przejmuje jego zapis.
-    save.redeem = async (code: string) => {
-      const remote = await link.redeem(code);
+    // Przeniesienie konta (kod albo konto Google): to urządzenie dołącza do tamtego konta i przejmuje jego zapis.
+    const switchTo = async (remote: GameState | null) => {
       if (remote) adopt(remote, true);
       clanLife.reset();
       if (chat) {
@@ -216,6 +215,8 @@ function boot(hotData?: { s?: string }) {
       save.reason = undefined;
       await saveServer(link);
     };
+    save.redeem = async (code: string) => switchTo(await link.redeem(code));
+    setGoogleSwitch(async (token: string) => switchTo(await link.googleSwitch(token)));
     save.deleteAccount = async (confirm: string) => {
       wiped = true;
       try {

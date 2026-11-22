@@ -13,6 +13,8 @@ import { APP_VERSION, canInstall, install, isIOS, isNative, isStandalone, onPwa 
 import { checkStoreUpdate, nativeVersion, onStoreUpdate, storeUpdateReady, updateFromStore } from '../storeupdate';
 import { CodexCard } from './Achievements';
 import { adsNative, privacyOptionsNeeded, showPrivacyOptions } from '../ads';
+import { GoogleLinkBox } from '../GoogleLink';
+import { googleAvailable } from '../../save/google';
 
 /** Adres gry do zaproszeń: z ustawień builda (aplikacja) albo adres tej strony. */
 const publicUrl = () => {
@@ -269,7 +271,15 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
   return (
     <section class="card" aria-label="Konto">
       <div class="eyebrow">Konto</div>
-      <div class="h">Gra na kilku urządzeniach</div>
+      {googleAvailable() && link && (
+        <>
+          <div class="h">Konto Google</div>
+          <p class="sub">Postęp połączony z kontem Google wczytasz na nowym telefonie albo po ponownej instalacji gry — bez kodu.</p>
+          <GoogleLinkBox game={game} online={online} />
+          <div class="h" style={{ marginTop: '14px' }}>Kod przeniesienia</div>
+        </>
+      )}
+      {!(googleAvailable() && link) && <div class="h">Gra na kilku urządzeniach</div>}
       <p class="sub">Na urządzeniu, na którym masz postęp, pokaż kod. Na drugim urządzeniu wpisz go poniżej — od tej chwili oba grają tym samym kowalem.</p>
       {code && left > 0 ? (
         <>

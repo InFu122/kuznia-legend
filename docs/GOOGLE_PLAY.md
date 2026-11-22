@@ -90,10 +90,10 @@ polski, **Gra**, **Bezpłatna**. Potem Testowanie → **Test wewnętrzny** → U
 | Formularz | Odpowiedź |
 |---|---|
 | Polityka prywatności | `https://ADRES-GRY/polityka-prywatnosci.html` |
-| Dostęp do aplikacji | Wszystkie funkcje dostępne bez specjalnego dostępu (konto zakłada się samo) |
+| Dane logowania (dawniej „Dostęp do aplikacji”) | **Nie** — wszystkie funkcje dostępne bez logowania (konto zakłada się samo; logowanie przez Google jest dobrowolne i niczego nie odblokowuje) |
 | Reklamy | Tak, aplikacja zawiera reklamy |
 | Identyfikator wyświetlania reklam | Tak — reklamy (AdMob) |
-| Klasyfikacja treści | Kwestionariusz IARC, kategoria „Gra”: przemoc fantasy wobec potworów (pixel art, bez krwi), **interakcja użytkowników (czat)**, **zakupy cyfrowe**, brak hazardu (losowość wytopu to nie gra o pieniądze) |
+| Klasyfikacja treści | Kwestionariusz IARC, kategoria „Gra”: **przemoc: tak** (fantasy, pixel art, bez krwi; także postacie podobne do ludzi — bandyci, nekromanta, bohaterowie na arenie), **zakupy cyfrowe: tak, w tym losowe przedmioty** (zwoje, siodła, jaja — szanse w sklepie), **interakcja użytkowników: tak** (czat z filtrem, wycisz, zgłoś), hazard: nie |
 | Grupa docelowa | 16 i więcej (patrz krok 0) |
 | Aplikacja z wiadomościami | Nie |
 | Usuwanie danych / konta | Tak, w aplikacji (Kodeks → Konto → Usuń konto) i przez stronę: `https://ADRES-GRY/usun-konto.html` |
@@ -106,7 +106,7 @@ polski, **Gra**, **Bezpłatna**. Potem Testowanie → **Test wewnętrzny** → U
 
 | Typ danych | Cel | Wymagane? |
 |---|---|---|
-| Dane osobowe → Identyfikatory użytkownika (nick, identyfikator konta) | Działanie aplikacji, Zarządzanie kontem | Tak |
+| Dane osobowe → Identyfikatory użytkownika (nick, identyfikator konta; identyfikator konta Google, gdy gracz połączy konto z Google) | Działanie aplikacji, Zarządzanie kontem | Tak |
 | Informacje finansowe → Historia zakupów | Działanie aplikacji, Zapobieganie oszustwom | Nie (tylko przy zakupie) |
 | Wiadomości → Inne wiadomości w aplikacji (czat) | Działanie aplikacji | Nie |
 | Aktywność w aplikacji → Interakcje z aplikacją (postęp gry) | Działanie aplikacji | Tak |
@@ -165,6 +165,20 @@ skończy się komunikatem „Nie udało się potwierdzić zakupu” — gra pono
 Dopóki zmienne AdMob są puste, aplikacja pokazuje reklamy testowe Google (napis „Test Ad”) — tak też działa APK dla
 znajomych. **Nie klikaj własnych prawdziwych reklam** (AdMob blokuje za to konto) — na swoim telefonie dodaj go jako
 urządzenie testowe w AdMob → Ustawienia → Urządzenia testowe.
+
+## 8b. Logowanie przez Google (Google Cloud)
+
+Gracz może połączyć postęp z kontem Google (Kodeks → Konto) i wczytać go na nowym telefonie („Zaloguj przez Google”
+w oknie powitalnym). Logowanie jest dobrowolne. Serwer zapisuje tylko numer konta Google (bez e-maila).
+
+1. Google Cloud → Interfejsy API i usługi → **Ekran zgody OAuth**: typ „Zewnętrzny”, nazwa gry, e-mail pomocy, link do
+   polityki prywatności; podstawowe zakresy. Na koniec **Opublikuj aplikację** (w trybie testowym logują się tylko dopisani testerzy).
+2. **Dane logowania → Identyfikator klienta OAuth → Aplikacja internetowa.** Jego identyfikator jest w kodzie
+   (`src/save/google.ts` i `server/src/google.ts` — muszą być takie same). Tajny klucz klienta nie jest potrzebny.
+3. W tym samym projekcie: klient **Android**, pakiet `pl.kuznialegend.gra`, SHA-1 z Play Console → Ochrona w Sklepie Play →
+   Podpisywanie aplikacji w Play → Klucz podpisywania aplikacji. Osobny klient dla SHA-1 „klucza klasycznego” i dla
+   „klucza kryptografii postkwantowej”. Do gry instalowanej z pliku poza sklepem — jeszcze jeden z SHA-1 klucza przesyłania.
+4. Błąd „28444” w grze = SHA-1 albo nazwa pakietu w Google Cloud się nie zgadzają.
 
 ## 9. Testy
 

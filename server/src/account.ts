@@ -9,6 +9,7 @@ import { ROOMS } from './chat';
 import { clanOf, leaveClan } from './clan';
 import { INVALID, NOT_FOUND, SYSTEM_USER, err, parse, readSave, updateObject, userOf } from './common';
 import { nameKey, releaseName } from './names';
+import { googleForget } from './google';
 
 /** Słowo, które gracz wpisuje w grze, żeby potwierdzić usunięcie konta. */
 export const DELETE_WORD = 'USUŃ';
@@ -53,6 +54,7 @@ export function deleteAccount(nk: nkruntime.Nakama, logger: nkruntime.Logger, us
     const mine = nk.storageRead([{ collection: 'transfer', key: 'mine', userId }]);
     if (mine.length && mine[0].value.code) nk.storageDelete([{ collection: 'transfer', key: String(mine[0].value.code), userId: SYSTEM_USER }]);
   });
+  step('konto Google', () => googleForget(nk, userId));
   step('liga', () => {
     const me = nk.storageRead([{ collection: 'league', key: 'me', userId }]);
     const g = me.length ? (me[0].value as LeagueMe).g : null;

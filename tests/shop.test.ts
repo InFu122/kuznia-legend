@@ -169,3 +169,26 @@ describe('sklep i reklamy', () => {
     expect(m.boost).toEqual({ lvl: 0, ms: 0 });
   });
 });
+
+describe('szanse losowań w sklepie (Google Play: przed zakupem losowej zawartości)', () => {
+  it('Zwój i Siodło: szanse rzadkości sumują się do 100%, a każda rzadkość ma co losować', async () => {
+    const { oddsRows } = await import('../src/ui/Odds');
+    for (const w of ['zwoj', 'siodlo'] as const) {
+      const rows = oddsRows(w);
+      expect(rows.reduce((a, x) => a + x.p, 0)).toBeCloseTo(100, 6);
+      for (const x of rows) {
+        expect(x.n, `${w}: rzadkość ${x.r}`).toBeGreaterThan(0);
+        expect(x.each * x.n).toBeCloseTo(x.p, 6);
+      }
+    }
+  });
+  it('Rzadkie jajo ze sklepu ma zawsze tę rzadkość, którą pokazuje tabela', async () => {
+    const { SHOP_EGG_R, oddsRows } = await import('../src/ui/Odds');
+    const { gemItemReward } = await import('../src/engine/shop');
+    const g = makeGame();
+    expect(gemItemReward(g.s, 'jajo').eggs).toEqual({ [SHOP_EGG_R]: 1 });
+    const [row] = oddsRows('jajo');
+    expect(row.p).toBe(100);
+    expect(row.n).toBeGreaterThan(0);
+  });
+});

@@ -30,6 +30,8 @@ import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, onTrackEnd, setMood, setMusic, setTrack } from './music';
 import { NoteIcon } from './MusicSheet';
 import { hasUpdate, onPwa } from './pwa';
+import { getLink } from '../save/server';
+import { googleAvailable } from '../save/google';
 import { onStoreUpdate, storeUpdateReady, updateFromStore } from './storeupdate';
 import { UpdateWall } from './UpdateWall';
 import { initHistoryBack, initNative } from './native';
@@ -114,6 +116,16 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   setTrack(game.s.opts.track ?? null);
   setMusic(game.s.opts.music, game.s.opts.mvol);
   setMood(moodOf(game.b.mode, !!game.b.enemy?.boss));
+
+  // Raz na konto, po pierwszym pokonanym bossie i samouczku: prośba o połączenie postępu z Google (aplikacja z Google Play).
+  useEffect(() => {
+    const gl = getLink();
+    if (queue.current.length || step || game.s.opts.gAsk || game.s.stats.bosses < 1) return;
+    if (!googleAvailable() || !gl?.online || gl.google) return;
+    game.setGoogleAsked();
+    queue.current.push({ kind: 'google' });
+    force(x => x + 1);
+  });
 
   // Wstęp jest dla nowego gracza — znika, gdy z serwera przyszedł zapis z postępem.
   if (queue.current[0]?.kind === 'intro' && game.s.stats.smelted > 0) queue.current.shift();

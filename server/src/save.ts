@@ -18,6 +18,7 @@ import { ensureName } from './names';
 import { submitBoards } from './ranking';
 import { cleanName, validateSave } from './validate';
 import { readLegacy } from './legacy';
+import { googleOf } from './google';
 import { passOnSave, readBoost, shopIntoSave } from './shop';
 import { warOnSave } from './war';
 
@@ -118,6 +119,7 @@ export function rpcSaveGet(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
     testSpeed: dev ? 100 : testSpeed(ctx),
     serverTime: Date.now(),
     dev, uid: userId,
+    google: !!googleOf(nk, userId),
   });
 }
 

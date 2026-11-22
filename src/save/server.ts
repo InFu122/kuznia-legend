@@ -142,6 +142,8 @@ export class ServerLink {
   dev = false;
   /** Identyfikator konta na serwerze (Kodeks → ID konta; do pliku sekrety/dev.txt). */
   uid: string | null = null;
+  /** Konto połączone z Google (Kodeks → Konto Google; na nowym telefonie wczytuje się logowaniem przez Google). */
+  google = false;
 
   constructor(private readonly cfg: ServerConfig) {}
 
@@ -222,11 +224,12 @@ export class ServerLink {
       try { msg = (JSON.parse(text) as { message?: string }).message ?? text; } catch { /* zostaje surowy tekst */ }
       throw new ServerError(res.status, msg);
     }
-    const data = JSON.parse(text) as T & { serverTime?: number; testSpeed?: number; dev?: boolean; uid?: string };
+    const data = JSON.parse(text) as T & { serverTime?: number; testSpeed?: number; dev?: boolean; uid?: string; google?: boolean };
     if (typeof data.serverTime === 'number') this.offset = data.serverTime - Date.now();
     if (typeof data.testSpeed === 'number') this.testSpeed = data.testSpeed;
     if (typeof data.dev === 'boolean') this.dev = data.dev;
     if (typeof data.uid === 'string') this.uid = data.uid;
+    if (typeof data.google === 'boolean') this.google = data.google;
     return data;
   }
 
@@ -348,6 +351,26 @@ export class ServerLink {
   async redeem(code: string): Promise<GameState | null> {
     const device = newDeviceId();
     await this.rpc('transfer_redeem', { code, device });
+    return this.useDevice(device);
+  }
+
+  /**
+   * Łączy to konto z kontem Google (token od Google z telefonu). Gdy to konto Google ma już innego kowala,
+   * nic się nie zmienia — wraca `conflict` z jego nickiem i poziomem kuźni, a gracz decyduje (googleSwitch).
+   */
+  googleLink(token: string): Promise<{ linked?: boolean; conflict?: boolean; other?: { name: string; forge: number } }> {
+    return this.rpc('google_link', { token });
+  }
+
+  /** Przechodzi na kowala z konta Google: jak kod przeniesienia — nowe urządzenie dołącza do tamtego konta. */
+  async googleSwitch(token: string): Promise<GameState | null> {
+    const device = newDeviceId();
+    await this.rpc('google_switch', { token, device });
+    return this.useDevice(device);
+  }
+
+  /** Od teraz to urządzenie loguje się nowym identyfikatorem (już dołączonym do innego konta) — wczytaj tamten zapis. */
+  private async useDevice(device: string): Promise<GameState | null> {
     try { localStorage.setItem(DEVICE_KEY, device); } catch { this.tmpDevice = device; }
     this.token = null;
     this.version = null;
@@ -365,3 +388,8 @@ export const getLink = () => current;
 let flusher: (() => Promise<void>) | null = null;
 export const setFlush = (f: (() => Promise<void>) | null) => { flusher = f; };
 export const flushSave = () => (flusher ? flusher() : Promise.resolve());
+
+/** Przejście na kowala z konta Google (ustawia go main.tsx: wczytuje zapis, czat i klan od nowa). */
+let googleSwitcher: ((token: string) => Promise<void>) | null = null;
+export const setGoogleSwitch = (f: ((token: string) => Promise<void>) | null) => { googleSwitcher = f; };
+export const googleSwitch = (token: string) => (googleSwitcher ? googleSwitcher(token) : Promise.reject(new Error('Brak połączenia z serwerem.')));

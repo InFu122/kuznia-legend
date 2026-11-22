@@ -383,6 +383,8 @@ export class Game {
   /** Tryb oszczędzania: przyciemnianie po minucie bez dotyku. */
   setDim(on: boolean) { this.s.opts = { ...this.s.opts, dim: on }; this.ctx.dirty = true; this.changed(); }
   /** „Nie pokazuj ponownie” w oknie Co nowego: id wpisu albo '' (pokaż przy następnym włączeniu). */
+  /** Prośba o połączenie z Google była już pokazana (raz na konto). */
+  setGoogleAsked() { this.s.opts = { ...this.s.opts, gAsk: true }; this.ctx.dirty = true; this.changed(); }
   setLogSeen(id: string) { this.s.opts = { ...this.s.opts, logSeen: id }; this.ctx.dirty = true; this.changed(); }
   /** Wybór utworu (null — automatycznie według miejsca). Wybranie utworu włącza muzykę. */
   setTrack(id: string | null) { this.s.opts = { ...this.s.opts, track: id, music: id ? true : this.s.opts.music }; this.ctx.dirty = true; this.changed(); }

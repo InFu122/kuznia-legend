@@ -22,6 +22,7 @@ import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
 import { rpcDevGems } from './dev';
 import { rpcAccountDelete, rpcAccountDeleteAdmin } from './account';
 import { rpcAdReward, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
+import { rpcGoogleLink, rpcGoogleSwitch } from './google';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
 import { rpcWarAttack, rpcWarState, rpcWarTestClock } from './war';
 
@@ -48,6 +49,8 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('player_profile', rpcPlayerProfile);
   initializer.registerRpc('transfer_code', rpcTransferCode);
   initializer.registerRpc('transfer_redeem', rpcTransferRedeem);
+  initializer.registerRpc('google_link', rpcGoogleLink);
+  initializer.registerRpc('google_switch', rpcGoogleSwitch);
   initializer.registerRpc('obieg_sync', rpcObiegSync);
   initializer.registerRpc('arena_list', rpcArenaList);
   initializer.registerRpc('arena_fight', rpcArenaFight);

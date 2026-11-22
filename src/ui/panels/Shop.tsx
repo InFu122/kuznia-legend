@@ -19,6 +19,7 @@ import { Note, errText, useAction } from './ClanLife';
 import { Res, RewardIcons } from '../RewardIcons';
 import { adsNative, showRewarded } from '../ads';
 import { billingNative, buyPack, recoverPurchases, storePrices } from '../billing';
+import { OddsTable, type OddsWhat } from '../Odds';
 
 export type ShopTab = 'sklep' | 'przepustka' | 'klejnoty';
 const TABS: [ShopTab, string][] = [['sklep', 'Sklep'], ['przepustka', 'Przepustka'], ['klejnoty', 'Klejnoty']];
@@ -201,9 +202,14 @@ export function ShopView({ game, initial, close }: { game: Game; initial?: ShopT
   );
 }
 
+/** Przedmioty z losową zawartością — przy nich przycisk „Szanse”. */
+const RANDOM: OddsWhat[] = ['zwoj', 'siodlo', 'jajo'];
+
 function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
   const a = useShopAct(game);
   const ad = useAdWatch();
+  /** Otwarta tabela szans (losowe przedmioty — Google Play wymaga ich pokazania przed zakupem). */
+  const [odds, setOdds] = useState<OddsWhat | null>(null);
   const s = game.s;
   const sh = game.shopNow;
   const now = game.ctx.now();
@@ -248,11 +254,13 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
           const block = gemItemBlock(s, sh, id, s.gems);
           const left = gemItemLeft(sh, id);
           const r = gemItemReward(s, id);
+          const rnd = RANDOM.includes(id as OddsWhat) ? (id as OddsWhat) : null;
           return (
             <li key={id} class={left <= 0 ? 'out' : ''}>
               <Px src={id === 'ruda' ? oreUrl(bestOre(s)) : resUrl(ITEM_ICON[id])} size={28} />
               <b>{it.n}</b>
               <small>{id === 'klucze' ? it.d : <RewardIcons r={r} size={14} />}</small>
+              {rnd && <button class={`linkbtn odds-btn${odds === rnd ? ' on' : ''}`} aria-expanded={odds === rnd} onClick={() => setOdds(odds === rnd ? null : rnd)}>Szanse</button>}
               <small class="muted">{left > 0 ? `zostało dziś: ${left}` : 'na dziś wyprzedane'}</small>
               <button class="btn small primary" disabled={a.busy || (!!block && block !== 'za mało Klejnotów')}
                 onClick={() => (block === 'za mało Klejnotów' ? goGems() : void a.act(() => game.buyGemItem(id), l => l.shopBuy(id), `Kupiono: ${it.n}.`))}>
@@ -262,6 +270,7 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
           );
         })}
       </ul>
+      {odds && <OddsTable what={odds} />}
       <Note msg={a.msg} />
       {(s.forge.up > 0 || s.tech.cur) && (
         <>
@@ -394,7 +403,12 @@ function GemsTabView({ game }: { game: Game }) {
         })}
       </ul>
       <Note msg={a.msg} />
-      <p class="sub">Klejnoty kupione za pieniądze trzyma serwer — nie przepadają przy nowej grze ani zmianie telefonu (z kodem przeniesienia konta).</p>
+      <details class="odds-all">
+        <summary>Szanse losowań (Zwój zaklęć, Siodło, Rzadkie jajo)</summary>
+        <p class="sub">Dotyczy też Zwojów i jaj z pakietów i przepustki.</p>
+        {RANDOM.map(w => <OddsTable key={w} what={w} />)}
+      </details>
+      <p class="sub">Klejnoty kupione za pieniądze trzyma serwer — nie przepadają przy nowej grze ani zmianie telefonu (z kontem Google albo kodem przeniesienia).</p>
     </>
   );
 }

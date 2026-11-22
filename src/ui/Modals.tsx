@@ -44,6 +44,8 @@ import { MusicSheet } from './MusicSheet';
 import { ChangelogView } from './Changelog';
 import { AwakenBox, AwakenChoice } from './Awaken';
 import { skillFx } from './skillText';
+import { GoogleAskView, GoogleRestore } from './GoogleLink';
+import { googleAvailable } from '../save/google';
 import { buzz } from './haptics';
 import { play } from './sound';
 import type { Tab } from './icons';
@@ -314,6 +316,8 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       return <CompUpgrade game={game} what={m.what} id={m.id} close={close} />;
     case 'changelog':
       return <ChangelogView game={game} all={m.all} close={close} />;
+    case 'google':
+      return <GoogleAskView game={game} close={close} />;
     case 'reset':
       return (
         <>
@@ -662,6 +666,7 @@ function IntroView({ game, close }: { game: Game; close: () => void }) {
         <small class={msg ? 'bad' : 'muted'}>{msg || 'To twój nick: podpis na wykutych przedmiotach, imię w rankingach i na czacie. Zmienisz go później w Kodeksie.'}</small>
         <button class="btn primary" disabled={busy}>{busy ? 'Chwila…' : 'Rozpal kuźnię'}</button>
       </form>
+      {googleAvailable() && <GoogleRestore />}
     </>
   );
 }
