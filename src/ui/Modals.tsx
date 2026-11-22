@@ -662,7 +662,7 @@ function IntroView({ game, close }: { game: Game; close: () => void }) {
             onInput={e => { setV(e.currentTarget.value); setMsg(''); }} />
           <button type="button" class="btn small" disabled={busy} onClick={() => { setV(suggestNick()); setMsg(''); }} aria-label="Wylosuj inne imię">Losuj</button>
         </div>
-        <small class={msg ? 'bad' : 'muted'}>{msg || 'To twój nick: podpis na wykutych przedmiotach, imię w rankingach i na czacie. Zmienisz go później w Kodeksie.'}</small>
+        <small class={msg ? 'bad' : 'muted'}>{msg || 'To twój nick: podpis na wykutych przedmiotach, imię w rankingach i na czacie. Zmienisz go później w Kodeksie → Konto.'}</small>
         <button class="btn primary" disabled={busy}>{busy ? 'Chwila…' : 'Rozpal kuźnię'}</button>
       </form>
       {googleAvailable() && <GoogleRestore />}

@@ -69,8 +69,8 @@ function boot(hotData?: { s?: string }) {
     game.applyServerName(r.name);
     if (!r.newName) return;
     // Nowy gracz jeszcze w oknie powitalnym (imię wybierze za chwilę) — bez komunikatu.
-    if (wanted === DEFAULT_NAME) { if (game.s.stats.smelted > 0) toast(game.ctx, `Twój nick: ${r.name}. Zmienisz go w Kodeksie.`, 'good'); }
-    else toast(game.ctx, `Imię „${wanted}” jest już zajęte — grasz jako ${r.name}. Zmienisz je w Kodeksie.`, 'good');
+    if (wanted === DEFAULT_NAME) { if (game.s.stats.smelted > 0) toast(game.ctx, `Twój nick: ${r.name}. Zmienisz go w Kodeksie → Konto.`, 'good'); }
+    else toast(game.ctx, `Imię „${wanted}” jest już zajęte — grasz jako ${r.name}. Zmienisz je w Kodeksie → Konto.`, 'good');
   };
 
   /** Czat i klan startują po pierwszym udanym połączeniu z serwerem. */

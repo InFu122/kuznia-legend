@@ -1030,6 +1030,14 @@ a.linkbtn{display:inline-block}
 .codexgrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(32px, 1fr)); gap:4px; padding:8px 4px}
 .cx{display:grid; place-items:center; height:32px; border-radius:8px; background:var(--plate-2); filter:grayscale(1) brightness(.35)}
 .cx.have{filter:none; outline:1px solid var(--rivet)}
+.codexores.tiles{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:6px}
+.codexores.tiles .codexore{grid-template-columns:24px minmax(0,1fr) auto; grid-template-areas:"ic n c" "ic b b"; row-gap:6px; column-gap:8px; padding:8px 10px}
+.codexores.tiles .codexore > :first-child{grid-area:ic; align-self:center}
+.codexores.tiles .cname{grid-area:n; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px}
+.codexores.tiles .num{grid-area:c; font-size:12px; color:var(--ash)}
+.codexores.tiles .bar{grid-area:b}
+.codexores.tiles .full .num{color:var(--straw)}
+.codexores.tiles .cx-open{grid-column:1 / -1}
 
 /* ---------- ligi areny ---------- */
 .lgtop{display:inline-flex; align-items:center; gap:6px}
@@ -2125,3 +2133,30 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .dock-go .dg-add span{overflow:hidden; text-overflow:ellipsis; margin-left:2px}
 @keyframes uqGlow{0%,100%{box-shadow:0 -2px 10px -3px var(--uc)} 50%{box-shadow:0 -2px 16px -1px var(--uc)}}
 @media (prefers-reduced-motion: reduce){ .dock-uq.on{animation:none} }
+
+/* Kodeks: zakładki, Piętno Kowala z paskiem Sławy, skrót Kolekcji, ustawienia w grupach */
+.codex-seg{margin:0 0 10px}
+.fame{margin-top:8px}
+.fame small{display:block; margin-top:5px; font-size:12px; color:var(--ash)}
+.fame small b{color:var(--frost)}
+.smith-btns{display:grid; grid-template-columns:repeat(auto-fit, minmax(0,1fr)); gap:6px; margin-top:12px}
+.smith-btns .btn{justify-content:center}
+.cx-sum{display:flex; align-items:center; gap:12px; width:100%; text-align:left; color:var(--frost)}
+.cx-sum > span:first-child{flex:1; min-width:0; display:flex; flex-direction:column; gap:4px}
+.cx-sum b{font-family:var(--f-display); font-size:18px; font-weight:500}
+.cx-sum .bar{margin-top:2px}
+.cx-sum .num{color:var(--straw); font-size:14px; white-space:nowrap}
+.opt-group{padding:12px 14px 4px}
+.opt{display:grid; grid-template-columns:22px minmax(0,1fr) auto; align-items:center; column-gap:12px; padding:10px 0}
+.opt + .opt{border-top:1px solid var(--rivet)}
+.opt-ic{width:22px; height:22px; color:var(--straw)}
+.opt-ic svg{display:block; width:100%; height:100%}
+.opt-t{min-width:0}
+.opt-t b{display:block; font-size:14px; font-weight:600; color:var(--frost)}
+.opt-t small{display:block; font-size:12px; color:var(--ash); margin-top:1px}
+.toggle.sw{padding:4px}
+.opt-x{grid-column:2 / -1; display:flex; align-items:center; gap:10px; margin-top:8px}
+.opt-x input[type=range]{flex:1; accent-color:var(--straw)}
+.opt-x span{font-size:12px; color:var(--ash); min-width:34px; text-align:right; font-variant-numeric:tabular-nums}
+.codex-credits{text-align:center; margin:2px 8px 0}
+.opt-group .speed-set{margin:6px 0 10px}

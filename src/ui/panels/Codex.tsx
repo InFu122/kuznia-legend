@@ -1,13 +1,14 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { FRAME_IDS, LANDS, SKIN_IDS } from '../../data';
+import { CODEX_PCT, LANDS } from '../../data';
 import { Avatar } from '../Avatar';
 import { showProfile } from '../profile';
 import { nextSmithTitle, smithTitle } from '../../engine/formulas';
-import { abyssCleared } from '../../engine/achievements';
+import { CODEX_TOTAL, abyssCleared } from '../../engine/achievements';
 import { pl } from '../texts';
 import type { Game } from '../../engine/game';
 import { ServerError, getLink } from '../../save/server';
-import { fmt } from '../format';
+import { f1, fmt } from '../format';
 import type { SaveInfo } from '../App';
 import { APP_VERSION, canInstall, install, isIOS, isNative, isStandalone, onPwa } from '../pwa';
 import { checkStoreUpdate, nativeVersion, onStoreUpdate, storeUpdateReady, updateFromStore } from '../storeupdate';
@@ -305,136 +306,225 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
   );
 }
 
-export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { game: Game; save: SaveInfo; onReset: () => void; onRanking: () => void; onFeedback: () => void }) {
-  const saveMode = save.mode;
-  const s = game.s;
-  const t = smithTitle(s.smith.fame);
-  const next = nextSmithTitle(s.smith.fame);
+/** Ikonki ustawień (linie w kolorze tekstu, jak ikonki zakładek). */
+const OPT_SVG: Record<string, string> = {
+  sound: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>',
+  music: '<path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
+  vibe: '<rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8"/>',
+  bell: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  awake: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>',
+  dim: '<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z"/>',
+  speed: '<path d="M4 18a8 8 0 1 1 16 0"/><path d="m12 18 4-6"/>',
+};
+const OptIcon = ({ k }: { k: string }) => (
+  <span class="opt-ic" aria-hidden="true" dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${OPT_SVG[k]}</svg>` }} />
+);
+
+/** Jeden wiersz ustawień: ikonka, nazwa z krótkim dopiskiem, przełącznik po prawej; pod spodem np. suwak głośności. */
+function Opt({ ic, n, d, on, set, children }: { ic: string; n: string; d?: string; on: boolean; set: (v: boolean) => void; children?: ComponentChildren }) {
+  return (
+    <div class="opt">
+      <OptIcon k={ic} />
+      <span class="opt-t"><b>{n}</b>{d && <small>{d}</small>}</span>
+      <button class={`toggle sw${on ? ' on' : ''}`} role="switch" aria-checked={on} aria-label={n} onClick={() => set(!on)}><span class="knob" /></button>
+      {children && <div class="opt-x">{children}</div>}
+    </div>
+  );
+}
+
+function Volume({ id, v, set, label }: { id: string; v: number; set: (v: number) => void; label: string }) {
   return (
     <>
-      <section class="card">
-        <div class="smith-head">
-          <button class="avbtn" onClick={() => game.openModal({ kind: 'look' })} aria-label="Wygląd: stroje i ramki"><Avatar skin={s.look.skin} frame={s.look.frame} size={52} /></button>
-          <div>
-            <div class="eyebrow">Piętno Kowala</div>
-            <div class="h">{t.n} {s.name}</div>
-            <div class="pf-links">
-              <button class="linkbtn" onClick={() => game.openModal({ kind: 'look' })}>Wygląd · stroje {s.look.skins.length}/{SKIN_IDS.length}, ramki {s.look.frames.length}/{FRAME_IDS.length}</button>
-              <button class="linkbtn" onClick={() => showProfile(null)}>Mój profil</button>
-            </div>
-          </div>
-        </div>
-        <p class="sub" style={{ marginTop: '8px' }}>
-          Sława kowala: <b class="num">{fmt(s.smith.fame)}</b>{next ? ` · do tytułu ${next.n}: ${fmt(next.at - s.smith.fame)}` : ''}. Sławę dają progi osiągnięć (Menu → Zadania → Osiągnięcia).
-        </p>
+      <input id={id} type="range" min={0} max={100} step={5} value={Math.round(v * 100)} aria-label={label} onInput={e => set(Number(e.currentTarget.value) / 100)} />
+      <span>{Math.round(v * 100)}%</span>
+    </>
+  );
+}
+
+/** Ustawienia w trzech grupach: dźwięk, telefon, gra (tempo testowe). */
+function SettingsGroups({ game }: { game: Game }) {
+  const s = game.s;
+  return (
+    <>
+      <section class="card opt-group">
+        <div class="eyebrow">Dźwięk</div>
+        <Opt ic="sound" n="Dźwięki" d="kucie, walka, nagrody" on={s.opts.sound} set={v => game.setSound(v)}>
+          {s.opts.sound && <Volume id="vol" v={s.opts.vol} set={v => game.setSound(true, v)} label="Głośność dźwięków" />}
+        </Opt>
+        <Opt ic="music" n="Muzyka" d="krainy, lochy, bossowie" on={s.opts.music} set={v => game.setMusic(v)}>
+          {s.opts.music && <Volume id="mvol" v={s.opts.mvol} set={v => game.setMusic(true, v)} label="Głośność muzyki" />}
+        </Opt>
+        <Opt ic="vibe" n="Wibracje" d="przy rzadkich wytopach" on={s.opts.vibe !== false} set={v => game.setVibe(v)} />
       </section>
-      {(saveMode === 'server' || saveMode === 'offline' || saveMode === 'connecting') && (
-        <section class="card">
-          <div class="row">
-            <div><div class="eyebrow">Serwer gry</div><div class="h">Rankingi</div></div>
-            <button class="btn primary small" disabled={saveMode !== 'server'} onClick={onRanking}>Pokaż</button>
-          </div>
-          <p class="sub">Moc, Wieża Wyzwań, postęp w kampanii i arena. Serwer liczy Moc sam z twojego zapisu.</p>
-          {saveMode === 'server' && getLink()?.power != null && (
-            <p class="sub" style={{ marginTop: '6px' }}>
-              Moc w rankingu: <b class="num">{fmt(getLink()!.power!)}</b>
-              {getLink()!.unverified.length > 0 && ` · ${getLink()!.unverified.length} z założonych przedmiotów się nie liczy (serwer nie zna ich pochodzenia)`}
-            </p>
-          )}
-          {saveMode !== 'server' && save.reason && (
-            <div class="lockline">
-              Brak połączenia: {save.reason}
-              {save.retry && <div style={{ marginTop: '8px' }}><button class="btn small" onClick={save.retry}>Połącz ponownie</button></div>}
-            </div>
-          )}
-          {save.error && <div class="lockline">Serwer odrzucił zapis: {save.error}</div>}
-        </section>
-      )}
-      <CodexCard game={game} />
-      <AppCard game={game} onFeedback={onFeedback} />
-      {game.net && <AccountCard game={game} save={save} />}
-      <section class="card">
-        <div class="eyebrow">Statystyki</div>
-        <div class="stats" style={{ marginTop: '8px' }}>
-          <div class="stat"><small>Wytopy</small><b>{fmt(s.stats.smelted)}</b></div>
-          <div class="stat"><small>Przeskoki</small><b>{fmt(s.stats.jumps)}</b></div>
-          <div class="stat"><small>Wrogowie</small><b>{fmt(s.stats.kills)}</b></div>
-          <div class="stat"><small>Bossowie</small><b>{fmt(s.stats.bosses)}</b></div>
-          <div class="stat"><small>Krainy</small><b>{s.cleared.slice(0, LANDS.length).filter(Boolean).length}/{LANDS.length}</b></div>
-          {abyssCleared(s) > 0 && <div class="stat"><small>Otchłań</small><b>{abyssCleared(s)} {pl(abyssCleared(s), 'krąg', 'kręgi', 'kręgów')}</b></div>}
-          <div class="stat"><small>Sztolnia</small><b>{s.dungeons.sztolnia.best || '—'}</b></div>
-          <div class="stat"><small>Wieża Wyzwań</small><b>{s.dungeons.wieza.best || '—'}</b></div>
-          <div class="stat"><small>Technologie</small><b>{Object.values(s.tech.lv).reduce((a, b) => a + (b ?? 0), 0)}</b></div>
-        </div>
+      <section class="card opt-group">
+        <div class="eyebrow">Telefon</div>
+        {isNative() && <Opt ic="bell" n="Powiadomienia" d="kuźnia, badania, jaja" on={s.opts.notify} set={v => game.setNotify(v)} />}
+        <Opt ic="awake" n="Ekran nie gaśnie" d="dopóki gra jest włączona" on={s.opts.awake !== false} set={v => game.setAwake(v)} />
+        {s.opts.awake !== false && <Opt ic="dim" n="Przyciemnianie" d="po minucie bez dotyku" on={s.opts.dim !== false} set={v => game.setDim(v)} />}
       </section>
-      <section class="card settings">
-        <div class="eyebrow">Ustawienia</div>
-        {game.net ? <NickField game={game} online={saveMode === 'server'} /> : (
-          <label class="field" for="nick">
-            Imię kowala (podpis na nowych przedmiotach)
-            <input id="nick" key={s.name} maxLength={16} defaultValue={s.name} autoComplete="off"
-              onChange={e => { const el = e.currentTarget; el.value = game.setName(el.value); }} />
-          </label>
-        )}
-        <div class="row">
-          <span class="sub">Dźwięki kucia, walki i nagród.</span>
-          <button class={`toggle${s.opts.sound ? ' on' : ''}`} aria-pressed={s.opts.sound} onClick={() => game.setSound(!s.opts.sound)}><span class="knob" />Dźwięki</button>
-        </div>
-        {s.opts.sound && (
-          <label class="field" for="vol">
-            Głośność dźwięków: {Math.round(s.opts.vol * 100)}%
-            <input id="vol" type="range" min={0} max={100} step={5} value={Math.round(s.opts.vol * 100)}
-              onInput={e => game.setSound(true, Number(e.currentTarget.value) / 100)} />
-          </label>
-        )}
-        <div class="row">
-          <span class="sub">Muzyka w tle: krainy, lochy, bossowie.</span>
-          <button class={`toggle${s.opts.music ? ' on' : ''}`} aria-pressed={s.opts.music} onClick={() => game.setMusic(!s.opts.music)}><span class="knob" />Muzyka</button>
-        </div>
-        {s.opts.music && (
-          <label class="field" for="mvol">
-            Głośność muzyki: {Math.round(s.opts.mvol * 100)}%
-            <input id="mvol" type="range" min={0} max={100} step={5} value={Math.round(s.opts.mvol * 100)}
-              onInput={e => game.setMusic(true, Number(e.currentTarget.value) / 100)} />
-          </label>
-        )}
-        {isNative() && (
-          <div class="row">
-            <span class="sub">Powiadomienia: kuźnia gotowa, koniec badania, wyklute jajo.</span>
-            <button class={`toggle${s.opts.notify ? ' on' : ''}`} aria-pressed={s.opts.notify} onClick={() => game.setNotify(!s.opts.notify)}><span class="knob" />Powiadomienia</button>
-          </div>
-        )}
-        <div class="row">
-          <span class="sub">Wibracje przy rzadkich wytopach (od Rzadkiego wzwyż).</span>
-          <button class={`toggle${s.opts.vibe !== false ? ' on' : ''}`} aria-pressed={s.opts.vibe !== false} onClick={() => game.setVibe(s.opts.vibe === false)}><span class="knob" />Wibracje</button>
-        </div>
-        <div class="row">
-          <span class="sub">Ekran nie gaśnie i telefon się nie blokuje, dopóki gra jest włączona.</span>
-          <button class={`toggle${s.opts.awake !== false ? ' on' : ''}`} aria-pressed={s.opts.awake !== false} onClick={() => game.setAwake(s.opts.awake === false)}><span class="knob" />Ekran nie gaśnie</button>
-        </div>
-        {s.opts.awake !== false && (
-          <div class="row">
-            <span class="sub">Po minucie bez dotyku gra się przyciemnia, ale dalej widać walkę. Dotknij, aby wrócić.</span>
-            <button class={`toggle${s.opts.dim !== false ? ' on' : ''}`} aria-pressed={s.opts.dim !== false} onClick={() => game.setDim(s.opts.dim === false)}><span class="knob" />Oszczędzanie</button>
-          </div>
-        )}
-        <p class="sub credits">Muzyka: eBunny, Sonican, Dummy Daniel · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
-        {game.speeds.length > 1 && (
+      {game.speeds.length > 1 && (
+        <section class="card opt-group">
+          <div class="eyebrow">Tempo testowe</div>
           <div class="speed-set">
-            <span class="sub">Tempo testowe przyspiesza walkę, kuźnię, badania i inne timery, żeby szybciej sprawdzić progresję.{game.net ? ' Działa, bo serwer ma włączony tryb testowy.' : ''}</span>
+            <span class="sub">Przyspiesza walkę, kuźnię, badania i timery.{game.net ? ' Działa, bo serwer ma włączony tryb testowy.' : ''}</span>
             <div class="seg speed-seg" role="radiogroup" aria-label="Tempo testowe">
               {game.speeds.map(v => (
                 <button key={v} role="radio" aria-checked={s.speed === v} class={s.speed === v ? 'on' : ''} onClick={() => game.setSpeed(v)}>×{v}</button>
               ))}
             </div>
           </div>
-        )}
-        <div class="row">
-          <span class="sub">{saveMode === 'server' ? 'Postęp zapisuje się na serwerze gry.' : saveMode === 'cloud' ? 'Postęp zapisuje się w chmurze — zagrasz dalej na innym urządzeniu.' : 'Postęp zapisuje się w tej przeglądarce.'}</span>
-          <button class="btn danger small" onClick={onReset}>Zacznij od nowa</button>
-        </div>
-      </section>
+        </section>
+      )}
+      <p class="sub credits codex-credits">Muzyka: eBunny, Sonican, Dummy Daniel · dźwięki walki: Floraphonic, Voicebosch, Magiaz (Pixabay).</p>
     </>
   );
 }
 
+/** Piętno Kowala: awatar, tytuł, pasek Sławy do następnego tytułu i skróty (wygląd, profil, rankingi). */
+function SmithCard({ game, save, onRanking }: { game: Game; save: SaveInfo; onRanking: () => void }) {
+  const s = game.s;
+  const t = smithTitle(s.smith.fame);
+  const next = nextSmithTitle(s.smith.fame);
+  const pct = next ? Math.max(0, Math.min(1, (s.smith.fame - t.at) / (next.at - t.at))) : 1;
+  const server = save.mode === 'server' || save.mode === 'offline' || save.mode === 'connecting';
+  const power = save.mode === 'server' ? getLink()?.power : null;
+  return (
+    <section class="card">
+      <div class="smith-head">
+        <button class="avbtn" onClick={() => game.openModal({ kind: 'look' })} aria-label="Wygląd: stroje i ramki"><Avatar skin={s.look.skin} frame={s.look.frame} size={52} /></button>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div class="eyebrow">Piętno Kowala</div>
+          <div class="h">{t.n} {s.name}</div>
+          <div class="fame">
+            <div class="bar"><i style={{ width: pct * 100 + '%' }} /></div>
+            <small>Sława <b class="num">{fmt(s.smith.fame)}</b>{next ? <> · do tytułu {next.n}: {fmt(next.at - s.smith.fame)}</> : ' · najwyższy tytuł'}</small>
+          </div>
+        </div>
+      </div>
+      <div class="smith-btns">
+        <button class="btn small" onClick={() => game.openModal({ kind: 'look' })}>Wygląd</button>
+        <button class="btn small" onClick={() => showProfile(null)}>Mój profil</button>
+        {server && <button class="btn small" disabled={save.mode !== 'server'} onClick={onRanking}>Rankingi</button>}
+      </div>
+      {power != null && (
+        <p class="sub" style={{ marginTop: '8px' }}>
+          Moc w rankingu: <b class="num">{fmt(power)}</b>
+          {getLink()!.unverified.length > 0 && ` · ${getLink()!.unverified.length} z założonych przedmiotów się nie liczy (serwer nie zna ich pochodzenia)`}
+        </p>
+      )}
+      {server && save.mode !== 'server' && save.reason && (
+        <div class="lockline">
+          Brak połączenia: {save.reason}
+          {save.retry && <div style={{ marginTop: '8px' }}><button class="btn small" onClick={save.retry}>Połącz ponownie</button></div>}
+        </div>
+      )}
+      {save.error && <div class="lockline">Serwer odrzucił zapis: {save.error}</div>}
+    </section>
+  );
+}
+
+function StatsCard({ game }: { game: Game }) {
+  const s = game.s;
+  return (
+    <section class="card">
+      <div class="eyebrow">Statystyki</div>
+      <div class="stats" style={{ marginTop: '8px' }}>
+        <div class="stat"><small>Wytopy</small><b>{fmt(s.stats.smelted)}</b></div>
+        <div class="stat"><small>Przeskoki</small><b>{fmt(s.stats.jumps)}</b></div>
+        <div class="stat"><small>Wrogowie</small><b>{fmt(s.stats.kills)}</b></div>
+        <div class="stat"><small>Bossowie</small><b>{fmt(s.stats.bosses)}</b></div>
+        <div class="stat"><small>Krainy</small><b>{s.cleared.slice(0, LANDS.length).filter(Boolean).length}/{LANDS.length}</b></div>
+        {abyssCleared(s) > 0 && <div class="stat"><small>Otchłań</small><b>{abyssCleared(s)} {pl(abyssCleared(s), 'krąg', 'kręgi', 'kręgów')}</b></div>}
+        <div class="stat"><small>Sztolnia</small><b>{s.dungeons.sztolnia.best || '—'}</b></div>
+        <div class="stat"><small>Wieża Wyzwań</small><b>{s.dungeons.wieza.best || '—'}</b></div>
+        <div class="stat"><small>Technologie</small><b>{Object.values(s.tech.lv).reduce((a, b) => a + (b ?? 0), 0)}</b></div>
+      </div>
+    </section>
+  );
+}
+
+/** Skrót Kolekcji w zakładce Kowal: premia i postęp; dotknięcie otwiera zakładkę Kolekcja. */
+function CollectionSummary({ game, onOpen }: { game: Game; onOpen: () => void }) {
+  const n = game.s.codex.length;
+  return (
+    <button class="card cx-sum" onClick={onOpen}>
+      <span>
+        <span class="eyebrow">Kolekcja Kowala</span>
+        <b>+{f1(n * CODEX_PCT)}% obrażeń i zdrowia</b>
+        <span class="bar"><i style={{ width: (n / CODEX_TOTAL) * 100 + '%' }} /></span>
+      </span>
+      <span class="num">{n}/{CODEX_TOTAL} ›</span>
+    </button>
+  );
+}
+
+/** Imię kowala (na serwerze — nick). */
+function NameCard({ game, online }: { game: Game; online: boolean }) {
+  const s = game.s;
+  return (
+    <section class="card settings">
+      <div class="eyebrow">Imię kowala</div>
+      {game.net ? <NickField game={game} online={online} /> : (
+        <label class="field" for="nick">
+          Podpis na nowych przedmiotach
+          <input id="nick" key={s.name} maxLength={16} defaultValue={s.name} autoComplete="off"
+            onChange={e => { const el = e.currentTarget; el.value = game.setName(el.value); }} />
+        </label>
+      )}
+    </section>
+  );
+}
+
+function ResetCard({ save, onReset }: { save: SaveInfo; onReset: () => void }) {
+  const m = save.mode;
+  return (
+    <section class="card">
+      <div class="row">
+        <span class="sub">{m === 'server' ? 'Postęp zapisuje się na serwerze gry.' : m === 'cloud' ? 'Postęp zapisuje się w chmurze — zagrasz dalej na innym urządzeniu.' : 'Postęp zapisuje się w tej przeglądarce.'}</span>
+        <button class="btn danger small" onClick={onReset}>Zacznij od nowa</button>
+      </div>
+    </section>
+  );
+}
+
+type CodexTab = 'kowal' | 'kolekcja' | 'ustawienia' | 'konto';
+const CODEX_TABS: [CodexTab, string][] = [['kowal', 'Kowal'], ['kolekcja', 'Kolekcja'], ['ustawienia', 'Ustawienia'], ['konto', 'Konto']];
+const TAB_KEY = 'kl-codex-tab';
+const readTab = (): CodexTab => {
+  try { const v = localStorage.getItem(TAB_KEY); return CODEX_TABS.some(([k]) => k === v) ? v as CodexTab : 'kowal'; } catch { return 'kowal'; }
+};
+/**
+ * Kodeks w czterech zakładkach (gra pamięta ostatnią): Kowal — profil, Sława, skrót kolekcji i statystyki;
+ * Kolekcja; Ustawienia — krótkie wiersze w grupach; Konto — imię, konto Google i przeniesienie, aplikacja, reset.
+ */
+export function CodexPanel({ game, save, onReset, onRanking, onFeedback }: { game: Game; save: SaveInfo; onReset: () => void; onRanking: () => void; onFeedback: () => void }) {
+  const [tab, setTabState] = useState<CodexTab>(readTab);
+  const setTab = (t: CodexTab) => { setTabState(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* bez pamięci */ } };
+  const online = save.mode === 'server';
+  return (
+    <>
+      <div class="seg codex-seg" role="tablist" aria-label="Kodeks">
+        {CODEX_TABS.map(([k, n]) => (
+          <button key={k} role="tab" data-ctab={k} aria-selected={tab === k} class={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>
+        ))}
+      </div>
+      {tab === 'kowal' && (
+        <>
+          <SmithCard game={game} save={save} onRanking={onRanking} />
+          <CollectionSummary game={game} onOpen={() => setTab('kolekcja')} />
+          <StatsCard game={game} />
+        </>
+      )}
+      {tab === 'kolekcja' && <CodexCard game={game} />}
+      {tab === 'ustawienia' && <SettingsGroups game={game} />}
+      {tab === 'konto' && (
+        <>
+          <NameCard game={game} online={online} />
+          {game.net && <AccountCard game={game} save={save} />}
+          <AppCard game={game} onFeedback={onFeedback} />
+          <ResetCard save={save} onReset={onReset} />
+        </>
+      )}
+    </>
+  );
+}

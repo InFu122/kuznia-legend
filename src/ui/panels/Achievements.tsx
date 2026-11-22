@@ -59,38 +59,45 @@ export function AchievementsView({ game }: { game: Game }) {
   );
 }
 
-/** Kolekcja Kowala w Kodeksie: odkryte modele według rud, z podglądem rodzajów. */
+/** Kolekcja Kowala w Kodeksie: rudy jako kafelki w dwóch kolumnach; dotknięcie rozwija modele pod rzędem kafelka. */
 export function CodexCard({ game }: { game: Game }) {
   const s = game.s;
   const [open, setOpen] = useState<number | null>(null);
   const n = s.codex.length;
+  const openRow = open === null ? -1 : Math.floor(ORE_ORDER.indexOf(open) / 2);
   return (
     <section class="card">
       <div class="row"><div class="eyebrow">Kolekcja Kowala</div><span class="num">{n}/{CODEX_TOTAL}</span></div>
       <div class="h">+{f1(n * CODEX_PCT)}% obrażeń i zdrowia</div>
       <p class="sub">Każdy nowy model przedmiotu (rodzaj × ruda) daje na zawsze +{String(CODEX_PCT).replace('.', ',')}% obrażeń i zdrowia.</p>
-      <ul class="codexores">
-        {ORE_ORDER.map(i => {
+      <ul class="codexores tiles">
+        {ORE_ORDER.flatMap((i, idx) => {
           const o = ORES[i];
           const c = codexOre(s, i);
-          return (
+          const rowEnd = idx % 2 === 1 || idx === ORE_ORDER.length - 1;
+          const out = [
             <li key={i}>
-              <button class={`codexore${open === i ? ' on' : ''}`} onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+              <button class={`codexore${open === i ? ' on' : ''}${c === ALL_KINDS.length ? ' full' : ''}`} onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
                 <Px src={oreUrl(i)} size={22} />
                 <span class="cname">{o.n}</span>
-                <span class="bar thin"><i style={{ width: (c / ALL_KINDS.length) * 100 + '%' }} /></span>
                 <span class="num">{c}/{ALL_KINDS.length}</span>
+                <span class="bar thin"><i style={{ width: (c / ALL_KINDS.length) * 100 + '%' }} /></span>
               </button>
-              {open === i && (
+            </li>,
+          ];
+          if (rowEnd && open !== null && Math.floor(idx / 2) === openRow) {
+            out.push(
+              <li key="grid" class="cx-open">
                 <div class="codexgrid">
                   {SLOT_ORDER.flatMap(sl => SLOTS[sl].kinds.map(([k]) => {
-                    const have = s.codex.includes(`${k}|${i}`);
-                    return <span key={k} class={`cx${have ? ' have' : ''}`} title={have ? k : '?'}><Px src={itemUrl(k, i, have ? undefined : 0)} size={24} /></span>;
+                    const have = s.codex.includes(`${k}|${open}`);
+                    return <span key={k} class={`cx${have ? ' have' : ''}`} title={have ? k : '?'}><Px src={itemUrl(k, open, have ? undefined : 0)} size={24} /></span>;
                   }))}
                 </div>
-              )}
-            </li>
-          );
+              </li>,
+            );
+          }
+          return out;
         })}
       </ul>
     </section>
