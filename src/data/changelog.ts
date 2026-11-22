@@ -18,6 +18,28 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-22',
+    date: '22 listopada 2026',
+    add: [
+      'Runy aż do Boskiej Rudy: każda runa ma teraz 50 poziomów — po 5 na każdą rudę (rzadkie rudy kosztują mniej sztuk).',
+      'Przebudzenie: sam wybierasz cechę przedmiotu — przeciw Bestiom, Nieumarłym, Demonom, Smokom albo bossom. Gra podpowiada, z kim walczysz teraz i kogo spotkasz dalej. Pierwszy wybór jest darmowy (także dla przedmiotów przebudzonych wcześniej), każda kolejna zmiana kosztuje złoto.',
+      'Przekuwanie z potwierdzeniem i losowaniem: wartość nabija się na twoich oczach, a kolor paska pokazuje, jak dobry jest rzut.',
+      'Otwieranie zwojów, siodeł i jaj z dreszczykiem — poświata przechodzi przez kolejne rzadkości aż do wylosowanej.',
+      'Ulepszanie chowańców i wierzchowców w oknie z podglądem: co się zmieni i ile Mocy zyskasz.',
+    ],
+    change: [
+      'Przebudzony przedmiot daje +15% do statystyki głównej (było +10%).',
+      'Karta przedmiotu pokazuje wszystkie progi legendy i skąd bierze się Sława Czynów.',
+      'Premie bohatera (wobec rodzajów wrogów, bossów i inne) mają ikonki i rozwijają się po dotknięciu.',
+      'Nowe karty umiejętności: rodzaj, główna wartość, odnowienie i postęp do następnego poziomu.',
+      'Powiadomienia nie zasłaniają złota, Klejnotów ani Mocy, a przy otwartym oknie czekają, aż je zamkniesz.',
+      'Poziomy run 26–30 kosztują teraz Obsydian zamiast Smoczej Stali.',
+    ],
+    remove: [
+      'Powiadomienie „Sprzedano za … złota” — monety lecą prosto do licznika złota.',
+    ],
+  },
+  {
     id: '2026-11-21',
     date: '21 listopada 2026',
     add: [
