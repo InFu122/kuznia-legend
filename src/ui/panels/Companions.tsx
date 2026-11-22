@@ -16,7 +16,12 @@ import { buzz } from '../haptics';
 import { play } from '../sound';
 import { skillFx } from '../skillText';
 
-const Stars = ({ n }: { n: number }) => (n > 0 ? <span class="stars" title={`Gwiazdki: ${n}/${STARS_MAX}`}>{'★'.repeat(n)}</span> : null);
+/** Gwiazdki zawsze widoczne: zdobyte złote, brakujące przygaszone (od razu widać, ile kopii jeszcze się przyda). */
+const Stars = ({ n }: { n: number }) => (
+  <span class="stars" title={`Gwiazdki: ${n}/${STARS_MAX}`} aria-label={`Gwiazdki: ${n} z ${STARS_MAX}`}>
+    {Array.from({ length: STARS_MAX }, (_, i) => <i key={i} class={i < n ? 'on' : ''} aria-hidden="true">★</i>)}
+  </span>
+);
 const Odds = () => <p class="sub">Szanse: {DRAW_ODDS.map((p, r) => <span key={r}>{r > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n} {p}%</span></span>)}</p>;
 
 /* ---------- umiejętności ---------- */

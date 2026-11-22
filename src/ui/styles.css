@@ -274,7 +274,9 @@ a.linkbtn{display:inline-block}
 .cname{font-weight:600}
 .cbtns{display:flex; flex-direction:column; gap:6px; align-items:stretch; flex:none; min-width:96px}
 .cbtns .tech-busy{min-width:0}
-.stars{color:var(--straw); font-size:12px; letter-spacing:1px}
+.stars{color:var(--straw); font-size:12px; letter-spacing:1px; white-space:nowrap}
+.stars > i{font-style:normal; color:#5a4a3a}
+.stars > i.on{color:var(--straw); text-shadow:0 0 6px color-mix(in srgb, var(--straw) 45%, transparent)}
 .doors{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 .door{background:var(--plate-2); border:1px solid var(--rivet); border-top:3px solid var(--straw); border-radius:12px; padding:16px 10px; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center; min-height:110px; justify-content:center}
 .door b{font-family:var(--f-display); font-size:22px; font-weight:400}
@@ -1816,8 +1818,6 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .btn.dock-go.mix{padding-block:4px}
 .dock-go.mix b{font-size:26px; line-height:1}
 .dock-go.mix small{font-size:11.5px; line-height:1.1}
-.alloy{position:relative; flex:none; display:inline-flex}
-.alloy .alloy-el{position:absolute; right:-7px; bottom:-5px; filter:drop-shadow(0 1px 0 rgba(42,26,6,.9))}
 @keyframes elGlow{0%,100%{box-shadow:0 -2px 10px -3px var(--ec)} 50%{box-shadow:0 -2px 16px -1px var(--ec)}}
 @media (prefers-reduced-motion: reduce){ .dock-el.on{animation:none} }
 
@@ -2082,3 +2082,26 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .dev-ask{margin-top:8px}
 .acc-id code{font-size:11px; word-break:break-all; color:var(--frost)}
 .acc-id .linkbtn{margin-left:6px}
+
+/* ruda unikalna: druga „dobudówka” nad Wytopem — ta sama wysokość co domieszka; Wytop z ikonkami dodatków */
+.dock-gw{position:relative; flex:1; min-width:0; display:flex}
+.dock-gw > .dock-go{flex:1}
+.dock-uq{--uc:#f6e7a6; position:absolute; left:6px; bottom:100%; max-width:calc(100% - 8px); height:30px; display:flex; align-items:center; gap:4px;
+  padding:0 9px; background:var(--plate); border:1px dashed #7a6a58; border-bottom:0; border-radius:12px 12px 0 0; color:#c9b8a2;
+  font:700 12px var(--f-ui); white-space:nowrap; cursor:pointer}
+.dock-uq span{overflow:hidden; text-overflow:ellipsis}
+.dock-uq.on{border:1px solid var(--uc); border-bottom:0; color:#fff4c8; font-size:12px;
+  background:linear-gradient(color-mix(in srgb, var(--uc) 24%, var(--plate)), var(--plate)); animation:uqGlow 2.2s ease-in-out infinite}
+.dock-uq.on b{flex:none; font-variant-numeric:tabular-nums}
+.btn.dock-go.uq{box-shadow:0 4px 0 #9a7428, inset 0 0 0 2px #fff4c8, 0 0 14px -2px #f6e7a6}
+.btn.dock-go{flex-wrap:nowrap}
+.dock-go .dg-t{flex:0 1 auto; max-width:calc(100% - 38px)}
+.btn.dock-go.mix{padding-inline:8px; gap:8px}
+.dock-go.mix > .px{width:28px; height:28px}
+.dock-go.mix .dg-add{font-size:11px}
+.dock-go .dg-t > small{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dock-go .dg-add{display:flex; align-items:center; gap:3px}
+.dock-go .dg-add .px{flex:none; filter:drop-shadow(0 1px 0 rgba(42,26,6,.6))}
+.dock-go .dg-add span{overflow:hidden; text-overflow:ellipsis; margin-left:2px}
+@keyframes uqGlow{0%,100%{box-shadow:0 -2px 10px -3px var(--uc)} 50%{box-shadow:0 -2px 16px -1px var(--uc)}}
+@media (prefers-reduced-motion: reduce){ .dock-uq.on{animation:none} }

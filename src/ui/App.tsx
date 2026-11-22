@@ -295,7 +295,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       <div class="tabs" ref={bottomRef}>
         <div class={`tabs-wrap${elTab ? ' el-tab' : ''}`}>
           <ChatPop game={game} onOpen={ch => { game.seenFeatures(['czat']); open({ kind: 'chat', ch }); }} />
-          {tab === 'kuznia' && <ForgeDock game={game} onElem={() => open({ kind: 'mix', what: 'el' })} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} onAuto={() => open({ kind: 'auto' })} />}
+          {tab === 'kuznia' && <ForgeDock game={game} onElem={() => open({ kind: 'mix', what: 'el' })} onUniq={() => open({ kind: 'mix', what: 'set' })} onPick={() => open({ kind: 'ores' })} onDecide={() => open({ kind: 'decide' })} onAuto={() => open({ kind: 'auto' })} />}
           <nav class="tabs-in" aria-label="Zakładki">
             {NAVS.map(([id, n]) => {
               const locked = id === 'bohater' ? !game.unlocked('bohater') : id === 'przygoda' ? !game.unlocked('krainy') && !game.unlocked('lochy') : false;

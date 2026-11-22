@@ -85,7 +85,9 @@ export const DRAW_ODDS = [45, 30, 16, 7, 2];
 export const COMPANION_MAX = 40;   // maks. poziom chowańca i wierzchowca
 export const STARS_MAX = 5;        // duplikaty dają gwiazdki
 export const STAR_BONUS = 0.15;    // +15% za gwiazdkę
-export const DUPE_STONES = 10;     // duplikat ponad 5 gwiazdek zamienia się w Kamienie
+/** Kopia ponad 5 gwiazdek zamienia się w Kamienie — tym więcej, im rzadszy towarzysz (Zwykły … Legendarny). */
+export const DUPE_STONES = [10, 20, 40, 80, 150];
+export const dupeStones = (r: number) => DUPE_STONES[Math.max(0, Math.min(DUPE_STONES.length - 1, r))];
 /** Koszt ulepszenia chowańca/wierzchowca z poziomu l na l+1 (w Kamieniach). */
 export const levelCost = (lvl: number, r: number) => Math.round(4 * Math.pow(1.17, lvl - 1) * (1 + 0.25 * r));
 /** Mnożnik siły chowańca/wierzchowca od poziomu i gwiazdek. */

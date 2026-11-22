@@ -1,6 +1,6 @@
 // Umiejętności (Zwoje zaklęć), chowańce (Jaja i wykluwanie), wierzchowce (Siodła) i Pieczęcie Legendy.
 import {
-  COMPANION_MAX, DRAW_ODDS, DUPE_STONES, HATCH_MS, MOUNTS, MOUNTS_UNLOCK_LAND, MOUNT_IDS, PETS, PETS_UNLOCK_LAND, PET_IDS,
+  COMPANION_MAX, DRAW_ODDS, dupeStones, HATCH_MS, MOUNTS, MOUNTS_UNLOCK_LAND, MOUNT_IDS, PETS, PETS_UNLOCK_LAND, PET_IDS,
   SEAL_FAME, SKILLS, SKILLS_UNLOCK_G, SKILL_IDS, SKILL_MAX, STARS_MAX, levelCost,
 } from '../data';
 import { toast, type Ctx } from './context';
@@ -79,13 +79,14 @@ export function equipSkill(ctx: Ctx, id: SkillId | null, slot: number): boolean 
 /* ---------- chowańce ---------- */
 
 /** Dodaje chowańca albo wierzchowca do kolekcji; duplikat daje gwiazdkę (albo Kamienie po 5 gwiazdkach). */
-function grant<K extends string>(ctx: Ctx, coll: Partial<Record<K, { lvl: number; stars: number }>>, id: K): DrawResult<K> {
+function grant<K extends string>(ctx: Ctx, coll: Partial<Record<K, { lvl: number; stars: number }>>, id: K, r: number): DrawResult<K> {
   const c = coll[id];
   if (!c) { coll[id] = { lvl: 1, stars: 0 }; return { id, dupe: false, from: 0, to: 0 }; }
   const from = c.stars;
   if (c.stars < STARS_MAX) { c.stars++; return { id, dupe: true, from, to: c.stars }; }
-  ctx.s.stones += DUPE_STONES;
-  return { id, dupe: true, from, to: from, stones: DUPE_STONES };
+  const n = dupeStones(r);
+  ctx.s.stones += n;
+  return { id, dupe: true, from, to: from, stones: n };
 }
 
 export function startHatch(ctx: Ctx, r: number): boolean {
@@ -106,7 +107,7 @@ export function tickHatch(ctx: Ctx, ms: number, quiet = false): PetId | null {
   if (h.left > 0) return null;
   ctx.s.hatch = null;
   const id = pick(ctx.rng, PET_IDS.filter(k => PETS[k].r === h.r));
-  const res = grant(ctx, ctx.s.pets, id);
+  const res = grant(ctx, ctx.s.pets, id, PETS[id].r);
   if (!ctx.s.petSel) ctx.s.petSel = id;
   invalidate(ctx);
   ctx.dirty = true;
@@ -130,7 +131,7 @@ export function openSaddle(ctx: Ctx): DrawResult<MountId> | null {
   s.saddles--;
   const r = drawRarity(ctx);
   const id = pick(ctx.rng, MOUNT_IDS.filter(k => MOUNTS[k].r === r));
-  const res = grant(ctx, s.mounts, id);
+  const res = grant(ctx, s.mounts, id, MOUNTS[id].r);
   if (!s.mountSel) s.mountSel = id;
   invalidate(ctx);
   ctx.dirty = true;

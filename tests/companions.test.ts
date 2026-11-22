@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DUPE_STONES, HATCH_MS, MOUNTS, PETS, SEAL_FAME, SKILLS, SKILL_IDS, STARS_MAX, levelCost } from '../src/data';
+import { HATCH_MS, dupeStones, MOUNTS, PETS, SEAL_FAME, SKILLS, SKILL_IDS, STARS_MAX, levelCost } from '../src/data';
 import { openSaddle, openScroll, skillNeed, startHatch, tickHatch } from '../src/engine/companions';
 import { equip, smelt } from '../src/engine/forge';
 import { allMods } from '../src/engine/mods';
@@ -108,7 +108,9 @@ describe('wierzchowce i Kamienie', () => {
     expect(s.mounts[first.id]!.stars).toBe(STARS_MAX);
     const stones = s.stones;
     openSaddle(ctx);
-    expect(s.stones).toBe(stones + DUPE_STONES);
+    expect(s.stones).toBe(stones + dupeStones(MOUNTS[first.id].r)); // Kamienie według rzadkości
+    expect(dupeStones(0)).toBe(10);
+    expect(dupeStones(4)).toBe(150);
   });
 
   it('wierzchowiec podnosi obrażenia i zdrowie, ulepszenie kosztuje Kamienie', () => {

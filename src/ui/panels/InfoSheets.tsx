@@ -83,7 +83,14 @@ export function RuneInfo({ game, close }: { game: Game; close: () => void }) {
 
 /* ---------- chowańce ---------- */
 
-const starsText = `Kopia tego samego daje gwiazdkę: +${Math.round(STAR_BONUS * 100)}% siły (do ${STARS_MAX}). Kopia ponad komplet zamienia się w ${DUPE_STONES} Kamieni.`;
+/** Gwiazdki i kopie: co daje kopia i ile Kamieni po komplecie gwiazdek (według rzadkości). */
+const StarsTip = () => (
+  <>
+    Kopia tego samego daje gwiazdkę: +{Math.round(STAR_BONUS * 100)}% siły, do {STARS_MAX} gwiazdek (widać je przy każdym: złote — zdobyte, szare — brakujące).
+    Kopia ponad komplet zamienia się w Kamienie — tym więcej, im rzadszy:{' '}
+    {DUPE_STONES.map((n, r) => <span key={r}>{r > 0 && ', '}<span class={`rt${r}`}>{RAR[r].n.toLowerCase()}</span> {n}</span>)}.
+  </>
+);
 
 export function PetsInfo({ close }: { close: () => void }) {
   return (
@@ -96,7 +103,7 @@ export function PetsInfo({ close }: { close: () => void }) {
       ]}
       tips={[
         [resUrl('kamien'), 'Poziomy', <>Kamienie podnoszą poziom (do {COMPANION_MAX}): +5% siły za poziom. Kamienie dają bossowie, lochy, sklep, klan i arena.</>],
-        [resUrl('trofeum'), 'Gwiazdki', <>{starsText}</>],
+        [resUrl('trofeum'), 'Gwiazdki i kopie', <StarsTip />],
         [resUrl('moc'), 'Walczy jeden', <>Wybierasz jednego chowańca. Jego atak to % obrażeń bohatera, a cecha działa cały czas — także za nieobecność.</>],
         [resUrl('pieczec'), 'Na zawsze', <>Chowańce zostają z tobą na całą grę — warto inwestować w ulubionego.</>],
       ]}
@@ -139,7 +146,7 @@ export function MountsInfo({ close }: { close: () => void }) {
       ]}
       tips={[
         [resUrl('kamien'), 'Poziomy', <>Kamienie podnoszą poziom (do {COMPANION_MAX}): +5% premii wierzchowca za poziom.</>],
-        [resUrl('trofeum'), 'Gwiazdki', <>{starsText}</>],
+        [resUrl('trofeum'), 'Gwiazdki i kopie', <StarsTip />],
         [resUrl('lapa'), 'Razem z chowańcem', <>Wierzchowiec i chowaniec działają jednocześnie — to dwie osobne premie.</>],
         [resUrl('pieczec'), 'Na zawsze', <>Wierzchowce zostają z tobą na całą grę — warto inwestować w ulubionego.</>],
       ]}

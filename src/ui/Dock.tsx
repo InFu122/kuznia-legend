@@ -2,12 +2,12 @@
 // więc zawsze widać je bez przewijania. Rudę i auto-wytop (z rzadkością, na której ma się zatrzymać)
 // ustawia się w okienkach wysuwanych z dołu; włączony auto-wytop wyłącza jedno dotknięcie Auto.
 import { useRef } from 'preact/hooks';
-import { B, ELEM, ORES, ORE_ORDER, RAR, rAt } from '../data';
-import { canSmelt } from '../engine/forge';
+import { B, ELEM, ORES, ORE_ORDER, RAR, SETS, SET_FORGE_LVL, rAt } from '../data';
+import { canSmelt, uniqActive } from '../engine/forge';
 import { oreNominal } from '../engine/formulas';
 import type { Game } from '../engine/game';
 import type { ElemKey } from '../engine/types';
-import { dungeonBgUrl, elemUrl, oreUrl, resUrl } from '../art/render';
+import { dungeonBgUrl, elemUrl, oreUrl, resUrl, setOreUrl } from '../art/render';
 import { AutoElem, AutoStop, InfoBtn, OreSummary } from './panels/Forge';
 import { sparks } from './fx';
 import { Px } from './Px';
@@ -16,15 +16,8 @@ import { fmt } from './format';
 /** Kolor żywiołu domieszki (poświata „dobudówki” nad rudą). */
 const EL_COL: Record<ElemKey, string> = { zar: '#ff8a3a', szron: '#7fd6ff', burz: '#b98cff', jad: '#7ed957', cien: '#a58bd6', jasn: '#ffe27a' };
 
-/** Ikona rudy z ikoną domieszki w rogu — „stop”, który wyjdzie z wytopu. */
-const Alloy = ({ ore, el, size }: { ore: number; el: ElemKey | null; size: number }) => (
-  <span class="alloy" aria-hidden="true">
-    <Px src={oreUrl(ore)} size={size} />
-    {el && <Px src={elemUrl(el)} size={Math.round(size * 0.55)} cls="alloy-el" />}
-  </span>
-);
 
-export function ForgeDock({ game, onPick, onDecide, onAuto, onElem }: { game: Game; onPick: () => void; onDecide: () => void; onAuto: () => void; onElem: () => void }) {
+export function ForgeDock({ game, onPick, onDecide, onAuto, onElem, onUniq }: { game: Game; onPick: () => void; onDecide: () => void; onAuto: () => void; onElem: () => void; onUniq: () => void }) {
   const s = game.s;
   const f = s.forge;
   const o = s.oreSel;
@@ -33,8 +26,14 @@ export function ForgeDock({ game, onPick, onDecide, onAuto, onElem }: { game: Ga
   const el = s.elSel && (s.els[s.elSel] ?? 0) > 0 ? s.elSel : null;
   const sub = f.lvl < ORES[o].lvl ? `${ORES[o].n} od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `brak rudy: ${ORES[o].n}`
     : ORES[o].n;
-  /** Z domieszką podpis ma dwie linijki: ruda / „+ domieszka” — długie nazwy (Gwiezdny Kruszec + Obsydian Cienia) się mieszczą. */
-  const mix = el && f.lvl >= ORES[o].lvl && s.ores[o] >= 1;
+  /** Ruda unikalna (zestaw, pewny przeskok): druga „dobudówka” nad Wytopem, od poziomu kuźni, na którym działają zestawy. */
+  const uqOn = f.lvl >= SET_FORGE_LVL;
+  const uq = uniqActive(s);
+  /**
+   * Z domieszką albo rudą unikalną podpis ma drugą linijkę z ikonkami: „[domieszka] Szronit”, „[unikalna] zestaw · pewny
+   * przeskok”, a z obiema — obie ikonki i „zestaw · przeskok” (nazwa domieszki jest w zakładce nad rudą).
+   */
+  const mix = (el || uq) && f.lvl >= ORES[o].lvl && s.ores[o] >= 1;
   /** Domieszka na pasku: od poziomu kuźni, na którym się otwiera — jako „dobudówka” nad przyciskiem rudy. */
   const elOn = f.lvl >= B.ELEM_FORGE_LVL;
   // Wybrana ruda się skończyła, a w magazynie jest inna — przycisk otwiera wybór rudy zamiast stać wyszarzony.
@@ -53,6 +52,14 @@ export function ForgeDock({ game, onPick, onDecide, onAuto, onElem }: { game: Ga
           <span><b>{fmt(s.ores[o])}</b><i aria-hidden="true">▾</i></span>
         </button>
       </div>
+      <div class="dock-gw">
+      {uqOn && (
+        <button class={`dock-uq${uq ? ' on' : ''}`} onClick={onUniq} aria-haspopup="dialog"
+          style={uq ? { '--uc': SETS[uq].col } as Record<string, string> : undefined}
+          aria-label={uq ? `Ruda unikalna: ${SETS[uq].ore}, ${s.uniq[uq]} sztuk — zestaw ${SETS[uq].n}. Zmień` : 'Bez rudy unikalnej. Wybierz rudę unikalną'}>
+          {uq ? <><Px src={setOreUrl(uq)} size={20} /><span>{SETS[uq].ore}</span><b>· {fmt(s.uniq[uq] ?? 0)}</b></> : <span>+ ruda unikalna</span>}
+        </button>
+      )}
       {s.pending ? (
         <button class="btn primary dock-go decide" onClick={onDecide}>
           <span class="dg-t"><b>Zdecyduj</b><small>nowy przedmiot czeka</small></span>
@@ -63,11 +70,21 @@ export function ForgeDock({ game, onPick, onDecide, onAuto, onElem }: { game: Ga
           <span class="dg-t"><b>Zmień rudę</b><small>brak: {ORES[o].n} · masz {ORES[other].n}</small></span>
         </button>
       ) : (
-        <button class={`btn primary btn-forge dock-go${mix ? ' mix' : ''}`} disabled={!ok} onClick={() => { const it = game.smeltManual(); if (it) sparks(sparkRef.current, it.r); }}>
-          <Alloy ore={o} el={el} size={32} />
-          <span class="dg-t"><b>Wytop</b><small>{sub}</small>{mix && el && <small>+ {ELEM[el].n}</small>}</span>
+        <button class={`btn primary btn-forge dock-go${mix ? ' mix' : ''}${uq ? ' uq' : ''}`} disabled={!ok} onClick={() => { const it = game.smeltManual(); if (it) sparks(sparkRef.current, it.r); }}>
+          <Px src={oreUrl(o)} size={32} />
+          <span class="dg-t">
+            <b>Wytop</b><small>{sub}</small>
+            {mix && (
+              <small class="dg-add">
+                {el && <Px src={elemUrl(el)} size={14} />}
+                {uq && <Px src={setOreUrl(uq)} size={14} />}
+                <span>{uq ? 'zestaw + przeskok' : el ? ELEM[el].n : ''}</span>
+              </small>
+            )}
+          </span>
         </button>
       )}
+      </div>
       {f.lvl >= B.AUTO_FORGE_LVL && (
         <button class={`dock-auto${s.auto ? ' on' : ''}`} aria-haspopup={s.auto ? undefined : 'dialog'} onClick={() => (s.auto ? game.toggleAuto() : onAuto())}
           aria-label={s.auto ? `Auto-wytop włączony, zatrzyma się na: ${RAR[game.autoTarget()].n}. Wyłącz` : 'Auto-wytop wyłączony. Ustaw i włącz'}>
