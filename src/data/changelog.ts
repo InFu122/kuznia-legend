@@ -18,6 +18,22 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-22b',
+    date: '22 listopada 2026',
+    add: [
+      'Logowanie przez Google: w Kodeksie → Konto połączysz postęp z kontem Google, a na nowym telefonie albo po ponownej instalacji wczytasz kowala przyciskiem „Zaloguj przez Google” w oknie powitalnym. To dobrowolne — kod przeniesienia nadal działa.',
+      'Szanse losowań w sklepie: przycisk „Szanse” przy Zwoju zaklęć, Siodle i Rzadkim jaju pokazuje, z jakim prawdopodobieństwem trafisz każdą rzadkość i każdą rzecz.',
+      'Ruda unikalna na pasku wytopu: wybierasz ją obok domieszki, a przycisk Wytop pokazuje, czym właśnie wytapiasz.',
+    ],
+    change: [
+      'Kopia chowańca lub wierzchowca, który ma już 5 gwiazdek, daje tym więcej Kamieni, im rzadszy jest towarzysz: od 10 (Zwykły) do 150 (Legendarny).',
+      'Przy każdym chowańcu i wierzchowcu widać 5 gwiazdek — zdobyte złote, brakujące szare. Okno „i” wyjaśnia, skąd biorą się gwiazdki i co dają kopie.',
+    ],
+    fix: [
+      'Boski ekwipunek jest czytelniejszy: spokojniejsza poświata, a nazwa przedmiotu na ciemnym tle.',
+    ],
+  },
+  {
     id: '2026-11-22',
     date: '22 listopada 2026',
     add: [
