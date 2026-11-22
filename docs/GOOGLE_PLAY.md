@@ -28,6 +28,7 @@ W pliku `.env` na serwerze:
 ```
 TEST_SPEED=1
 OWNER_NAME=Imię i nazwisko (albo nazwa firmy) — administrator danych w polityce prywatności
+OWNER_ADDRESS=adres do regulaminu (ten sam, który podałeś Google jako przedsiębiorca)
 CONTACT_EMAIL=adres do spraw graczy i danych (Google pokaże go też w karcie sklepu)
 ADMOB_PUBLISHER_ID=pub-XXXXXXXXXXXXXXXX   ← po kroku 7, na razie zostaw puste
 ```
@@ -97,6 +98,7 @@ polski, **Gra**, **Bezpłatna**. Potem Testowanie → **Test wewnętrzny** → U
 | Grupa docelowa | 16 i więcej (patrz krok 0) |
 | Aplikacja z wiadomościami | Nie |
 | Usuwanie danych / konta | Tak, w aplikacji (Kodeks → Konto → Usuń konto) i przez stronę: `https://ADRES-GRY/usun-konto.html` |
+| Status przedsiębiorcy i Warunki korzystania | Tak, status przedsiębiorcy (jak na koncie dewelopera); Warunki: `https://ADRES-GRY/regulamin.html` |
 | Aplikacje rządowe, finansowe, zdrowotne | Nie |
 
 ### Bezpieczeństwo danych
@@ -222,6 +224,6 @@ z Google Play wpisz ten kod — postęp przejdzie razem z kontem.
 | Płatności (serwer) | `server/src/shop.ts` (`iap_google`) i `server/src/play.ts` — sprawdzenie u Google, pakiet raz na zakup, zakup innego konta odrzucony |
 | Reklamy | `src/ui/ads.ts` — @capacitor-community/admob, zgoda Google UMP, „Prywatność reklam” w Kodeksie |
 | Usuwanie konta | `server/src/account.ts` (`account_delete`, `account_delete_admin`), Kodeks → Konto |
-| Strony WWW | `deploy/strony/*.html` (wstawiane przy budowaniu: `OWNER_NAME`, `CONTACT_EMAIL`) + `app-ads.txt` |
+| Strony WWW | `deploy/strony/*.html` — polityka prywatności, regulamin, usuwanie konta (wstawiane przy budowaniu: `OWNER_NAME`, `OWNER_ADDRESS`, `CONTACT_EMAIL`) + `app-ads.txt` |
 | Podpisywanie i AAB | `android/app/build.gradle`, `.github/workflows/play.yml` |
 | Karta sklepu | `store/` (teksty w `store/opis.md`) |

@@ -20,7 +20,8 @@ const versionFile = (): Plugin => ({
 
 /**
  * Strony dla Google Play obok gry (polityka prywatności, usuwanie konta — szablony w deploy/strony) i app-ads.txt
- * dla AdMob. Dane z .env albo zmiennych builda: OWNER_NAME (administrator danych), CONTACT_EMAIL, ADMOB_PUBLISHER_ID.
+ * dla AdMob. Dane z .env albo zmiennych builda: OWNER_NAME (administrator danych), OWNER_ADDRESS (adres w regulaminie),
+ * CONTACT_EMAIL, ADMOB_PUBLISHER_ID.
  */
 const legalPages = (env: Record<string, string>): Plugin => ({
   name: 'kuznia-legal',
@@ -30,9 +31,10 @@ const legalPages = (env: Record<string, string>): Plugin => ({
     const mail = (env.CONTACT_EMAIL || '').trim();
     const kontakt = mail ? `<a href="mailto:${esc(mail)}">${esc(mail)}</a>` : 'adres e-mail twórcy podany w karcie gry w Sklepie Google Play';
     const admin = esc((env.OWNER_NAME || '').trim() || 'twórca gry Kuźnia Legend');
+    const adres = esc((env.OWNER_ADDRESS || '').trim()) || 'adres podany w karcie gry w Sklepie Google Play';
     for (const f of readdirSync('deploy/strony')) {
       if (!f.endsWith('.html')) continue;
-      const html = readFileSync(`deploy/strony/${f}`, 'utf8').split('{{KONTAKT}}').join(kontakt).split('{{ADMIN}}').join(admin);
+      const html = readFileSync(`deploy/strony/${f}`, 'utf8').split('{{KONTAKT}}').join(kontakt).split('{{ADMIN}}').join(admin).split('{{ADRES}}').join(adres);
       writeFileSync(`${opts.dir}/${f}`, html);
     }
     const pub = (env.ADMOB_PUBLISHER_ID || '').trim();

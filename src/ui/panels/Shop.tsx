@@ -20,6 +20,7 @@ import { Res, RewardIcons } from '../RewardIcons';
 import { adsNative, showRewarded } from '../ads';
 import { billingNative, buyPack, recoverPurchases, storePrices } from '../billing';
 import { OddsTable, type OddsWhat } from '../Odds';
+import { pageUrl } from '../pages';
 
 export type ShopTab = 'sklep' | 'przepustka' | 'klejnoty';
 const TABS: [ShopTab, string][] = [['sklep', 'Sklep'], ['przepustka', 'Przepustka'], ['klejnoty', 'Klejnoty']];
@@ -383,6 +384,14 @@ function GemsTabView({ game }: { game: Game }) {
             ? 'Płatność obsługuje Google Play. Klejnoty trafiają na twoje konto na serwerze gry.'
             : 'Pakiety Klejnotów kupisz w aplikacji z Google Play. Tutaj Klejnoty zdobywasz w przepustce i za reklamy.'}
       </p>
+      {play && !free && (
+        // Treść cyfrowa dostarczana od razu: informacja o utracie prawa odstąpienia przed zakupem (ustawa o prawach konsumenta, art. 38).
+        <p class="sub buy-note">
+          Klejnoty i Pakiet Nowicjusza dostajesz od razu po zakupie. Kupując, zgadzasz się na natychmiastowe dostarczenie
+          i przyjmujesz do wiadomości, że tracisz wtedy prawo odstąpienia od umowy.
+          {pageUrl('regulamin.html') && <> <a class="linkbtn" href={pageUrl('regulamin.html')} target="_blank" rel="noopener">Regulamin</a></>}
+        </p>
+      )}
       <ul class="clist shoplist">
         {GEM_PACKS.map(p => {
           const done = !!p.once && bought.includes(p.id);

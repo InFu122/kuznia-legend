@@ -962,6 +962,8 @@ a.linkbtn{display:inline-block}
 .odds-all{margin-top:10px}
 .odds-all summary{cursor:pointer; font-size:13px; color:var(--straw); padding:4px 0}
 .odds-all .odds{margin-top:6px}
+.buy-note{font-size:12px; line-height:1.4; border-left:2px solid var(--rivet); padding-left:8px}
+.buy-note .linkbtn{font-size:12px; padding:0}
 .adoffer{position:relative; display:inline-grid; place-items:center; width:36px; height:36px; border-radius:50%; background:radial-gradient(circle, rgba(242,193,78,.35), rgba(242,193,78,.05) 70%); border:1px solid rgba(242,193,78,.6); flex:none}
 .adoffer b{position:absolute; right:-6px; bottom:-4px; font-size:11px; font-weight:800; color:#1b1408; background:var(--straw); border-radius:6px; padding:0 4px; line-height:15px}
 .adoffer.small{width:34px; height:34px}

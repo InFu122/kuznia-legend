@@ -14,22 +14,10 @@ import { checkStoreUpdate, nativeVersion, onStoreUpdate, storeUpdateReady, updat
 import { CodexCard } from './Achievements';
 import { adsNative, privacyOptionsNeeded, showPrivacyOptions } from '../ads';
 import { GoogleLinkBox } from '../GoogleLink';
+import { pageUrl, publicUrl } from '../pages';
 import { googleAvailable } from '../../save/google';
 
 /** Adres gry do zaproszeń: z ustawień builda (aplikacja) albo adres tej strony. */
-const publicUrl = () => {
-  const env = import.meta.env.VITE_PUBLIC_URL as string | undefined;
-  if (env) return env;
-  const local = /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
-  return local || isNative() || location.protocol === 'file:' ? '' : location.origin + location.pathname;
-};
-
-/** Strona na serwerze gry (polityka prywatności, usuwanie konta) albo pusto, gdy gra nie zna swojego adresu. */
-const pageUrl = (file: string) => {
-  const base = publicUrl();
-  return base ? new URL(file, base.endsWith('/') ? base : base + '/').href : '';
-};
-
 /** Aplikacja i test: wersja gry, instalacja na telefonie, zaproszenie znajomych i zgłaszanie uwag. */
 function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
   const [, force] = useState(0);
@@ -148,7 +136,7 @@ function DevTools({ game }: { game: Game }) {
   );
 }
 
-/** Polityka prywatności i (w aplikacji) zmiana zgody na reklamy — formularz Google dla graczy z UE. */
+/** Polityka prywatności, regulamin i (w aplikacji) zmiana zgody na reklamy — formularz Google dla graczy z UE. */
 function PrivacyLinks() {
   const [ads, setAds] = useState(false);
   useEffect(() => { if (adsNative()) void privacyOptionsNeeded().then(setAds); }, []);
@@ -157,6 +145,7 @@ function PrivacyLinks() {
   return (
     <div class="pf-links" style={{ marginTop: '8px' }}>
       {url && <a class="linkbtn" href={url} target="_blank" rel="noopener">Polityka prywatności</a>}
+      {url && <a class="linkbtn" href={pageUrl('regulamin.html')} target="_blank" rel="noopener">Regulamin</a>}
       {ads && <button class="linkbtn" onClick={() => void showPrivacyOptions().catch(() => {})}>Prywatność reklam</button>}
     </div>
   );

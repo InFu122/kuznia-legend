@@ -74,6 +74,7 @@ services:
       args:
         VITE_SERVER_KEY: ${NAKAMA_SERVER_KEY}
         OWNER_NAME: ${OWNER_NAME:-}
+        OWNER_ADDRESS: ${OWNER_ADDRESS:-}
         CONTACT_EMAIL: ${CONTACT_EMAIL:-}
         ADMOB_PUBLISHER_ID: ${ADMOB_PUBLISHER_ID:-}
     image: kuznia-legend/web:local
