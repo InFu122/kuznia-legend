@@ -177,10 +177,14 @@ w oknie powitalnym). Logowanie jest dobrowolne. Serwer zapisuje tylko numer kont
    polityki prywatności; podstawowe zakresy. Na koniec **Opublikuj aplikację** (w trybie testowym logują się tylko dopisani testerzy).
 2. **Dane logowania → Identyfikator klienta OAuth → Aplikacja internetowa.** Jego identyfikator jest w kodzie
    (`src/save/google.ts` i `server/src/google.ts` — muszą być takie same). Tajny klucz klienta nie jest potrzebny.
-3. W tym samym projekcie: klient **Android**, pakiet `pl.kuznialegend.gra`, SHA-1 z Play Console → Ochrona w Sklepie Play →
-   Podpisywanie aplikacji w Play → Klucz podpisywania aplikacji. Osobny klient dla SHA-1 „klucza klasycznego” i dla
-   „klucza kryptografii postkwantowej”. Do gry instalowanej z pliku poza sklepem — jeszcze jeden z SHA-1 klucza przesyłania.
-4. Błąd „28444” w grze = SHA-1 albo nazwa pakietu w Google Cloud się nie zgadzają.
+3. W tym samym projekcie: klient **Android** (pakiet `pl.kuznialegend.gra`) **dla każdego** odcisku SHA-1 z Play Console →
+   Ochrona w Sklepie Play → Podpisywanie aplikacji w Play → przycisk **„Skopiuj wszystkie klucze”** (u nas trzy: klucz
+   klasyczny, klucz postkwantowy i najstarszy klucz z łańcucha `6E:6C:…` — bez tego ostatniego Google odrzuca logowanie
+   błędem 16). Jeden klient = jeden SHA-1. Do gry instalowanej z pliku poza sklepem — jeszcze jeden z SHA-1 klucza przesyłania.
+4. Gdy logowanie się nie uda, gra pokazuje szczegóły („Kopiuj szczegóły”): komunikat Google i wszystkie SHA-1, którymi
+   podpisana jest zainstalowana aplikacja. Każdy z nich musi mieć klienta Android w Google Cloud.
+   Błąd 28444 albo 16 = brakuje SHA-1 (albo nazwa pakietu się nie zgadza); 16 także, gdy ekran zgody jest w trybie
+   testowym, a konta nie ma wśród testerów. Zmiany w Google Cloud działają po kilku minutach, czasem po kilku godzinach.
 
 ## 9. Testy
 
