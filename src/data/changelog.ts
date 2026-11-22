@@ -18,6 +18,20 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-22c',
+    date: '22 listopada 2026',
+    add: [
+      'Regulamin gry: link w Kodeksie, obok polityki prywatności.',
+    ],
+    change: [
+      'W sklepie, pod Klejnotami, krótka informacja: Klejnoty i Pakiet Nowicjusza dostajesz od razu po zakupie (z linkiem do regulaminu).',
+      'Polityka prywatności i strona usuwania konta opisują logowanie przez Google.',
+    ],
+    fix: [
+      'Logowanie przez Google: gdy się nie uda, gra pokazuje szczegóły błędu i przycisk „Kopiuj szczegóły” — łatwiej zgłosić problem.',
+    ],
+  },
+  {
     id: '2026-11-22b',
     date: '22 listopada 2026',
     add: [
