@@ -5,7 +5,7 @@ export const LEGEND = [
   { n: '', at: 0, b: 0 },
   { n: 'Zahartowany', at: 1000, b: 0.05 },
   { n: 'Sławny', at: 5000, b: 0.10 },
-  { n: 'Przebudzony', at: 20000, b: 0.10 },
+  { n: 'Przebudzony', at: 20000, b: 0.15 },
 ] as const;
 
 export const SMITH_TITLES = [
@@ -112,7 +112,7 @@ export const B = {
   AUTO_FORGE_LVL: 5,
   REFINE_FORGE_LVL: 5,
   RUNE_FORGE_LVL: 10,           // runy slotów
-  RUNE_MAX: 30,
+  RUNE_MAX: 50,                 // po 5 poziomów na każdą z 10 rud (ORE_ORDER), od Miedzi do Boskiej Rudy
   RUNE_PCT: 1,                  // +1% głównej statystyki przedmiotu w slocie za poziom runy
   REFORGE_FORGE_LVL: 15,        // przekuwanie statystyk dodatkowych
   // Dziedzictwo (nowe pokolenie) wycofane — kuźnia rośnie do 200. Kto je przeszedł, zachowuje premie:
@@ -149,6 +149,7 @@ export const B = {
   DUNGEON_KEYS: 2,
   DUNGEON_CHECKPOINT: 5,
   LEGEND_TRANSFER: 0.5,
+  AW_CHANGE_WAVES: 100,         // zmiana cechy przebudzenia (druga i kolejne; pierwsza za darmo): złoto za tyle fal
   BOSS_HP_MULT: 8,
   BOSS_ATK_MULT: 0.11,
   WAVE_HP_MULT: 2.6,

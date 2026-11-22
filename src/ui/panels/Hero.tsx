@@ -109,15 +109,17 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
         </section>
       )}
       <section class="card">
-        <div class="row"><IconEyebrow icon={<Px src={resUrl('kowadlo')} size={16} />}>Ekwipunek</IconEyebrow><span class="sub">Kropki = progi legendy{s.seals ? ` · Pieczęcie Legendy: ${s.seals}` : ''}</span></div>
+        <div class="row"><IconEyebrow icon={<Px src={resUrl('kowadlo')} size={16} />}>Ekwipunek</IconEyebrow><span class="sub">Kropki = progi legendy (dotknij przedmiot){s.seals ? ` · Pieczęcie Legendy: ${s.seals}` : ''}</span></div>
         <div class="slots" style={{ marginTop: '10px' }}>
           {SLOT_ORDER.map(slot => {
             const it = s.eq[slot];
             const rl = runeLvl(s, slot);
             if (!it) return <button key={slot} class="slot empty" disabled><RuneBadge lvl={rl} cls="on-slot" /><SlotIcon slot={slot} /><span>{SLOTS[slot].n}</span><div class="pips" /></button>;
             return (
-              <button key={slot} class={`slot r${it.r}`} aria-label={`${itemName(it)}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}`} onClick={() => onItem(it)}>
+              <button key={slot} class={`slot r${it.r}`} aria-label={`${itemName(it)}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}${it.aw && !it.awc ? ', możesz wybrać cechę' : ''}`} onClick={() => onItem(it)}>
                 <RuneBadge lvl={rl} cls="on-slot" />
+                {/* Przebudzony z niewybraną cechą (darmowy wybór) — kropka zachęca, żeby zajrzeć. */}
+                {it.aw && !it.awc && <i class="slot-aw" title="Wybierz cechę przebudzenia — za darmo" />}
                 <Px src={itemUrl(it.kind, it.ore, it.r)} size={36} />
                 {/* Ucięta nazwa („Żelazna …”) nic nie mówi: zwykły przedmiot pokazuje poziom, przebudzony i Boski — imię. */}
                 <span>{it.aw || it.r === R.BOSKI ? itemName(it) : `poz. ${it.lvl}`}</span>

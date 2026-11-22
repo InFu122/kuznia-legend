@@ -1,6 +1,6 @@
 // Runy bohatera (zakładka Bohater) i przekuwanie statystyk dodatkowych (okno założonego przedmiotu).
 import { useState } from 'preact/hooks';
-import { B, LANDS, ORES, SLOTS, SLOT_ORDER } from '../../data';
+import { B, DIVINE_ORE, LANDS, ORES, SLOTS, SLOT_ORDER } from '../../data';
 import { oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
 import { farmLandFor, runeForAll, reforgeBlock, reforgeCost, runeBlock, runeCost, runeGain, runeLvl, runePay, runeStat, subText } from '../../engine/runes';
@@ -16,7 +16,7 @@ const CostLine = ({ ore, n, gold, lack }: { ore: number; n: number; gold: number
   <span class={`rcost${lack ? ' lack' : ''}`}><Px src={oreUrl(ore)} size={14} />{fmt(n)} <Px src={resUrl('zloto')} size={14} />{fmt(gold)}</span>
 );
 
-/** Pasek runy: 6 odcinków po 5 poziomów, każdy w kolorze rudy, którą się za nie płaci. */
+/** Pasek runy: 10 odcinków po 5 poziomów, każdy w kolorze rudy, którą się za nie płaci. */
 function RuneBar({ s, lvl }: { s: Game['s']; lvl: number }) {
   return (
     <span class="rbar" aria-hidden="true">
@@ -102,7 +102,9 @@ export function RunesCard({ game }: { game: Game }) {
                             {here ? <small class="muted">· tu walczysz</small>
                               : <button class="btn small" onClick={() => game.goLand(farm.land)}>Farmuj tam</button>}
                           </>
-                        ) : <small class="muted">{ORES[c.ore].n} wypada w dalszych krainach</small>}
+                        ) : <small class="muted">{c.ore === DIVINE_ORE
+                          ? 'Boska Ruda: bossowie krain IV aktu, skrzynie lochów sezonowych, nagrody wydarzeń i Przepustki'
+                          : `${ORES[c.ore].n} wypada w dalszych krainach i w Otchłani`}</small>}
                       </span>
                     )}
                   </div>

@@ -1,8 +1,8 @@
 import {
   B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
-  JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RANK_MAX, RARITY_AT_BOSS, RAR, R, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank, rAt,
+  FOE_GENITIVE, JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RANK_MAX, RARITY_AT_BOSS, RAR, R, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank, rAt,
 } from '../data';
-import type { GameState, Item } from './types';
+import type { Awakening, FoeType, GameState, Item } from './types';
 
 /** Globalny indeks trudności: kraina × 10 + etap (kampania 0–159, dalej kręgi Otchłani). */
 export const gOf = (land: number, stage: number) => land * 10 + (stage - 1);
@@ -231,6 +231,38 @@ export function dist(ore: number, lvl: number, rel = 0, ver = JUMP_V): [number, 
   if (mj === 0) return [...low, [r, 100 - pd]];
   if (mj === 1) return [...low, [r, 100 - p1 - p2 - pd], [r + 1, p1 + p2]];
   return [...low, [r, 100 - p1 - p2 - pd], [r + 1, p1], [r + 2, p2]];
+}
+
+/* ---------- cecha przebudzenia (Przebudzony, 20 000 Sławy) ---------- */
+
+/** Do wyboru przy przebudzeniu: przeciw jednemu rodzajowi wrogów albo przeciw bossom. */
+export type AwKey = FoeType | 'boss';
+export const AW_KEYS: AwKey[] = ['Bestie', 'Nieumarli', 'Demony', 'Smoki', 'boss'];
+export const AW_TYPE_V = 25;
+export const AW_BOSS_V = 15;
+/** „wobec …” — dopełniacz pełnej nazwy rodzaju wrogów. */
+export const AW_VS: Record<FoeType, string> = { Bestie: 'Bestii', Nieumarli: 'Nieumarłych', Demony: 'Demonów', Smoki: 'Smoków' };
+export const awKey = (a: Awakening): AwKey => (a.kind === 'boss' || !a.t ? 'boss' : a.t);
+export function awakeningOf(k: AwKey): Awakening {
+  return k === 'boss' ? { kind: 'boss', v: AW_BOSS_V, name: 'Pogromca' } : { kind: 'type', t: k, v: AW_TYPE_V, name: 'Zguba ' + FOE_GENITIVE[k] };
+}
+/** Co daje cecha — jednym zdaniem. */
+export const awText = (a: Awakening) => `+${a.v}% obrażeń wobec ${a.kind === 'boss' || !a.t ? 'bossów' : AW_VS[a.t]}`;
+/** Podpowiedź (i cecha domyślna): skąd przedmiot ma najwięcej Sławy — rodzaj wrogów albo bossowie. */
+export function awakeningFor(it: Item): Awakening {
+  const bossFame = (it.bosses || 0) * B.FAME_BOSS;
+  let best: FoeType | null = null;
+  let bv = 0;
+  for (const [t, v] of Object.entries(it.kills ?? {}) as [FoeType, number][]) if (v > bv) { bv = v; best = t; }
+  return awakeningOf(bossFame > bv || !best ? 'boss' : best);
+}
+/** Cecha z zapisu: tylko znane wartości (siła i imię zawsze z tabeli), inaczej brak. */
+export function normAwakening(aw: unknown): Awakening | null {
+  if (!aw || typeof aw !== 'object') return null;
+  const a = aw as Partial<Awakening>;
+  if (a.kind === 'boss') return awakeningOf('boss');
+  if (a.kind === 'type' && a.t && (AW_KEYS as string[]).includes(a.t)) return awakeningOf(a.t);
+  return null;
 }
 
 export const legStage = (fame: number) => (fame >= LEGEND[3].at ? 3 : fame >= LEGEND[2].at ? 2 : fame >= LEGEND[1].at ? 1 : 0);

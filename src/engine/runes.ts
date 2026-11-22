@@ -1,11 +1,13 @@
 // Runy slotów i przekuwanie statystyk dodatkowych — ujścia rudy i złota.
-// Runa: każdy z 8 slotów ma poziom 0–30; +1% głównej statystyki przedmiotu w tym slocie za poziom (działa na każdy założony przedmiot).
-// Koszt rośnie po pięć poziomów na każdą rudę: 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril, 21–25 Adamantyt, 26–30 Smocza Stal.
+// Runa: każdy z 8 slotów ma poziom 0–50; +1% głównej statystyki przedmiotu w tym slocie za poziom (działa na każdy założony przedmiot).
+// Po pięć poziomów na każdą rudę w kolejności odblokowania (ORE_ORDER): 1–5 Miedź, 6–10 Żelazo, 11–15 Srebro, 16–20 Mithril,
+// 21–25 Adamantyt, 26–30 Obsydian, 31–35 Smocza Stal, 36–40 Eteryt, 41–45 Gwiezdny Kruszec, 46–50 Boska Ruda.
+// Rzadkie rudy kosztują mniej sztuk (RUNE_ORE_MULT, Boska Ruda po 1–3), żeby ostatnie poziomy dało się zrobić.
 // Każdy slot płaci dokładnie rudą ze swojego poziomu — bez zamienników. Słabsze rudy zostają potrzebne przez całą grę,
 // więc opłaca się wracać do wcześniejszych krain i je farmić (karta runy podpowiada, gdzie dana ruda wypada najczęściej).
 // Przekuwanie: jedna statystyka dodatkowa przedmiotu losowana od nowa za rudę przedmiotu i złoto; gracz wybiera, którą wersję zatrzymać.
 // Z serwerem przekuwa serwer (server/src/runes.ts) i podpisuje przedmiot, żeby dalej liczył się do rankingów.
-import { B, DIVINE_ORE, LANDS, ORES, RAR, SLOTS, SUBS, SUB_IDS, subMult } from '../data';
+import { B, DIVINE_ORE, LANDS, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, subMult } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
 import { allMods } from './mods';
@@ -47,11 +49,21 @@ export const runeStat = (slot: SlotId) => (SLOTS[slot].stat === 'dmg' ? 'obraże
 
 export const runeLvl = (s: GameState, slot: SlotId) => Math.max(0, Math.min(B.RUNE_MAX, Math.floor(s.runes?.[slot] ?? 0)));
 
-/** Koszt wzmocnienia runy na poziom `lvl` (1–30). */
+/** Ruda dla poziomów runy: `tier` = (poziom − 1) / 5, po kolei jak rudy otwierają się w kuźni. */
+export const runeOre = (tier: number) => ORE_ORDER[Math.max(0, Math.min(ORE_ORDER.length - 1, tier))];
+/** Rzadkie rudy: mniej sztuk na poziom (Eteryt i Gwiezdny Kruszec o połowę). */
+const RUNE_ORE_MULT: Record<number, number> = { 8: 0.5, 6: 0.5 };
+/** Boska Ruda (bossowie IV aktu, lochy sezonowe — bardzo rzadka): sztuk na kolejne poziomy 46–50. */
+const RUNE_DIVINE = [1, 2, 2, 3, 3];
+
+/** Koszt wzmocnienia runy na poziom `lvl` (1–50). */
 export function runeCost(s: GameState, lvl: number): Cost {
-  const tier = Math.min(5, Math.floor((lvl - 1) / 5)); // Miedź … Smocza Stal (indeksy 0–5)
+  const tier = Math.floor((lvl - 1) / 5);
+  const step = (lvl - 1) % 5;
+  const ore = runeOre(tier);
   const k = 1 - allMods(s).runeCost / 100; // Mistrz run
-  return { ore: tier, n: Math.ceil((20 + 10 * ((lvl - 1) % 5)) * k), gold: Math.round(goldWaveOf(s) * 5 * lvl * k) };
+  const base = ore === DIVINE_ORE ? RUNE_DIVINE[step] : (20 + 10 * step) * (RUNE_ORE_MULT[ore] ?? 1);
+  return { ore, n: Math.max(1, Math.ceil(base * k)), gold: Math.round(goldWaveOf(s) * 5 * lvl * k) };
 }
 
 export interface RunePay extends Cost {

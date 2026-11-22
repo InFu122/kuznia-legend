@@ -15,12 +15,19 @@ function armed(seed = 1) {
 }
 
 describe('runy slotów', () => {
-  it('koszt: pięć poziomów na rudę, od Miedzi do Smoczej Stali', () => {
+  it('koszt: pięć poziomów na rudę w kolejności odblokowania, od Miedzi do Boskiej Rudy (rzadkie taniej)', () => {
     const { s } = armed();
+    expect(B.RUNE_MAX).toBe(50);
     expect(runeCost(s, 1)).toMatchObject({ ore: 0, n: 20 });
     expect(runeCost(s, 5)).toMatchObject({ ore: 0, n: 60 });
     expect(runeCost(s, 6)).toMatchObject({ ore: 1, n: 20 });
-    expect(runeCost(s, 30).ore).toBe(5);
+    expect(runeCost(s, 26)).toMatchObject({ ore: 7, n: 20 });  // Obsydian
+    expect(runeCost(s, 31)).toMatchObject({ ore: 5, n: 20 });  // Smocza Stal
+    expect(runeCost(s, 36)).toMatchObject({ ore: 8, n: 10 });  // Eteryt — o połowę mniej
+    expect(runeCost(s, 45)).toMatchObject({ ore: 6, n: 30 });  // Gwiezdny Kruszec — o połowę mniej
+    expect([46, 47, 48, 49, 50].map(l => runeCost(s, l))).toEqual([1, 2, 2, 3, 3].map(n => expect.objectContaining({ ore: 9, n })));
+    // ten sam koszt rośnie w złocie z poziomem
+    expect(runeCost(s, 50).gold).toBeGreaterThan(runeCost(s, 30).gold);
     // zawsze dokładnie ruda z kosztu — lepsze rudy jej nie zastępują
     s.ores[0] = 10; s.ores[1] = 5000; s.ores[2] = 5000;
     expect(runePay(s, 1)).toMatchObject({ ore: 0, n: 20, avail: 10, enough: false });

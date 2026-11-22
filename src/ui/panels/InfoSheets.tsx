@@ -58,7 +58,7 @@ export function RuneInfo({ game, close }: { game: Game; close: () => void }) {
         [resUrl('moc'), '3. Cały bohater, na zawsze', `+${B.RUNE_PCT}% głównej statystyki za poziom (do ${B.RUNE_MAX}) — trwałe wzmocnienie do końca gry`],
       ]}
       tips={[
-        [oreUrl(0), 'Brakuje rudy?', <>Każdy slot płaci dokładnie rudą ze swojego poziomu — po kolei Miedź, Żelazo, Srebro… Słabsze rudy farmisz we wcześniejszych krainach (karta runy podpowiada gdzie). Zanim zamienisz zapasy w Rafinacji, zostaw trochę na runy.</>],
+        [oreUrl(0), 'Brakuje rudy?', <>Każdy slot płaci dokładnie rudą ze swojego poziomu — po kolei Miedź, Żelazo, Srebro… aż do Boskiej Rudy (rzadkie rudy kosztują mniej sztuk). Słabsze rudy farmisz we wcześniejszych krainach (karta runy podpowiada gdzie). Zanim zamienisz zapasy w Rafinacji, zostaw trochę na runy.</>],
         [itemUrl('Miecz', 3, 3), 'Co najpierw', <>Broń, Pierścień i Amulet dają obrażenia, reszta zdrowie. Runa mnoży główną statystykę, więc najwięcej daje w slocie z najsilniejszym przedmiotem.</>],
         [resUrl('zloto'), 'Złoto', <>Każdy poziom kosztuje też złoto — tym więcej, im wyższy poziom runy i im dalej jesteś w kampanii.</>],
         [resUrl('kowadlo'), `Przekuwanie · od ${B.REFORGE_FORGE_LVL}. poziomu`, <>W oknie założonego przedmiotu losujesz od nowa jedną statystykę dodatkową (za rudę przedmiotu i złoto) i wybierasz, którą wersję zostawić.</>],

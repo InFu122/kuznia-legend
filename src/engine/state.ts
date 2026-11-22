@@ -1,5 +1,6 @@
 import { unlockedNow } from './unlocks';
 import { ACHIEVEMENTS, ELEM, LATEST_LOG, achFame, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
+import { awakeningFor, normAwakening } from './formulas';
 import type { Battle, DungId, Fx, GameState } from './types';
 
 /**
@@ -159,7 +160,9 @@ export function migrate(raw: unknown, now: number): GameState {
   const oldVersion = typeof raw.v === 'number' ? raw.v : 1;
   for (const it of [...Object.values(out.eq), out.pending, ...out.found, ...out.obIn, ...out.obOut, out.legacy.item]) {
     if (!it) continue;
-    it.flvl ??= 0; it.forced ??= ''; it.kills ??= {}; it.bosses ??= 0; it.owners ??= [it.smith]; it.obieg ??= false; it.ls ??= 0; it.aw ??= null;
+    it.flvl ??= 0; it.forced ??= ''; it.kills ??= {}; it.bosses ??= 0; it.owners ??= [it.smith]; it.obieg ??= false; it.ls ??= 0; it.aw = normAwakening(it.aw);
+    if ((it.ls || 0) >= 3 && !it.aw) it.aw = awakeningFor(it); // przebudzony bez (poprawnej) cechy — podpowiedź jak przy przebudzeniu
+    if (it.awc !== undefined) it.awc = Math.max(0, Math.floor(Number(it.awc) || 0));
     it.set ??= null;
     if (oldVersion < 2) it.lvl = 2 * (it.flvl || out.forge.lvl) + 1;
   }

@@ -91,6 +91,8 @@ export interface Item {
   bosses: number;
   ls: number;           // osiągnięty próg legendy 0–3
   aw: Awakening | null;
+  /** Ile razy gracz wybrał/zmienił cechę przebudzenia (0 — pierwszy wybór jeszcze darmowy). */
+  awc?: number;
   owners: string[];
   obieg: boolean;       // przedmiot dawnego kowala (Zbrojownia; dawniej też Wielki Obieg)
   set: SetId | null;    // część zestawu (z rudy unikalnej)

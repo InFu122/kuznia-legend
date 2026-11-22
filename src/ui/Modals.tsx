@@ -1,7 +1,7 @@
 import type { ComponentChildren, JSX } from 'preact';
 import {
   B, DIVINE_JUMP, DIVINE_ORE, ELEM, ELEM_KEYS, EVENT, SET_IDS, LAB_BLESSINGS, LAB_DOORS, LAB_ROOMS, MOUNTS, ORES, PETS, RAR, SEAL_FAME, SETS, SET_FORGE_LVL,
-  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, FORGE_UNLOCKS, FEATURES, ORE_ORDER, rAt, rRank, type FeatureId, isRareOre, oreShares, setOfLand, skillValue, landDef, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
+  MOUNTS_UNLOCK_LAND, PETS_UNLOCK_LAND, SKILLS, SKILL_MAX, STARS_MAX, TECH, TECH_UNLOCK_FORGE, FORGE_UNLOCKS, FEATURES, ORE_ORDER, rAt, rRank, type FeatureId, isRareOre, oreShares, setOfLand, skillValue, landDef, LEGEND, ABYSS_FROM, actName, isAbyss, abyssCircle } from '../data';
 import type { MountId, PetId, SkillId } from '../engine/types';
 import { ForgeLevelInfo, MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -41,6 +41,7 @@ import { MenuView } from './Menu';
 import { AutoSheet, OrePicker } from './Dock';
 import { MusicSheet } from './MusicSheet';
 import { ChangelogView } from './Changelog';
+import { AwakenBox, AwakenChoice } from './Awaken';
 import type { Tab } from './icons';
 
 /**
@@ -144,11 +145,12 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
     case 'awaken':
       return (
         <>
-          <div class="eyebrow">Przebudzenie</div>
-          <div class="h">{m.item.aw?.name}</div>
-          <p class="sub">{baseName(m.item)} zebrał 20 000 Sławy Czynów i przebudził się. Od teraz nosi własne imię.</p>
-          <ItemCard it={m.item} />
-          <Close onClose={close} label="Dalej" />
+          <div class="eyebrow">Przebudzenie · {fmt(LEGEND[3].at)} Sławy Czynów</div>
+          <div class="h">{baseName(m.item)}</div>
+          <p class="sub">Przedmiot się przebudził: +{Math.round(LEGEND[3].b * 100)}% do statystyki głównej i <b>cecha do wyboru</b> — przeciw komu ma być silniejszy. Cecha da mu też nowe imię.</p>
+          {s.eq[m.item.slot]?.id === m.item.id
+            ? <AwakenChoice game={game} slot={m.item.slot} onDone={close} />
+            : <><ItemCard it={m.item} /><Close onClose={close} label="Dalej" /></>}
         </>
       );
     case 'dungChoice':
@@ -241,6 +243,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       return (
         <>
           <ItemCard it={worn ? s.eq[m.item.slot]! : m.item} history proof={game.net && worn ? hasProof(s.eq[m.item.slot]!) : undefined} />
+          {worn && <AwakenBox game={game} slot={m.item.slot} />}
           {worn && <Reforge game={game} it={m.item} />}
           {worn && s.seals > 0 && (
             <button class="btn" onClick={() => game.useSeal(m.item.slot)}>Użyj Pieczęci Legendy (+{SEAL_FAME} Sławy) · masz {s.seals}</button>

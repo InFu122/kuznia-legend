@@ -21,7 +21,7 @@ export const ACHIEVEMENTS: Record<AchId, AchDef> = {
   rzadkosc: { n: 'Blask rzadkości', d: 'Wykuj przedmiot co najmniej {n}', tiers: [3, 4, 5, 6] },
   kolekcja: { n: 'Kolekcjoner', d: 'Odkryj {n} modeli przedmiotów', tiers: [20, 50, 100, 150, 217, 310] },
   otchlan: { n: 'Zstępujący w Otchłań', d: 'Pokonaj bossa {n}. kręgu Otchłani', tiers: [1, 5, 10, 20, 35, 50, 75, 100] },
-  runy: { n: 'Runmistrz', d: 'Zbierz {n} poziomów run', tiers: [10, 50, 120, 240] },
+  runy: { n: 'Runmistrz', d: 'Zbierz {n} poziomów run', tiers: [10, 50, 120, 240, 400] },
   nauka: { n: 'Uczony kowal', d: 'Zdobądź {n} poziomów badań w Akademii', tiers: [10, 40, 80, 130, 180, 209] },
   towarzysze: { n: 'Przyjaciel zwierząt', d: 'Zdobądź {n} chowańców i wierzchowców', tiers: [2, 6, 12, 18] },
   zadania: { n: 'Pracowity', d: 'Wykonaj {n} zadań dziennych i tygodniowych', tiers: [10, 100, 500, 1500, 4000, 10000] },

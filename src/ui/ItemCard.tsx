@@ -1,5 +1,5 @@
 import { B, ELEM, LEGEND, ORES, RAR, SETS, SLOTS, R } from '../data';
-import { baseName, itemName, mainVal } from '../engine/formulas';
+import { awText, baseName, itemName, mainVal } from '../engine/formulas';
 import type { FoeType, Item } from '../engine/types';
 import { SUBS } from '../data';
 import { f1, fmt } from './format';
@@ -34,10 +34,28 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
           Zestaw <b>{SETS[it.set].n}</b>: 2 części — {SETS[it.set].d2}; 4 części — {SETS[it.set].d4}
         </div>
       )}
-      {it.aw && <div class="itrait">Cecha: +{it.aw.v}% obrażeń wobec {it.aw.kind === 'boss' ? 'bossów' : it.aw.t?.toLowerCase()}</div>}
+      {it.aw && <div class="itrait">Cecha: {it.aw.name} — {awText(it.aw)}</div>}
       <div class="ileg">
-        <span>Legenda: <b>{st >= 3 ? 'Przebudzony' : st ? LEGEND[st].n : 'brak'}</b> · {fmt(it.fame)}{st < 3 ? ' / ' + fmt(next.at) : ''} Sławy Czynów</span>
+        <div class="ileg-h">
+          <span>Legenda: <b>{st >= 3 ? 'Przebudzony' : st ? LEGEND[st].n : 'jeszcze brak'}</b></span>
+          <span>{fmt(it.fame)}{st < 3 ? ' / ' + fmt(next.at) : ''} Sławy</span>
+        </div>
         <div class="bar"><i style={{ width: legPct + '%' }} /></div>
+        {/* Wszystkie progi naraz: co już jest, co następne i co daje. */}
+        <ol class="ileg-steps">
+          {([1, 2, 3] as const).map(k => (
+            <li key={k} class={st >= k ? 'done' : st + 1 === k ? 'next' : ''}>
+              <b>{LEGEND[k].n}</b>
+              <small>{st >= k ? '✓ ' : ''}{fmt(LEGEND[k].at)} · +{Math.round(LEGEND[k].b * 100)}%{k === 3 ? ' i cecha do wyboru' : ''}</small>
+            </li>
+          ))}
+        </ol>
+        {history && (
+          <small class="ileg-how">
+            Sława: 1 za każdego wroga, {B.FAME_BOSS} za bossa — zbierają ją tylko założone przedmioty. Przy wymianie połowa
+            przechodzi na nowy. Na progu Przebudzony sam wybierasz cechę: przeciw jednemu rodzajowi wrogów albo bossom.
+          </small>
+        )}
         {history && (kills.length > 0 || it.bosses > 0) && <span>Czyny: {kills.join(' · ')}{it.bosses ? ' · bossowie: ' + it.bosses : ''}</span>}
       </div>
       <div class="isign">

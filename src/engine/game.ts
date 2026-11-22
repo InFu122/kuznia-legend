@@ -8,7 +8,8 @@ import { equipBestSkills, equipSkill, levelUp, openSaddle, openScroll, selectBes
 import { canClaimLogin, claimChest, claimLogin, claimMission, claimable, ensureMissions } from './missions';
 import { tutTick } from './tutorial';
 import { autoHandle, autoTarget, autoTargets, canSmelt, equip, refine, sell, smelt, startUpgrade, tickForge, upgradeCost, upgradeTime, refineTo } from './forge';
-import { itemName } from './formulas';
+import { itemName, type AwKey } from './formulas';
+import { setAwakening } from './legend';
 import { allMods } from './mods';
 import { startResearch, tickResearch } from './tech';
 import { checkUnlocks, isUnlocked, seenFeature } from './unlocks';
@@ -333,6 +334,8 @@ export class Game {
   selectMount(id: MountId | null) { const ok = selectMount(this.ctx, id); this.changed(); return ok; }
   levelUp(kind: 'pet' | 'mount', id: PetId | MountId) { const ok = levelUp(this.ctx, kind, id); this.changed(); return ok; }
   useSeal(slot: SlotId) { const ok = useSeal(this.ctx, slot); this.changed(); return ok; }
+  /** Wybór albo zmiana cechy przebudzenia założonego przedmiotu (pierwszy wybór darmowy, potem złoto). */
+  setAwakening(slot: SlotId, key: AwKey) { const ok = setAwakening(this.ctx, slot, key); this.changed(); return ok; }
   /** „Załóż najlepsze”: umiejętności, chowaniec albo wierzchowiec dające najwięcej Mocy. */
   equipBest(what: 'skills' | 'pet' | 'mount'): boolean {
     const ok = what === 'skills' ? equipBestSkills(this.ctx) : what === 'pet' ? selectBestPet(this.ctx) : selectBestMount(this.ctx);

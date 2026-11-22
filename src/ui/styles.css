@@ -1224,7 +1224,7 @@ a.linkbtn{display:inline-block}
 .runelist .rtop > b{font-size:14px}
 .rbonus{font-size:12px; color:var(--ash); font-variant-numeric:tabular-nums}
 .rbonus b{color:#9ff0ff}
-.rbar{display:grid; grid-template-columns:repeat(6, 1fr); gap:2px; margin:5px 0 4px}
+.rbar{display:grid; grid-template-columns:repeat(10, 1fr); gap:2px; margin:5px 0 4px}
 .rbar i{height:5px; border-radius:2px; background:linear-gradient(90deg, var(--c) calc(var(--f) * 100%), #2a221c calc(var(--f) * 100%))}
 .rneed{display:flex; flex-wrap:wrap; gap:3px 10px; align-items:center; font-size:12px; color:var(--frost); font-variant-numeric:tabular-nums}
 .rneed > span{display:inline-flex; align-items:center; gap:4px}
@@ -1891,3 +1891,34 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .log-part.remove li i{background:color-mix(in srgb, #e5604f 22%, transparent); color:#f08a7a}
 .log-hide{display:flex; align-items:center; gap:10px; margin:4px 0 12px; font-size:14px; color:var(--frost); cursor:pointer}
 .log-hide input{width:20px; height:20px; accent-color:var(--straw)}
+
+/* legenda przedmiotu: progi i wybór cechy przebudzenia */
+.ileg-h{display:flex; justify-content:space-between; gap:8px}
+.ileg-h b{color:var(--frost)}
+.ileg-steps{list-style:none; margin:2px 0 0; padding:0; display:grid; grid-template-columns:repeat(3, 1fr); gap:4px}
+.ileg-steps li{display:flex; flex-direction:column; gap:1px; padding:5px 6px; border-radius:8px; background:rgba(255,255,255,.03); border:1px solid var(--rivet)}
+.ileg-steps li b{font-size:12px; color:var(--ash)}
+.ileg-steps li small{font-size:11px; line-height:1.25}
+.ileg-steps li.done{border-color:color-mix(in srgb, var(--straw) 45%, var(--rivet))}
+.ileg-steps li.done b{color:var(--straw)}
+.ileg-steps li.next{border-style:dashed}
+.ileg-steps li.next b{color:var(--frost)}
+.ileg-how{line-height:1.4}
+.awbox{display:flex; flex-direction:column; gap:8px; padding:10px 12px; border-radius:12px; background:var(--plate); border:1px solid var(--rivet)}
+.awbox .row{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap}
+.awbox small{color:var(--ash)}
+.awc{display:flex; flex-direction:column; gap:8px}
+.awc-note{margin:0}
+.awc-list{display:flex; flex-direction:column; gap:6px}
+.awc-o{display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; padding:10px 12px; border-radius:12px; text-align:left; cursor:pointer;
+  background:var(--plate); border:1px solid var(--rivet); color:var(--frost)}
+.awc-o.on{border-color:var(--straw); background:color-mix(in srgb, var(--straw) 12%, var(--plate)); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--straw) 45%, transparent)}
+.awc-n{display:flex; flex-direction:column; gap:2px}
+.awc-n b{font-size:14px}
+.awc-n small{color:var(--ash); font-size:12px}
+.awc-tags{display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none}
+.awc-tags i{font-style:normal; font:700 10.5px var(--f-ui); padding:2px 7px; border-radius:999px; background:rgba(255,255,255,.06); color:var(--ash); white-space:nowrap}
+.awc-tags i.here{background:color-mix(in srgb, #7ed957 22%, transparent); color:#9be37a}
+.awc-tags i.cur{background:color-mix(in srgb, var(--straw) 22%, transparent); color:var(--straw)}
+
+.slot-aw{position:absolute; top:4px; right:4px; width:10px; height:10px; border-radius:50%; background:var(--good, #7ed957); box-shadow:0 0 0 2px var(--plate), 0 0 8px #7ed957}
