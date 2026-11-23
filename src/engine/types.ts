@@ -84,6 +84,7 @@ export interface Item {
   flvl: number;         // poziom kuźni w chwili wytopu (0 = nieznany, np. przedmiot dawnego kowala)
   forced: '' | 'tut' | 'pity' | 'set';
   jv?: number;          // wersja zasad przeskoku (brak = 1, przedmioty sprzed października 2026)
+  q?: number;           // jakość 1–5 (I–V; brak = I, przedmioty sprzed jakości — wersja zasad 7)
   smith: string;        // Piętno Kowala
   land: string;         // kraina wykucia
   fame: number;         // Sława Czynów
@@ -95,7 +96,7 @@ export interface Item {
   awc?: number;
   owners: string[];
   obieg: boolean;       // przedmiot dawnego kowala (Zbrojownia; dawniej też Wielki Obieg)
-  set: SetId | null;    // ruda unikalna, z której wykuto przedmiot (pewny przeskok; dawniej część zestawu)
+  set: SetId | null;    // ruda unikalna, z której wykuto przedmiot (od wersji 7 — pewna jakość IV–V; wcześniej pewny przeskok)
   sx?: number;          // numer wytopu z ziarnem serwera (serwer może odtworzyć losowanie)
   sig?: string;         // podpis serwera (przedmiot dawnego kowala ze Zbrojowni)
   npc?: boolean;        // wykuł go kowal-widmo (przedmiot Zbrojowni od serwera)

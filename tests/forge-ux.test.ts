@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { R } from '../src/data';
+import { R, rGe } from '../src/data';
 import { addFound, autoTarget, autoTargets, smelt } from '../src/engine/forge';
 import { makeGame, simulate } from './helpers';
 
@@ -31,7 +31,7 @@ describe('auto-wytop do wybranej rzadkości', () => {
     const gold0 = s.gold;
     for (let i = 0; i < 400 && !s.pending; i++) simulate(g, 1000);
     expect(s.pending).not.toBeNull();
-    expect(s.pending!.r).toBeGreaterThanOrEqual(3);
+    expect(rGe(s.pending!.r, g.autoTarget())).toBe(true); // stanął na celu (albo wyżej)
     expect(s.auto).toBe(true);        // auto zostaje włączony, tylko czeka na decyzję
     expect(g.autoPaused).toBe(true);
     expect(events.some(e => e.t === 'sfx' && e.k === 'alert')).toBe(true);

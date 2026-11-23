@@ -2425,3 +2425,22 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .evg-bar{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px}
 .evg-bar small{font-size:11.5px; color:var(--ash)}
 .cfx-box .rwtiles{grid-template-columns:repeat(auto-fit, minmax(84px, 104px)); justify-content:center}
+/* Jakość I–V: żelazo, brąz, srebro, złoto, płomień */
+.qb{display:inline-grid; place-items:center; min-width:22px; height:18px; padding:0 5px; border-radius:5px; font-family:Georgia, "Times New Roman", "Noto Serif", serif; font-weight:700; font-size:12px; line-height:1; letter-spacing:.03em; vertical-align:middle; color:#21160c; text-shadow:0 1px 0 rgba(255,255,255,.3); box-shadow:inset 0 -2px 0 rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.55)}
+.qb.q1{background:linear-gradient(180deg, #a39d95, #6b655e); color:#1b1815}
+.qb.q2{background:linear-gradient(180deg, #e8ae74, #a1612c)}
+.qb.q3{background:linear-gradient(180deg, #f4f7fa, #a6b0ba)}
+.qb.q4{background:linear-gradient(180deg, #ffe68e, #cf9726); box-shadow:inset 0 -2px 0 rgba(0,0,0,.2), 0 0 6px rgba(255,205,90,.45)}
+.qb.q5{background:linear-gradient(110deg, #ff7f3a, #ffd46b 35%, #fff7d6 50%, #ffd46b 65%, #ff7f3a); background-size:220% 100%; animation:qflame 2.4s linear infinite;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.18), 0 0 9px rgba(255,160,60,.8)}
+@keyframes qflame{from{background-position:110% 0} to{background-position:-110% 0}}
+.qb.sm{min-width:18px; height:15px; padding:0 4px; border-radius:4px; font-size:10px}
+.qb.big{min-width:32px; height:25px; padding:0 7px; border-radius:7px; font-size:15px}
+.eqc-ic .qb{position:absolute; z-index:2; left:-6px; top:-6px}
+.irar .qb{margin:0 1px; transform:translateY(-1px)}
+.dc-q{display:inline-flex; align-items:center; gap:5px}
+.dc-q small{font-size:11.5px; font-weight:700; color:var(--ash)}
+.dc-q.hi{animation:qStamp .55s cubic-bezier(.2,1.6,.4,1) .8s both}
+.dc-q.hi small{color:#ffd46b}
+@keyframes qStamp{from{opacity:0; transform:scale(2.4) rotate(-10deg)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){ .qb.q5, .dc-q.hi{animation:none} }

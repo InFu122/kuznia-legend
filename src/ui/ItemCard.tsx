@@ -1,10 +1,19 @@
-import { B, ELEM, LEGEND, ORES, RAR, SLOTS, R } from '../data';
+import { B, ELEM, LEGEND, ORES, QUAL, RAR, SLOTS, R, qOf } from '../data';
 import { awText, baseName, itemName, mainVal } from '../engine/formulas';
 import type { FoeType, Item } from '../engine/types';
 import { SUBS } from '../data';
 import { f1, fmt } from './format';
 import { itemUrl } from '../art/render';
 import { Px } from './Px';
+
+/** Plakietka jakości I–V (żelazo, brąz, srebro, złoto, płomień); przedmioty sprzed jakości to I. */
+export function QBadge({ q, size = '' }: { q?: number; size?: '' | 'big' | 'sm' }) {
+  const n = qOf({ q });
+  const Q = QUAL[n - 1];
+  return <span class={`qb q${n}${size ? ' ' + size : ''}`} title={`Jakość ${Q.n}${Q.b ? ` — +${Q.b}% statystyk` : ''}`} aria-label={`jakość ${Q.n}`}>{Q.n}</span>;
+}
+/** „jakość IV · +13%” — do opisów przedmiotu. */
+export const qText = (q?: number) => { const Q = QUAL[qOf({ q }) - 1]; return `jakość ${Q.n}${Q.b ? ` (+${Q.b}%)` : ''}`; };
 
 /** `proof` (tylko z serwerem): czy serwer może potwierdzić pochodzenie przedmiotu. */
 interface Props { it: Item; delta?: number; reveal?: boolean; history?: boolean; proof?: boolean }
@@ -21,7 +30,7 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
         <div class="ico"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} alt="" /></div>
         <div>
           <div class={`iname${it.aw ? ' aw' : ''}`}>{itemName(it)}{it.obieg && <span class="tag">Z historią</span>}</div>
-          <div class="irar">{it.aw || it.r === R.BOSKI ? baseName(it) + ' · ' : ''}{RAR[it.r].n} · poz. {it.lvl}</div>
+          <div class="irar">{it.aw || it.r === R.BOSKI ? baseName(it) + ' · ' : ''}{RAR[it.r].n} · jakość <QBadge q={it.q} size="sm" />{QUAL[qOf(it) - 1].b ? ` +${QUAL[qOf(it) - 1].b}%` : ''} · poz. {it.lvl}</div>
         </div>
         {delta !== undefined && <div class={`delta ${delta >= 0 ? 'up' : 'down'}`}>{delta >= 0 ? '+' : '−'}{fmt(Math.abs(delta))}</div>}
       </div>

@@ -93,7 +93,7 @@ describe('zasady w wersji 6: ruda dojrzewa z kuźnią', () => {
     const rng = mulberry32(seedFor(n)); smeltDraws(rng);
     const r5 = smeltRarity(4, L, -1, 5);
     expect(r5).toBe(R.EPICKI);
-    const v5 = { ...it, jv: 5, jump: -1, r: r5, subs: rollSubs(rng, r5) };
+    const v5 = { ...it, jv: 5, jump: -1, r: r5, subs: rollSubs(rng, r5), q: undefined };
     expect(verifySmelt(v5, seedFor(n), 0, L, 5)).toBeNull();
     expect(verifySmelt(v5, seedFor(n), 0, L)).not.toBeNull();
   });

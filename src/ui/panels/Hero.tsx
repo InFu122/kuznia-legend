@@ -13,6 +13,7 @@ import { showProfile } from '../profile';
 import { HeroSprite, bestRarity } from '../Arena';
 import { LegacyCard } from './Legacy';
 import { RuneBadge, RunesTab } from './Runes';
+import { QBadge, qText } from '../ItemCard';
 import { runeLvl } from '../../engine/runes';
 import { heroTodo } from '../todo';
 
@@ -147,8 +148,8 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
             const dmg = SLOTS[slot].stat === 'dmg';
             return (
               <button key={slot} class={`eqc r${it.r}`} onClick={() => onItem(it)}
-                aria-label={`${SLOTS[slot].n}: ${itemName(it)}, ${RAR[it.r].n}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}${it.aw && !it.awc ? ', możesz wybrać cechę' : ''}`}>
-                <span class="eqc-ic"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} /><RuneBadge lvl={rl} cls="on-slot" />{it.aw && !it.awc && <i class="slot-aw" title="Wybierz cechę przebudzenia — za darmo" />}</span>
+                aria-label={`${SLOTS[slot].n}: ${itemName(it)}, ${RAR[it.r].n}, ${qText(it.q)}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}${it.aw && !it.awc ? ', możesz wybrać cechę' : ''}`}>
+                <span class="eqc-ic"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} /><QBadge q={it.q} size="sm" /><RuneBadge lvl={rl} cls="on-slot" />{it.aw && !it.awc && <i class="slot-aw" title="Wybierz cechę przebudzenia — za darmo" />}</span>
                 <span class="eqc-t">
                   <small>{SLOTS[slot].n}</small>
                   <b class={`rt${it.r}`}>{itemName(it)}</b>

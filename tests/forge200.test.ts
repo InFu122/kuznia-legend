@@ -16,7 +16,7 @@ const seedFor = (n: number) => (Math.imul(n + 1, 2654435761) ^ 0x5bd1e995) >>> 0
 describe('kuźnia do 200. poziomu', () => {
   it('rudy otwierają się później; dawne poziomy zostają dla wytopów sprzed aktualizacji', () => {
     expect(B.FORGE_MAX).toBe(200);
-    expect(JUMP_V).toBe(6);
+    expect(JUMP_V).toBe(7);
     expect([2, 3, 4, 7, 5, 8, 6, 9].map(o => ORES[o].lvl)).toEqual([5, 12, 25, 40, 60, 85, 100, 120]);
     expect(oreLvl(4, 4)).toBe(ORE_LVL_V4[4]);
     expect(oreLvl(4)).toBe(25);
@@ -44,7 +44,7 @@ describe('kuźnia do 200. poziomu', () => {
     expect(verifySmelt(it, seedFor(n), 0, 30)).toBeNull();
     // ten sam wytop na kuźni 15 według zasad v4 (Adamantyt od 15. poziomu)
     const rng = mulberry32(seedFor(n)); const d = smeltDraws(rng);
-    const old: Item = { ...it, flvl: 15, lvl: itemLevelFor(15, d.lvl), r: 4, jump: 0, subs: rollSubs(rng, 4), jv: 4 };
+    const old: Item = { ...it, flvl: 15, lvl: itemLevelFor(15, d.lvl), r: 4, jump: 0, subs: rollSubs(rng, 4), jv: 4, q: undefined };
     if (d.roll < 100 - 50) {
       expect(verifySmelt(old, seedFor(n), 0, 30, 4)).toBeNull();
     }

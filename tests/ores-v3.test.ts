@@ -88,7 +88,7 @@ describe('dawne Boskie przedmioty zostają', () => {
     expect(verifySmelt(it, seedFor(n), 0, 100)).toBeNull();
     // ten sam wytop według zasad w wersji 2 (kuźnia 30): Gwiezdny Kruszec zawsze Boski, bez przeskoku
     const rng = mulberry32(seedFor(n)); const dr = smeltDraws(rng);
-    const old: Item = { ...it, r: 6, jump: 0, flvl: 30, lvl: itemLevelFor(30, dr.lvl), subs: rollSubs(rng, 6), jv: 2 };
+    const old: Item = { ...it, r: 6, jump: 0, flvl: 30, lvl: itemLevelFor(30, dr.lvl), subs: rollSubs(rng, 6), jv: 2, q: undefined };
     expect(oreFloor(6, 2)).toBe(6);
     expect(verifySmelt(old, seedFor(n), 0, 30, 2)).toBeNull();
     expect(verifySmelt(old, seedFor(n), 0, 30, 3)).not.toBeNull();

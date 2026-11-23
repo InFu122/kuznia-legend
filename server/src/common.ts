@@ -44,6 +44,7 @@ export interface SaveMeta {
   jv4?: number;      // od tego numeru wytopu obowiązują zasady w wersji 4 (nowa ruda wchodzi stopniowo)
   jv5?: number;      // od tego numeru wytopu obowiązują zasady w wersji 5 (kuźnia do 200, rudy otwierają się później)
   jv6?: number;      // od tego numeru wytopu obowiązują zasady w wersji 6 (10 rzadkości, płynne szanse rud)
+  jv7?: number;      // od tego numeru wytopu obowiązują zasady w wersji 7 (jakość I–V, ruda unikalna — jakość IV–V)
 }
 export interface SaveValue { state: GameState; power: number; savedAt: number; meta?: SaveMeta }
 

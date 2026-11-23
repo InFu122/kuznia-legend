@@ -121,15 +121,32 @@ export const STAT_CAPS = { crit: 40, critd: 150, spd: 60, ls: 15, dodge: 25, reg
 export const SUB_IDS = Object.keys(SUBS) as SubId[];
 
 /** Domieszki żywiołów: drugi, opcjonalny składnik wytopu. */
+// Każdy założony przedmiot z domieszką dodaje swoją wartość (pełne 8 części — 8 razy tyle). Od listopada 2026
+// wartości są ok. 5 razy mniejsze: domieszka to dodatek, a nie powód, żeby nie kuć bez niej.
 export const ELEM: Record<ElemKey, { n: string; el: string; eff: 'dmg' | 'slow' | 'ls' | 'holy'; v: number; d: string }> = {
-  zar: { n: 'Żarowiec', el: 'Ogień', eff: 'dmg', v: 10, d: '+10% obrażeń (podpalenie)' },
-  szron: { n: 'Szronit', el: 'Lód', eff: 'slow', v: 15, d: 'wróg atakuje o 15% wolniej' },
-  burz: { n: 'Burzyt', el: 'Błyskawica', eff: 'dmg', v: 12, d: '+12% obrażeń (piorun łańcuchowy)' },
-  jad: { n: 'Jadowit', el: 'Trucizna', eff: 'dmg', v: 8, d: '+8% obrażeń (trucizna)' },
-  cien: { n: 'Obsydian Cienia', el: 'Cień', eff: 'ls', v: 4, d: '+4% kradzieży życia' },
-  jasn: { n: 'Jasnokwarc', el: 'Światło', eff: 'holy', v: 20, d: '+20% obrażeń wobec nieumarłych i demonów' },
+  zar: { n: 'Żarowiec', el: 'Ogień', eff: 'dmg', v: 2, d: '+2% obrażeń (podpalenie)' },
+  szron: { n: 'Szronit', el: 'Lód', eff: 'slow', v: 3, d: 'wróg atakuje o 3% wolniej' },
+  burz: { n: 'Burzyt', el: 'Błyskawica', eff: 'dmg', v: 2.5, d: '+2,5% obrażeń (piorun łańcuchowy)' },
+  jad: { n: 'Jadowit', el: 'Trucizna', eff: 'dmg', v: 1.5, d: '+1,5% obrażeń (trucizna)' },
+  cien: { n: 'Obsydian Cienia', el: 'Cień', eff: 'ls', v: 0.8, d: '+0,8% kradzieży życia' },
+  jasn: { n: 'Jasnokwarc', el: 'Światło', eff: 'holy', v: 4, d: '+4% obrażeń wobec nieumarłych i demonów' },
 };
 export const ELEM_KEYS = Object.keys(ELEM) as ElemKey[];
+
+/** Jakość wytopu I–V (losowana przy każdym wytopie): szansa w % i premia do głównej i dodatkowych statystyk w %. */
+export const QUAL = [
+  { n: 'I', p: 40, b: 0 },
+  { n: 'II', p: 30, b: 4 },
+  { n: 'III', p: 18, b: 8 },
+  { n: 'IV', p: 9, b: 13 },
+  { n: 'V', p: 3, b: 20 },
+] as const;
+/** Wytop z rudą unikalną: jakość IV z tą szansą (%), w pozostałych — V. */
+export const QUAL_UNIQ_IV = 75;
+/** Jakość przedmiotu 1–5 (przedmioty sprzed jakości liczą się jako I). */
+export const qOf = (it: { q?: number }) => Math.max(1, Math.min(QUAL.length, it.q ?? 1));
+/** Mnożnik statystyk za jakość. */
+export const qMult = (q?: number) => 1 + (QUAL[Math.max(1, Math.min(QUAL.length, q ?? 1)) - 1].b) / 100;
 
 /**
  * Rafinacja: ile sztuk rudy (indeks) daje 1 sztukę następnej. Im szlachetniejsza ruda, tym drożej —

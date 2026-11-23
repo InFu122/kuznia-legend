@@ -177,7 +177,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
           <InfoBtn corner onClick={() => onInfo('forge')} label="Jak działa kuźnia i jakie są szanse" />
         </div>
         <OreFacts game={game} />
-        <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && pityOk ? 'z rudą unikalną bez najniższej' : undefined} />
+        <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : undefined} />
         {pityOk && (
           <div class="pity">
             <span>Gwarancja przeskoku</span>
@@ -203,7 +203,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
             ) : SET_IDS.some(k => (s.uniq[k] ?? 0) > 0) && <span class="sub">Rudy unikalne wytopisz od {SET_FORGE_LVL}. poziomu kuźni.</span>}
           </div>
         )}
-        {set && <p class="sub" style={{ marginTop: '8px' }}>Następny wytop z rudą unikalną <b style={{ color: SETS[set].col }}>{SETS[set].ore}</b>{pityOk ? ': pewny przeskok o co najmniej 1 rzadkość' : mj >= 1 ? ' (przeskok do Boskiego nigdy nie jest pewny)' : ''}.</p>}
+        {set && <p class="sub" style={{ marginTop: '8px' }}>Następny wytop z rudą unikalną <b style={{ color: SETS[set].col }}>{SETS[set].ore}</b>: pewna jakość IV albo V.</p>}
         {f.lvl < B.AUTO_FORGE_LVL && <div class="auto"><span>Auto-wytop odblokujesz na {B.AUTO_FORGE_LVL}. poziomie kuźni.</span></div>}
       </section>
 
@@ -218,7 +218,6 @@ export function OreSummary({ game }: { game: Game }) {
   const f = s.forge;
   const o = s.oreSel;
   const mj = maxJump(o);
-  const set = uniqActive(s);
   const rel = techMods(s).jumpRel;
   const at = Math.max(f.lvl, ORES[o].lvl);
   const nom = rAt(oreNominal(o, at)), goal = rAt(Math.ceil(ORES[o].v6[1] - 1e-9));
@@ -230,7 +229,7 @@ export function OreSummary({ game }: { game: Game }) {
         <b>{ORES[o].n}</b> · zwykle <span class={`rt${nom}`}>{RAR[nom].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
         {growing && <> · <span class="rampnote">na niskiej kuźni czasem o rzadkość niżej — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></span></>}
       </div>
-      <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : set && pityOk ? 'z rudą unikalną bez najniższej' : undefined} />
+      <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : undefined} />
       {pityOk && (
         <div class="pity">
           <span>Gwarancja przeskoku</span>

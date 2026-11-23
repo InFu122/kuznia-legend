@@ -1,4 +1,4 @@
-import { B, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, R, RANK_MAX, RAR, REFINE, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, rAt, rGe, rRank, subMult } from '../data';
+import { B, GOLD_SKIN_FORGE, ELEM, FORGE_UNLOCKS, ORES, QUAL, QUAL_UNIQ_IV, R, RANK_MAX, RAR, REFINE, SET_FORGE_LVL, SLOTS, SLOT_ORDER, SUBS, SUB_IDS, landDef, qMult, rAt, rGe, rRank, subMult } from '../data';
 import { discover } from './achievements';
 import { toast, type Ctx } from './context';
 import { JUMP_V, dropChance, itemLevelFor, itemName, jumpChances, maxJump, oreNominal, pityAllowed, sellPrice, smeltRarity, upCost, upTime } from './formulas';
@@ -7,10 +7,10 @@ import { allMods } from './mods';
 import { track } from './missions';
 import { mulberry32, ri, rnd, shuffle, type Rng } from './rng';
 import { invalidate, powerDelta } from './stats';
-import type { ElemKey, GameState, Item, SetId, SlotId } from './types';
+import type { ElemKey, GameState, Item, SetId, SlotId, SubId } from './types';
 
 export const canSmelt = (ctx: Ctx, ore: number) => ctx.s.ores[ore] > 0 && ctx.s.forge.lvl >= ORES[ore].lvl;
-/** Czy przy następnym wytopie zostanie użyta ruda unikalna (pewny przeskok rzadkości). */
+/** Czy przy następnym wytopie zostanie użyta ruda unikalna (pewna jakość IV–V). */
 export const uniqActive = (s: GameState): SetId | null =>
   s.uniqSel && s.forge.lvl >= SET_FORGE_LVL && (s.uniq[s.uniqSel] ?? 0) > 0 ? s.uniqSel : null;
 
@@ -36,9 +36,23 @@ export function rollSubs(rng: Rng, r: number) {
   }));
 }
 
+/** Jakość z losowania `u` (0–1): według szans z QUAL, a z rudą unikalną — IV albo V. */
+export function qualityOf(u: number, uniq: boolean): number {
+  if (uniq) return u * 100 < QUAL_UNIQ_IV ? 4 : 5;
+  let acc = 0;
+  for (let i = 0; i < QUAL.length; i++) {
+    acc += QUAL[i].p;
+    if (u * 100 < acc) return i + 1;
+  }
+  return QUAL.length;
+}
+/** Statystyki dodatkowe z premią za jakość (zaokrąglone jak przy losowaniu — do 0,1). */
+export const qualSubs = (subs: { id: SubId; v: number }[], q: number) =>
+  q <= 1 ? subs : subs.map(x => ({ id: x.id, v: Math.round(x.v * qMult(q) * 10) / 10 }));
+
 /**
  * Losowania jednego wytopu — zawsze w tej samej kolejności, żeby serwer mógł odtworzyć wytop z ziarna:
- * oszczędność rudy, przeskok, miejsce, rodzaj, poziom, a potem statystyki dodatkowe.
+ * oszczędność rudy, przeskok, miejsce, rodzaj, poziom, potem statystyki dodatkowe, a na końcu (od wersji 7) jakość.
  */
 export function smeltDraws(rng: Rng) {
   return { save: rng.next() * 100, roll: rng.next() * 100, slot: rng.next(), kind: rng.next(), lvl: ri(rng, 0, 2) };
@@ -71,7 +85,6 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   let forced: Item['forced'] = '';
   if (s.stats.smelted === 2 && mj >= 1 && jump <= 0) { jump = 1; forced = 'tut'; } // samouczek
   if (jump <= 0 && pityAllowed(ore, JUMP_V, flvl) && s.pity >= B.PITY_MAX) { jump = 1; forced = 'pity'; }
-  if (set && jump <= 0 && pityAllowed(ore, JUMP_V, flvl)) { jump = 1; forced = 'set'; } // ruda unikalna gwarantuje przeskok (ale nigdy do Boskiego)
   if (mj >= 1) s.pity = jump > 0 ? 0 : s.pity + 1;
   const r = smeltRarity(ore, flvl, jump);
 
@@ -81,6 +94,8 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   const kind = first ? kinds[0] : kinds[Math.floor(d.kind * kinds.length)];
   let elKey: ElemKey | null = null;
   if (el && s.forge.lvl >= B.ELEM_FORGE_LVL && (s.els[el] ?? 0) > 0) { s.els[el] = (s.els[el] ?? 0) - 1; elKey = el; }
+  const subs0 = rollSubs(rng, r);
+  const q = qualityOf(rng.next(), !!set); // ruda unikalna: pewna jakość IV albo V
   s.stats.smelted++;
   if (jump > 0) s.stats.jumps++;
   track(ctx, 'smelt');
@@ -88,7 +103,7 @@ export function smelt(ctx: Ctx, ore: number, el: ElemKey | null): Item | null {
   ctx.dirty = true;
   const it: Item = {
     id: s.nid++, slot, kind: kind[0], g: kind[1], ore, r, lvl: itemLevelFor(s.forge.lvl, d.lvl),
-    subs: rollSubs(rng, r), el: elKey, jump, flvl: s.forge.lvl, forced, jv: JUMP_V,
+    subs: qualSubs(subs0, q), el: elKey, jump, flvl: s.forge.lvl, forced, jv: JUMP_V, q,
     smith: s.name, land: landDef(s.cur.land).n, fame: 0, kills: {}, bosses: 0, ls: 0, aw: null, owners: [s.name], obieg: false, set,
   };
   if (sx !== undefined) it.sx = sx;

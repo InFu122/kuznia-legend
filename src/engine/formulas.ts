@@ -1,6 +1,6 @@
 import {
   B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
-  FOE_GENITIVE, JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RANK_MAX, RARITY_AT_BOSS, RAR, R, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank, rAt,
+  FOE_GENITIVE, JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RANK_MAX, RARITY_AT_BOSS, RAR, R, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank, qMult, rAt,
 } from '../data';
 import type { Awakening, FoeType, GameState, Item } from './types';
 
@@ -122,7 +122,7 @@ export const recPower = (land: number) => {
  * (`oreBase`), która rośnie z poziomem kuźni; przeskok liczy się od rangi nominalnej (`oreNominal`), a część
  * wytopów wychodzi o rangę niżej (`dropChance`). Do wersji 5 rzadkość to indeks 0–6 i rachunek na indeksach.
  */
-export const JUMP_V = 6;
+export const JUMP_V = 7; // 7: jakość I–V, ruda unikalna daje jakość IV–V zamiast pewnego przeskoku
 /** Od którego poziomu kuźni ruda daje się wytopić według zasad wersji `ver`. */
 export const oreLvl = (ore: number, ver = JUMP_V) => (ver < 5 ? ORE_LVL_V4[ore] ?? ORES[ore]?.lvl ?? 1 : ORES[ore]?.lvl ?? 1);
 /** Mnożnik szansy na przeskok, który kończy się na danej rzadkości (wersje 2–5, indeks dawnej rzadkości). */
@@ -268,7 +268,7 @@ export function normAwakening(aw: unknown): Awakening | null {
 export const legStage = (fame: number) => (fame >= LEGEND[3].at ? 3 : fame >= LEGEND[2].at ? 2 : fame >= LEGEND[1].at ? 1 : 0);
 
 export function mainVal(it: Item): number {
-  return Math.round(SLOTS[it.slot].base * lvlFactor(it.lvl) * RAR[it.r].m * (ORES[it.ore]?.q ?? 1) * (1 + LEGEND[it.ls || 0].b));
+  return Math.round(SLOTS[it.slot].base * lvlFactor(it.lvl) * RAR[it.r].m * (ORES[it.ore]?.q ?? 1) * (1 + LEGEND[it.ls || 0].b) * qMult(it.q));
 }
 
 /** Boskie przedmioty mają własne imię — zawsze to samo dla danego przedmiotu (z numeru wytopu, rodzaju i kowala). */

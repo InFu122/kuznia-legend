@@ -27,12 +27,12 @@ export function ForgeDock({ game, onPick, onDecide, onAuto, onElem, onUniq }: { 
   const el = s.elSel && (s.els[s.elSel] ?? 0) > 0 ? s.elSel : null;
   const sub = f.lvl < ORES[o].lvl ? `${ORES[o].n} od poz. ${ORES[o].lvl}` : s.ores[o] < 1 ? `brak rudy: ${ORES[o].n}`
     : ORES[o].n;
-  /** Ruda unikalna (pewny przeskok): druga „dobudówka” nad Wytopem, od poziomu kuźni, na którym się otwiera. */
+  /** Ruda unikalna (pewna jakość IV–V): druga „dobudówka” nad Wytopem, od poziomu kuźni, na którym się otwiera. */
   const uqOn = f.lvl >= SET_FORGE_LVL;
   const uq = uniqActive(s);
   /**
-   * Z domieszką albo rudą unikalną podpis ma drugą linijkę z ikonkami: „[domieszka] Szronit”, „[unikalna] pewny przeskok”,
-   * a z obiema — obie ikonki i „pewny przeskok” (nazwa domieszki jest w zakładce nad rudą).
+   * Z domieszką albo rudą unikalną podpis ma drugą linijkę z ikonkami: „[domieszka] Szronit”, „[unikalna] jakość IV–V”,
+   * a z obiema — obie ikonki i „jakość IV–V” (nazwa domieszki jest w zakładce nad rudą).
    */
   const mix = (el || uq) && f.lvl >= ORES[o].lvl && s.ores[o] >= 1;
   /** Domieszka na pasku: od poziomu kuźni, na którym się otwiera — jako „dobudówka” nad przyciskiem rudy. */
@@ -57,7 +57,7 @@ export function ForgeDock({ game, onPick, onDecide, onAuto, onElem, onUniq }: { 
       {uqOn && (
         <button class={`dock-uq${uq ? ' on' : ''}`} onClick={onUniq} aria-haspopup="dialog"
           style={uq ? { '--uc': SETS[uq].col } as Record<string, string> : undefined}
-          aria-label={uq ? `Ruda unikalna: ${SETS[uq].ore}, ${s.uniq[uq]} sztuk — pewny przeskok rzadkości. Zmień` : 'Bez rudy unikalnej. Wybierz rudę unikalną'}>
+          aria-label={uq ? `Ruda unikalna: ${SETS[uq].ore}, ${s.uniq[uq]} sztuk — pewna jakość IV albo V. Zmień` : 'Bez rudy unikalnej. Wybierz rudę unikalną'}>
           {uq ? <><Px src={setOreUrl(uq)} size={20} /><span>{SETS[uq].ore}</span><b>· {fmt(s.uniq[uq] ?? 0)}</b></> : <span>+ ruda unikalna</span>}
         </button>
       )}
@@ -79,7 +79,7 @@ export function ForgeDock({ game, onPick, onDecide, onAuto, onElem, onUniq }: { 
               <small class="dg-add">
                 {el && <Px src={elemUrl(el)} size={14} />}
                 {uq && <Px src={setOreUrl(uq)} size={14} />}
-                <span>{uq ? 'pewny przeskok' : el ? ELEM[el].n : ''}</span>
+                <span>{uq ? 'jakość IV–V' : el ? ELEM[el].n : ''}</span>
               </small>
             )}
           </span>

@@ -7,7 +7,7 @@
 // więc opłaca się wracać do wcześniejszych krain i je farmić (karta runy podpowiada, gdzie dana ruda wypada najczęściej).
 // Przekuwanie: jedna statystyka dodatkowa przedmiotu losowana od nowa za rudę przedmiotu i złoto; gracz wybiera, którą wersję zatrzymać.
 // Z serwerem przekuwa serwer (server/src/runes.ts) i podpisuje przedmiot, żeby dalej liczył się do rankingów.
-import { B, DIVINE_ORE, LANDS, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, subMult } from '../data';
+import { B, DIVINE_ORE, LANDS, ORES, ORE_ORDER, RAR, SLOTS, SUBS, SUB_IDS, qMult, subMult } from '../data';
 import { toast, type Ctx } from './context';
 import { goldWaveOf } from './formulas';
 import { allMods } from './mods';
@@ -138,7 +138,7 @@ export function rerollSub(rng: Rng, it: Item, i: number): Item | null {
   const others = new Set(it.subs.filter((_, j) => j !== i).map(x => x.id));
   const pool = SUB_IDS.filter(id => !others.has(id));
   const id = pool[Math.floor(rng.next() * pool.length)];
-  const v = Math.round(rnd(rng, SUBS[id].lo, SUBS[id].hi) * subMult(it.r) * 10) / 10;
+  const v = Math.round(rnd(rng, SUBS[id].lo, SUBS[id].hi) * subMult(it.r) * qMult(it.q) * 10) / 10; // z premią za jakość
   const out: Item = JSON.parse(JSON.stringify(it));
   out.subs[i] = { id, v };
   return out;

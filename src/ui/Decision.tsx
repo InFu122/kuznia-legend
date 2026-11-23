@@ -1,7 +1,7 @@
 // Okno decyzji o nowym przedmiocie (wytop, zatrzymany auto-wytop, skrzynia bossa, Zbrojownia):
 // animacja dropu, nowy przedmiot obok założonego, różnice statystyk i przyciski Załóż / Sprzedaj.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { B, ELEM, ORES, R, RAR, RAR_ORDER, SLOTS, SLOT_ORDER, SUBS, rAt, rGe, rRank, rTier } from '../data';
+import { B, ELEM, ORES, QUAL, R, RAR, RAR_ORDER, SLOTS, SLOT_ORDER, SUBS, qOf, rAt, rGe, rRank, rTier } from '../data';
 import { itemUrl, resUrl } from '../art/render';
 import { coinsToGold, flyToSlot, sparks } from './fx';
 import { buzz } from './haptics';
@@ -15,7 +15,7 @@ import { toast } from '../engine/context';
 import type { Item, SubId } from '../engine/types';
 import { ServerError, getLink } from '../save/server';
 import { f1, fmt, pct } from './format';
-import { ItemCard } from './ItemCard';
+import { ItemCard, QBadge } from './ItemCard';
 import { Px } from './Px';
 
 /** „Pochwal się dropem”: karta przedmiotu Mitycznego lub Boskiego na czacie globalnym. */
@@ -81,6 +81,9 @@ function DCard({ it, tag, win, first, cls = '', iconRef }: { it: Item; tag: stri
       <img ref={iconRef} class="px dc-ico" src={itemUrl(it.kind, it.ore, it.r)} width={win ? 72 : 52} height={win ? 72 : 52} alt="" draggable={false} />
       <b class="dc-name">{itemName(it)}</b>
       <small class={`rt${it.r}`}>{RAR[it.r].n} · poz. {it.lvl}</small>
+      <span class={`dc-q${cls === 'new' && qOf(it) >= 4 ? ' hi' : ''}`}>
+        <small>jakość</small><QBadge q={it.q} size={win ? 'big' : ''} />{QUAL[qOf(it) - 1].b > 0 && <small>+{QUAL[qOf(it) - 1].b}%</small>}
+      </span>
       {it.jump > 0 && <span class="dc-jump">Przeskok +{it.jump}!</span>}
     </div>
   );

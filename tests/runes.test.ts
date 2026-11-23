@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { B, SUBS, RAR, subMult } from '../src/data';
+import { B, SUBS, RAR, qMult, subMult } from '../src/data';
 import { equip, smelt } from '../src/engine/forge';
 import { mulberry32 } from '../src/engine/rng';
 import { farmLandFor, reforgeBlock, reforgeCost, rerollSub, runeBlock, runeCost, runePay } from '../src/engine/runes';
@@ -83,8 +83,8 @@ describe('przekuwanie', () => {
       const x = out.subs[0];
       expect(out.subs.slice(1)).toEqual(it.subs.slice(1));
       expect(it.subs.slice(1).some(o => o.id === x.id)).toBe(false);
-      expect(x.v).toBeGreaterThanOrEqual(Math.round(SUBS[x.id].lo * subMult(it.r) * 10) / 10 - 0.05);
-      expect(x.v).toBeLessThanOrEqual(Math.round(SUBS[x.id].hi * subMult(it.r) * 10) / 10 + 0.05);
+      expect(x.v).toBeGreaterThanOrEqual(Math.round(SUBS[x.id].lo * subMult(it.r) * qMult(it.q) * 10) / 10 - 0.05);
+      expect(x.v).toBeLessThanOrEqual(Math.round(SUBS[x.id].hi * subMult(it.r) * qMult(it.q) * 10) / 10 + 0.05);
     }
     expect(rerollSub(rng, it, 9)).toBeNull();
   });

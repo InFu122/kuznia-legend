@@ -7,7 +7,8 @@ export interface SetDef {
 }
 
 /**
- * Rudy unikalne wypadają z bossów (i z Leży Bossów). Wytop z rudą unikalną ma pewny przeskok o co najmniej 1 rzadkość.
+ * Rudy unikalne wypadają z bossów (i z Leży Bossów). Wytop z rudą unikalną ma pewną jakość IV albo V
+ * (do listopada 2026 — wersja zasad 6 — dawał pewny przeskok o co najmniej 1 rzadkość).
  * (Premie za zestawy — 2 i 4 części z tej samej rudy — zostały usunięte w listopadzie 2026; identyfikatory rud zostają.)
  */
 export const SETS: Record<SetId, SetDef> = {

@@ -1,7 +1,7 @@
 // Sprawdzanie przedmiotów po stronie serwera. Silnik losuje wytop z ziarna, które zna tylko serwer
 // (numer wytopu `sx`), więc serwer może odtworzyć losowanie i sprawdzić, czy przedmiot jest prawdziwy.
 import { B, KIND_POOL_SIZES, ORES, SET_FORGE_LVL, SLOTS, SLOT_ORDER } from '../data';
-import { rollSubs, smeltDraws } from './forge';
+import { qualSubs, qualityOf, rollSubs, smeltDraws } from './forge';
 import { JUMP_V, dropChance, itemLevelFor, jumpChances, maxJump, oreLvl, pityAllowed, smeltRarity } from './formulas';
 import { mulberry32 } from './rng';
 import type { Item } from './types';
@@ -53,7 +53,8 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
       break;
     }
     case 'set':
-      if (it.jump !== 1 || !it.set || (ver >= 3 && !pityAllowed(it.ore, ver, it.flvl))) return 'przeskok z rudy unikalnej';
+      // Do wersji 6 ruda unikalna dawała pewny przeskok; od wersji 7 daje jakość IV–V, a przeskok losuje się zwyczajnie.
+      if (ver >= 7 || it.jump !== 1 || !it.set || (ver >= 3 && !pityAllowed(it.ore, ver, it.flvl))) return 'przeskok z rudy unikalnej';
       break;
     default:
       return 'rodzaj przeskoku';
@@ -68,14 +69,22 @@ export function verifySmelt(it: Item, seed: number, maxRel: number, forgeLvl: nu
   const kindOk = sizes.some(n => { const k = kinds[Math.floor(d.kind * n)]; return k[0] === it.kind && k[1] === it.g; });
   if (!first && !kindOk) return 'rodzaj przedmiotu';
   if (it.lvl !== itemLevelFor(it.flvl, d.lvl)) return 'poziom przedmiotu';
-  const subs = rollSubs(rng, it.r);
+  let subs = rollSubs(rng, it.r);
+  if (ver >= 7) {
+    // Jakość: ostatnie losowanie wytopu (z rudą unikalną — IV albo V); statystyki dodatkowe z jej premią.
+    const q = qualityOf(rng.next(), !!it.set);
+    if (it.q !== q) return 'jakość';
+    subs = qualSubs(subs, q);
+  } else if (it.q !== undefined) return 'jakość sprzed wersji 7';
   if (!Array.isArray(it.subs) || subs.length !== it.subs.length || subs.some((x, i) => x.id !== it.subs[i].id || x.v !== it.subs[i].v)) return 'statystyki dodatkowe';
   return null;
 }
 
 /** Część przedmiotu, którą podpisuje serwer. Sława, historia i przebudzenie zmieniają się w grze, więc ich nie obejmuje. */
 export function itemCore(it: Item): string {
-  return JSON.stringify([it.slot, it.kind, it.g, it.ore, it.r, it.lvl, it.subs.map(x => [x.id, x.v]), it.el, it.set, it.smith, it.land, !!it.npc]);
+  const core: unknown[] = [it.slot, it.kind, it.g, it.ore, it.r, it.lvl, it.subs.map(x => [x.id, x.v]), it.el, it.set, it.smith, it.land, !!it.npc];
+  if (it.q !== undefined) core.push(it.q); // jakość — tylko gdy jest (dawne podpisy przedmiotów bez jakości zostają ważne)
+  return JSON.stringify(core);
 }
 
 /** Czy przedmiot ma dowód pochodzenia od serwera (ziarno wytopu albo podpis). */
