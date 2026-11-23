@@ -245,18 +245,25 @@ export class ServerLink {
    * Zapisuje stan. Gdy serwer ma nowszy zapis z innego urządzenia, zwraca go jako `conflict`
    * (gra wybiera nowszy po `savedAt`).
    */
+  /** Licznik zmian nicku: zapis wysłany przed zmianą wraca ze starym nickiem — ten nie może nadpisać nowego. */
+  private renames = 0;
   async save(state: GameState): Promise<{ conflict?: GameState | null; force?: boolean; power?: number; name?: string; newName?: boolean; clanLvl?: number; shop?: ShopSync }> {
+    const ren = this.renames;
     const r = await this.rpc<{ version?: string; power?: number; unverified?: SlotId[]; conflict?: boolean; force?: boolean; state?: GameState | null; name?: string; newName?: boolean; clanLvl?: number } & ShopSync>(
       'save_put', { state, version: this.version });
     this.version = r.version ?? this.version;
     if (r.conflict) return { conflict: r.state ?? null, force: !!r.force };
     this.power = r.power ?? null;
     this.unverified = r.unverified ?? [];
-    return { power: r.power, name: r.name, newName: r.newName, clanLvl: r.clanLvl, shop: { gems: r.gems, shop: r.shop, pass: r.pass, buffs: r.buffs } };
+    return { power: r.power, name: ren === this.renames ? r.name : undefined, newName: r.newName, clanLvl: r.clanLvl, shop: { gems: r.gems, shop: r.shop, pass: r.pass, buffs: r.buffs } };
   }
 
   /** Zmiana nicku (unikalny na serwerze, raz na dobę). */
-  nameSet(name: string): Promise<{ name: string }> { return this.rpc('name_set', { name }); }
+  async nameSet(name: string): Promise<{ name: string }> {
+    const r = await this.rpc<{ name: string }>('name_set', { name });
+    this.renames++;
+    return r;
+  }
 
   clanInfo(): Promise<ClanInfo> { return this.rpc('clan_info', {}); }
   clanList(q = ''): Promise<{ clans: ClanSummary[]; power: number }> { return this.rpc('clan_list', { q }); }

@@ -551,6 +551,8 @@ export class Game {
     this.ctx.dirty = true;
     this.changed();
   }
+  /** Do kiedy sięga ostatnio podsumowana nieobecność (zegar urządzenia — tym samym liczą `ms` wywołujący `offline`). */
+  private offlineTo = 0;
   /** Wywołaj po powrocie do gry: nalicza nagrody offline i pokazuje podsumowanie. */
   offline(ms: number): void {
     // Przepustka bez serwera: przełom dnia przed nagrodami za nieobecność, żeby wrogowie z nocy liczyli się do nowego dnia.
@@ -558,7 +560,12 @@ export class Game {
     tickEvent(this.ctx);
     const report = applyOffline(this.ctx, ms);
     if (report) {
-      this.dispatch({ t: 'modal', m: { kind: 'offline', report } });
+      // Nieobecność zaczęła się przed końcem poprzedniego podsumowania — to ta sama przerwa policzona od nowa
+      // (np. po starcie przyszedł z serwera nowszy zapis). Okno pokaże się drugi raz tylko, jeśli pierwsze wciąż czeka.
+      const wall = Date.now();
+      const again = wall - ms < this.offlineTo - 5000;
+      this.offlineTo = wall;
+      this.dispatch({ t: 'modal', m: { kind: 'offline', report, again } });
       // Skrzynia nocnej zmiany zatrzymała się na wybranej rzadkości — przedmiot czeka na decyzję.
       if (report.chest.some(x => x.stop) && this.s.pending) this.dispatch({ t: 'modal', m: { kind: 'decide' } });
     }

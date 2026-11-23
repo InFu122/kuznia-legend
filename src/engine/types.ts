@@ -276,7 +276,8 @@ export type ModalData =
   | { kind: 'arena' }
   | { kind: 'chat'; ch?: 'global' | 'clan' }
   | { kind: 'draw'; what: 'skill' | 'mount' | 'pet'; id: string; dupe: boolean; from?: number; to?: number; cards?: number; need?: number; stones?: number }
-  | { kind: 'offline'; report: OfflineReport }
+  /** `again` — ta sama nieobecność była już podsumowana (np. nowszy zapis z serwera policzył ją od nowa). */
+  | { kind: 'offline'; report: OfflineReport; again?: boolean }
   | { kind: 'item'; item: Item }
   | { kind: 'info'; k: 'forge' | 'level' | 'runes' | 'pets' | 'mounts' }
   | { kind: 'reset' }
