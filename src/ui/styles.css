@@ -2444,3 +2444,24 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .dc-q.hi small{color:#ffd46b}
 @keyframes qStamp{from{opacity:0; transform:scale(2.4) rotate(-10deg)} to{opacity:1; transform:none}}
 @media (prefers-reduced-motion:reduce){ .qb.q5, .dc-q.hi{animation:none} }
+/* Jakość w podglądzie przedmiotu: skala I–V z premiami */
+.iq-plus{font-size:.82em; font-weight:700; color:#e8c26a}
+.iq{display:flex; flex-direction:column; gap:7px; padding:9px 10px; border-radius:10px; background:rgba(14,10,7,.45); border:1px solid var(--rivet)}
+.iq.q4, .iq.q5{border-color:color-mix(in srgb, #e8c26a 55%, var(--rivet)); background:linear-gradient(120deg, rgba(232,194,106,.12), rgba(14,10,7,.45) 60%)}
+.iq-h{display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; color:var(--ash)}
+.iq-h > span{display:inline-flex; align-items:center; gap:6px}
+.iq-h b{color:var(--frost); font-size:13px}
+.iq.q4 .iq-h b, .iq.q5 .iq-h b{color:#ffd46b}
+.iq-scale{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(5, 1fr); gap:4px}
+.iq-scale li{position:relative; display:flex; flex-direction:column; align-items:center; gap:3px; padding:5px 0 4px; border-radius:7px; background:#16110d; opacity:.45}
+.iq-scale li::before{content:""; position:absolute; left:0; right:0; top:0; height:3px; border-radius:7px 7px 0 0; background:var(--rivet)}
+.iq-scale li.on{opacity:1}
+.iq-scale li.on::before{background:linear-gradient(90deg, #a1612c, #e8c26a)}
+.iq-scale li.now{background:#241a12; box-shadow:inset 0 0 0 1px #e8c26a, 0 0 10px -2px rgba(232,194,106,.6)}
+.iq-scale li small{font-size:11px; font-weight:700; color:var(--ash); font-variant-numeric:tabular-nums}
+.iq-scale li.now small{color:#ffd46b}
+.iq-note{font-size:11.5px; line-height:1.35; color:var(--ash)}
+.iq-note b{color:#e8c26a}
+.ds.dq .ds-n small{font-size:11px; color:#8f8173}
+.ds.dq .ds-v{display:inline-flex; align-items:center; gap:5px; justify-content:flex-end}
+.ds.dq .ds-old{display:inline-flex; align-items:center; gap:4px}

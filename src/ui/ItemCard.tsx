@@ -1,4 +1,4 @@
-import { B, ELEM, LEGEND, ORES, QUAL, RAR, SLOTS, R, qOf } from '../data';
+import { B, ELEM, LEGEND, ORES, QUAL, RAR, SLOTS, R, qMult, qOf } from '../data';
 import { awText, baseName, itemName, mainVal } from '../engine/formulas';
 import type { FoeType, Item } from '../engine/types';
 import { SUBS } from '../data';
@@ -12,6 +12,34 @@ export function QBadge({ q, size = '' }: { q?: number; size?: '' | 'big' | 'sm' 
   const Q = QUAL[n - 1];
   return <span class={`qb q${n}${size ? ' ' + size : ''}`} title={`Jakość ${Q.n}${Q.b ? ` — +${Q.b}% statystyk` : ''}`} aria-label={`jakość ${Q.n}`}>{Q.n}</span>;
 }
+/** Ile z wartości statystyki daje jakość (statystyka dodatkowa jest zapisana już z premią). */
+export const qShare = (v: number, q?: number) => { const m = qMult(q); return m > 1 ? Math.round((v - v / m) * 10) / 10 : 0; };
+
+/** Jakość w podglądzie przedmiotu: skala I–V z premiami i to, ile daje jakość tego przedmiotu. */
+export function QualityScale({ it }: { it: Item }) {
+  const n = qOf(it);
+  const Q = QUAL[n - 1];
+  const extra = mainVal(it) - mainVal({ ...it, q: undefined });
+  return (
+    <div class={`iq q${n}`}>
+      <div class="iq-h">
+        <span>Jakość <QBadge q={it.q} size="sm" /></span>
+        <b>{Q.b ? `+${Q.b}% do wszystkich statystyk` : 'bez premii'}</b>
+      </div>
+      <ol class="iq-scale" aria-label="Skala jakości">
+        {QUAL.map((x, i) => (
+          <li key={x.n} class={`${i + 1 <= n ? 'on' : ''}${i + 1 === n ? ' now' : ''}`}>
+            <span class={`qb sm q${i + 1}`}>{x.n}</span>
+            <small>{x.b ? `+${x.b}%` : '0%'}</small>
+          </li>
+        ))}
+      </ol>
+      {Q.b > 0 && <small class="iq-note">Z jakości: <b>+{fmt(extra)}</b> {SLOTS[it.slot].stat === 'dmg' ? 'obrażeń' : 'zdrowia'}{it.subs.length ? ' i część każdej statystyki dodatkowej (zaznaczona niżej)' : ''}.</small>}
+      {Q.b === 0 && <small class="iq-note">Wyższa jakość tego samego przedmiotu dałaby do +{QUAL[QUAL.length - 1].b}% statystyk.</small>}
+    </div>
+  );
+}
+
 /** „jakość IV · +13%” — do opisów przedmiotu. */
 export const qText = (q?: number) => { const Q = QUAL[qOf({ q }) - 1]; return `jakość ${Q.n}${Q.b ? ` (+${Q.b}%)` : ''}`; };
 
@@ -34,8 +62,9 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
         </div>
         {delta !== undefined && <div class={`delta ${delta >= 0 ? 'up' : 'down'}`}>{delta >= 0 ? '+' : '−'}{fmt(Math.abs(delta))}</div>}
       </div>
-      <div class="imain">{S.stat === 'dmg' ? 'Obrażenia' : 'Zdrowie'} {fmt(mainVal(it))}</div>
-      {it.subs.length > 0 && <ul class="isubs">{it.subs.map(s => <li key={s.id}>{SUBS[s.id].n} +{f1(s.v)}{SUBS[s.id].u}</li>)}</ul>}
+      <div class="imain">{S.stat === 'dmg' ? 'Obrażenia' : 'Zdrowie'} {fmt(mainVal(it))}{qOf(it) > 1 && <span class="iq-plus" title="z jakości"> +{fmt(mainVal(it) - mainVal({ ...it, q: undefined }))}</span>}</div>
+      {it.subs.length > 0 && <ul class="isubs">{it.subs.map(s => <li key={s.id}>{SUBS[s.id].n} +{f1(s.v)}{SUBS[s.id].u}{qShare(s.v, it.q) > 0 && <span class="iq-plus" title="z jakości"> +{f1(qShare(s.v, it.q))}</span>}</li>)}</ul>}
+      <QualityScale it={it} />
       {it.r === R.BOSKI && <div class="iaura"><span aria-hidden="true">✦</span><span><b>Boska aura:</b> +{B.DIVINE_AURA}% obrażeń i zdrowia całego bohatera, gdy ten przedmiot jest założony.</span></div>}
       {it.el && <div class="iel">Żywioł: {ELEM[it.el].el} — {ELEM[it.el].d}</div>}
       {it.aw && <div class="itrait">Cecha: {it.aw.name} — {awText(it.aw)}</div>}

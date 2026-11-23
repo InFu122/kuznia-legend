@@ -120,6 +120,23 @@ function Ladder({ it, cur }: { it: Item; cur: Item | undefined }) {
 
 interface StatRow { k: string; n: string; a: number; b: number; f: (n: number) => string; txt?: [string, string] }
 
+/** Jakość w porównaniu: „I → V” z premią do statystyk i różnicą premii (np. +20%). */
+function QualRow({ cur, it }: { cur: Item | undefined; it: Item }) {
+  const a = qOf(cur ?? { q: 1 }), b = qOf(it);
+  const ba = QUAL[a - 1].b, bb = QUAL[b - 1].b;
+  const d = bb - (cur ? ba : 0);
+  return (
+    <div class="ds dq">
+      <span class="ds-n">Jakość</span>
+      <span class="ds-v">
+        {cur && a !== b && <span class="ds-old"><span class={`qb sm q${a}`}>{QUAL[a - 1].n}</span> +{ba}% → </span>}
+        <span class={`qb sm q${b}`}>{QUAL[b - 1].n}</span> +{bb}%
+      </span>
+      {d === 0 ? <span class="ds-chip eq">=</span> : <span class={`ds-chip ${d > 0 ? 'up' : 'down'}`}>{d > 0 ? '+' : '−'}{Math.abs(d)}%</span>}
+    </div>
+  );
+}
+
 /** Zmiany statystyk: „21 → 32” i znaczek różnicy; nowa cecha — NOWE, utracona — przekreślona. */
 function Stats({ cur, it }: { cur: Item | undefined; it: Item }) {
   const subOf = (x: Item | undefined, id: SubId) => x?.subs.find(q => q.id === id)?.v ?? 0;
@@ -129,6 +146,7 @@ function Stats({ cur, it }: { cur: Item | undefined; it: Item }) {
   if (cur?.el || it.el) rows.push({ k: 'el', n: 'Żywioł', a: cur?.el ? 1 : 0, b: it.el ? 1 : 0, f: () => '', txt: [cur?.el ? ELEM[cur.el].el : '', it.el ? ELEM[it.el].el : ''] });
   return (
     <div class="dstats">
+      <QualRow cur={cur} it={it} />
       {rows.map((r, i) => {
         const fresh = r.b > 0 && r.a === 0, lost = r.a > 0 && r.b === 0;
         const same = r.txt ? r.txt[0] === r.txt[1] : Math.abs(r.b - r.a) < 0.05;
