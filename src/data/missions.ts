@@ -58,7 +58,7 @@ export const TUTORIAL: TutStep[] = [
   { id: 'stage5', t: 'Naprzód', d: 'Bohater walczy sam — każda fala to złoto, a czasem ruda. Dojdź do 5. etapu Spalonej Wioski: tam odblokujesz umiejętności.', tab: 'kuznia', target: '.arena .track', act: 'look' },
   { id: 'skill', t: 'Pierwsza umiejętność', d: 'Otwórz Zwój zaklęć: Bohater → Umiejętności.', tab: 'bohater', target: ['.btn-scroll', '[data-sub="skills"]'] },
   { id: 'boss1', t: 'Boss Spalonej Wioski', d: 'Na 10. etapie wyzwij Herszta Bandytów. Jeśli przegrasz, wzmocnij ekwipunek i wróć.', tab: 'kuznia', target: ['.arena-actions .btn', '.arena .track'] },
-  { id: 'dung1', t: 'Pierwszy loch', d: 'Wejdź do Skarbca Złota w zakładce Lochy.', tab: 'lochy', target: '.dungcard .btn' },
+  { id: 'dung1', t: 'Pierwszy loch', d: 'Wejdź do Skarbca Złota w zakładce Lochy.', tab: 'lochy', target: ['.di-go', '.dungrow'] },
 ];
 
 /** Tekst misji z celem. */

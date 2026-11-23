@@ -29,7 +29,7 @@ export const FEATURES: Record<FeatureId, FeatureDef> = {
   zadania: { n: 'Zadania', d: 'Codzienne i tygodniowe zadania z nagrodami, kalendarz logowania i osiągnięcia.', forge: 2, at: { btn: 'zadania' }, target: '[data-btn="zadania"]' },
   nauka: { n: 'Nauka', d: 'Akademia Kowalska: badania za Księgi Wiedzy i złoto wzmacniają kuźnię, walkę i zarobki.', forge: TECH_UNLOCK_FORGE, at: { tab: 'nauka' }, target: '[data-tab="nauka"]' },
   sklep: { n: 'Sklep', d: 'Darmowy prezent dnia, nagrody za reklamy i towary za Klejnoty.', forge: 3, at: { btn: 'sklep' }, target: '[data-btn="sklep"]' },
-  auto: { n: 'Auto-wytop', d: 'Kuźnia kuje sama: słabsze sprzedaje, a na wybranej rzadkości czeka na twoją decyzję.', forge: B.AUTO_FORGE_LVL, at: { inTab: 'kuznia' }, target: '.auto-card .toggle' },
+  auto: { n: 'Auto-wytop', d: 'Kuźnia kuje sama: słabsze sprzedaje, a na wybranej rzadkości czeka na twoją decyzję.', forge: B.AUTO_FORGE_LVL, at: { inTab: 'kuznia' }, target: '.dock-auto' },
   umiejetnosci: { n: 'Umiejętności', d: 'Zaklęcia ze Zwojów, które bohater rzuca sam w walce.', g: SKILLS_UNLOCK_G, at: { inTab: 'bohater' }, target: '[data-sub="skills"]' },
   krainy: { n: 'Krainy', d: 'Mapa kampanii: wracaj do pokonanych krain po ich rudy.', lands: 1, at: { tab: 'krainy' }, target: '[data-tab="krainy"]' },
   lochy: { n: 'Lochy', d: 'Codzienne lochy z kluczami: złoto, rudy, Księgi i przedmioty.', lands: 1, at: { tab: 'lochy' }, target: '[data-tab="lochy"]' },

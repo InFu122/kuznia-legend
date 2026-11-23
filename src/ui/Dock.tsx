@@ -1,6 +1,7 @@
 // Kowadło pod kciukiem: na zakładce Kuźnia ruda, przycisk Wytop i Auto są przypięte nad dolnym paskiem,
 // więc zawsze widać je bez przewijania. Rudę i auto-wytop (z rzadkością, na której ma się zatrzymać)
-// ustawia się w okienkach wysuwanych z dołu; włączony auto-wytop wyłącza jedno dotknięcie Auto.
+// ustawia się w okienkach wysuwanych z dołu: wyłączony Auto otwiera ustawienia i „Włącz”, włączony — jedno dotknięcie wyłącza.
+// Osobnej karty auto-wytopu w zakładce Kuźnia nie ma. Gdy skończy się ruda, auto-wytop wyłącza się sam.
 import { useRef } from 'preact/hooks';
 import { B, ELEM, ORES, ORE_ORDER, RAR, SETS, SET_FORGE_LVL, rAt } from '../data';
 import { canSmelt, uniqActive } from '../engine/forge';
@@ -140,7 +141,7 @@ export function OrePicker({ game, close }: { game: Game; close: () => void }) {
   );
 }
 
-/** Auto-wytop: wybór rzadkości, na której kuźnia się zatrzyma, i „Włącz”. (Wyłącza się jednym dotknięciem Auto na pasku.) */
+/** Auto-wytop: wybór rzadkości, na której kuźnia się zatrzyma, domieszka i „Włącz” (wyłącza jedno dotknięcie Auto na pasku). */
 export function AutoSheet({ game, close }: { game: Game; close: () => void }) {
   const s = game.s;
   const o = s.oreSel;
@@ -149,14 +150,16 @@ export function AutoSheet({ game, close }: { game: Game; close: () => void }) {
     <>
       <div class="eyebrow">Kuźnia · poziom {s.forge.lvl}</div>
       <div class="h">Auto-wytop</div>
-      <p class="sub">{on ? 'Kuźnia kuje sama.' : 'Wybierz rzadkość i naciśnij „Włącz” — kuźnia zacznie kuć sama.'} Słabsze przedmioty sprzedaje, do pustego miejsca zakłada. Gdy wykuje wybraną rzadkość (albo rzadszą) lub przedmiot z rudy unikalnej, zatrzymuje się i czeka na twoją decyzję.</p>
+      <p class="sub">{on ? 'Kuźnia kuje sama.' : 'Kuźnia będzie kuć sama.'} Słabsze przedmioty sprzedaje, do pustych miejsc zakłada. Zatrzymuje się na wybranej rzadkości (albo rzadszej) i na przedmiocie z rudy unikalnej, a gdy skończy się ruda — wyłącza się.</p>
       {on && game.autoWaiting && <p class="tech-cost warn">{s.forge.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `Czeka na rudę: ${ORES[o].n}`}</p>}
       {on && game.autoPaused && <p class="tech-cost warn">Czeka na twoją decyzję o przedmiocie.</p>}
       <AutoStop game={game} />
       <AutoElem game={game} />
       {on
         ? <button class="btn wide" onClick={() => { game.toggleAuto(); close(); }}>Wyłącz auto-wytop</button>
-        : <button class="btn primary wide" onClick={() => { game.toggleAuto(); close(); }}>Włącz · zatrzymaj na: {RAR[game.autoTarget()].n}</button>}
+        : !canSmelt(game.ctx, o)
+          ? <button class="btn wide" disabled>{s.forge.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `Brak rudy: ${ORES[o].n}`}</button>
+          : <button class="btn primary wide" onClick={() => { game.toggleAuto(); close(); }}>Włącz · zatrzymaj na: {RAR[game.autoTarget()].n}</button>}
     </>
   );
 }

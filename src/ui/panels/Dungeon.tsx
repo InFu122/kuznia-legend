@@ -104,38 +104,6 @@ function Guardian({ game, id, locked = false }: { game: Game; id: DungId; locked
   return <img class={`dt-foe${locked ? ' shadow' : ''}`} src={foeUrl(name, type, locked ? 0 : frameAt(game.ctx.now(), 520))} alt="" aria-hidden="true" />;
 }
 
-/** Loch jako szeroka karta z tłem (jak kraina): nazwa, nagroda, klucze, rekord i wejście; strażnik po prawej. */
-function DungCard({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: DungId) => void }) {
-  const D = { ...DUNGEONS[id], n: dungName(id, game.ctx.now()) };
-  const keys = game.dungKeys(id);
-  const unlimited = !Number.isFinite(keys);
-  const run = game.b.mode === 'dung' ? game.b.dung : null;
-  const here = run?.id === id;
-  const blocked = run && !here ? 'Trwa inny loch' : !unlimited && keys < 1 ? 'Klucze jutro' : '';
-  const [rn, ric] = reward(game, id);
-  const enter = () => { if (game.startDung(id)) window.scrollTo?.({ top: 0, behavior: 'smooth' }); };
-  return (
-    <div class={`landcard dungcard${here ? ' cur' : ''}${blocked ? ' spent' : ''}${id === 'sezon' ? ' event' : ''}`} style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>}>
-      <Guardian game={game} id={id} />
-      <button class="info corner" onClick={() => onInfo(id)} aria-label={`Szczegóły: ${D.n}`}>i</button>
-      <div class="lc-top">
-        <div class="lc-name"><span class="ln">{D.n}</span>{here && <span class="lstat front">Trwa</span>}</div>
-      </div>
-      <div class="dc-reward"><Px src={ric} size={22} /><span><small>Nagroda</small><b>{rn}</b></span></div>
-      <div class="lc-bot">
-        <div class="lc-info dc-info">
-          <Keys game={game} id={id} />
-          <span class="dc-best">{id === 'leza' ? 'zwycięstwa' : 'rekord'}: <b>{best(game, id)}</b></span>
-        </div>
-        {here ? <span class="lc-here">Walka u góry</span>
-          : id === 'leza' && !blocked ? <button class="btn small primary" onClick={() => onInfo(id)}>Wybierz bossa</button>
-            : blocked ? <span class="lc-lock">{blocked}</span>
-              : <button class="btn small primary" onClick={enter}>{unlimited ? `Piętro ${game.s.dungeons.wieza.best + 1}` : 'Wejdź'}</button>}
-      </div>
-    </div>
-  );
-}
-
 /** Lochy jeszcze zamknięte: krótkie wiersze z warunkiem (dotknięcie — szczegóły). */
 function LockedList({ game, ids, onInfo }: { game: Game; ids: DungId[]; onInfo: (id: DungId) => void }) {
   if (!ids.length) return null;
@@ -160,6 +128,29 @@ function LockedList({ game, ids, onInfo }: { game: Game; ids: DungId[]; onInfo: 
   );
 }
 
+/** Loch jako niska karta: strażnik, nazwa, nagroda, klucze i rekord; dotknięcie otwiera okno lochu (tam „Wejdź”). */
+function DungRow({ game, id, onInfo }: { game: Game; id: DungId; onInfo: (id: DungId) => void }) {
+  const keys = game.dungKeys(id);
+  const unlimited = !Number.isFinite(keys);
+  const run = game.b.mode === 'dung' ? game.b.dung : null;
+  const here = run?.id === id;
+  const spent = !here && !unlimited && keys < 1;
+  const [rn, ric] = reward(game, id);
+  const n = dungName(id, game.ctx.now());
+  return (
+    <button class={`dungrow${here ? ' cur' : ''}${spent ? ' spent' : ''}${id === 'sezon' ? ' event' : ''}`} onClick={() => onInfo(id)}
+      style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>} aria-label={`${n}: nagroda ${rn}`}>
+      <span class="dr-foe"><Guardian game={game} id={id} /></span>
+      <span class="dr-main">
+        <span class="dr-name">{n}</span>
+        <span class="dr-reward"><Px src={ric} size={16} />{rn}</span>
+        <span class="dr-meta"><Keys game={game} id={id} /><span>{id === 'leza' ? 'zwycięstwa' : 'rekord'}: <b>{best(game, id)}</b></span></span>
+      </span>
+      <span class={`dr-go${here ? ' here' : spent ? ' off' : ''}`}>{here ? 'Trwa' : spent ? 'Jutro' : unlimited ? `Piętro ${game.s.dungeons.wieza.best + 1}` : id === 'leza' ? 'Wybierz' : 'Wejdź'}<i aria-hidden="true">›</i></span>
+    </button>
+  );
+}
+
 export function DungeonPanel({ game, onInfo }: { game: Game; onInfo: (id: DungId) => void }) {
   const openIds = DUNG_ORDER.filter(id => game.dungUnlocked(id));
   const lockedIds = DUNG_ORDER.filter(id => !game.dungUnlocked(id));
@@ -170,7 +161,7 @@ export function DungeonPanel({ game, onInfo }: { game: Game; onInfo: (id: DungId
         <span>{openIds.length === 0 ? 'Pierwszy loch otworzy się po pokonaniu bossa pierwszej krainy.'
           : <>Nowe klucze za <b>{tfmt(untilMidnight(game.ctx.now()))}</b> · otwarte {openIds.length}/{DUNG_ORDER.length}</>}</span>
       </section>
-      {openIds.map(id => <DungCard key={id} game={game} id={id} onInfo={onInfo} />)}
+      <div class="dungrows">{openIds.map(id => <DungRow key={id} game={game} id={id} onInfo={onInfo} />)}</div>
       <LockedList game={game} ids={lockedIds} onInfo={onInfo} />
     </>
   );
@@ -187,7 +178,8 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
   const enter = (land?: number) => { if (game.startDung(id, land)) { close(); window.scrollTo?.({ top: 0, behavior: 'smooth' }); } };
   return (
     <>
-      <div class="li-head" style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>}>
+      <div class="li-head di-head" style={{ '--bg': `url(${dungeonBgUrl(dungScene(id, game.ctx.now()))})` } as Record<string, string>}>
+        <Guardian game={game} id={id} locked={!unlocked} />
         <div class="eyebrow">Loch{unlocked ? '' : ' · zablokowany'}</div>
         <div class="h">{D.n}</div>
       </div>
@@ -218,7 +210,12 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
                 })}
               </div>
             </>
-          ) : <button class="btn primary" onClick={() => enter()}>{unlimited ? `Wejdź na piętro ${game.s.dungeons.wieza.best + 1}` : 'Wejdź'}</button>}
+          ) : (
+            <button class="btn primary di-go" onClick={() => enter()}>
+              {unlimited ? `Wejdź na piętro ${game.s.dungeons.wieza.best + 1}` : 'Wejdź'}
+              <small>{unlimited ? 'bez kluczy' : `zużywa 1 klucz · zostanie ${keys - 1}`}</small>
+            </button>
+          )}
       <button class="btn" onClick={close}>Zamknij</button>
     </>
   );

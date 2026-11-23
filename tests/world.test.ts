@@ -58,15 +58,16 @@ describe('walka i postęp', () => {
     expect(oresShown).toBe(events.filter(e => e.t === 'drop').length);
   });
 
-  it('auto-wytop bez rudy czeka zamiast się wyłączać', () => {
+  it('auto-wytop wyłącza się, gdy skończy się ruda', () => {
     const { g, s } = makeGame();
     s.forge.lvl = 5; s.auto = true; s.ores[1] = 0; s.oreSel = 1;
-    simulate(g, 3000);
-    expect(s.auto).toBe(true);
-    expect(g.autoWaiting).toBe(true);
-    s.ores[1] = 2;
-    simulate(g, 3000);
-    expect(s.ores[1]).toBe(0);
+    simulate(g, 1500);
+    expect(s.auto).toBe(false);
+    expect(g.autoWaiting).toBe(false);
+    // z rudą działa dalej
+    s.ores[1] = 50; g.toggleAuto();
+    simulate(g, 1500);
+    expect(s.ores[1]).toBeLessThan(50);
   });
 
   it('każda kraina ma poprawne rudy i domieszki', () => {

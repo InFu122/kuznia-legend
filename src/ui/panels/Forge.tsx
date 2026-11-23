@@ -207,23 +207,6 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
         {f.lvl < B.AUTO_FORGE_LVL && <div class="auto"><span>Auto-wytop odblokujesz na {B.AUTO_FORGE_LVL}. poziomie kuźni.</span></div>}
       </section>
 
-      {f.lvl >= B.AUTO_FORGE_LVL && (
-        <section class="card auto-card">
-          <div class="ac-top">
-            <Px src={resUrl('kowadlo')} size={28} />
-            <div class="ac-t">
-              <div class="eyebrow">Auto-wytop</div>
-              <div class="h">{!s.auto ? 'Wyłączony' : game.autoPaused ? 'Czeka na twoją decyzję' : game.autoWaiting ? 'Czeka na rudę' : `Kuje: ${ORES[o].n}`}</div>
-            </div>
-            <button class={`toggle sw${s.auto ? ' on' : ''}`} role="switch" aria-checked={s.auto} aria-label="Auto-wytop" onClick={() => game.toggleAuto()}><span class="knob" /></button>
-          </div>
-          {game.autoWaiting && <div class="tech-cost warn">{f.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `skończyła się ruda: ${ORES[o].n}`}</div>}
-          <AutoStop game={game} />
-          <AutoElem game={game} />
-          <p class="sub ac-note">Słabsze przedmioty sprzedaje, do pustych miejsc zakłada. Zatrzymuje się na wybranej rzadkości i na przedmiocie z rudy unikalnej.</p>
-        </section>
-      )}
-
       <Refine game={game} />
     </>
   );

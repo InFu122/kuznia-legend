@@ -18,6 +18,32 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-23',
+    date: '23 listopada 2026',
+    add: [
+      'Nowa Przepustka Kowala: nagrody jako karty na torze przesuwanym w bok (kolor karty mówi, ile nagroda jest warta), podgląd wszystkiego, co daje złota ścieżka, i okno z odebranymi nagrodami.',
+      'Nowe okno wydarzenia: główna nagroda (strój i ramka) od razu na widoku, tor progów jak w przepustce i loch sezonowy pod ręką.',
+      'Arena to teraz trzecia zakładka Przygody, obok Krain i Lochów. Nad zakładkami Przygody widać trwające wydarzenie i sezon.',
+      'Przed wejściem do lochu pokazuje się okno ze strażnikiem, nagrodą i informacją, ile kluczy zostanie.',
+    ],
+    change: [
+      'Kodeks podzielony na zakładki: Kowal, Kolekcja, Ustawienia i Konto.',
+      'Bohater: założony ekwipunek jako karty z opisem każdej części, a Runy w osobnej zakładce z podsumowaniem premii.',
+      'Kuźnia: czytelniejsze ulepszenie, wytop i rafinacja (z przyciskiem „Wszystko”).',
+      'Auto-wytop ustawiasz tylko przyciskiem Auto na pasku. Gdy skończy się wybrana ruda, auto-wytop sam się wyłącza.',
+      'Umiejętności: sloty jak karty i krótsza lista.',
+      'Lochy: niższe, czytelniejsze karty.',
+      'Przycisk „i” zawsze w prawym górnym rogu.',
+      'Zostały tylko czerwone, delikatnie migające kropki — gdy masz coś do odebrania albo otwarcia.',
+    ],
+    remove: [
+      'Premie za zestawy wyposażenia. Ruda unikalna nadal daje pewny przeskok rzadkości.',
+    ],
+    fix: [
+      'Okno „Witaj z powrotem” pokazuje się przy starcie tylko raz.',
+    ],
+  },
+  {
     id: '2026-11-22c',
     date: '22 listopada 2026',
     add: [

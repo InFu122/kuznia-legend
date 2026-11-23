@@ -215,8 +215,15 @@ export class Game {
     const ctx = this.ctx;
     const s = ctx.s;
     if (s.pending) return; // przedmiot czeka na decyzję gracza — po niej auto-wytop jedzie dalej
-    // Brak rudy nie wyłącza auto-wytopu: kuźnia czeka, aż wypadnie następna.
-    if (!canSmelt(ctx, s.oreSel)) return;
+    // Skończyła się ruda (albo jest za wysoka na ten poziom kuźni): auto-wytop się wyłącza i mówi dlaczego.
+    if (!canSmelt(ctx, s.oreSel)) {
+      const O = ORES[s.oreSel];
+      s.auto = false;
+      ctx.dirty = true;
+      toast(ctx, s.forge.lvl < O.lvl ? `Auto-wytop wyłączony: ${O.n} od ${O.lvl}. poziomu kuźni.` : `Auto-wytop wyłączony — skończyła się ruda: ${O.n}.`, 'bad');
+      this.changed();
+      return;
+    }
     const it = smelt(ctx, s.oreSel, s.autoEl);
     if (!it) return;
     const res = autoHandle(ctx, it, true);

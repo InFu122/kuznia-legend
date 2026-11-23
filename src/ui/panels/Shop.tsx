@@ -4,10 +4,11 @@
 // Pakiety Klejnotów: w aplikacji z Google Play — płatność Google (billing.ts); serwer w trybie testowym — bez płatności.
 import { useEffect, useState } from 'preact/hooks';
 import { AD, AD_BUFFS, GEM_ITEM_IDS, GEM_PACKS, GEM_SHOP, PASS, PASS_LEVELS, type BuffId, type GemItemId } from '../../data';
-import { oreUrl, resUrl } from '../../art/render';
+import { dungeonBgUrl, oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
+import type { Reward } from '../../engine/types';
 import {
-  bestOre, gemItemBlock, gemItemLeft, gemItemOpen, gemItemReward, giftReward, passItemsReward, passLevel, passUnclaimed, packReward, passXp, seasonOf, speedupCost,
+  addReward, bestOre, gemItemBlock, gemItemLeft, gemItemOpen, gemItemReward, giftReward, passItemsReward, passLevel, passUnclaimed, packReward, passXp, seasonOf, speedupCost,
 } from '../../engine/shop';
 import { clanLife } from '../../save/clanlife';
 import { flushSave, getLink, type ServerLink, type ShopResp } from '../../save/server';
@@ -16,7 +17,10 @@ import { Px } from '../Px';
 import { gemsText } from '../texts';
 import { buffIcon } from '../buffs';
 import { Note, errText, useAction } from './ClanLife';
-import { Res, RewardIcons } from '../RewardIcons';
+import { Res, RewardIcons, rewardChips } from '../RewardIcons';
+import { Avatar } from '../Avatar';
+import { LockIcon } from '../icons';
+import { ClaimReveal, RewardCard, Track, rewardTier, seasonScene, type CardState } from './Track';
 import { adsNative, showRewarded } from '../ads';
 import { billingNative, buyPack, recoverPurchases, storePrices } from '../billing';
 import { OddsTable, type OddsWhat } from '../Odds';
@@ -286,65 +290,116 @@ function ShopTabView({ game, goGems }: { game: Game; goGems: () => void }) {
   );
 }
 
+/** Wszystkie nagrody złotej ścieżki razem (na wizytówkę „co dostaniesz”). */
+function premTotal(s: Game['s']): Reward {
+  return PASS_LEVELS.reduce<Reward>((r, L) => addReward(r, passItemsReward(L.prem, s)), {});
+}
+/** Na wizytówce: tylko to, co najbardziej kusi (wygląd, jaja, Boska Ruda, Pieczęcie, Siodło, Zwoje, Klejnoty). */
+const SHOW_KEYS = (c: { key: string; cls?: string }) => c.cls === 'rt6' || ['skin', 'frame', 'egg', 'seals', 'saddles', 'scrolls', 'gems'].some(k => c.key.startsWith(k));
+
 function PassTabView({ game, goGems }: { game: Game; goGems: () => void }) {
   const a = useShopAct(game);
+  const [reveal, setReveal] = useState<Reward | null>(null);
   const s = game.s;
   const now = game.ctx.now();
   const season = seasonOf(now);
-  const p = s.pass;
-  if (!p) return <p class="sub">Przepustka wczytuje się — zagraj chwilę albo zapisz grę.</p>;
+  const p = s.pass!;
   const lvl = passLevel(p);
   const xp = passXp(p);
-  const inLvl = lvl >= PASS.LEVELS ? PASS.XP_PER_LVL : xp - lvl * PASS.XP_PER_LVL;
+  const max = lvl >= PASS.LEVELS;
+  const inLvl = max ? PASS.XP_PER_LVL : xp - lvl * PASS.XP_PER_LVL;
   const un = passUnclaimed(p, s);
-  const canClaim = un.free + un.prem > 0;
+  const todo = un.free + un.prem;
+  const waiting = p.prem ? 0 : lvl - p.cp; // złote nagrody z osiągniętych poziomów, które odbierzesz od razu po odblokowaniu
+  const total = premTotal(s);
+  const show = rewardChips(total).filter(SHOW_KEYS).sort((x, y) => (x.cls === 'look' ? -1 : 0) - (y.cls === 'look' ? -1 : 0));
+  const claim = async () => {
+    const r = un.r;
+    await a.act(() => !!game.claimPass(), l => l.passClaim(), '');
+    if ((game.s.pass?.cf ?? 0) >= lvl) setReveal(r);
+  };
+  const buy = () => (s.gems < PASS.PREM_COST ? goGems() : void a.act(() => game.buyPass(), l => l.passBuy(), 'Złota ścieżka odblokowana! Odbierz nagrody na torze.'));
+  const focus = Math.min(PASS.LEVELS - 1, Math.min(p.cf, p.prem ? p.cp : p.cf, lvl));
+  const st = (n: number, claimed: number, open: boolean): CardState =>
+    !open ? 'locked' : n <= claimed ? 'got' : n <= lvl ? 'ready' : 'lock';
   return (
     <>
-      <section class="passhead">
-        <div class="pass-lvl" aria-hidden="true"><Px src={resUrl('przepustka')} size={34} /><b>{lvl}</b></div>
-        <div class="cmain">
-          <div class="eyebrow">Sezon {season.n} · {season.name}</div>
-          <div class="h">Poziom {lvl} / {PASS.LEVELS}</div>
-          <div class="bar" style={{ marginTop: '6px' }}><i style={{ width: (inLvl / PASS.XP_PER_LVL) * 100 + '%' }} /></div>
-          <div class="tech-cost">{lvl >= PASS.LEVELS ? 'Przepustka ukończona!' : `${fmt(inLvl)} / ${fmt(PASS.XP_PER_LVL)} pkt`} · dziś {fmt(p.dxp)} / {fmt(PASS.DAY_CAP)} · koniec sezonu za {tfmt(season.end - now)}</div>
+      <section class="ps-hero" style={{ '--bg': `url(${dungeonBgUrl(seasonScene(season.name))})` } as Record<string, string>}>
+        <div class="psh-top">
+          <span class="eyebrow">Przepustka Kowala · sezon {season.n}</span>
+          <span class="ps-time"><Px src={resUrl('czas')} size={14} />{tfmt(season.end - now)}</span>
         </div>
+        <div class="psh-title">{season.name}</div>
+        <div class="psh-lvl">
+          <div class="ps-badge" aria-hidden="true"><Px src={resUrl('przepustka')} size={30} /><b>{lvl}</b></div>
+          <div class="psh-xp">
+            <div class="psh-xt"><b>Poziom {lvl}<span> / {PASS.LEVELS}</span></b><span class="num">{max ? 'ukończona!' : `${fmt(inLvl)} / ${fmt(PASS.XP_PER_LVL)}`}</span></div>
+            <div class="bar big"><i style={{ width: (inLvl / PASS.XP_PER_LVL) * 100 + '%' }} /></div>
+            <small>{max ? 'Wszystkie poziomy zdobyte.' : <>następny poziom za <b>{fmt(PASS.XP_PER_LVL - inLvl)} pkt</b></>} · dziś {fmt(p.dxp)}/{fmt(PASS.DAY_CAP)}</small>
+          </div>
+        </div>
+        {p.prem && <span class="psh-gold">Złota ścieżka aktywna</span>}
       </section>
-      <div class="passbtns">
-        <button class="btn primary" disabled={a.busy || !canClaim} onClick={() => void a.act(() => !!game.claimPass(), l => l.passClaim(), 'Nagrody przepustki odebrane!')}>
-          {canClaim ? `Odbierz nagrody (${un.free + un.prem})` : 'Brak nagród do odebrania'}
-        </button>
-        {!p.prem && (
-          <button class="btn gold" disabled={a.busy} onClick={() => (s.gems < PASS.PREM_COST ? goGems() : void a.act(() => game.buyPass(), l => l.passBuy(), 'Złota ścieżka odblokowana!'))}>
-            Złota ścieżka · <GemIco size={14} /> {PASS.PREM_COST}
-          </button>
-        )}
+
+      {!p.prem && (
+        <section class="ps-offer">
+          <div class="pso-main">
+            <div class="pso-t">Złota ścieżka</div>
+            <ul class="pso-pts">
+              {waiting > 0 && <li class="hot">Od razu odbierzesz <b>{waiting}</b> {waiting === 1 ? 'złotą nagrodę' : waiting < 5 ? 'złote nagrody' : 'złotych nagród'}</li>}
+              <li>Druga, bogatsza nagroda na każdym z {PASS.LEVELS} poziomów</li>
+              <li>Zwraca <Res r={{ gems: total.gems ?? 0 }} size={14} /></li>
+            </ul>
+          </div>
+          <div class="pso-hero" aria-hidden="true"><Avatar skin="szkarlat" frame="przepustka" size={66} /></div>
+          <ul class="pso-show">
+            {show.map(c => (
+              <li key={c.key} class={`t-${rewardTier([c])}`} title={c.t}>
+                {c.frame ? <Avatar frame={c.frame} size={28} /> : c.key.startsWith('skin') ? <Avatar skin={c.key.slice(4)} size={28} /> : <Px src={c.ic!} size={24} />}
+                {c.n && c.n !== '1' && <b>{c.n}</b>}
+              </li>
+            ))}
+          </ul>
+          <button class="btn gold big pso-buy" disabled={a.busy} onClick={buy}>Odblokuj złotą ścieżkę · <GemIco size={16} /> {PASS.PREM_COST}</button>
+        </section>
+      )}
+
+      <div class="trk-head"><span class="eyebrow">Nagrody sezonu</span>{todo > 0 && <span class="trk-todo">do odebrania: {todo}</span>}</div>
+      <div class="trk-wrap">
+        <div class="trk-lab" aria-hidden="true">
+          <span class="tl-prem">{!p.prem && <LockIcon />}<i>Złota</i></span>
+          <span class="tl-node" />
+          <span class="tl-free"><i>Darmowa</i></span>
+        </div>
+        <Track focus={focus}>
+          {PASS_LEVELS.map((L, i) => {
+            const n = i + 1;
+            const fill = n <= lvl ? 1 : n === lvl + 1 ? inLvl / PASS.XP_PER_LVL : 0;
+            return (
+              <li key={n} class={`tcol${n <= lvl ? ' done' : ''}${n === lvl + 1 ? ' cur' : ''}${n % 5 === 0 ? ' big' : ''}`} style={{ '--fill': fill } as Record<string, number>}>
+                <RewardCard r={passItemsReward(L.prem, s)} prem state={st(n, p.cp, p.prem)} onClaim={() => void claim()} />
+                <span class="tk-node"><b>{n}</b></span>
+                <RewardCard r={passItemsReward(L.free, s)} state={st(n, p.cf, true)} onClaim={() => void claim()} />
+              </li>
+            );
+          })}
+        </Track>
       </div>
       <Note msg={a.msg} />
-      <ol class="passlist">
-        <li class="ph"><span>Poz.</span><span>Darmowa</span><span>Złota{!p.prem && ' · zablokowana'}</span></li>
-        {PASS_LEVELS.map((L, i) => {
-          const n = i + 1;
-          const st = (claimed: number, open: boolean) => (n <= claimed && open ? 'got' : n <= lvl ? (open ? 'ready' : 'lock reached') : open ? '' : 'lock');
-          const cell = (items: typeof L.free, state: string, prem: boolean) => (
-            <span class={`pr${prem ? ' prem' : ''} ${state}`}>
-              <RewardIcons r={passItemsReward(items, s)} size={18} />
-              {state === 'got' ? <i class="pr-st ok" aria-label="odebrane">✓</i> : state.startsWith('lock') ? <i class="pr-st" aria-label="zablokowane">🔒</i> : null}
-            </span>
-          );
-          return (
-            <li key={n} class={`${n === lvl + 1 ? 'next' : ''}${n <= lvl ? ' done' : ''}`}>
-              <span class="pl">{n}</span>
-              {cell(L.free, st(p.cf, true), false)}
-              {cell(L.prem, st(p.cp, p.prem), true)}
-            </li>
-          );
-        })}
-      </ol>
-      <p class="sub">
-        Punkty przepustki: wytop {dec(PASS.XP_SMELT)} pkt, pokonany wróg {dec(PASS.XP_KILL)} pkt (także za nieobecność), boss krainy {PASS.XP_BOSS}, klucz w lochu {PASS.XP_KEY},
-        piętro Wieży {PASS.XP_TOWER}; najwyżej {fmt(PASS.DAY_CAP)} dziennie. Złota ścieżka zwraca część Klejnotów i daje jaja, Siodło, Pieczęcie i więcej zasobów.
-        Nieodebrane nagrody po końcu sezonu trafią do ciebie same.
-      </p>
+      <div class="ps-how">
+        <span class="eyebrow">Punkty przepustki</span>
+        <ul>
+          <li>Wytop <b>{dec(PASS.XP_SMELT)}</b></li><li>Wróg <b>{dec(PASS.XP_KILL)}</b></li><li>Boss krainy <b>{PASS.XP_BOSS}</b></li>
+          <li>Klucz w lochu <b>{PASS.XP_KEY}</b></li><li>Piętro Wieży <b>{PASS.XP_TOWER}</b></li>
+        </ul>
+        <small>Najwyżej {fmt(PASS.DAY_CAP)} pkt dziennie (liczy się też nieobecność). Nieodebrane nagrody po końcu sezonu trafią do ciebie same.</small>
+      </div>
+      {todo > 0 && (
+        <div class="claimbar">
+          <button class="btn primary big" disabled={a.busy} onClick={() => void claim()}>Odbierz nagrody ({todo})</button>
+        </div>
+      )}
+      {reveal && <ClaimReveal r={reveal} onClose={() => setReveal(null)} />}
     </>
   );
 }
