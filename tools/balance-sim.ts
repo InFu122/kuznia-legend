@@ -37,6 +37,8 @@ function nextSession(ms: number): number {
 const CAL_LANDS = Array.from({ length: LANDS.length + 12 }, (_, i) => i);
 const STEP = 250;          // ms czasu gry na krok
 const BOSS_RETRY = 120000; // bot próbuje bossa co 2 min, gdy ma ≥ 90% zalecanej Mocy
+/** Próg Mocy (część zalecanej), od którego bot próbuje bossa: BOT_GATE=0 — próbuje zawsze, jak gracz, który po prostu walczy. */
+const GATE = Number(process.env.BOT_GATE ?? 0.9);
 const TOWER_RETRY = 30 * 60000;
 const SAMPLE = 6 * 60000;  // próbka Mocy co 6 min (do kalibracji)
 /** Kolejność badań bota: pierwsze niezablokowane z listy. */
@@ -170,7 +172,7 @@ function runOnce(run: number, seed: number) {
       }
     }
     sinceBoss += STEP;
-    if (bossWaiting(g.ctx) && !g.b.enemy?.boss && sinceBoss >= BOSS_RETRY && g.stats.power >= 0.9 * recPower(g.s.cur.land)) {
+    if (bossWaiting(g.ctx) && !g.b.enemy?.boss && sinceBoss >= BOSS_RETRY && g.stats.power >= GATE * recPower(g.s.cur.land)) {
       g.challengeBoss();
       sinceBoss = 0;
     }

@@ -57,7 +57,9 @@ export const RARITY_AT_BOSS = [1.05, 1.21, 1.43, 1.62, 1.75, 1.85, 1.92, 2.05, 2
  * Dodatkowy mnożnik siły wrogów przy bossie krainy L (zdrowie i obrażenia). Skalibrowany symulatorem:
  * gracz zbiera substaty, legendy i rzadkie rudy szybciej niż zakłada sama krzywa rzadkości.
  */
-export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.9, 2.35, 2.95, 3.9, 4.6, 4.6, 5.6, 6.0, 6.5, 9.3, 13.8, 22, 30];
+// Listopad 2026 (po usunięciu zestawów): krainy 15–16 łagodniej (dawniej 22 i 30) — symulator: boss Gwiezdnego Krateru
+// wymagał kuźni o 7 poziomów wyższej niż zakładana, a pierwszy krąg Otchłani (liczony od tej wartości) był ścianą.
+export const ENEMY_SCALE_AT_BOSS = [1.0, 1.05, 1.25, 1.9, 2.35, 2.95, 3.9, 4.6, 4.6, 5.6, 6.0, 6.5, 9.3, 13.8, 20, 18];
 /**
  * Siła przedmiotu rośnie o 8% na poziom przedmiotu do ITEM_LVL_SOFT (kuźnia 30), dalej o ITEM_LVL_GROWTH_HI na poziom —
  * kuźnia rośnie do 200, więc liczby nie mogą wybuchnąć. Poziom przedmiotu = 2 × poziom kuźni (+0–2).
