@@ -78,7 +78,7 @@ GitHub → Actions → **Google Play (AAB)** → Run workflow → wersja `1.0.0`
 uruchomienia, w sekcji Artifacts, jest `kuznia-legend-aab` (zip z plikiem `.aab`).
 
 Każde kolejne wgranie do Google Play musi mieć wyższy numer kompilacji — workflow nadaje go sam (1001, 1002, …).
-Numer wersji widoczny dla graczy (1.0.0, 1.0.1, …) wpisujesz przy uruchomieniu.
+Numer wersji widoczny dla graczy nadaje się sam: zostaw pole „wersja” puste, a kolejne uruchomienia dostaną 1.0.17, 1.0.18, … (numer uruchomienia minus 4). Własny numer, np. 1.1.0, wpisujesz w to pole.
 
 ## 4. Play Console: nowa aplikacja
 

@@ -19,9 +19,9 @@ on:
   workflow_dispatch:
     inputs:
       wersja:
-        description: 'Numer wersji widoczny dla graczy (np. 1.0.0)'
-        required: true
-        default: '1.0.0'
+        description: 'Numer wersji widoczny dla graczy — zostaw puste, a nada się sam (1.0.17, 1.0.18, …); wpisz, np. 1.1.0, żeby nadać własny'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -53,6 +53,11 @@ jobs:
           # Numer kompilacji dla Google Play: każde wgranie musi mieć większy numer niż poprzednie.
           KL_VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))
           echo "KL_VERSION_CODE=$KL_VERSION_CODE" >> "$GITHUB_ENV"
+          # Bez podanego numeru: 1.0.x rośnie sam z każdym uruchomieniem (uruchomienie nr 20 = 1.0.16, nr 21 = 1.0.17, …).
+          if [ -z "$KL_VERSION_NAME" ]; then
+            KL_VERSION_NAME="1.0.$((GITHUB_RUN_NUMBER - 4))"
+            echo "KL_VERSION_NAME=$KL_VERSION_NAME" >> "$GITHUB_ENV"
+          fi
           missing=""
           [ -z "$KS" ] && missing="$missing KL_UPLOAD_KEYSTORE_B64"
           [ -z "$SP" ] && missing="$missing KL_UPLOAD_STORE_PASSWORD"

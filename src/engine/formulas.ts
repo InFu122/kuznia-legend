@@ -1,5 +1,5 @@
 import {
-  B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
+  B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, GOLD_WAVES_STEP, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
   FOE_GENITIVE, JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RANK_MAX, RARITY_AT_BOSS, RAR, R, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank, qMult, rAt,
 } from '../data';
 import type { Awakening, FoeType, GameState, Item } from './types';
@@ -70,10 +70,22 @@ export const goldTimeK = (f: number) =>
 /** Ile fal walki „kosztuje” następne ulepszenie przy kuźni na poziomie f. */
 export const goldWaves = (f: number) =>
   Math.max(GOLD_WAVES * Math.pow(GOLD_WAVES_GROWTH, Math.max(0, Math.min(f, B.UPGRADE_COST_SOFT) - 1)), goldTimeK(f) * (UPGRADE_MIN[Math.min(B.FORGE_MAX, f + 1)] ?? 0));
+/**
+ * Fale na ulepszenie po wygładzeniu: rosną najwyżej ×GOLD_WAVES_STEP na poziom kuźni, więc złoto z fali nigdy nie maleje
+ * z postępem (dawniej między 10. a 20. poziomem kuźni spadało, bo czas ulepszeń rósł szybciej niż koszt).
+ */
+const smoothWaves: number[] = [];
+export function goldWavesSmooth(f: number): number {
+  const n = Math.max(1, Math.min(B.FORGE_MAX, Math.floor(f)));
+  for (let k = smoothWaves.length ? smoothWaves.length : 1; k <= n; k++) {
+    smoothWaves[k] = k === 1 ? goldWaves(1) : Math.min(goldWaves(k), smoothWaves[k - 1] * GOLD_WAVES_STEP);
+  }
+  return smoothWaves[n];
+}
 /** Złoto z fali na etapie g: koszt następnego ulepszenia oczekiwanej kuźni podzielony przez liczbę fal (rośnie z poziomem). */
 export const goldWave = (g: number) => {
   const f = Math.min(B.FORGE_MAX, Math.ceil(forgeExp(g)));
-  return Math.max(1, Math.round(upCost(Math.min(B.FORGE_MAX, f + 1)) / goldWaves(f)));
+  return Math.max(1, Math.round(upCost(Math.min(B.FORGE_MAX, f + 1)) / goldWavesSmooth(Math.max(1, f))));
 };
 /** Najmniejszy etap g, na którym gra oczekuje kuźni co najmniej f (powyżej najwyższego poziomu — bez granicy). */
 const gAtForgeCache = new Map<number, number>();
@@ -102,7 +114,7 @@ export const goldWaveOf = (s: Pick<GameState, 'bestG' | 'forge'>, g = s.bestG) =
 /** Cena sprzedaży: mniej więcej pół fali złota za przedmiot Zwykły, więcej za rzadsze. */
 export const sellPrice = (it: Item) => {
   const f = Math.min(B.FORGE_MAX, Math.floor(it.lvl / 2));
-  return Math.max(1, Math.round((upCost(Math.min(B.FORGE_MAX, f + 1)) / (2 * goldWaves(Math.max(1, f)))) * (1 + (RAR[it.r]?.o ?? 0) * 0.5)));
+  return Math.max(1, Math.round((upCost(Math.min(B.FORGE_MAX, f + 1)) / (2 * goldWavesSmooth(Math.max(1, f)))) * (1 + (RAR[it.r]?.o ?? 0) * 0.5)));
 };
 export const recPower = (land: number) => {
   const g = land * 10 + 5;

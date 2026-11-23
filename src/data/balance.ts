@@ -96,6 +96,11 @@ export const UPGRADE_MIN: number[] = Array.from({ length: 201 }, (_, n) =>
  * więcej, niż kosztują ulepszenia — zapas złota to kilka kolejnych ulepszeń, a nie kilkadziesiąt.
  */
 export const GOLD_WAVES = 50;
+/**
+ * Fale na ulepszenie rosną najwyżej tyle razy na poziom kuźni (wygładzenie). Bez tego między 10. a 20. poziomem
+ * czas ulepszeń rósł szybciej niż koszt i złoto z fali w nowej krainie spadało (21 → 12 → 8 zł) poniżej złota z poprzedniej.
+ */
+export const GOLD_WAVES_STEP = 1.4;
 export const GOLD_WAVES_GROWTH = 1.2;
 export const GOLD_TIME_K = 4.5;
 export const GOLD_CUT = 2.5;
@@ -161,6 +166,7 @@ export const B = {
   UNIQ_BOSS_CHANCE: 0.05,       // szansa na rudę unikalną przy kolejnych pokonaniach
   RAMP_DROP: 50,                // nowa ruda wchodzi stopniowo: tyle % wytopów o rzadkość niżej na poziomie kuźni, na którym się odblokowuje…
   RAMP_LEVELS: 5,               // …i mniej z każdym poziomem — po tylu poziomach już zawsze pełne minimum
+  VAULT_UPGRADE_DIV: 500,       // Skarbiec Złota: goblin wart co najmniej 1/500 kosztu następnego ulepszenia kuźni (×(3 + 0,5k))
   GOLD_FORGE_AHEAD: 2,          // złoto liczone najwyżej jak dla kuźni o 2 poziomy wyższej niż gracza (choćby był dalej w kampanii)
   DIVINE_AURA: 3,               // Boska aura: +% obrażeń i zdrowia bohatera za każdy założony Boski przedmiot
   DIVINE_ORE_BOSS: 0.01,        // szansa na Boską Rudę z bossa krainy w akcie IV

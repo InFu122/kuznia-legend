@@ -9,7 +9,7 @@ export interface DungeonInfo {
 }
 
 export const DUNGEONS: Record<DungId, DungeonInfo> = {
-  skarbiec: { n: 'Skarbiec Złota', short: 'Złoto', reward: 'Złoto', how: '30 sekund walki z goblinami niosącymi worki; każdy kolejny daje więcej złota.', keys: 2 },
+  skarbiec: { n: 'Skarbiec Złota', short: 'Złoto', reward: 'Złoto', how: '30 sekund walki z goblinami niosącymi worki; każdy kolejny daje więcej złota. Jeden klucz to zwykle od 1/5 do 1/3 kosztu następnego ulepszenia kuźni.', keys: 2 },
   sztolnia: { n: 'Głęboka Sztolnia', short: 'Lepsza ruda', reward: 'Ruda o poziom lepsza niż w twojej krainie', how: 'Schodzisz piętro po piętrze. Co 5 pięter wybierasz: wyjść z łupem albo ryzykować; porażka zabiera połowę worka.', keys: 2 },
   wieza: { n: 'Wieża Wyzwań', short: 'Księgi Wiedzy', reward: 'Księgi Wiedzy co 5 pięter, złoto z każdego piętra', how: 'Nieskończone piętra coraz silniejszych strażników. Postęp zostaje — zaczynasz od pierwszego niepokonanego piętra.', keys: 0 },
   leza: { n: 'Leża Bossów', short: 'Rudy unikalne', reward: 'Rudy unikalne (pewna jakość IV–V)', how: 'Walka z silniejszą wersją pokonanego bossa. Każdy boss z rudą unikalną daje własną rudę.', keys: 3 },

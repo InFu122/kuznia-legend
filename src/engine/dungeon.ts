@@ -4,7 +4,7 @@ import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { addEventPts, eventFloorPts, eventOf, evText } from './events';
 import type { Ctx } from './context';
 import { Dstar, Hstar, early, goldWaveOf, legStage, todayStr } from './formulas';
-import { addFound, rollSubs } from './forge';
+import { addFound, rollSubs, upgradeCost } from './forge';
 import { addFame } from './legend';
 import { allMods } from './mods';
 import { ghostItem, takeGhost } from './armory';
@@ -14,7 +14,7 @@ import { grant } from './reward';
 import { track } from './missions';
 
 export { grant };
-import type { DungId, ElemKey, FoeType, KryptaRuleId, LabDoorOpt, Reward } from './types';
+import type { DungId, ElemKey, FoeType, GameState, KryptaRuleId, LabDoorOpt, Reward } from './types';
 
 const { SKARBIEC_MS, OLTARZE_FLOORS } = B;
 
@@ -161,6 +161,13 @@ export const mineStones = (maxLand: number) => 2 + Math.floor(maxLand / 3);
 /** Rzadkość jaj z lochów: rośnie z postępem. */
 const dungEggRarity = (maxLand: number) => Math.max(0, Math.min(4, Math.floor((maxLand - 3) / 3)));
 
+/**
+ * Skarbiec Złota: złoto za goblina (×(3 + 0,5 × numer goblina)) — „fala złota”, ale nie mniej niż 1/VAULT_UPGRADE_DIV kosztu
+ * następnego ulepszenia kuźni. Dzięki temu klucz jest wart mniej więcej 1/5–1/3 ulepszenia przez całą grę
+ * (dawniej od 5. krainy dawał ok. 1% ulepszenia).
+ */
+export const vaultUnit = (s: GameState) => Math.max(goldWaveOf(s), upgradeCost(s, Math.min(B.FORGE_MAX, s.forge.lvl + 1)) / B.VAULT_UPGRADE_DIV);
+
 /** Wróg w lochu pokonany. */
 export function dungFloor(ctx: Ctx): void {
   const { s, b } = ctx;
@@ -185,7 +192,7 @@ export function dungFloor(ctx: Ctx): void {
     }
     case 'skarbiec': {
       d.kills++;
-      const g = Math.round(goldWaveOf(s) * (3 + d.kills * 0.5) * gold);
+      const g = Math.round(vaultUnit(s) * (3 + d.kills * 0.5) * gold);
       add(d.loot, 'gold', g);
       ctx.emit({ t: 'float', side: 'foe', text: `+${g.toLocaleString('pl-PL')} zł.`, cls: 'loot', force: true });
       s.dungeons.skarbiec.best = Math.max(s.dungeons.skarbiec.best, d.kills);
