@@ -526,8 +526,16 @@ function DrawView({ game, m, close }: { game: Game; m: Extract<ModalData, { kind
 }
 
 /** Co wypada w krainie: z fal i z bossa (przycisk „i” na polu walki). */
-function LandInfoView({ game, land, close }: { game: Game; land: number; close: () => void }) {
+/**
+ * Co wypada w krainie. Strzałki (albo przesunięcie palcem) przełączają na sąsiednie krainy — tak jak na liście krain:
+ * cała kampania i Otchłań do najdalszego osiągniętego kręgu — żeby porównać rudy i nagrody bez zamykania okna.
+ */
+function LandInfoView({ game, land: start, close }: { game: Game; land: number; close: () => void }) {
   const s = game.s;
+  const last = Math.max(ABYSS_FROM, s.maxLand);
+  const [land, setLand] = useState(() => Math.max(0, Math.min(last, start)));
+  const go = (d: number) => setLand(l => Math.max(0, Math.min(last, l + d)));
+  const touch = useRef<{ x: number; y: number } | null>(null);
   const L = landDef(land);
   const mods = techMods(s);
   const shares = oreShares(L, allMods(s).rarePct);
@@ -535,11 +543,27 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
   const wave = goldWaveOf(game.s, gOf(land, 5));
   const first = !s.cleared[land];
   const act = L.act;
+  const here = land === s.cur.land && game.b.mode === 'camp';
   return (
-    <>
-      <div class="li-head" style={{ '--bg': `url(${landBgUrl(land)})` } as Record<string, string>}>
+    <div class="li-swipe" onTouchStart={e => { const t = e.touches[0]; touch.current = { x: t.clientX, y: t.clientY }; }}
+      onTouchEnd={e => {
+        const a = touch.current; touch.current = null;
+        if (!a) return;
+        const t = e.changedTouches[0], dx = t.clientX - a.x, dy = t.clientY - a.y;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+      }}>
+      <div class="li-head" key={land} style={{ '--bg': `url(${landBgUrl(land)})` } as Record<string, string>}>
         <div class="eyebrow">{isAbyss(land) ? `Otchłań · krąg ${abyssCircle(land)}` : `${actName(act)} · kraina ${land + 1}`}</div>
         <div class="h">{L.n}</div>
+        <div class="li-st">
+          {here ? <span class="lstat front">Tu walczysz</span> : land > s.maxLand ? <span class="lstat lock"><LockIcon />Zablokowana</span>
+            : s.cleared[land] ? <span class="lstat done">Pokonana</span> : land === s.maxLand ? <span class="lstat front">Front</span> : null}
+        </div>
+      </div>
+      <div class="li-nav" role="group" aria-label="Inne krainy">
+        <button class="btn small" disabled={land <= 0} onClick={() => go(-1)} aria-label="Poprzednia kraina">‹ {land > 0 ? landDef(land - 1).n : ''}</button>
+        {land !== start && <button class="btn small li-back" onClick={() => setLand(start)} aria-label="Wróć do pierwszej krainy">↺</button>}
+        <button class="btn small" disabled={land >= last} onClick={() => go(1)} aria-label="Następna kraina">{land < last ? landDef(land + 1).n : ''} ›</button>
       </div>
       <div class="eyebrow">Z każdej fali</div>
       <ul class="droplist">
@@ -565,8 +589,10 @@ function LandInfoView({ game, land, close }: { game: Game; land: number; close: 
         {land >= MOUNTS_UNLOCK_LAND - 1 && <li><Px src={resUrl('siodlo')} size={24} /><span>Siodło</span><b>{first ? `${B.SADDLES_BOSS_FIRST} (pierwsze)` : pct(B.SADDLE_BOSS_CHANCE * 100)}</b></li>}
       </ul>
       <p class="sub">Zalecana Moc krainy: <b>{fmt(recPower(land))}</b> (twoja: {fmt(game.stats.power)}).{mods.rarePct ? ` Premia do rzadkich rud (+${pct(mods.rarePct)}) jest już wliczona.` : ''}</p>
-      <Close onClose={close} label="Zamknij" />
-    </>
+      {!here && land <= s.maxLand
+        ? <div class="li-act"><button class="btn" onClick={close}>Zamknij</button><button class="btn primary" onClick={() => { game.goLand(land); close(); }}>Walcz tutaj</button></div>
+        : <Close onClose={close} label="Zamknij" />}
+    </div>
   );
 }
 

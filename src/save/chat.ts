@@ -8,6 +8,10 @@ export type ChatCh = 'global' | 'clan';
 export const GLOBAL_ROOM = 'global-pl';
 const MUTED_KEY = 'kuznia-legend-muted';
 const HISTORY = 50;
+/** Jak długo wiadomość jest widoczna: czat globalny — doba, czat klanu — 3 dni (starsze znikają z listy). */
+export const CHAT_KEEP_MS: Record<ChatCh, number> = { global: 24 * 3600000, clan: 3 * 24 * 3600000 };
+/** Wiadomości kanału, które jeszcze nie wygasły. */
+export const freshMsgs = (ch: ChatCh, list: ChatMsg[], now = Date.now()) => list.filter(m => now - m.time < CHAT_KEEP_MS[ch]);
 const RECONNECT_MS = 5000;
 /** Tyle czeka na otwarcie gniazda i na odpowiedź na „ping” — dłużej znaczy, że połączenie jest martwe. */
 const WAIT_MS = 10000;
@@ -150,7 +154,7 @@ export class ChatLink {
     const ch = (Object.keys(this.ids) as ChatCh[]).find(k => this.ids[k] === cm.channel_id);
     const msg = ch && this.parse(cm, ch);
     if (!ch || !msg) return;
-    this.msgs[ch] = this.msgs[ch].concat(msg).slice(-HISTORY * 2);
+    this.msgs[ch] = freshMsgs(ch, this.msgs[ch]).concat(msg).slice(-HISTORY * 2);
     if (this.viewing !== ch && !msg.mine && !this.muted.has(msg.uid)) {
       this.unread[ch]++;
       if (msg.k === 'msg' || msg.k === 'ann') { this.live = msg; this.liveAt = Date.now(); }
@@ -177,7 +181,7 @@ export class ChatLink {
     const id = (r.channel as { id: string }).id;
     this.ids[ch] = id;
     const h = await this.link.get<{ messages?: NkMessage[] }>(`/v2/channel/${encodeURIComponent(id)}?limit=${HISTORY}&forward=false`);
-    this.msgs[ch] = (h.messages || []).reverse().map(x => this.parse(x, ch)).filter((x): x is ChatMsg => !!x);
+    this.msgs[ch] = freshMsgs(ch, (h.messages || []).reverse().map(x => this.parse(x, ch)).filter((x): x is ChatMsg => !!x));
     this.changed();
   }
 

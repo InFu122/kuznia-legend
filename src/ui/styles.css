@@ -355,6 +355,7 @@ a.linkbtn{display:inline-block}
 .cm-div{font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#ffe48f; text-shadow:0 0 6px #ffb80088}
 .cm.drop .rar{color:var(--rc)}
 .cm-subs{font-size:12px; color:var(--ash); font-variant-numeric:tabular-nums}
+.chat-keep{font-size:11px; color:var(--ash); margin-top:-6px}
 .chat-in{display:flex; gap:8px; align-items:stretch}
 .chat-in input{flex:1; min-width:0; background:#120e0b; border:1px solid var(--rivet); border-radius:8px; padding:9px 10px; color:var(--frost); font:inherit}
 .chat-in input:disabled{opacity:.5}
@@ -609,6 +610,19 @@ a.linkbtn{display:inline-block}
 .li-head{position:relative; isolation:isolate; overflow:hidden; border-radius:12px; padding:34px 12px 10px; margin:-4px 0 2px}
 .li-head::before{content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(transparent, rgba(14,10,7,.85)), var(--bg); background-size:cover; background-position:center 72%; image-rendering:pixelated}
 .li-head .h{text-shadow:0 1px 2px #000}
+.li-swipe{display:flex; flex-direction:column; gap:12px}
+.li-head{animation:liIn .22s ease-out}
+@keyframes liIn{from{opacity:.4}}
+.li-st{position:absolute; top:10px; right:10px}
+.li-st .lstat{margin:0; display:inline-flex; align-items:center; gap:4px; background:rgba(14,10,7,.75)}
+.li-st .lstat.lock{color:var(--ash)}
+.li-st .lstat .lock-ic{width:11px; height:11px}
+.li-nav{display:flex; gap:6px; margin-top:-4px}
+.li-nav .btn{flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12.5px}
+.li-nav .btn:last-child{text-align:right}
+.li-act{display:grid; grid-template-columns:1fr 1.4fr; gap:8px}
+.li-nav .li-back{flex:none; width:40px; padding-left:0; padding-right:0}
+@media (prefers-reduced-motion: reduce){ .li-head{animation:none} }
 .droplist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
 .droplist li{display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--plate-2); font-size:13px}
 .droplist li:first-child{border-top:0}
@@ -1728,6 +1742,10 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .reff b{color:var(--good)}
 .btn.rup{display:inline-flex; flex-direction:column; align-items:center; line-height:1.1; min-width:58px}
 .btn.rup small{font-size:10px; font-weight:700; opacity:.85; white-space:nowrap}
+.btn.rup .lock-ic{color:currentColor; margin-bottom:1px}
+.lockline.rlock{display:flex; align-items:flex-start; gap:8px; color:#e9dcc8; border-color:color-mix(in srgb, var(--straw) 45%, var(--rivet)); background:rgba(231,190,98,.06)}
+.lockline.rlock .lock-ic{width:16px; height:16px; margin-top:1px; color:var(--straw)}
+.lockline.rlock b{color:var(--straw)}
 .dec-rune{display:flex; align-items:center; gap:8px; margin:0; padding:8px 10px; border-radius:12px; font-size:13px; color:#bff6ff;
   background:color-mix(in srgb, #7ff0ff 9%, var(--plate-2)); box-shadow:inset 0 0 0 1px color-mix(in srgb, #7ff0ff 30%, transparent)}
 .runes > .row{flex-wrap:nowrap; align-items:flex-start; gap:8px} .runes .rhead{min-width:0}
@@ -2086,6 +2104,19 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .eqc:not(.empty){background:linear-gradient(90deg, color-mix(in srgb, var(--rc) 22%, var(--plate-2)), var(--plate-2) 60%)}
 .eqc-ic{position:relative; display:grid; place-items:center; width:44px; height:44px; border-radius:10px; background:#140f0c; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 60%, transparent)}
 .eqc-ic svg{width:22px; height:22px; color:#5a4a3b}
+/* Aureola jak w szczegółach przedmiotu: poświata od Epickiego, pulsowanie od Legendarnego, obracające się promienie (Mityczny, Pradawny, Boski),
+   a Boski dostaje jeszcze złotą obracającą się ramkę i połysk. Promienie są w tle ikony, więc plakietki jakości i runy nie są przycinane. */
+.eqc:not(.empty):not(.r0) .eqc-ic{background:radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #140f0c), #140f0c 74%)}
+.eqc.r3 .eqc-ic, .eqc.r4 .eqc-ic, .eqc.r5 .eqc-ic, .eqc.r6 .eqc-ic, .eqc.r7 .eqc-ic, .eqc.r8 .eqc-ic, .eqc.r9 .eqc-ic{box-shadow:inset 0 0 0 1px var(--rc), 0 0 12px -2px var(--rc)}
+.eqc.r4 .eqc-ic, .eqc.r8 .eqc-ic{animation:rpulse 2.4s ease-in-out infinite}
+.eqc.r5:not(.empty) .eqc-ic, .eqc.r9:not(.empty) .eqc-ic, .eqc.r6:not(.empty) .eqc-ic{animation:rpulse 2.4s ease-in-out infinite, goldspin 9s linear infinite;
+  background:repeating-conic-gradient(from var(--ga), color-mix(in srgb, var(--rc) 50%, transparent) 0 14deg, transparent 14deg 36deg), radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rc) 30%, #140f0c), #140f0c 74%)}
+.eqc.r6:not(.empty) .eqc-ic{background:repeating-conic-gradient(from var(--ga), #ffe48faa 0 9deg, transparent 9deg 22deg, #fff7c477 22deg 27deg, transparent 27deg 40deg), radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--r6) 30%, #140f0c), #140f0c 74%)}
+.eqc.r6{border-color:transparent; border-left-width:3px; animation:goldspin 4s linear infinite; box-shadow:0 0 14px -4px #ffd84aaa;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--r6) 22%, var(--plate-2)), var(--plate-2) 60%) padding-box, conic-gradient(from var(--ga), #7a4f10, #d8a537, #fff4c2, #ffd84a, #9a6a18, #ffe48f, #7a4f10) border-box}
+.eqc.r6::after{content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:linear-gradient(105deg, transparent 35%, rgba(255,240,180,.14) 48%, transparent 61%); background-size:250% 100%; animation:sheen 3.2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){ .eqc, .eqc .eqc-ic, .eqc::after{animation:none !important} }
 .eqc-ic .rune-badge.on-slot{left:auto; right:-6px; top:auto; bottom:-6px}
 .eqc-t{display:flex; flex-direction:column; min-width:0; line-height:1.2}
 .eqc-t small{font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ash)}

@@ -23,7 +23,34 @@ export function channelKind(channelId: string): { kind: 'room' | 'group' | 'dm' 
 }
 
 /** Wolno dołączyć tylko do pokoju globalnego i kanału swojego klanu (członkostwo w grupie sprawdza Nakama). */
-export function chatJoin(_ctx: nkruntime.Context, _logger: nkruntime.Logger, _nk: nkruntime.Nakama, env: nkruntime.EnvelopeChannelJoin): nkruntime.EnvelopeChannelJoin {
+/** Wiadomości starsze niż tyle dni serwer usuwa z bazy (gra i tak pokazuje tylko ostatnią dobę globalnego i 3 dni klanu). */
+export const CHAT_KEEP_DAYS = 7;
+const JANITOR_EVERY_MS = 24 * 3600000;
+
+/**
+ * Sprzątanie czatu raz na dobę: usuwa z bazy stare wiadomości wszystkich kanałów. Uruchamia je pierwsze wejście
+ * na czat po upływie doby; zapis z wersją sprawia, że przy kilku graczach naraz sprząta tylko jeden.
+ */
+export function chatJanitor(nk: nkruntime.Nakama, logger: nkruntime.Logger, now: number): boolean {
+  try {
+    const o = nk.storageRead([{ collection: 'sys', key: 'chat_clean', userId: SYSTEM_USER }]);
+    const last = o.length ? Number((o[0].value as { t?: number }).t) || 0 : 0;
+    if (now - last < JANITOR_EVERY_MS) return false;
+    nk.storageWrite([{ collection: 'sys', key: 'chat_clean', userId: SYSTEM_USER, value: { t: now }, version: o.length ? o[0].version : '*', permissionRead: 0, permissionWrite: 0 }]);
+  } catch {
+    return false; // ktoś inny właśnie zaczął sprzątać
+  }
+  try {
+    nk.sqlExec(`DELETE FROM message WHERE create_time < now() - interval '${CHAT_KEEP_DAYS} days'`, []);
+    return true;
+  } catch (e) {
+    logger.warn('Sprzątanie czatu nieudane: %s', String(e));
+    return false;
+  }
+}
+
+export function chatJoin(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, env: nkruntime.EnvelopeChannelJoin): nkruntime.EnvelopeChannelJoin {
+  chatJanitor(nk, logger, Date.now());
   const j = env.channelJoin;
   if (j.type === 1 && ROOMS.includes(String(j.target))) { j.persistence = true; j.hidden = false; return env; }
   if (j.type === 3) { j.persistence = true; j.hidden = false; return env; }

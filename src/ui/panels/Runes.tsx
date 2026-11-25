@@ -5,7 +5,7 @@ import type { Game } from '../../engine/game';
 import type { SlotId } from '../../engine/types';
 import { farmLandFor, runeBlock, runeCost, runeGain, runeLvl, runePay } from '../../engine/runes';
 import { fmt, pctS } from '../format';
-import { SlotIcon } from '../icons';
+import { LockIcon, SlotIcon } from '../icons';
 import { Px } from '../Px';
 import { InfoBtn } from './Forge';
 
@@ -66,7 +66,8 @@ function RuneUp({ game, sl }: { game: Game; sl: SlotId }) {
   return (
     <button class="btn small primary rup" disabled={!!block} title={block ?? undefined} onClick={() => game.upgradeRune(sl)}
       aria-label={L >= B.RUNE_MAX ? 'Maksymalny poziom' : `Ulepsz runę: ${SLOTS[sl].n}${nxt ? `, +${fmt(nxt.power)} Mocy` : ''}`}>
-      {L >= B.RUNE_MAX ? 'maks.' : <>+1{nxt && nxt.power > 0 && <small>+{fmt(nxt.power)} Mocy</small>}</>}
+      {L >= B.RUNE_MAX ? 'maks.' : s.forge.lvl < B.RUNE_FORGE_LVL ? <><LockIcon /><small>Kuźnia {B.RUNE_FORGE_LVL}</small></>
+        : <>+1{nxt && nxt.power > 0 && <small>+{fmt(nxt.power)} Mocy</small>}</>}
     </button>
   );
 }
@@ -86,6 +87,9 @@ export function RunesTab({ game }: { game: Game }) {
       <div class="row">
         <div class="rhead"><Px src={resUrl('runa')} size={30} /><div><div class="eyebrow">Runy bohatera · na zawsze</div><div class="h">Wzmocnienie miejsc ekwipunku</div></div></div>
       </div>
+      {s.forge.lvl < B.RUNE_FORGE_LVL && (
+        <div class="lockline rlock"><LockIcon /><span>Runy odblokujesz na <b>{B.RUNE_FORGE_LVL}. poziomie kuźni</b> — teraz masz {s.forge.lvl}. Ulepszaj kuźnię w zakładce Kuźnia.</span></div>
+      )}
       {all && all.power > 0 ? (
         <div class="rsum">
           <span>Runy dają teraz bohaterowi</span>
@@ -99,7 +103,7 @@ export function RunesTab({ game }: { game: Game }) {
             <div><span class="rh-ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h12l-3-3M18 14H6l3 3" /></svg></span><small>Zmieniasz przedmiot — <b>premia zostaje</b></small></div>
             <div><span class="rh-ic"><Px src={resUrl('moc')} size={22} /></span><small>Bohater silniejszy <b>do końca gry</b></small></div>
           </div>
-          <p class="sub">Każdy poziom runy to +{B.RUNE_PCT}% głównej statystyki dla <b>każdego</b> przedmiotu, który założysz w tym miejscu.{s.forge.lvl < B.RUNE_FORGE_LVL ? ` Ulepszanie od ${B.RUNE_FORGE_LVL}. poziomu kuźni.` : ''}</p>
+          <p class="sub">Każdy poziom runy to +{B.RUNE_PCT}% głównej statystyki dla <b>każdego</b> przedmiotu, który założysz w tym miejscu.</p>
         </>
       )}
       <ul class="runelist compact">

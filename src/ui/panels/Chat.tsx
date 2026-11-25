@@ -5,7 +5,7 @@ import { B, ORES, RAR, SUBS, R } from '../../data';
 import { itemUrl } from '../../art/render';
 import { Px } from '../Px';
 import type { Game } from '../../engine/game';
-import { getChat, type ChatCh, type ChatMsg } from '../../save/chat';
+import { freshMsgs, getChat, type ChatCh, type ChatMsg } from '../../save/chat';
 import { getLink } from '../../save/server';
 import { f1 } from '../format';
 import type { ClanTab } from './ClanLife';
@@ -81,7 +81,7 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
   if (!chat) {
     return (<><div class="eyebrow">Czat</div><p class="sub">Czat działa po połączeniu z serwerem gry.</p><button class="btn" onClick={close}>Zamknij</button></>);
   }
-  const msgs = chat.msgs[ch].filter(m => !chat.muted.has(m.uid));
+  const msgs = freshMsgs(ch, chat.msgs[ch]).filter(m => !chat.muted.has(m.uid));
   const noClan = ch === 'clan' && !chat.clanId;
   const lockGlobal = ch === 'global' && game.s.forge.lvl < B.CHAT_GLOBAL_FORGE;
 
@@ -121,13 +121,14 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
         </div>
       ) : (
         <ul class="chat-list" ref={listRef} aria-live="polite" aria-label={ch === 'global' ? 'Czat globalny' : 'Czat klanu'}>
-          {msgs.length === 0 && <li class="cm sys">{chat.state === 'on' ? 'Jeszcze nikt nic nie napisał.' : 'Łączenie z czatem…'}</li>}
+          {msgs.length === 0 && <li class="cm sys">{chat.state === 'on' ? (ch === 'global' ? 'Nikt nic nie napisał przez ostatnią dobę.' : 'Nikt nic nie napisał przez ostatnie 3 dni.') : 'Łączenie z czatem…'}</li>}
           {msgs.map(m => (
             <Message key={m.id} m={m} open={menu === m.id} onMenu={() => setMenu(menu === m.id ? null : m.id)} onHelp={() => goClan('pomoc')}
               onMute={() => { chat.mute(m.uid, true); setMenu(null); setNote(`Wyciszono: ${m.n}.`); }} onReport={() => report(m)} />
           ))}
         </ul>
       )}
+      {!noClan && <small class="chat-keep">Wiadomości znikają po {ch === 'global' ? '24 godzinach' : '3 dniach'}.</small>}
       {lockGlobal && <p class="sub">Na czacie globalnym piszesz od {B.CHAT_GLOBAL_FORGE}. poziomu kuźni. Do tego czasu pisz na czacie klanu.</p>}
       {!noClan && (
         <form class="chat-in" onSubmit={send}>
