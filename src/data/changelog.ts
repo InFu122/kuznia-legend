@@ -18,6 +18,27 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-25',
+    date: '25 listopada 2026',
+    add: [
+      'Jakość przedmiotów I–V: każdy wytop losuje jakość, która podnosi wszystkie statystyki przedmiotu (II: +4%, III: +8%, IV: +13%, V: +20%). Jakość V trafia się w 3 wytopach na 100. W podglądzie przedmiotu widać, ile daje jego jakość.',
+      'Herb klanu: Przywódca wybiera kolor i symbol, a herb widać na banerze, w wyszukiwarce i na wojnie.',
+      'Skrzynia tygodnia: datki, ataki na bossa i smoka, pomoc, dary rudy i bitwy dają klanowi wspólne punkty. Otwierają one 5 skrzyń dla każdego, kto w tym tygodniu dołożył choć punkt.',
+      'Kowal tygodnia: najlepszy członek klanu w tygodniu dostaje Monety klanowe i Pieczęć Legendy oraz złotą odznakę.',
+    ],
+    change: [
+      'Klan w nowej odsłonie: baner z poziomem klanu, „Dziś dla klanu”, zakładki z ikonami, arena bossa i smoka z podium, pomoc z paskami postępu, sklep w kafelkach i tablica wyniku wojny.',
+      'Ruda unikalna daje teraz pewną jakość IV albo V zamiast przeskoku rzadkości.',
+      'Domieszki żywiołów są ok. 5 razy słabsze: to dodatek, a nie konieczność. Moc postaci z domieszkami może przez to trochę spaść.',
+      'Złoto z fal nie maleje już w dalszych krainach, a Skarbiec Złota płaci więcej (jeden klucz to ok. 1/5–1/3 ulepszenia kuźni).',
+      'Krainy 15–16 i pierwszy krąg Otchłani są łagodniejsze.',
+    ],
+    fix: [
+      'Okno „Witaj z powrotem” nie pokazuje się drugi raz po odebraniu nagrody dziennej.',
+      'Nowy nick nie wraca już do starego po synchronizacji z serwerem.',
+    ],
+  },
+  {
     id: '2026-11-23',
     date: '23 listopada 2026',
     add: [
