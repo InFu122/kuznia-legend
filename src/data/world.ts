@@ -53,8 +53,10 @@ export function landDef(i: number): LandDef {
   if (!L) {
     const b = LANDS[abyssBase(i)];
     L = { ...b, n: `Otchłań ${abyssCircle(i)} · ${b.n}`, act: 5, main: 5, rare: 8, drops: ABYSS_DROPS, boss: `${b.boss} z Otchłani` };
-    if (abyssLands.size > 500) abyssLands.clear();
-    abyssLands.set(i, L);
+    try {
+      if (abyssLands.size > 500) abyssLands.clear();
+      abyssLands.set(i, L);
+    } catch { /* serwer: zamrożone zmienne globalne — bez pamięci */ }
   }
   return L;
 }

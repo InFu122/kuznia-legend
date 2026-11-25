@@ -104,6 +104,8 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   let broke: { ph: number; pd: Record<string, number> } | null = null;
   let killed = false;
   let limit = false;
+  // Nagrodę liczymy przed zapisem ataku: gdyby jej liczenie się wywróciło, atak nie przepadnie.
+  const reward = raidAttackReward(bestG);
   r = updateObject<Raid>(nk, RAID_C, keyOf(clock.week, g.id), SYSTEM_USER, cur => {
     dealt = 0; broke = null; killed = false; limit = false;
     if (!cur || cur.done) return null;
@@ -128,7 +130,7 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   }, perm) as Raid;
   if (limit) throw err('Na dziś ataki na smoka wykorzystane — wróć jutro.', PRECONDITION);
   if (!dealt) throw err('Smok pokonany — następny pojawi się w poniedziałek.', PRECONDITION);
-  pushRewards(nk, userId, [{ why: 'Atak na smoka', r: raidAttackReward(bestG) }]);
+  pushRewards(nk, userId, [{ why: 'Atak na smoka', r: reward }]);
   try { addWeekPoints(nk, ctx, g.id, userId, 'raid'); } catch { /* skrzynia tygodnia nie blokuje ataku */ }
 
   const lvl = r.lvl;

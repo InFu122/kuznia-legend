@@ -382,6 +382,8 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
   let dealt = 0;
   let killed: Boss | null = null;
   const before = clanLevelOf(x.st.xp);
+  // Nagrodę liczymy przed zapisem ataku: gdyby jej liczenie się wywróciło, atak nie przepadnie.
+  const reward = clanAttackReward(bestG);
   x.st = updateObject<ClanState>(nk, STATE, x.g.id, SYSTEM_USER, cur => {
     if (!cur) return null;
     const b: Boss = { ...cur.boss, dmg: { ...cur.boss.dmg }, who: { ...cur.boss.who } };
@@ -401,7 +403,7 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
     }
     return st;
   }, perm) as ClanState;
-  pushRewards(nk, userId, [{ why: 'Atak na bossa klanowego', r: clanAttackReward(bestG) }]);
+  pushRewards(nk, userId, [{ why: 'Atak na bossa klanowego', r: reward }]);
   try { warOnBossAttack(nk, ctx, userId, x.g, x.now); } catch { /* wojna nie blokuje ataku na bossa */ }
 
   const k = killed as Boss | null;
@@ -547,6 +549,10 @@ export function rpcClanWeekClaim(ctx: nkruntime.Context, _logger: nkruntime.Logg
   const up = upOf(nk, userId, parse(payload).up);
   let tiers: number[] = [];
   let none = '';
+  // Skrzynie liczymy przed zapisem „odebrane”: gdyby liczenie się wywróciło, skrzynie nie przepadną.
+  const save = readSave(nk, userId);
+  const bestG = goldStage(save && save.value.state);
+  const chests = CLAN_WEEK.TIERS.map((_, t) => clanWeekChest(t, bestG));
   x.st = updateObject<ClanState>(nk, STATE, x.g.id, SYSTEM_USER, cur => {
     tiers = []; none = '';
     if (!cur || !cur.wk || cur.wk.id !== x.wk) { none = 'Tydzień klanu dopiero się zaczął.'; return null; }
@@ -557,9 +563,7 @@ export function rpcClanWeekClaim(ctx: nkruntime.Context, _logger: nkruntime.Logg
     return { ...cur, wk: { ...cur.wk, got: { ...cur.wk.got, [userId]: got.concat(tiers) } } };
   }, perm) as ClanState;
   if (!tiers.length) throw err(none || 'Nie ma nowej skrzyni do odebrania.', PRECONDITION);
-  const save = readSave(nk, userId);
-  const bestG = goldStage(save && save.value.state);
-  pushRewards(nk, userId, tiers.map(t => ({ why: `Skrzynia tygodnia klanu nr ${t + 1}`, r: clanWeekChest(t, bestG) })));
+  pushRewards(nk, userId, tiers.map(t => ({ why: `Skrzynia tygodnia klanu nr ${t + 1}`, r: chests[t] })));
   return JSON.stringify(view(nk, x, up, { claimed: tiers.length }));
 }
 

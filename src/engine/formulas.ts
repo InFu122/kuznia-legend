@@ -74,13 +74,15 @@ export const goldWaves = (f: number) =>
  * Fale na ulepszenie po wygładzeniu: rosną najwyżej ×GOLD_WAVES_STEP na poziom kuźni, więc złoto z fali nigdy nie maleje
  * z postępem (dawniej między 10. a 20. poziomem kuźni spadało, bo czas ulepszeń rósł szybciej niż koszt).
  */
-const smoothWaves: number[] = [];
+// Tabela liczona od razu przy wczytaniu: serwer gry (Nakama) zamraża zmienne globalne po starcie,
+// więc pamięci podręcznej uzupełnianej w trakcie gry nie wolno trzymać w tablicy czy obiekcie.
+const smoothWaves: readonly number[] = (() => {
+  const a = [0, goldWaves(1)];
+  for (let k = 2; k <= B.FORGE_MAX; k++) a[k] = Math.min(goldWaves(k), a[k - 1] * GOLD_WAVES_STEP);
+  return a;
+})();
 export function goldWavesSmooth(f: number): number {
-  const n = Math.max(1, Math.min(B.FORGE_MAX, Math.floor(f)));
-  for (let k = smoothWaves.length ? smoothWaves.length : 1; k <= n; k++) {
-    smoothWaves[k] = k === 1 ? goldWaves(1) : Math.min(goldWaves(k), smoothWaves[k - 1] * GOLD_WAVES_STEP);
-  }
-  return smoothWaves[n];
+  return smoothWaves[Math.max(1, Math.min(B.FORGE_MAX, Math.floor(f)))];
 }
 /** Złoto z fali na etapie g: koszt następnego ulepszenia oczekiwanej kuźni podzielony przez liczbę fal (rośnie z poziomem). */
 export const goldWave = (g: number) => {
@@ -97,7 +99,7 @@ export function gAtForge(f: number): number {
     while (forgeExp(hi) < f && hi < 1e6) hi *= 2;
     while (lo < hi) { const m = (lo + hi) >> 1; if (forgeExp(m) >= f) hi = m; else lo = m + 1; }
     g = lo;
-    gAtForgeCache.set(f, g);
+    try { gAtForgeCache.set(f, g); } catch { /* serwer: zamrożone zmienne globalne — liczymy bez pamięci */ }
   }
   return g;
 }
