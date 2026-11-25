@@ -24,8 +24,9 @@ Kuźnia Legend to RPG, w którym ty kujesz, a bohater walczy sam. Wrogowie zosta
 ⚒ WYTAPIAJ I WYKUWAJ
 • 10 rzadkości — od Zwykłych przez Epickie i Legendarne aż po Boskie
 • lepsza ruda to rzadsze przedmioty, a każdy poziom kuźni zwiększa szansę na przeskok o rzadkość wyżej
+• jakość I–V: każdy wytop losuje premię do wszystkich statystyk, aż do +20%
 • założone przedmioty zdobywają Sławę Czynów i w końcu budzą się z własnym imieniem
-• przekuwaj, ulepszaj kuźnię i zdobywaj kolejne rudy: od miedzi po Gwiezdny Kruszec
+• przekuwaj, ulepszaj kuźnię i zdobywaj kolejne rudy: od miedzi po Boską Rudę
 
 ⚔ WALCZ BEZ PRZERWY
 • bohater sam przemierza 16 krain w 4 aktach: od Spalonej Wioski po Gwiezdny Krater
@@ -34,11 +35,13 @@ Kuźnia Legend to RPG, w którym ty kujesz, a bohater walczy sam. Wrogowie zosta
 
 📜 ROZWIJAJ SIĘ
 • Akademia Kowalska: ponad 20 badań w czterech dziedzinach, większość w trzech stopniach
-• umiejętności, runy, chowańce i wierzchowce
-• lochy po łupy, Wieża Wyzwań i wydarzenia
+• umiejętności i runy, chowańce z jaj (od Wilczka po Feniksa) i wierzchowce
+• lochy po łupy, Wieża Wyzwań, przepustka i wydarzenia
 
 🛡 GRAJ Z INNYMI
-• klany ze Wspólną Kuźnią, bossem klanowym i wojnami klanów
+• klany z własnym herbem i Wspólną Kuźnią
+• boss klanowy, Smocze Leże i tygodniowe wojny klanów
+• Skrzynia tygodnia dla całego klanu i tytuł Kowala tygodnia
 • arena i tygodniowe ligi
 • rankingi Mocy, postępu i Wieży
 • czat z innymi kowalami
@@ -62,9 +65,27 @@ Postęp zapisuje się na serwerze gry — kodem przeniesienia przeniesiesz kowal
 |---|---|---|
 | `ikona-512.png` | Ikona aplikacji | 512×512 PNG, do 1 MB (sklep sam zaokrągla rogi) |
 | `grafika-1024x500.png` | Grafika (feature graphic) | 1024×500 PNG/JPEG, bez przezroczystości |
-| `zrzut-1…6-*.jpg` | Zrzuty ekranu telefonu | 2–8 zrzutów, 1080×1920 |
+| `zrzut-1…8-*.png` | Zrzuty ekranu telefonu (w tej kolejności) | 2–8 zrzutów, 1080×1920, PNG bez przezroczystości |
 
-Zrzuty i grafikę zrobiono z prawdziwej gry (pixel art z silnika). Jeśli dodasz nowe funkcje, zrób nowe zrzuty — karta sklepu nie może pokazywać rzeczy, których w grze nie ma.
+Zrzuty i grafikę zrobiono z prawdziwej gry (ekrany i pixel art z silnika; tła, bohaterów i bossów w pełnym
+rozmiarze eksportuje `tools/store/art.html` — `npx vite`, potem otwórz `/tools/store/art.html`). Hasła na
+zrzutach trzymają się wytycznych Google: zajmują mniej niż 20% obrazka, bez ramek telefonu, bez słów typu
+„najlepsza”, „nr 1”, „nowość”, „za darmo” i bez wezwań w stylu „Pobierz teraz”. Jeśli dodasz nowe funkcje, zrób
+nowe zrzuty — karta sklepu nie może pokazywać rzeczy, których w grze nie ma.
+
+### Teksty alternatywne (pole „Tekst alternatywny” przy każdej grafice, do 140 znaków)
+
+| Plik | Tekst alternatywny |
+|---|---|
+| `grafika-1024x500.png` | Złoty bohater i Czerwony Smok po obu stronach napisu Kuźnia Legend |
+| `zrzut-1-wytop.png` | Wykuty Mityczny amulet: przeskok rzadkości, jakość IV i +911 tys. Mocy |
+| `zrzut-2-boss.png` | Bohater w zbroi ze Smoczej Stali walczy z Ognistym Tytanem w Wulkanicznych Pustkowiach |
+| `zrzut-3-bohater.png` | Karta bohatera: Moc 6,13 mln, statystyki i ekwipunek ze Smoczej Stali |
+| `zrzut-4-krainy.png` | Krainy aktu IV: Wulkaniczne Pustkowia, Smocze Turnie, Burzowe Wyspy i Gwiezdny Krater |
+| `zrzut-5-lochy.png` | Lochy: Skarbiec Złota, Nawiedzone Katakumby, Głęboka Sztolnia, Wieża Wyzwań i inne |
+| `zrzut-6-klan.png` | Ekran klanu z herbem, zadaniami na dziś i Skrzynią tygodnia |
+| `zrzut-7-smok.png` | Smocze Leże: klan walczy z Lodowym Smokiem słabym na ogień |
+| `zrzut-8-chowance.png` | Inkubator z wykluwającym się Legendarnym jajem i chowaniec Salamandra |
 
 ## Produkty w aplikacji (Zarabianie → Produkty → Produkty w aplikacji)
 
