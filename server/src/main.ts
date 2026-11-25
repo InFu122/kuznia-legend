@@ -7,7 +7,7 @@ import { rpcArenaFight, rpcArenaList } from './arena';
 import { rpcArenaLeague, rpcArenaShopBuy } from './league';
 import { chatBlock, chatJoin, chatSend, rpcChatDrop, rpcChatReport } from './chat';
 import { blockGroupApi, rpcClanCreate, rpcClanInfo, rpcClanJoin, rpcClanLeave, rpcClanList, rpcClanManage, rpcClanSettings } from './clan';
-import { rpcClanBossAttack, rpcClanDonate, rpcClanHelp, rpcClanHelpAsk, rpcClanOreAsk, rpcClanOreGive, rpcClanSync } from './clanlife';
+import { rpcClanBossAttack, rpcClanDonate, rpcClanHelp, rpcClanHelpAsk, rpcClanOreAsk, rpcClanOreGive, rpcClanSync, rpcClanWeekClaim } from './clanlife';
 import { SYSTEM_USER, signSecret, testSpeed } from './common';
 import { rpcFeedback, rpcFeedbackList } from './feedback';
 import { rpcNameSet } from './names';
@@ -71,6 +71,7 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('clan_help', rpcClanHelp);
   initializer.registerRpc('clan_ore_ask', rpcClanOreAsk);
   initializer.registerRpc('clan_ore_give', rpcClanOreGive);
+  initializer.registerRpc('clan_week_claim', rpcClanWeekClaim);
   initializer.registerRpc('war_state', rpcWarState);
   initializer.registerRpc('war_attack', rpcWarAttack);
   initializer.registerRpc('war_test_clock', rpcWarTestClock);

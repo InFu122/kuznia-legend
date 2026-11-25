@@ -18,7 +18,7 @@ import { shuffle } from '../../src/engine/rng';
 import type { GameState } from '../../src/engine/types';
 import { readHero, readHeroes } from './arena';
 import { clanOf, postClan } from './clan';
-import { addClanXp, clanPower, pushRewards, readPending } from './clanlife';
+import { addClanXp, addWeekPoints, clanPower, pushRewards, readPending } from './clanlife';
 import { INVALID, PRECONDITION, SYSTEM_USER, UNAUTH, err, goldStage, parse, serverRng, testSpeed, updateObject, userOf } from './common';
 import { clanSeasonSettle, warSeason, warSeasonResult } from './clanrank';
 import { nameOf } from './names';
@@ -466,6 +466,7 @@ export function rpcWarAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
     };
   }, perm) as WarClan;
   if (!used) throw err('Wykorzystałeś już wszystkie ataki w tej bitwie.', PRECONDITION);
+  try { addWeekPoints(nk, ctx, g.id, userId, 'war'); } catch { /* skrzynia tygodnia nie blokuje bitwy */ }
   return JSON.stringify(view(nk, clock, rec, userId, t.me, now, {
     fight: {
       win: res.win, ms: res.ms, frames: res.frames, crits: res.crits, skills: res.skills, pts,

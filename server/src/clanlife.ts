@@ -8,12 +8,13 @@
 //   clan/daily (gracz)             — dzienne liczniki: datki, ataki, dobre uczynki, czas ostatniej prośby o rudę,
 //   clan/helped (gracz)            — ile pomocy dostał przy ulepszeniu na dany poziom (kontrola tempa kuźni),
 //   clan/rewards (gracz)           — nagrody czekające na odbiór.
-import { CLAN, CLAN_LEVELS, ORES, ORE_WANT, clanBossHp, clanBossOf, clanLevelOf } from '../../src/data';
-import { clanAttackReward, clanBossChest, type ServerReward } from '../../src/engine/clan';
+// Skrzynia tygodnia i Kowal tygodnia: punkty aktywności członków w stanie klanu (`wk`), poprzedni zwycięzca w `top`.
+import { CLAN, CLAN_LEVELS, CLAN_WEEK, ORES, ORE_WANT, clanBossHp, clanBossOf, clanEmbOf, clanLevelOf, clanWeekGoal, type ClanWeekKind } from '../../src/data';
+import { clanAttackReward, clanBossChest, clanWeekChest, type ServerReward } from '../../src/engine/clan';
 import type { Reward } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { raidBrief } from './raid';
-import { warBrief, warOnBossAttack } from './war';
+import { warBrief, warClock, warOnBossAttack } from './war';
 import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, goldStage, parse, readSave, serverDay, serverRng, updateObject, userOf } from './common';
 import { clanSeasonSettle, updateClanPower } from './clanrank';
 import { nameOf } from './names';
@@ -21,7 +22,13 @@ import { nameOf } from './names';
 interface HelpReq { uid: string; n: string; lvl: number; got: string[]; t: number }
 interface OreReq { id: string; uid: string; n: string; ore: number; want: number; got: number; t: number }
 interface Boss { lvl: number; hp: number; max: number; dmg: Record<string, number>; who: Record<string, string>; t: number }
-export interface ClanState { xp: number; boss: Boss; kills: number; helps: HelpReq[]; ores: OreReq[]; log: { t: number; m: string; n?: number }[]; raidLvl?: number }
+/** Tydzień klanu: punkty łącznie i każdego członka (`by`), imiona, odebrane skrzynie (numery 0–4). */
+interface Week { id: string; pts: number; by: Record<string, number>; who: Record<string, string>; got: Record<string, number[]> }
+interface WeekTop { wk: string; uid: string; n: string; pts: number }
+export interface ClanState {
+  xp: number; boss: Boss; kills: number; helps: HelpReq[]; ores: OreReq[]; log: { t: number; m: string; n?: number }[]; raidLvl?: number;
+  wk?: Week; top?: WeekTop | null;
+}
 interface Daily { day: string; don: number; atk: number; deed: number; oreT: number }
 type Helped = Record<string, number>;
 interface Pending { list: ServerReward[] }
@@ -31,6 +38,77 @@ const PENDING_MAX = 60;
 const perm = { read: 0 as nkruntime.ReadPermissionValues, write: 0 as nkruntime.WritePermissionValues };
 
 const myName = (nk: nkruntime.Nakama, userId: string) => nameOf(nk, userId) || 'Kowal';
+const DAY_MS = 86400000;
+
+/* ---------- Skrzynia tygodnia i Kowal tygodnia ---------- */
+
+const freshWeek = (id: string): Week => ({ id, pts: 0, by: {}, who: {}, got: {} });
+/** Punkty tygodnia — wywoływane w środku zmiany stanu klanu (`st` to już kopia). */
+function bumpWeek(st: ClanState, wk: string, uid: string, who: string, pts: number): void {
+  const w: Week = st.wk && st.wk.id === wk ? { ...st.wk, by: { ...st.wk.by }, who: { ...st.wk.who } } : freshWeek(wk);
+  w.pts += pts;
+  w.by[uid] = (w.by[uid] || 0) + pts;
+  w.who[uid] = who;
+  st.wk = w;
+}
+/** Najaktywniejszy członek tygodnia (przy remisie — pierwszy, który zdobył punkty). */
+function bestOf(w: Week): { uid: string; n: string; pts: number } | null {
+  let top: { uid: string; n: string; pts: number } | null = null;
+  for (const [u, p] of Object.entries(w.by)) if (p > 0 && (!top || p > top.pts)) top = { uid: u, n: w.who[u] || 'Kowal', pts: p };
+  return top;
+}
+/** Ile skrzyń tygodnia otworzył klan (przy obecnej liczbie członków). */
+const opened = (w: Week, members: number) => CLAN_WEEK.TIERS.filter((_, i) => w.pts >= clanWeekGoal(i, members)).length;
+
+/** Rozliczenie skończonego tygodnia: nieodebrane skrzynie dla każdego, kto dołożył punkty, i nagroda Kowala tygodnia. */
+function settleWeek(nk: nkruntime.Nakama, groupId: string, ids: string[], w: Week): void {
+  const members = new Set(ids);
+  const n = opened(w, ids.length);
+  const users = Object.keys(w.by).filter(u => w.by[u] > 0 && members.has(u));
+  const best: Record<string, number> = {};
+  if (users.length) for (const o of nk.storageRead(users.map(u => ({ collection: 'save', key: 'state', userId: u })))) best[o.userId] = goldStage((o.value as { state?: object }).state);
+  for (const u of users) {
+    const got = w.got[u] || [];
+    const items: { why: string; r: Reward }[] = [];
+    for (let t = 0; t < n; t++) if (!got.includes(t)) items.push({ why: `Skrzynia tygodnia klanu nr ${t + 1}`, r: clanWeekChest(t, best[u] || 0) });
+    if (items.length) { try { pushRewards(nk, u, items); } catch { /* następna osoba */ } }
+  }
+  const top = bestOf(w);
+  if (top && members.has(top.uid)) {
+    try { pushRewards(nk, top.uid, [{ why: 'Kowal tygodnia w klanie', r: { ...CLAN_WEEK.TOP_REWARD } }]); } catch { /* nagroda przy następnej okazji przepada */ }
+    postClan(nk, groupId, { k: 'sys', t: `Kowal tygodnia: ${top.n} (${top.pts} pkt)! Nagroda czeka w zakładce Klan.` });
+  }
+}
+/** Nowy tydzień: rozlicza poprzedni i zaczyna liczyć od zera. Zwraca aktualny stan klanu. */
+function rollWeek(nk: nkruntime.Nakama, groupId: string, ids: string[], wk: string): ClanState | null {
+  let old: Week | null = null;
+  const st = updateObject<ClanState>(nk, STATE, groupId, SYSTEM_USER, cur => {
+    old = null;
+    if (!cur) return null;
+    if (!cur.wk) return { ...cur, wk: freshWeek(wk) };
+    if (cur.wk.id === wk) return null;
+    old = cur.wk;
+    const t = bestOf(cur.wk);
+    return { ...cur, wk: freshWeek(wk), top: t ? { wk: cur.wk.id, ...t } : null };
+  }, perm);
+  const o = old as Week | null;
+  if (o) settleWeek(nk, groupId, ids, o);
+  return st;
+}
+/** Punkty tygodnia za aktywność poza tym plikiem (bitwa w wojnie, atak na smoka). */
+export function addWeekPoints(nk: nkruntime.Nakama, ctx: nkruntime.Context, groupId: string, uid: string, kind: ClanWeekKind): void {
+  const wk = warClock(nk, ctx, Date.now()).week;
+  const ids = memberIds(nk, groupId);
+  ensureState(nk, groupId, ids);
+  rollWeek(nk, groupId, ids, wk);
+  const who = myName(nk, uid);
+  updateObject<ClanState>(nk, STATE, groupId, SYSTEM_USER, cur => {
+    if (!cur) return null;
+    const st: ClanState = { ...cur };
+    bumpWeek(st, wk, uid, who, CLAN_WEEK.PTS[kind]);
+    return st;
+  }, perm);
+}
 
 export function memberIds(nk: nkruntime.Nakama, groupId: string): string[] {
   return (nk.groupUsersList(groupId, 100).groupUsers || []).filter(u => u.user && typeof u.state === 'number' && u.state <= 2).map(u => u.user.userId);
@@ -157,7 +235,7 @@ function deedReward(nk: nkruntime.Nakama, userId: string, now: number, count: nu
 
 /* ---------- widok klanu dla gry ---------- */
 
-interface Ctx { userId: string; g: nkruntime.Group; ids: string[]; st: ClanState; now: number }
+interface Ctx { userId: string; g: nkruntime.Group; ids: string[]; st: ClanState; now: number; wk: string; wkEnds: number }
 
 /** Sprzątanie: wygasłe prośby, prośby byłych członków, własna prośba o pomoc po zakończonym ulepszeniu. */
 function tidy(nk: nkruntime.Nakama, c: Ctx, up: number | null): ClanState {
@@ -177,6 +255,19 @@ function tidy(nk: nkruntime.Nakama, c: Ctx, up: number | null): ClanState {
   }, perm) as ClanState;
 }
 
+/** Skrzynia tygodnia w widoku: punkty klanu i moje, progi, odebrane skrzynie, kto prowadzi i Kowal poprzedniego tygodnia. */
+function weekView(c: Ctx, userId: string) {
+  const w = c.st.wk && c.st.wk.id === c.wk ? c.st.wk : freshWeek(c.wk);
+  const lead = bestOf(w);
+  const top = c.st.top;
+  return {
+    pts: w.pts, mine: w.by[userId] || 0, goals: CLAN_WEEK.TIERS.map((_, i) => clanWeekGoal(i, c.ids.length)), got: w.got[userId] || [],
+    open: opened(w, c.ids.length), ends: c.wkEnds,
+    lead: lead ? { n: lead.n, pts: lead.pts, me: lead.uid === userId } : null,
+    top: top ? { uid: top.uid, n: top.n, pts: top.pts, me: top.uid === userId } : null,
+  };
+}
+
 function view(nk: nkruntime.Nakama, c: Ctx, up: number | null, extra: Record<string, unknown> = {}) {
   const { st, userId, now } = c;
   const d = readDaily(nk, userId, now);
@@ -188,7 +279,7 @@ function view(nk: nkruntime.Nakama, c: Ctx, up: number | null, extra: Record<str
   const mine = st.helps.find(h => h.uid === userId) || null;
   const myOre = st.ores.find(o => o.uid === userId) || null;
   return {
-    clan: { id: c.g.id, name: c.g.name, tag: ((c.g.metadata || {}) as { tag?: string }).tag || '' },
+    clan: { id: c.g.id, name: c.g.name, tag: ((c.g.metadata || {}) as { tag?: string }).tag || '', emb: clanEmbOf(((c.g.metadata || {}) as { emb?: unknown }).emb) },
     lvl, xp: st.xp, cur: lvl ? CLAN_LEVELS[lvl - 1].xp : 0, next: lvl < CLAN_LEVELS.length ? CLAN_LEVELS[lvl].xp : null,
     boss: {
       n: clanBossOf(b.lvl).n, pal: clanBossOf(b.lvl).pal, lvl: b.lvl, hp: b.hp, max: b.max, kills: st.kills,
@@ -203,18 +294,23 @@ function view(nk: nkruntime.Nakama, c: Ctx, up: number | null, extra: Record<str
     ores: st.ores.filter(o => o.uid !== userId).map(o => ({ id: o.id, n: o.n, ore: o.ore, want: o.want, got: o.got })),
     myOre: myOre ? { id: myOre.id, ore: myOre.ore, want: myOre.want, got: myOre.got } : null,
     log: st.log.slice(-15).reverse(),
+    week: weekView(c, userId),
     rewards: readPending(nk, userId),
     serverTime: now,
     ...extra,
   };
 }
 
-/** Kontekst klanu gracza albo błąd, gdy nie jest w klanie. */
-function clanCtx(nk: nkruntime.Nakama, userId: string): Ctx {
+/** Kontekst klanu gracza albo błąd, gdy nie jest w klanie (przy okazji rozlicza skończony tydzień klanu). */
+function clanCtx(nk: nkruntime.Nakama, userId: string, ctx: nkruntime.Context): Ctx {
   const c = clanOf(nk, userId);
   if (!c) throw err('Nie jesteś w klanie.', PRECONDITION);
   const ids = memberIds(nk, c.g.id);
-  return { userId, g: c.g, ids, st: ensureState(nk, c.g.id, ids), now: Date.now() };
+  const now = Date.now();
+  const clock = warClock(nk, ctx, now);
+  let st = ensureState(nk, c.g.id, ids);
+  if (!st.wk || st.wk.id !== clock.week) st = rollWeek(nk, c.g.id, ids, clock.week) || st;
+  return { userId, g: c.g, ids, st, now, wk: clock.week, wkEnds: clock.ends + (6 - clock.day) * DAY_MS };
 }
 
 /** Poziom ulepszenia kuźni podany przez grę (sprawdzony z zapisem: najwyżej o 2 ponad zapisany poziom). */
@@ -241,7 +337,7 @@ export function rpcClanSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
       helped: up ? { lvl: up, n: Math.min(CLAN.HELP_MAX, helped[String(up)] || 0) } : null,
     });
   }
-  const x = clanCtx(nk, userId);
+  const x = clanCtx(nk, userId, ctx);
   x.st = tidy(nk, x, up);
   try { updateClanPower(nk, x.g, x.ids, clanLevelOf(x.st.xp)); } catch { /* ranking nie jest konieczny */ }
   const extra: Record<string, unknown> = {};
@@ -252,7 +348,7 @@ export function rpcClanSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
 /** Datek do Wspólnej Kuźni: Doświadczenie dla klanu, Monety dla gracza. Złoto płaci gra. */
 export function rpcClanDonate(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const x = clanCtx(nk, userId);
+  const x = clanCtx(nk, userId, ctx);
   const up = upOf(nk, userId, parse(payload).up);
   bumpDaily(nk, userId, x.now, d => (d.don < CLAN.DONATE_PER_DAY ? (d.don++, true) : false));
   const who = myName(nk, userId);
@@ -261,6 +357,7 @@ export function rpcClanDonate(ctx: nkruntime.Context, _logger: nkruntime.Logger,
     if (!cur) return null;
     const st = { ...cur, xp: cur.xp + CLAN.DONATE_XP, log: cur.log.slice() };
     addLog(st, `${who} wspiera Wspólną Kuźnię`, x.now);
+    bumpWeek(st, x.wk, userId, who, CLAN_WEEK.PTS.don);
     return st;
   }, perm) as ClanState;
   pushRewards(nk, userId, [{ why: 'Datek do Wspólnej Kuźni', r: { coins: CLAN.DONATE_COINS } }]);
@@ -272,7 +369,7 @@ export function rpcClanDonate(ctx: nkruntime.Context, _logger: nkruntime.Logger,
 /** Atak na bossa klanowego: obrażenia z Mocy liczonej przez serwer. */
 export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const x = clanCtx(nk, userId);
+  const x = clanCtx(nk, userId, ctx);
   const up = upOf(nk, userId, parse(payload).up);
   const save = readSave(nk, userId);
   const power = Math.max(1, save ? save.value.power || 0 : 0);
@@ -293,6 +390,7 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
     b.hp -= dealt;
     b.dmg[userId] = (b.dmg[userId] || 0) + dealt;
     b.who[userId] = who;
+    bumpWeek(st, x.wk, userId, who, CLAN_WEEK.PTS.atk);
     killed = null;
     if (b.hp <= 0) {
       killed = b;
@@ -329,7 +427,7 @@ export function rpcClanHelpAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger
   const userId = userOf(ctx);
   const up = upOf(nk, userId, parse(payload).up);
   if (!up) throw err('Pomoc przydaje się w czasie ulepszenia kuźni.', PRECONDITION);
-  const x = clanCtx(nk, userId);
+  const x = clanCtx(nk, userId, ctx);
   const have = Math.min(CLAN.HELP_MAX, readHelped(nk, userId)[String(up)] || 0);
   if (have >= CLAN.HELP_MAX) throw err('To ulepszenie dostało już pełną pomoc klanu.', PRECONDITION);
   const who = myName(nk, userId);
@@ -349,9 +447,10 @@ export function rpcClanHelp(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const userId = userOf(ctx);
   const req = parse(payload);
   const only = typeof req.uid === 'string' ? req.uid : '';
-  const x = clanCtx(nk, userId);
+  const x = clanCtx(nk, userId, ctx);
   const up = upOf(nk, userId, req.up);
   const ids = new Set(x.ids);
+  const helper = myName(nk, userId);
   let done: HelpReq[] = [];
   x.st = updateObject<ClanState>(nk, STATE, x.g.id, SYSTEM_USER, cur => {
     if (!cur) return null;
@@ -363,7 +462,9 @@ export function rpcClanHelp(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
       return n;
     });
     if (!done.length) return null;
-    return { ...cur, helps: helps.filter(h => h.got.length < CLAN.HELP_MAX) };
+    const st: ClanState = { ...cur, helps: helps.filter(h => h.got.length < CLAN.HELP_MAX) };
+    bumpWeek(st, x.wk, userId, helper, CLAN_WEEK.PTS.help * done.length);
+    return st;
   }, perm) as ClanState;
   if (!done.length) throw err('Nie ma komu pomóc — wszystkie prośby mają już twoją pomoc.', PRECONDITION);
   for (const h of done) {
@@ -385,7 +486,7 @@ export function rpcClanOreAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   const ore = Math.floor(Number(req.ore));
   if (!ORES[ore]) throw err('Nieznana ruda.', INVALID);
   if (!(ORE_WANT[ore] > 0)) throw err(`O ${ORES[ore].n} nie można prosić klanu.`, INVALID);
-  const x = clanCtx(nk, userId);
+  const x = clanCtx(nk, userId, ctx);
   const up = upOf(nk, userId, req.up);
   const save = readSave(nk, userId);
   if (!save || ORES[ore].lvl > save.value.state.forge.lvl) throw err(`${ORES[ore].n} odblokujesz na ${ORES[ore].lvl}. poziomie kuźni.`, PRECONDITION);
@@ -412,9 +513,10 @@ export function rpcClanOreGive(ctx: nkruntime.Context, _logger: nkruntime.Logger
   const req = parse(payload);
   const id = String(req.id || '');
   const n = Math.max(1, Math.min(CLAN.ORE_GIVE_MAX, Math.floor(Number(req.n)) || 0));
-  const x = clanCtx(nk, userId);
+  const x = clanCtx(nk, userId, ctx);
   const up = upOf(nk, userId, req.up);
   const ids = new Set(x.ids);
+  const giver = myName(nk, userId);
   let given = 0;
   let to: OreReq | null = null;
   x.st = updateObject<ClanState>(nk, STATE, x.g.id, SYSTEM_USER, cur => {
@@ -425,7 +527,9 @@ export function rpcClanOreGive(ctx: nkruntime.Context, _logger: nkruntime.Logger
     given = Math.min(n, r.want - r.got);
     to = { ...r, got: r.got + given };
     const t = to;
-    return { ...cur, ores: cur.ores.map(o => (o.id === id ? t : o)).filter(o => o.got < o.want) };
+    const st: ClanState = { ...cur, ores: cur.ores.map(o => (o.id === id ? t : o)).filter(o => o.got < o.want) };
+    bumpWeek(st, x.wk, userId, giver, CLAN_WEEK.PTS.ore);
+    return st;
   }, perm) as ClanState;
   const r = to as OreReq | null;
   if (!r || !given) throw err('Ta prośba jest już spełniona albo wygasła.', NOT_FOUND);
@@ -434,6 +538,29 @@ export function rpcClanOreGive(ctx: nkruntime.Context, _logger: nkruntime.Logger
   const paid = deedReward(nk, userId, x.now, 1, 'Dar rudy dla klanu');
   if (r.got >= r.want) logEvent(nk, x, `${r.n} dostaje komplet rudy (${ORES[r.ore].n} × ${r.want})`);
   return JSON.stringify(view(nk, x, up, { given, paid }));
+}
+
+/** Odbiór otwartych skrzyń tygodnia (każdy, kto w tym tygodniu dołożył choć 1 punkt). */
+export function rpcClanWeekClaim(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
+  const userId = userOf(ctx);
+  const x = clanCtx(nk, userId, ctx);
+  const up = upOf(nk, userId, parse(payload).up);
+  let tiers: number[] = [];
+  let none = '';
+  x.st = updateObject<ClanState>(nk, STATE, x.g.id, SYSTEM_USER, cur => {
+    tiers = []; none = '';
+    if (!cur || !cur.wk || cur.wk.id !== x.wk) { none = 'Tydzień klanu dopiero się zaczął.'; return null; }
+    if (!(cur.wk.by[userId] > 0)) { none = 'Skrzynie odbiera każdy, kto w tym tygodniu dołożył choć 1 punkt — zrób coś dla klanu.'; return null; }
+    const got = cur.wk.got[userId] || [];
+    for (let t = 0; t < opened(cur.wk, x.ids.length); t++) if (!got.includes(t)) tiers.push(t);
+    if (!tiers.length) { none = 'Nie ma nowej skrzyni do odebrania.'; return null; }
+    return { ...cur, wk: { ...cur.wk, got: { ...cur.wk.got, [userId]: got.concat(tiers) } } };
+  }, perm) as ClanState;
+  if (!tiers.length) throw err(none || 'Nie ma nowej skrzyni do odebrania.', PRECONDITION);
+  const save = readSave(nk, userId);
+  const bestG = goldStage(save && save.value.state);
+  pushRewards(nk, userId, tiers.map(t => ({ why: `Skrzynia tygodnia klanu nr ${t + 1}`, r: clanWeekChest(t, bestG) })));
+  return JSON.stringify(view(nk, x, up, { claimed: tiers.length }));
 }
 
 /** Doświadczenie dla klanu (wojna, smok) z wpisem w kronice; nowy poziom ogłasza na czacie. */

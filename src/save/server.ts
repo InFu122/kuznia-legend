@@ -1,6 +1,6 @@
 // Połączenie z serwerem gry (Nakama) przez REST. Gra potrzebuje tylko logowania urządzeniem i wywołań RPC,
 // więc obywa się bez biblioteki klienta. Bez skonfigurowanego serwera (np. w artefakcie) gra działa lokalnie.
-import type { AdKind, ArenaShopId, GemItemId } from '../data';
+import type { AdKind, ArenaShopId, ClanEmb, GemItemId } from '../data';
 import type { ServerReward } from '../engine/clan';
 import type { ShopSync } from '../engine/game';
 import type { ElemKey, GameState, Item, MountId, PetId, SkillId, SlotId } from '../engine/types';
@@ -100,7 +100,7 @@ const newDeviceId = () => 'kl-' + (crypto.randomUUID?.() ?? Math.random().toStri
 
 export type ClanMode = 'open' | 'request' | 'closed';
 export type ClanRole = 'lider' | 'zastepca' | 'starszy' | 'czlonek' | 'prosba';
-export interface ClanSummary { id: string; name: string; tag: string; desc: string; members: number; max: number; minPower: number; mode: ClanMode; lang: string; pending?: boolean }
+export interface ClanSummary { id: string; name: string; tag: string; desc: string; members: number; max: number; minPower: number; mode: ClanMode; lang: string; pending?: boolean; emb?: ClanEmb | null }
 export interface ClanMember { id: string; name: string; role: ClanRole; power: number; online: boolean; me: boolean }
 export interface ClanInfo {
   clan: (ClanSummary & { ann: string; annBy: string; annT: number }) | null;
@@ -111,8 +111,15 @@ export interface ClanInfo {
 export interface ClanBoss { n: string; pal: string; lvl: number; hp: number; max: number; kills: number; mine: number; rank: number; fighters: number; top: { n: string; d: number; me: boolean }[] }
 export interface ClanHelpReq { uid: string; n: string; lvl: number; got: number; done: boolean }
 export interface ClanOreReq { id: string; n: string; ore: number; want: number; got: number }
+/** Skrzynia tygodnia klanu: punkty klanu i moje, progi skrzyń, odebrane, kto prowadzi, Kowal poprzedniego tygodnia. */
+export interface ClanWeek {
+  pts: number; mine: number; goals: number[]; got: number[]; open: number; ends: number;
+  lead: { n: string; pts: number; me: boolean } | null;
+  top: { uid: string; n: string; pts: number; me: boolean } | null;
+}
 export interface ClanLife {
-  clan: { id: string; name: string; tag: string } | null;
+  clan: { id: string; name: string; tag: string; emb?: ClanEmb | null } | null;
+  week?: ClanWeek; claimed?: number;
   lvl?: number; xp?: number; cur?: number; next?: number | null;
   boss?: ClanBoss;
   left?: { don: number; atk: number; deed: number };
@@ -267,11 +274,11 @@ export class ServerLink {
 
   clanInfo(): Promise<ClanInfo> { return this.rpc('clan_info', {}); }
   clanList(q = ''): Promise<{ clans: ClanSummary[]; power: number }> { return this.rpc('clan_list', { q }); }
-  clanCreate(c: { name: string; tag: string; desc: string; mode: ClanMode; minPower: number; lang: string }): Promise<{ id: string }> { return this.rpc('clan_create', c); }
+  clanCreate(c: { name: string; tag: string; desc: string; mode: ClanMode; minPower: number; lang: string; emb?: ClanEmb }): Promise<{ id: string }> { return this.rpc('clan_create', c); }
   clanJoin(id: string): Promise<{ joined?: boolean; requested?: boolean }> { return this.rpc('clan_join', { id }); }
   clanLeave(cancel?: string): Promise<{ ok: boolean }> { return this.rpc('clan_leave', cancel ? { cancel } : {}); }
   clanManage(action: 'accept' | 'reject' | 'kick' | 'promote' | 'demote' | 'transfer', user: string): Promise<{ ok: boolean }> { return this.rpc('clan_manage', { action, user }); }
-  clanSettings(s: { desc?: string; mode?: ClanMode; minPower?: number; lang?: string; ann?: string }): Promise<{ ok: boolean }> { return this.rpc('clan_settings', s); }
+  clanSettings(s: { desc?: string; mode?: ClanMode; minPower?: number; lang?: string; ann?: string; emb?: ClanEmb }): Promise<{ ok: boolean }> { return this.rpc('clan_settings', s); }
   /** Życie klanu. `up` = trwające ulepszenie kuźni (poziom docelowy, 0 bez ulepszenia) — do pomocy klanu. */
   clanSync(up: number): Promise<ClanLife> { return this.rpc('clan_sync', { up }); }
   clanDonate(up: number): Promise<ClanLife> { return this.rpc('clan_donate', { up }); }
@@ -282,6 +289,8 @@ export class ServerLink {
   clanHelp(up: number, uid?: string): Promise<ClanLife> { return this.rpc('clan_help', uid ? { up, uid } : { up }); }
   clanOreAsk(up: number, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { up, ore }); }
   clanOreGive(up: number, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { up, id, n }); }
+  /** Odbiór otwartych skrzyń tygodnia klanu. */
+  clanWeekClaim(up: number): Promise<ClanLife> { return this.rpc('clan_week_claim', { up }); }
   /** Przekuwanie: serwer losuje nową statystykę i podpisuje przedmiot. */
   reforge(item: Item, i: number): Promise<{ item: Item }> { return this.rpc('reforge', { item, i }); }
   shopState(): Promise<ShopResp> { return this.rpc('shop_state', {}); }

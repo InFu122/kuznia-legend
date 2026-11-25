@@ -117,6 +117,18 @@ export function clanAttackReward(bestG: number): Reward {
  * Skrzynia za pokonanie bossa klanowego poziomu `lvl` dla gracza z miejscem `rank` (0 = najwięcej obrażeń).
  * Pierwsze miejsce dostaje +50% i jajo, drugie i trzecie +25%.
  */
+/** Skrzynia tygodnia klanu nr `tier` (0–4): coraz cenniejsza; złoto według etapu gracza. */
+export function clanWeekChest(tier: number, bestG: number): Reward {
+  const w = goldWave(bestG);
+  switch (Math.max(0, Math.min(4, Math.floor(tier)))) {
+    case 0: return { coins: 10, gold: Math.round(w * 20) };
+    case 1: return { coins: 15, books: 2, stones: 10 };
+    case 2: return { coins: 20, scrolls: 1, gold: Math.round(w * 40) };
+    case 3: return { coins: 30, eggs: { 2: 1 }, books: 3 };
+    default: return { coins: 40, eggs: { 3: 1 }, saddles: 1 };
+  }
+}
+
 export function clanBossChest(lvl: number, rank: number, bestG: number): Reward {
   const k = rank === 0 ? 1.5 : rank < 3 ? 1.25 : 1;
   const L = Math.max(0, Math.min(30, Math.floor(lvl)));

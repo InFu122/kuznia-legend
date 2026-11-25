@@ -95,3 +95,31 @@ export const CLAN_SHOP: Record<ClanShopId, ClanShopItem> = {
 export const CLAN_SHOP_IDS = Object.keys(CLAN_SHOP) as ClanShopId[];
 /** Sakiewka złota = tyle fal złota. */
 export const SHOP_GOLD_WAVES = 60;
+
+/** Herb klanu: kolory i symbole do wyboru (serwer zapisuje indeksy). Klan bez wybranego herbu ma herb wyliczony ze skrótu. */
+export const CLAN_EMB_COLORS = ['#b8402f', '#2f6fb8', '#2e9a5a', '#7d45a8', '#c98a1c', '#1f8f86', '#b8336a', '#5b6878'] as const;
+export const CLAN_EMB_ICONS = ['kowadlo', 'iskra', 'puchar', 'lapa', 'moc', 'runa', 'klejnot', 'tarcza', 'burza', 'oddech', 'kula', 'okrzyk'] as const;
+export interface ClanEmb { c: number; i: number }
+/** Poprawny herb (indeksy w zakresie) albo null. */
+export function clanEmbOf(raw: unknown): ClanEmb | null {
+  const e = raw as Partial<ClanEmb> | null | undefined;
+  if (!e || typeof e !== 'object') return null;
+  const c = Number(e.c), i = Number(e.i);
+  return Number.isInteger(c) && c >= 0 && c < CLAN_EMB_COLORS.length && Number.isInteger(i) && i >= 0 && i < CLAN_EMB_ICONS.length ? { c, i } : null;
+}
+
+/**
+ * Skrzynia tygodnia klanu: każdy członek zbiera punkty aktywności (datek, atak na bossa, pomoc, dar rudy, bitwa w wojnie,
+ * atak na smoka); suma klanu otwiera kolejne skrzynie. Progi rosną z liczbą członków (co najmniej jak dla 5),
+ * a skrzynię odbiera każdy, kto w tym tygodniu dołożył choć 1 punkt. Najaktywniejszy członek tygodnia zostaje
+ * „Kowalem tygodnia”: nagroda po końcu tygodnia i wyróżnienie w klanie przez cały następny tydzień.
+ */
+export const CLAN_WEEK = {
+  PTS: { don: 10, atk: 5, help: 3, ore: 3, war: 8, raid: 8 },
+  TIERS: [20, 50, 100, 160, 240],     // punkty na członka
+  MIN_MEMBERS: 5,
+  TOP_REWARD: { coins: 60, seals: 1 },
+} as const;
+export type ClanWeekKind = keyof typeof CLAN_WEEK.PTS;
+/** Punkty klanu potrzebne do skrzyni `tier` (0–4) przy `members` członkach. */
+export const clanWeekGoal = (tier: number, members: number) => CLAN_WEEK.TIERS[tier] * Math.max(CLAN_WEEK.MIN_MEMBERS, members);

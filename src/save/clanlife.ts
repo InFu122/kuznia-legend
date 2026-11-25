@@ -58,8 +58,10 @@ class ClanLifeStore {
   todo(): number {
     const d = this.data;
     if (!d?.clan || !d.left) return 0;
+    const w = d.week;
     return (d.left.don > 0 ? 1 : 0) + (d.left.atk > 0 ? 1 : 0) + ((d.helps ?? []).some(h => !h.done) ? 1 : 0)
-      + ((d.war?.atk ?? 0) > 0 ? 1 : 0) + ((d.raid?.left ?? 0) > 0 ? 1 : 0);
+      + ((d.war?.atk ?? 0) > 0 ? 1 : 0) + ((d.raid?.left ?? 0) > 0 ? 1 : 0)
+      + (w && w.mine > 0 && w.open > w.got.length ? 1 : 0); // skrzynia tygodnia do odebrania
   }
 
   /** Po ataku na smoka albo w bitwie: skrót do kropek bez czekania na odświeżenie klanu. */

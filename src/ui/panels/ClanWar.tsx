@@ -1,18 +1,26 @@
 // Wojna klanów (co tydzień: dobór, cztery dni aktywności, bitwa w sobotę, nagrody w niedzielę)
 // i rajd klanowy Smocze Leże (smok o czterech fazach ze słabościami na żywioły). Wszystko liczy serwer.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { B, ELEM, RAID, RAID_PHASES, WAR, WAR_DAYS } from '../../data';
-import { elemUrl, foeSize, foeUrl, resUrl } from '../../art/render';
+import { B, CLAN_WEEK, ELEM, RAID, RAID_PHASES, WAR, WAR_DAYS, type WarDayKind } from '../../data';
+import type { ElemKey } from '../../engine/types';
+import { dungeonBgUrl, elemUrl, foeSize, foeUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
 import { clanLife } from '../../save/clanlife';
 import { getLink, type RaidState, type WarState } from '../../save/server';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
-import { Res } from '../RewardIcons';
-import { Note, errText, useAction } from './ClanLife';
+import { DmgPodium, Note, errText, useAction } from './ClanLife';
+import { ClanEmblem, icUrl } from './ClanUi';
 import { DuelReplay } from './Pvp';
 
 const RES_N = { win: 'Zwycięstwo!', draw: 'Remis', loss: 'Porażka' } as const;
+/** Ikona dnia wojny. */
+const DAY_IC: Record<WarDayKind, string> = { dobor: 'tarcza', kucie: 'kowadlo', fale: 'burza', lochy: 'klucz', boss: 'moc', bitwa: 'okrzyk', nagrody: 'puchar' };
+/** Kolor żywiołu (słabość smoka). */
+const EL_COL: Record<ElemKey, string> = { zar: '#ff7a45', szron: '#7fd6ff', burz: '#ffe066', jad: '#8ee05a', cien: '#b38cff', jasn: '#fff0a0' };
+const Pips = ({ n, max }: { n: number; max: number }) => (
+  <span class="cb-pips" aria-label={`zostało ${n} z ${max}`}>{Array.from({ length: max }, (_, i) => <i key={i} class={i < n ? 'on' : ''} />)}</span>
+);
 const hhmm = (t: number) => new Date(t).toLocaleString('pl-PL', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
 
 /** Stan z serwera wczytywany przy otwarciu zakładki i co minutę. */
@@ -67,92 +75,110 @@ export function ClanWarTab({ game }: { game: Game }) {
     if (r.fight) setFight(r.fight);
   });
   const { us, them } = w;
+  const mine = clanLife.data?.clan;
+  const diff = them ? us.total - them.total : 0;
+  const nextDay = WAR_DAYS[w.day + 1];
+  const best = Math.max(1, ...w.members.map(m => m.pts));
 
   return (
     <>
-      <section class="card">
-        <div class="eyebrow">Wojna klanów · {D.short === 'Nd' ? 'koniec tygodnia' : 'ten tydzień'}{w.test ? ' · zegar testowy' : ''}</div>
-        <ol class="wdays" aria-label="Dni wojny">
-          {WAR_DAYS.map((x, i) => (
-            <li key={x.k} class={i < w.day ? 'past' : i === w.day ? 'on' : ''} title={x.n}>
-              <b>{x.short}</b>
-              <small>{i >= 1 && i <= 5 ? (i <= w.day ? fmt(us.days[i] || 0) : '·') : i === 0 ? 'dobór' : 'wynik'}</small>
-            </li>
-          ))}
-        </ol>
-        <div class="h">{D.n}</div>
-        <p class="sub">{D.how}</p>
-        {left > 0 && w.day < 6 && <p class="tech-cost" style={{ marginTop: '4px' }}>Następny dzień za {tfmt(left)} (o północy czasu UTC).</p>}
-      </section>
-
-      <section class="card">
+      <section class="wr-hero" style={{ '--bg': `url(${dungeonBgUrl('arena')})` } as Record<string, string>}>
+        <div class="psh-top">
+          <span class="eyebrow">Wojna klanów{w.test ? ' · zegar testowy' : ''}</span>
+          {left > 0 && nextDay && <span class="ps-time">{nextDay.short} za {tfmt(left)}</span>}
+        </div>
         {them ? (
           <>
-            <div class="wscore">
-              <div class="side us"><span>{us.tag ? `[${us.tag}] ` : ''}{us.n}</span><b>{fmt(us.total)}</b></div>
-              <div class="vs">:</div>
-              <div class="side them"><span>{them.tag ? `[${them.tag}] ` : ''}{them.n}</span><b>{fmt(them.total)}</b></div>
+            <div class="wr-vs">
+              <div class="wr-side us">
+                <ClanEmblem id={mine?.id ?? us.n} tag={us.tag} emb={mine?.emb} size={52} />
+                <span class="wr-n">{us.tag ? `[${us.tag}] ` : ''}{us.n}</span>
+                <b class="wr-pts num">{fmt(us.total)}</b>
+                <small>Moc {fmt(us.power)}</small>
+              </div>
+              <span class="wr-x">VS</span>
+              <div class="wr-side them">
+                <ClanEmblem id={'wr:' + them.n} tag={them.tag} size={52} />
+                <span class="wr-n">{them.tag ? `[${them.tag}] ` : ''}{them.n}{them.ghost && <i class="wr-ghost">widmo</i>}</span>
+                <b class="wr-pts num">{fmt(them.total)}</b>
+                <small>Moc {fmt(them.power)}</small>
+              </div>
             </div>
-            <div class="wbar" aria-hidden="true"><i style={{ flexGrow: Math.max(1, us.total) }} /><u style={{ flexGrow: Math.max(1, them.total) }} /></div>
-            <p class="tech-cost" style={{ marginTop: '6px' }}>Moc klanów: {fmt(us.power)} · {fmt(them.power)}</p>
-            {them.ghost && (
-              <p class="sub" style={{ marginTop: '6px' }}>
-                {them.n} to klan-widmo: zastępuje przeciwnika, gdy na serwerze brakuje klanu o podobnej sile. Zdobywa punkty przez cały dzień, mniej więcej tyle, co aktywny klan twojej wielkości.
-              </p>
-            )}
+            <div class="wr-tug" aria-hidden="true"><i style={{ flexGrow: Math.max(1, us.total) }} /><u style={{ flexGrow: Math.max(1, them.total) }} /></div>
+            <div class={`wr-lead${diff > 0 ? ' up' : diff < 0 ? ' down' : ''}`}>
+              {diff > 0 ? `Prowadzicie o ${fmt(diff)} pkt` : diff < 0 ? `Przeciwnik prowadzi o ${fmt(-diff)} pkt` : 'Remis — każdy punkt się liczy'}
+            </div>
           </>
         ) : (
-          <>
-            <div class="eyebrow">Przeciwnik</div>
-            <p class="sub">Dobór trwa do końca poniedziałku: klany o podobnej Mocy dostają się nawzajem. Klan bez pary zmierzy się z klanem-widmem.</p>
-          </>
+          <div class="wr-wait">
+            <span class="wr-wait-ic"><Px src={icUrl('okrzyk')} size={34} /></span>
+            <b>Szukamy przeciwnika…</b>
+            <small>Dobór trwa do końca poniedziałku: klany o podobnej Mocy dostają się nawzajem. Klan bez pary zmierzy się z klanem-widmem.</small>
+          </div>
         )}
         {w.season && (
-          <p class="tech-cost wseason">
-            <Px src={resUrl('puchar')} size={14} /> Sezon wojen {w.season.n}: <b>{fmt(w.season.trophies)}</b> Pucharów
-            {w.season.rank ? ` · ${w.season.rank}. miejsce` : ''} · koniec za {tfmt(Math.max(0, w.season.end - Date.now()))}
-            {' '}<button class="linkbtn" onClick={() => game.openModal({ kind: 'ranking', board: 'klany' })}>Ranking klanów</button>
-          </p>
+          <button class="wr-season" onClick={() => game.openModal({ kind: 'ranking', board: 'klany' })}>
+            <Px src={resUrl('puchar')} size={16} /> Sezon {w.season.n}: <b>{fmt(w.season.trophies)}</b> Pucharów{w.season.rank ? ` · ${w.season.rank}. miejsce` : ''}
+            <small>koniec za {tfmt(Math.max(0, w.season.end - Date.now()))} · ranking ›</small>
+          </button>
+        )}
+      </section>
+
+      <ol class="wr-days" aria-label="Dni wojny">
+        {WAR_DAYS.map((x, i) => (
+          <li key={x.k} class={i < w.day ? 'past' : i === w.day ? 'on' : ''} title={x.n}>
+            <span class="wr-d-ic"><Px src={icUrl(DAY_IC[x.k])} size={18} />{i < w.day && <i class="ct-ok">✓</i>}</span>
+            <b>{x.short}</b>
+            <small class="num">{i >= 1 && i <= 5 ? (i <= w.day ? fmt(us.days[i] || 0) : '·') : i === 0 ? 'dobór' : 'wynik'}</small>
+          </li>
+        ))}
+      </ol>
+
+      <section class="card wr-today">
+        <div class="wr-t-top">
+          <span class="wr-t-ic"><Px src={icUrl(DAY_IC[D.k])} size={30} /></span>
+          <div class="cmain"><span class="eyebrow">Dziś · {D.short}</span><b class="wr-t-n">{D.n}</b></div>
+          {w.me.in && <span class="wr-mine"><small>twoje pkt</small><b class="num">{fmt(w.me.pts)}</b></span>}
+        </div>
+        <p class="wr-how">{D.how}</p>
+        {!w.me.in ? (
+          <div class="lockline">Dołączyłeś do klanu po doborze przeciwnika — w wojnie walczysz od przyszłego poniedziałku.</div>
+        ) : (
+          <>
+            {w.day >= 1 && w.day <= 4 && (
+              <div class="wr-cap">
+                <div class="bar big"><i style={{ width: Math.min(100, (w.me.today / w.me.cap) * 100) + '%' }} /></div>
+                <small>Dziś <b class="num">{fmt(w.me.today)} / {fmt(w.me.cap)}</b> pkt (dzienny limit)</small>
+              </div>
+            )}
+            {w.day === 4 && <p class="hnote">Atakuj bossa klanowego w zakładce Boss — każdy atak to {WAR.BOSS_PTS} punktów.</p>}
+            {w.day === 0 && <p class="hnote">Jutro dzień kucia: przygotuj rudę — każdy wytop to punkt.</p>}
+            {w.day === 5 && <div class="wr-atk"><span>Ataki na obrońców</span><Pips n={w.me.atkLeft} max={WAR.ATTACKS} /></div>}
+          </>
         )}
         {w.res && (
           <div class={`duel-result ${w.res.r === 'loss' ? 'lose' : 'win'}`} role="status" style={{ marginTop: '10px' }}>
             <b>{RES_N[w.res.r]}</b>
             <span>{fmt(w.res.us)} : {fmt(w.res.them)} z klanem {w.res.vs}</span>
-            <small>{w.res.us > 0 ? 'Skrzynie trafiły do każdego, kto zdobył punkty (zakładka Klan pokazuje je od razu).' : 'Klan nie zdobył punktów, więc skrzyń nie ma.'} Nowa wojna od poniedziałku.</small>
+            <small>{w.res.us > 0 ? 'Skrzynie trafiły do każdego, kto zdobył punkty.' : 'Klan nie zdobył punktów, więc skrzyń nie ma.'} Nowa wojna od poniedziałku.</small>
           </div>
-        )}
-      </section>
-
-      <section class="card">
-        <div class="eyebrow">Twój udział</div>
-        {!w.me.in ? (
-          <div class="lockline">Dołączyłeś do klanu po doborze przeciwnika — w wojnie walczysz od przyszłego poniedziałku.</div>
-        ) : (
-          <>
-            <div class="stats">
-              <div class="stat"><small>Twoje punkty</small><b>{fmt(w.me.pts)}</b></div>
-              {w.day >= 1 && w.day <= 4 && <div class="stat"><small>Dziś (limit)</small><b>{fmt(w.me.today)} / {fmt(w.me.cap)}</b></div>}
-              {w.day === 5 && <div class="stat"><small>Ataki</small><b>{w.me.atkLeft} / {WAR.ATTACKS}</b></div>}
-            </div>
-            {w.day >= 1 && w.day <= 4 && <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.min(100, (w.me.today / w.me.cap) * 100) + '%' }} /></div>}
-            {w.day === 4 && <p class="sub" style={{ marginTop: '6px' }}>Atakuj bossa klanowego w zakładce Boss — każdy atak to {WAR.BOSS_PTS} punktów.</p>}
-            {w.day === 0 && <p class="sub" style={{ marginTop: '6px' }}>Jutro zaczyna się zdobywanie punktów: dzień kucia. Przygotuj rudę — każdy wytop to punkt.</p>}
-          </>
         )}
       </section>
 
       {w.day === 5 && w.def.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Obrońcy wroga</div>
-          <p class="sub">Walczy kopia twojego bohatera z ostatniego zapisu. Silniejszy obrońca daje więcej punktów, pierwsza wygrana z obrońcą +{WAR.FIRST_BLOOD}.</p>
-          <ul class="clist">
+          <span class="eyebrow">Obrońcy wroga</span>
+          <p class="hnote">Walczy kopia twojego bohatera. Silniejszy obrońca daje więcej punktów, pierwsza wygrana z obrońcą +{WAR.FIRST_BLOOD}.</p>
+          <ul class="hlist">
             {w.def.map(d => {
               const win = Math.round(WAR.WIN_PTS * Math.max(0.5, Math.min(2, d.power / myPower))) + (d.beaten ? 0 : WAR.FIRST_BLOOD);
+              const r = d.power / myPower;
               return (
-                <li key={d.id}>
+                <li key={d.id} class={`hrow${d.beaten ? ' done' : ''}`}>
+                  <span class="mbr-av r-prosba">{d.n.slice(0, 1)}</span>
                   <div class="cmain">
-                    <div class="cname">{d.n}{d.ghost && <span class="tag">Cień</span>}{d.beaten > 0 && <span class="tag">pokonany{d.beaten > 1 ? ` ×${d.beaten}` : ''}</span>}</div>
-                    <div class="tech-cost">Moc {fmt(d.power)} · wygrana ≈ {win} pkt</div>
+                    <b class="hname">{d.n}{d.ghost && <span class="tag">Cień</span>}{d.beaten > 0 && <span class="tag">pokonany{d.beaten > 1 ? ` ×${d.beaten}` : ''}</span>}</b>
+                    <small><span class={`wr-pw${r > 1.15 ? ' hard' : r < 0.85 ? ' easy' : ''}`}>Moc {fmt(d.power)}</span> · wygrana ≈ <b>{win} pkt</b></small>
                   </div>
                   <button class="btn primary small" disabled={a.busy || w.me.atkLeft < 1} onClick={() => attack(d.id)}>Atakuj</button>
                 </li>
@@ -165,11 +191,15 @@ export function ClanWarTab({ game }: { game: Game }) {
 
       {w.members.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Punkty członków</div>
-          <ol class="ctop">
+          <span class="eyebrow">Punkty członków</span>
+          <ol class="wr-mem">
             {w.members.map((m, i) => (
-              <li key={i} class={m.me ? 'me' : ''}>
-                <span>{i + 1}. {m.n}{w.day === 5 && <small class="muted"> · ataki {m.atk}/{WAR.ATTACKS}</small>}</span>
+              <li key={i} class={`${m.me ? 'me' : ''}${i < 3 ? ' top' : ''}`}>
+                <span class="wr-rk">{i + 1}</span>
+                <div class="cmain">
+                  <span class="wr-mn">{m.n}{m.me ? ' (ty)' : ''}{w.day === 5 && <small> · ataki {m.atk}/{WAR.ATTACKS}</small>}</span>
+                  <div class="wr-mb"><i style={{ width: (m.pts / best) * 100 + '%' }} /></div>
+                </div>
                 <b class="num">{fmt(m.pts)}</b>
               </li>
             ))}
@@ -179,12 +209,13 @@ export function ClanWarTab({ game }: { game: Game }) {
 
       {w.log.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Przebieg bitwy</div>
-          <ul class="clog">
+          <span class="eyebrow">Przebieg bitwy</span>
+          <ul class="ctime">
             {w.log.map((l, i) => (
               <li key={i} class={l.us ? 'us' : 'them'}>
-                <time>{hhmm(l.t)}</time>
+                <i aria-hidden="true" />
                 <span>{l.a} → {l.d}: {l.w ? 'wygrana' : 'porażka'} <b class="num">+{l.p}</b>{!l.us && <small class="muted"> (wróg)</small>}</span>
+                <time>{hhmm(l.t)}</time>
               </li>
             ))}
           </ul>
@@ -198,6 +229,7 @@ export function ClanWarTab({ game }: { game: Game }) {
             {WAR_DAYS.map(x => <li key={x.k}><b>{x.short} · {x.n}.</b> {x.how}</li>)}
             <li>W dni aktywności jedna osoba zdobywa najwyżej {WAR.DAY_CAP} punktów dziennie. Skład klanu ustala się w poniedziałek.</li>
             <li>Skrzynia (Monety, złoto, księgi, kamienie) rośnie z twoim udziałem; zwycięzcy dostają więcej i zwój, trzy najlepsze osoby w klanie — premię. Klan dostaje {WAR.WIN_XP} Doświadczenia za wygraną i {WAR.LOSS_XP} za porażkę.</li>
+            <li>Każdy atak w bitwie to też +{CLAN_WEEK.PTS.war} punktów Skrzyni tygodnia klanu.</li>
           </ul>
         </details>
       </section>
@@ -236,63 +268,68 @@ export function ClanRaidTab({ game }: { game: Game }) {
     return `Zadajesz ${fmt(x.hit.dmg)} obrażeń${x.hit.bonus > 0 ? ` (premia żywiołu +${Math.round(x.hit.bonus * 100)}%)` : ''}.`;
   });
 
+  const col = EL_COL[r.weak.el];
   return (
     <>
-      <section class="card cboss">
-        <div class="eyebrow">Smocze Leże · smok poziomu {r.lvl + 1}</div>
-        <div class="h">{r.done ? 'Smok pokonany!' : P.foe}</div>
-        <p class="sub">{r.done ? 'Następny, silniejszy smok przyleci w poniedziałek.' : `Faza ${ph + 1} z ${RAID_PHASES.length}: ${P.n}`}</p>
-        <div class="rphases" aria-hidden="true">
-          {RAID_PHASES.map((_, i) => <i key={i} class={i < r.ph ? 'done' : i === r.ph ? 'on' : ''} />)}
+      <section class="cb-arena rd-arena" style={{ '--bg': `url(${dungeonBgUrl('leza')})`, '--ec': col } as Record<string, string>}>
+        <div class="psh-top">
+          <span class="eyebrow">Smocze Leże · smok poziomu {r.lvl + 1}</span>
+          {!r.done && <span class="ps-time">odlatuje za {tfmt(Math.max(0, r.ends - game.ctx.now()))}</span>}
         </div>
-        <div class={`boss-art${hit ? ' hit' : ''}${r.done ? ' gone' : ''}`} key={hit?.key}>
-          <Px src={foeUrl(P.foe)} size={foeSize(P.foe) * 2} alt={P.foe} />
+        <div class="cb-name">{r.done ? 'Smok pokonany!' : P.foe}</div>
+        <ol class="rd-ph" aria-label="Fazy smoka">
+          {RAID_PHASES.map((x, i) => (
+            <li key={i} class={i < r.ph || r.done ? 'done' : i === r.ph ? 'on' : ''} style={{ '--pc': EL_COL[x.weak as ElemKey] } as Record<string, string>}>
+              <span class="rd-ph-ic"><Px src={elemUrl(x.weak as ElemKey)} size={18} />{(i < r.ph || r.done) && <i class="ct-ok">✓</i>}</span>
+              <small>{x.n}</small>
+            </li>
+          ))}
+        </ol>
+        <div class={`cb-art${hit ? ' hit' : ''}${r.done ? ' gone' : ''}`} key={hit?.key}>
+          <Px src={foeUrl(P.foe)} size={Math.min(150, foeSize(P.foe) * 3)} alt={P.foe} />
           {hit && <span class={`bhit${hit.big ? ' kill' : ''}`} aria-hidden="true">−{fmt(hit.dmg)}</span>}
         </div>
-        {!r.done && (
-          <>
-            <div class="bar hpbar" role="progressbar" aria-label="Zdrowie fazy smoka" aria-valuenow={Math.round(hpPct)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: hpPct + '%' }} /></div>
-            <div class="row" style={{ marginTop: '4px' }}><span class="num">{fmt(r.hp)} / {fmt(r.max)}</span><span class="tech-cost">odlatuje za {tfmt(Math.max(0, r.ends - game.ctx.now()))}</span></div>
-            <div class={`weak${r.weak.n ? ' on' : ''}`}>
-              <Px src={elemUrl(r.weak.el)} size={28} />
-              <div class="cmain">
-                <b>Słabość: {el.el}</b>
-                <div class="tech-cost">
-                  {r.weak.n
-                    ? `Masz ${r.weak.n} ${r.weak.n === 1 ? 'przedmiot' : 'przedmioty'} z domieszką ${el.n}: +${Math.round(r.weak.bonus * 100)}% obrażeń.`
-                    : `Przedmioty z domieszką ${el.n} zadają +${Math.round(RAID.WEAK_PER_ITEM * 100)}% za każdy (najwyżej +${Math.round(RAID.WEAK_MAX * 100)}%). Domieszki w Kuźni od ${B.ELEM_FORGE_LVL}. poziomu.`}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-        <div class="stats" style={{ marginTop: '10px' }}>
-          <div class="stat"><small>Twoje obrażenia</small><b>{fmt(r.mine)}</b></div>
-          <div class="stat"><small>Miejsce</small><b>{r.rank ? `${r.rank} / ${r.fighters}` : '—'}</b></div>
-          <div class="stat"><small>Ataki dziś</small><b>{r.left}/{RAID.ATTACKS}</b></div>
-        </div>
-        {!r.done && (
-          <button class="btn primary" style={{ marginTop: '10px', width: '100%' }} disabled={a.busy || r.left <= 0} onClick={attack}>
-            {r.left > 0 ? 'Atakuj smoka' : 'Ataki na dziś wykorzystane'}
-          </button>
-        )}
-        <Note msg={a.msg} />
-        <p class="sub" style={{ marginTop: '8px' }}>
-          Atak zadaje obrażenia z twojej Mocy (×{RAID.DMG_MULT}, ±15%) i daje <Res r={{ coins: 3 }} /> oraz złoto. Przełamana faza daje skrzynię każdemu, kto w niej walczył —
-          z rudą żywiołu na następną fazę. Pokonany smok: wielka skrzynia ze Smoczą Stalą (podium więcej, pierwsze miejsce także jajo),
-          {' '}{RAID.KILL_XP} Doświadczenia klanu i silniejszy smok za tydzień.
-        </p>
+        {!r.done ? (
+          <div class="cb-hp">
+            <div class="bar big cb-hpbar" role="progressbar" aria-label="Zdrowie fazy smoka" aria-valuenow={Math.round(hpPct)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: hpPct + '%' }} /></div>
+            <span class="num">Faza {ph + 1}/{RAID_PHASES.length} · {fmt(r.hp)} / {fmt(r.max)} · {Math.round(hpPct)}%</span>
+          </div>
+        ) : <p class="rd-done">Następny, silniejszy smok przyleci w poniedziałek.</p>}
       </section>
-      {r.top.length > 0 && (
-        <section class="card">
-          <div class="eyebrow">Najwięcej obrażeń</div>
-          <ol class="ctop">{r.top.map((x, i) => <li key={i} class={x.me ? 'me' : ''}><span>{i + 1}. {x.n}</span><b class="num">{fmt(x.d)}</b></li>)}</ol>
-        </section>
+      {!r.done && (
+        <div class={`rd-weak${r.weak.n ? ' on' : ''}`} style={{ '--ec': col } as Record<string, string>}>
+          <span class="rd-weak-ic"><Px src={elemUrl(r.weak.el)} size={30} /></span>
+          <div class="cmain">
+            <span class="eyebrow">Słabość: {el.el}</span>
+            <b>{r.weak.n ? `+${Math.round(r.weak.bonus * 100)}% obrażeń` : `do +${Math.round(RAID.WEAK_MAX * 100)}% obrażeń`}</b>
+            <small>
+              {r.weak.n
+                ? `Masz ${r.weak.n} ${r.weak.n === 1 ? 'przedmiot' : 'przedmioty'} z domieszką ${el.n}.`
+                : `+${Math.round(RAID.WEAK_PER_ITEM * 100)}% za każdy przedmiot z domieszką ${el.n}. Domieszki w Kuźni od ${B.ELEM_FORGE_LVL}. poziomu.`}
+            </small>
+          </div>
+        </div>
       )}
+      {!r.done && (
+        <button class="btn primary big cb-go" disabled={a.busy || r.left <= 0} onClick={attack}>
+          <span class="cb-go-t">{r.left > 0 ? 'Atakuj smoka' : 'Ataki na dziś zużyte'}</span>
+          <Pips n={r.left} max={RAID.ATTACKS} />
+        </button>
+      )}
+      <Note msg={a.msg} />
+      <DmgPodium top={r.top} rank={r.rank} fighters={r.fighters} mine={r.mine} />
+      <section class="card cb-rew">
+        <span class="eyebrow">Nagrody</span>
+        <ul>
+          <li><Px src={resUrl('moneta')} size={22} /><span><b>Za każdy atak</b><small>+3 Monety klanowe i złoto · obrażenia: Moc ×{RAID.DMG_MULT} (±15%)</small></span></li>
+          <li><Px src={elemUrl(RAID_PHASES[Math.min(ph + 1, RAID_PHASES.length - 1)].weak as ElemKey)} size={22} /><span><b>Przełamana faza</b><small>skrzynia z rudą żywiołu na następną fazę</small></span></li>
+          <li><Px src={resUrl('jajo3')} size={22} /><span><b>Pokonany smok</b><small>wielka skrzynia ze Smoczą Stalą · podium więcej, 1. miejsce jajo · {RAID.KILL_XP} Dośw. klanu</small></span></li>
+        </ul>
+      </section>
       {r.log.length > 0 && (
         <section class="card">
-          <div class="eyebrow">Kronika smoka</div>
-          <ul class="clog">{r.log.map((x, i) => <li key={i}><time>{hhmm(x.t)}</time><span>{x.m}</span></li>)}</ul>
+          <span class="eyebrow">Kronika smoka</span>
+          <ul class="ctime">{r.log.map((x, i) => <li key={i}><i aria-hidden="true" /><span>{x.m}</span><time>{hhmm(x.t)}</time></li>)}</ul>
         </section>
       )}
     </>

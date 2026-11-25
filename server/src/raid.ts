@@ -8,7 +8,7 @@ import { RAID, RAID_PHASES, raidPhaseHp } from '../../src/data';
 import { raidAttackReward, raidFinalChest, raidPhaseChest } from '../../src/engine/clan';
 import type { GameState } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
-import { addClanXp, clanPower, memberIds, pushRewards, readPending, readState } from './clanlife';
+import { addClanXp, addWeekPoints, clanPower, memberIds, pushRewards, readPending, readState } from './clanlife';
 import { PRECONDITION, SYSTEM_USER, err, goldStage, readSave, serverRng, updateObject, userOf } from './common';
 import { nameOf } from './names';
 import { warClock, type WarClock } from './war';
@@ -129,6 +129,7 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   if (limit) throw err('Na dziś ataki na smoka wykorzystane — wróć jutro.', PRECONDITION);
   if (!dealt) throw err('Smok pokonany — następny pojawi się w poniedziałek.', PRECONDITION);
   pushRewards(nk, userId, [{ why: 'Atak na smoka', r: raidAttackReward(bestG) }]);
+  try { addWeekPoints(nk, ctx, g.id, userId, 'raid'); } catch { /* skrzynia tygodnia nie blokuje ataku */ }
 
   const lvl = r.lvl;
   const best = (ids: string[]) => {

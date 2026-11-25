@@ -1,7 +1,7 @@
 // Klany na grupach Nakamy. Gra zarządza klanem wyłącznie przez RPC (bezpośrednie API grup jest zablokowane),
 // więc serwer pilnuje zasad: odblokowanie po pierwszym bossie, minimalna Moc, tryb wstępu, limity ról.
 // Role: Przywódca = superadmin (0), Zastępca = admin (1), Starszy = członek z listy `elders`, Członek (2), prośba (3).
-import { B } from '../../src/data';
+import { B, clanEmbOf, type ClanEmb } from '../../src/data';
 import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, parse, readSave, userOf } from './common';
 import { censor, nameClean } from './filter';
 import { dropClanPower } from './clanrank';
@@ -9,7 +9,7 @@ import { nameKey, nameOf } from './names';
 
 export type ClanMode = 'open' | 'request' | 'closed';
 export type Role = 'lider' | 'zastepca' | 'starszy' | 'czlonek' | 'prosba';
-export interface ClanMeta { tag: string; mode: ClanMode; minPower: number; lang: string; ann: string; annBy: string; annT: number; elders: string[] }
+export interface ClanMeta { tag: string; mode: ClanMode; minPower: number; lang: string; ann: string; annBy: string; annT: number; elders: string[]; emb?: ClanEmb | null }
 
 const MODES: ClanMode[] = ['open', 'request', 'closed'];
 export const LANGS = ['pl', 'en', 'de', 'cs', 'uk'];
@@ -23,7 +23,7 @@ const meta = (g: nkruntime.Group): ClanMeta => {
   const m = (g.metadata || {}) as Partial<ClanMeta>;
   return {
     tag: m.tag || '', mode: m.mode && MODES.includes(m.mode) ? m.mode : 'open', minPower: m.minPower || 0, lang: m.lang || 'pl',
-    ann: m.ann || '', annBy: m.annBy || '', annT: m.annT || 0, elders: Array.isArray(m.elders) ? m.elders : [],
+    ann: m.ann || '', annBy: m.annBy || '', annT: m.annT || 0, elders: Array.isArray(m.elders) ? m.elders : [], emb: clanEmbOf(m.emb),
   };
 };
 
@@ -79,7 +79,7 @@ function dropRequests(nk: nkruntime.Nakama, userId: string, username: string): v
 
 function clanSummary(g: nkruntime.Group) {
   const m = meta(g);
-  return { id: g.id, name: g.name, tag: m.tag, desc: g.description, members: g.edgeCount, max: g.maxCount, minPower: m.minPower, mode: m.mode, lang: g.langTag || m.lang };
+  return { id: g.id, name: g.name, tag: m.tag, desc: g.description, members: g.edgeCount, max: g.maxCount, minPower: m.minPower, mode: m.mode, lang: g.langTag || m.lang, emb: m.emb ?? null };
 }
 
 /* ---------- RPC ---------- */
@@ -119,7 +119,7 @@ export function rpcClanCreate(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   // Rejestr nazw i skrótów (bez względu na wielkość liter i polskie znaki).
   const keys = [{ collection: 'clan_names', key: 'n_' + nameKey(name) }, { collection: 'clan_names', key: 't_' + tag.toLowerCase() }];
   if (nk.storageRead(keys.map(k => ({ ...k, userId: SYSTEM_USER }))).length) throw err('Klan o takiej nazwie albo skrócie już istnieje.', INVALID);
-  const m: ClanMeta = { tag, mode, minPower, lang, ann: '', annBy: '', annT: 0, elders: [] };
+  const m: ClanMeta = { tag, mode, minPower, lang, ann: '', annBy: '', annT: 0, elders: [], emb: clanEmbOf(req.emb) };
   let g: nkruntime.Group;
   try {
     g = nk.groupCreate(userId, name, userId, lang, desc, '', mode === 'open', m as unknown as { [k: string]: unknown }, B.CLAN_MAX);
@@ -328,13 +328,14 @@ export function rpcClanSettings(ctx: nkruntime.Context, _logger: nkruntime.Logge
     m.annT = Date.now();
     if (m.ann) postClan(nk, g.id, { k: 'ann', t: m.ann, n: m.annBy });
   }
-  const settings = ['desc', 'mode', 'minPower', 'lang'].some(k => req[k] !== undefined);
+  const settings = ['desc', 'mode', 'minPower', 'lang', 'emb'].some(k => req[k] !== undefined);
   if (settings) {
     if (me !== 'lider') throw err('Ustawienia zmienia Przywódca.', PRECONDITION);
     if (typeof req.desc === 'string') extra.desc = censor(req.desc.trim().slice(0, DESC_MAX)).text;
     if (MODES.includes(req.mode as ClanMode)) { m.mode = req.mode as ClanMode; extra.open = m.mode === 'open'; }
     if (req.minPower !== undefined) m.minPower = Math.max(0, Math.min(1e9, Math.floor(Number(req.minPower) || 0)));
     if (LANGS.includes(String(req.lang))) { m.lang = String(req.lang); extra.lang = m.lang; }
+    if (req.emb !== undefined) { const e = clanEmbOf(req.emb); if (!e) throw err('Nieznany herb.', INVALID); m.emb = e; }
   }
   updateMeta(nk, g, m, extra);
   return JSON.stringify({ ok: true });
