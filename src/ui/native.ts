@@ -9,6 +9,7 @@ import { isNative, isStandalone } from './pwa';
 import { EXIT_WINDOW_MS } from './back';
 import { toast } from '../engine/context';
 import { flushSave } from '../save/server';
+import { registerPlugin } from '@capacitor/core';
 
 type LNMod = typeof import('@capacitor/local-notifications');
 type LN = LNMod['LocalNotifications'];
@@ -66,6 +67,36 @@ export async function testNotify(): Promise<NotifyState> {
   return st;
 }
 
+/** Powiadomienia naprawdę działają: włączone w grze i telefon pozwala. */
+export const notifyOn = (game: Game, st: NotifyState | null) => game.s.opts.notify && st === 'granted';
+
+/**
+ * Gracz chce powiadomień (przełącznik w Kodeksie, przypomnienie): telefon pyta „Zezwól / Nie zezwalaj”.
+ * Zgoda — włączone w grze; odmowa — w grze zostają wyłączone (przełącznik nie udaje, że działają).
+ */
+export async function enableNotify(game: Game): Promise<NotifyState> {
+  const st = await askNotify();
+  game.setNotify(st === 'granted');
+  return st;
+}
+
+/** Własna wtyczka aplikacji (android/…/AppSettingsPlugin.java): ekran powiadomień gry w ustawieniach telefonu. */
+const AppSettings = registerPlugin<{ openNotifications(): Promise<void> }>('AppSettings');
+export const canOpenNotifySettings = () => isNative() && !!window.Capacitor?.isPluginAvailable?.('AppSettings');
+export async function openNotifySettings(): Promise<boolean> {
+  if (!canOpenNotifySettings()) return false;
+  try { await AppSettings.openNotifications(); return true; } catch { return false; }
+}
+
+/** Powrót do gry (np. z ustawień telefonu) — okna z powiadomieniami sprawdzają wtedy zgodę jeszcze raz. */
+const backFns = new Set<() => void>();
+export function onComeBack(fn: () => void): () => void {
+  backFns.add(fn);
+  const vis = () => { if (!document.hidden) fn(); };
+  document.addEventListener('visibilitychange', vis);
+  return () => { backFns.delete(fn); document.removeEventListener('visibilitychange', vis); };
+}
+
 /** Prośba o zgodę na powiadomienia — raz, po minucie gry (nie od razu po uruchomieniu). */
 async function askOnce(): Promise<void> {
   try {
@@ -108,7 +139,7 @@ export async function initNative(game: Game, back: () => boolean): Promise<void>
   let queue: Promise<void> = Promise.resolve();
   const run = (f: () => Promise<void>) => { queue = queue.then(f).catch(e => console.warn('Kuźnia Legend: powiadomienia —', e)); };
   const leave = () => { if (away) return; away = true; run(() => schedule(game)); };
-  const come = () => { if (!away) return; away = false; run(cancelAll); };
+  const come = () => { if (!away) return; away = false; run(cancelAll); for (const fn of backFns) fn(); };
   document.addEventListener('visibilitychange', () => (document.hidden ? leave() : come()));
   run(cancelAll);
   const { App } = await import('@capacitor/app');

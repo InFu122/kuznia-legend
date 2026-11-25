@@ -2088,6 +2088,19 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .toggle.sw{padding:4px}
 .opt-x{grid-column:2 / -1; display:flex; align-items:center; gap:10px; margin-top:8px}
 .opt-x input[type=range]{flex:1; accent-color:var(--straw)}
+.na-head{display:grid; place-items:center; margin:-4px 0 -2px}
+.na-bell{display:grid; place-items:center; width:72px; height:72px; border-radius:50%; color:var(--straw);
+  background:radial-gradient(circle at 50% 40%, rgba(231,190,98,.3), rgba(14,10,7,.9) 72%); border:2px solid color-mix(in srgb, var(--straw) 55%, transparent);
+  box-shadow:0 0 22px -6px rgba(231,190,98,.7); animation:naRing 2.6s ease-in-out infinite}
+@keyframes naRing{0%,70%,100%{transform:rotate(0)} 76%{transform:rotate(-12deg)} 82%{transform:rotate(10deg)} 88%{transform:rotate(-6deg)} 94%{transform:rotate(3deg)}}
+.na-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+.na-list li{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:var(--plate-2); border:1px solid var(--rivet)}
+.na-list li span{display:flex; flex-direction:column; line-height:1.25}
+.na-list li b{font-size:14px; color:var(--frost)}
+.na-list li small{font-size:12px; color:var(--ash)}
+.na-blocked{margin-top:0; color:#e9dcc8}
+.na-foot{font-size:11.5px; color:var(--ash); text-align:center}
+@media (prefers-reduced-motion: reduce){ .na-bell{animation:none} }
 .notify-x{display:flex; flex-direction:column; align-items:flex-start; gap:6px}
 .notify-x small{font-size:12px; color:var(--ash); line-height:1.3}
 .notify-x small b{color:var(--frost)}

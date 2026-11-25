@@ -409,6 +409,7 @@ export class Game {
   setDim(on: boolean) { this.s.opts = { ...this.s.opts, dim: on }; this.ctx.dirty = true; this.changed(); }
   /** „Nie pokazuj ponownie” w oknie Co nowego: id wpisu albo '' (pokaż przy następnym włączeniu). */
   /** Prośba o połączenie z Google była już pokazana (raz na konto). */
+  setNotifyAsked() { this.s.opts = { ...this.s.opts, nAsk: true }; this.ctx.dirty = true; this.changed(); }
   setGoogleAsked() { this.s.opts = { ...this.s.opts, gAsk: true }; this.ctx.dirty = true; this.changed(); }
   setLogSeen(id: string) { this.s.opts = { ...this.s.opts, logSeen: id }; this.ctx.dirty = true; this.changed(); }
   /** Wybór utworu (null — automatycznie według miejsca). Wybranie utworu włącza muzykę. */

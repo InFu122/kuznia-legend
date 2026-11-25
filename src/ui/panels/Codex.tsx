@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { CODEX_PCT, LANDS } from '../../data';
 import { Avatar } from '../Avatar';
 import { showProfile } from '../profile';
@@ -17,7 +17,7 @@ import { adsNative, privacyOptionsNeeded, showPrivacyOptions } from '../ads';
 import { GoogleLinkBox } from '../GoogleLink';
 import { pageUrl, publicUrl } from '../pages';
 import { googleAvailable } from '../../save/google';
-import { askNotify, notifyState, testNotify, type NotifyState } from '../native';
+import { canOpenNotifySettings, enableNotify, notifyOn, notifyState, onComeBack, openNotifySettings, testNotify, type NotifyState } from '../native';
 
 /** Adres gry do zaproszeń: z ustawień builda (aplikacja) albo adres tej strony. */
 /** Aplikacja i test: wersja gry, instalacja na telefonie, zaproszenie znajomych i zgłaszanie uwag. */
@@ -343,18 +343,30 @@ function Volume({ id, v, set, label }: { id: string; v: number; set: (v: number)
 }
 
 /**
- * Powiadomienia telefonu: przełącznik gry i stan zgody Androida. Włączenie pyta o zgodę; gdy telefon ją zablokował,
- * podpowiada, gdzie ją włączyć. „Sprawdź” wysyła próbne powiadomienie za 3 sekundy.
+ * Powiadomienia telefonu. Przełącznik pokazuje, czy naprawdę działają (włączone w grze i telefon pozwala).
+ * Włączenie: telefon pyta „Zezwól / Nie zezwalaj”; odmowa zostawia przełącznik wyłączony. Gdy telefon już nie pyta
+ * (dwie odmowy), przycisk otwiera ustawienia powiadomień gry, a po powrocie gra sprawdza zgodę jeszcze raz.
  */
 function NotifyOpt({ game }: { game: Game }) {
-  const on = game.s.opts.notify;
   const [st, setSt] = useState<NotifyState | null>(null);
   const [note, setNote] = useState('');
-  useEffect(() => { void notifyState().then(setSt).catch(() => setSt(null)); }, []);
+  const want = useRef(false);
+  const on = st === null ? game.s.opts.notify : notifyOn(game, st);
+  useEffect(() => {
+    const check = () => void notifyState().then(x => {
+      setSt(x);
+      if (x === 'granted' && want.current) { want.current = false; game.setNotify(true); setNote(''); }
+    }).catch(() => {});
+    check();
+    return onComeBack(check);
+  }, []);
   const set = (v: boolean) => {
-    game.setNotify(v);
     setNote('');
-    if (v) void askNotify().then(setSt).catch(() => {});
+    if (!v) { want.current = false; game.setNotify(false); return; }
+    void enableNotify(game).then(x => {
+      setSt(x);
+      want.current = x !== 'granted';
+    }).catch(() => setSt('denied'));
   };
   const test = () => {
     setNote('');
@@ -363,13 +375,15 @@ function NotifyOpt({ game }: { game: Game }) {
       setNote(x === 'granted' ? 'Próbne powiadomienie przyjdzie za 3 sekundy.' : '');
     }).catch(() => setNote('Nie udało się wysłać próbnego powiadomienia.'));
   };
-  const blocked = st === 'denied';
+  const blocked = st === 'denied' && (game.s.opts.notify || want.current);
   return (
-    <Opt ic="bell" n="Powiadomienia" d={on && blocked ? 'zablokowane w ustawieniach telefonu' : 'gotowa kuźnia, koniec badania, jajo, pełne łupy za nieobecność'} on={on} set={set}>
-      {on && (
+    <Opt ic="bell" n="Powiadomienia" d={blocked ? 'telefon nie pozwala grze ich wysyłać' : 'gotowa kuźnia, koniec badania, jajo, pełne łupy za nieobecność'} on={on} set={set}>
+      {(on || blocked) && (
         <div class="notify-x">
           {blocked
-            ? <small>Włącz je w telefonie: <b>Ustawienia → Aplikacje → Kuźnia Legend → Powiadomienia</b>.</small>
+            ? (canOpenNotifySettings()
+              ? <><small>Włącz je w ustawieniach telefonu i wróć do gry.</small><button class="btn small primary" onClick={() => void openNotifySettings()}>Otwórz ustawienia telefonu</button></>
+              : <small>Włącz je w telefonie: <b>Ustawienia → Aplikacje → Kuźnia Legend → Powiadomienia</b>.</small>)
             : <button class="btn small" onClick={test}>Wyślij próbne</button>}
           {note && <small role="status">{note}</small>}
         </div>

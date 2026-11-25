@@ -29,12 +29,12 @@ import { bossWaiting } from '../engine/combat';
 import { play, setSound, unlockAudio } from './sound';
 import { initMusic, kickMusic, moodOf, onTrackEnd, setMood, setMusic, setTrack } from './music';
 import { NoteIcon } from './MusicSheet';
-import { hasUpdate, onPwa } from './pwa';
+import { hasUpdate, isNative, onPwa } from './pwa';
 import { getLink } from '../save/server';
 import { googleAvailable } from '../save/google';
 import { onStoreUpdate, storeUpdateReady, updateFromStore } from './storeupdate';
 import { UpdateWall } from './UpdateWall';
-import { initHistoryBack, initNative } from './native';
+import { initHistoryBack, initNative, notifyOn, notifyState } from './native';
 import { runBack } from './back';
 import { PowerSave } from './PowerSave';
 import { queueModal } from './modalQueue';
@@ -45,6 +45,8 @@ import { AdventureBanners } from './panels/Adventure';
 /** Okna, których nie zamyka się obok ani „wstecz” — czekają na decyzję. */
 const LOCKED = new Set<ModalData['kind']>(['dungChoice', 'labChoice', 'decide', 'intro']);
 /** Okna, przy których auto-wytop i walka idą dalej (nie czekają na decyzję gracza). */
+/** Przerwa między prośbą o Google a przypomnieniem o powiadomieniach. */
+const NOTIFY_ASK_GAP_MS = 3 * 60000;
 const NOT_BUSY = new Set<ModalData['kind']>(['chat', 'ranking', 'arena', 'menu', 'ores']);
 
 /** Widoki odblokowywane z postępem (kłódka). */
@@ -121,14 +123,33 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
   setMusic(game.s.opts.music, game.s.opts.mvol);
   setMood(moodOf(game.b.mode, !!game.b.enemy?.boss));
 
+  /** Kiedy gra ostatnio o coś prosiła (Google) i czy już sprawdzała powiadomienia w tej sesji. */
+  const askedAt = useRef(0);
+  const notifyCheck = useRef(false);
   // Raz na konto, po pierwszym pokonanym bossie i samouczku: prośba o połączenie postępu z Google (aplikacja z Google Play).
   useEffect(() => {
     const gl = getLink();
     if (queue.current.length || step || game.s.opts.gAsk || game.s.stats.bosses < 1) return;
     if (!googleAvailable() || !gl?.online || gl.google) return;
     game.setGoogleAsked();
+    askedAt.current = Date.now();
     queue.current.push({ kind: 'google' });
     force(x => x + 1);
+  });
+
+  // Raz na konto, po pokonaniu bossa pierwszej krainy (aplikacja na telefon): gdy powiadomienia nie działają —
+  // przypomnienie, co dają. Nie zaraz po innej prośbie (np. o Google): najpierw chwila gry.
+  useEffect(() => {
+    if (notifyCheck.current || queue.current.length || step || game.s.opts.nAsk || !game.s.cleared[0] || !isNative()) return;
+    if (Date.now() - askedAt.current < NOTIFY_ASK_GAP_MS) return;
+    notifyCheck.current = true;
+    void notifyState().then(st => {
+      if (st === 'web') return;
+      game.setNotifyAsked();
+      if (notifyOn(game, st)) return; // już działają — nie ma o co prosić
+      queue.current.push({ kind: 'notifyAsk' });
+      force(x => x + 1);
+    }).catch(() => { notifyCheck.current = false; });
   });
 
   // Wstęp jest dla nowego gracza — znika, gdy z serwera przyszedł zapis z postępem.

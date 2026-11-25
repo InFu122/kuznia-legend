@@ -6,6 +6,8 @@ import type { MountId, PetId, SkillId } from '../engine/types';
 import { ForgeLevelInfo, MountsInfo, PetsInfo, RuneInfo } from './panels/InfoSheets';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { LockIcon } from './icons';
+import { toast } from '../engine/context';
+import { canOpenNotifySettings, enableNotify, notifyState, onComeBack, openNotifySettings, type NotifyState } from './native';
 import { unlockProgress, unlockWhen } from '../engine/unlocks';
 import { tutStep } from '../engine/tutorial';
 import { DEFAULT_NAME, NAME_MAX, nickFormatProblem, suggestNick, tidyName } from '../engine/nick';
@@ -295,6 +297,8 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
       return <ArenaView game={game} close={close} />;
     case 'look':
       return <LookView game={game} close={close} />;
+    case 'notifyAsk':
+      return <NotifyAskView game={game} close={close} />;
     case 'event':
       return <EventView game={game} close={close} onDung={() => { close(); goTab?.('lochy'); }} />;
     case 'shop':
@@ -593,6 +597,55 @@ function LandInfoView({ game, land: start, close }: { game: Game; land: number; 
         ? <div class="li-act"><button class="btn" onClick={close}>Zamknij</button><button class="btn primary" onClick={() => { game.goLand(land); close(); }}>Walcz tutaj</button></div>
         : <Close onClose={close} label="Zamknij" />}
     </div>
+  );
+}
+
+/**
+ * Przypomnienie o powiadomieniach (raz, po pierwszej krainie, gdy nie działają): co gracz zyska. „Włącz” — telefon
+ * pyta o zgodę; gdy już nie pyta (dwie odmowy), przycisk prowadzi do ustawień powiadomień gry w telefonie.
+ */
+function NotifyAskView({ game, close }: { game: Game; close: () => void }) {
+  const [st, setSt] = useState<NotifyState | null>(null);
+  const [busy, setBusy] = useState(false);
+  const done = () => { toast(game.ctx, 'Powiadomienia włączone — telefon da znać, gdy coś będzie gotowe.', 'good'); close(); };
+  // Powrót z ustawień telefonu: zgoda włączona — gotowe.
+  useEffect(() => onComeBack(() => {
+    void notifyState().then(x => { if (x === 'granted') { game.setNotify(true); done(); } else setSt(x); }).catch(() => {});
+  }), []);
+  const on = async () => {
+    setBusy(true);
+    try {
+      const x = await enableNotify(game);
+      if (x === 'granted') done(); else setSt(x);
+    } catch { setSt('denied'); } finally { setBusy(false); }
+  };
+  const rows: [string, string, string][] = [
+    [resUrl('kowadlo'), 'Kuźnia gotowa', 'ulepszenie skończone — od razu kujesz lepsze przedmioty'],
+    [resUrl('ksiega'), 'Badanie zakończone', 'wybierasz następne, zamiast tracić godziny Akademii'],
+    [resUrl('zloto'), 'Pełne łupy', 'bohater walczy bez ciebie tylko do limitu — wiesz, kiedy wrócić'],
+    [resUrl('jajo0'), 'Jajo się wykluło', 'nowy chowaniec czeka na odbiór'],
+  ];
+  return (
+    <>
+      <div class="na-head" aria-hidden="true"><span class="na-bell"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg></span></div>
+      <div class="eyebrow">Pierwsza kraina zdobyta!</div>
+      <div class="h">Nie przegap gotowej kuźni</div>
+      <p class="sub">Kuźnia, Akademia i bohater pracują także wtedy, gdy nie grasz. Telefon da znać tylko w tych chwilach — bez reklam i bez zasypywania wiadomościami:</p>
+      <ul class="na-list">
+        {rows.map(([ic, t, d]) => <li key={t}><Px src={ic} size={28} /><span><b>{t}</b><small>{d}</small></span></li>)}
+      </ul>
+      {st === 'denied' && (
+        <div class="lockline na-blocked">
+          Telefon nie pozwala grze wysyłać powiadomień.{' '}
+          {canOpenNotifySettings()
+            ? <>Włącz je w ustawieniach telefonu i wróć do gry.<div style={{ marginTop: '8px' }}><button class="btn small primary" onClick={() => void openNotifySettings()}>Otwórz ustawienia telefonu</button></div></>
+            : <>Włącz je w telefonie: <b>Ustawienia → Aplikacje → Kuźnia Legend → Powiadomienia</b>.</>}
+        </div>
+      )}
+      {st !== 'denied' && <button class="btn primary big" disabled={busy} onClick={() => void on()}>Włącz powiadomienia</button>}
+      <button class="btn" onClick={close}>Nie teraz</button>
+      <small class="na-foot">Zawsze możesz to zmienić w Kodeksie → Ustawienia.</small>
+    </>
   );
 }
 

@@ -155,8 +155,8 @@ export interface GameState {
   tut: number;                                         // krok samouczka (TUTORIAL.length = ukończony)
   unl: string[];                                       // odblokowane funkcje, które gra już ogłosiła (FeatureId)
   unlNew: string[];                                    // nowe funkcje ze znaczkiem „nowe” do pierwszego otwarcia
-  opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean; vibe?: boolean; awake?: boolean; dim?: boolean; track?: string | null; logSeen?: string; gAsk?: boolean };
-  // vibe: wibracje przy rzadkich wytopach; awake: ekran nie gaśnie w czasie gry; dim: po minucie bez dotyku gra się przyciemnia (brak = włączone); track: wybrany utwór (brak/null = automatycznie); logSeen: wpis „Co nowego”, którego gracz nie chce już oglądać; gAsk: gra już raz poprosiła o połączenie z Google
+  opts: { sound: boolean; vol: number; music: boolean; mvol: number; notify: boolean; vibe?: boolean; awake?: boolean; dim?: boolean; track?: string | null; logSeen?: string; gAsk?: boolean; nAsk?: boolean };
+  // vibe: wibracje przy rzadkich wytopach; awake: ekran nie gaśnie w czasie gry; dim: po minucie bez dotyku gra się przyciemnia (brak = włączone); track: wybrany utwór (brak/null = automatycznie); logSeen: wpis „Co nowego”, którego gracz nie chce już oglądać; gAsk: gra już raz poprosiła o połączenie z Google; nAsk: gra już raz przypomniała o powiadomieniach (po pierwszej krainie)
   stats: { smelted: number; jumps: number; kills: number; bosses: number; keys: number; bestR: number; leg: number; missions: number; days: number }; // keys: klucze zużyte w lochach (dzień lochów w wojnie klanów); leg: wytopy Legendarne+; missions: odebrane zadania; days: odebrane prezenty za logowanie
   sx: number;                                          // numer następnego wytopu z ziarnem serwera (nie cofa się przy resecie)
   seeds: number[];                                     // ziarna serwera dla wytopów sx, sx+1, …
@@ -274,6 +274,7 @@ export type ModalData =
   | { kind: 'feedback' }
   | { kind: 'missions'; tab?: 'daily' | 'weekly' | 'login' | 'ach' }
   | { kind: 'event' }
+  | { kind: 'notifyAsk' }
   | { kind: 'look' }
   | { kind: 'ranking'; board?: 'moc' | 'wieza' | 'postep' | 'arena' | 'klany' }
   | { kind: 'arena' }
