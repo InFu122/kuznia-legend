@@ -10,5 +10,10 @@ public class MainActivity extends BridgeActivity {
         // Własna wtyczka gry (podpis aplikacji do diagnozy logowania Google) — rejestracja przed startem mostka.
         registerPlugin(AppSigningPlugin.class);
         super.onCreate(savedInstanceState);
+        // Bez paska przewijania po prawej: grę przewija się palcem, a pasek WebView tylko zasłania obraz.
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().setVerticalScrollBarEnabled(false);
+            getBridge().getWebView().setHorizontalScrollBarEnabled(false);
+        }
     }
 }

@@ -26,6 +26,11 @@ img { max-width: 100%; }
   --f-ui:"Barlow", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 html,body{height:100%}
+/* Na ekranach dotykowych bez pasków przewijania (strona, okna, listy); myszka na komputerze dalej je widzi. */
+@media (pointer: coarse){
+  *{scrollbar-width:none}
+  *::-webkit-scrollbar{display:none; width:0; height:0}
+}
 body{
   background:var(--iron); color:var(--frost); font-family:var(--f-ui); font-size:15px; line-height:1.4;
   padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:0;
