@@ -2,6 +2,8 @@ import { B, CODEX_PCT, MOUNTS, PETS, TECH, TECH_IDS, clanBonus, companionMult, p
 import type { GameState, Mods } from './types';
 
 export const techLvl = (s: GameState, id: keyof GameState['tech']['lv']) => s.tech.lv[id] ?? 0;
+/** Trwające badanie jako „id:poziom” (pomoc klanu i przyspieszenie reklamą liczą się osobno dla każdego badania). */
+export const techKey = (s: Pick<GameState, 'tech'>) => (s.tech.cur ? `${s.tech.cur.id}:${(s.tech.lv[s.tech.cur.id] ?? 0) + 1}` : '');
 
 const emptyMods = (): Mods => ({
   jumpRel: 0, saveOre: 0, forgeTime: 0, forgeCost: 0, autoSpeed: 0, dmgPct: 0, hpPct: 0, crit: 0, bossPct: 0,

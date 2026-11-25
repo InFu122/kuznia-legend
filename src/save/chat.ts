@@ -17,7 +17,7 @@ const PING_EVERY_MS = 60000;
 export interface DropCard { name: string; r: number; slot: SlotId; kind?: string; lvl: number; ore: number; subs: { id: SubId; v: number }[]; el: ElemKey | null; set: SetId | null }
 export interface ChatMsg {
   id: string; ch: ChatCh; uid: string; n: string; t: string;
-  k: 'msg' | 'sys' | 'drop' | 'ann'; it?: DropCard; time: number; mine: boolean;
+  k: 'msg' | 'sys' | 'drop' | 'ann' | 'ask'; it?: DropCard; time: number; mine: boolean;
 }
 
 interface NkMessage { channel_id: string; message_id: string; code?: number; sender_id?: string; content: string; create_time: string }

@@ -7,11 +7,12 @@
 //   clan_state/{groupId} (SYSTEM)  — stan klanu: Doświadczenie, boss, prośby, kronika,
 //   clan/daily (gracz)             — dzienne liczniki: datki, ataki, dobre uczynki, czas ostatniej prośby o rudę,
 //   clan/helped (gracz)            — ile pomocy dostał przy ulepszeniu na dany poziom (kontrola tempa kuźni),
+//   clan/helpedT (gracz)           — ile pomocy dostał przy badaniu „id:poziom” (gra skraca badanie sama),
 //   clan/rewards (gracz)           — nagrody czekające na odbiór.
 // Skrzynia tygodnia i Kowal tygodnia: punkty aktywności członków w stanie klanu (`wk`), poprzedni zwycięzca w `top`.
-import { CLAN, CLAN_LEVELS, CLAN_WEEK, ORES, ORE_WANT, clanBossHp, clanBossOf, clanEmbOf, clanLevelOf, clanWeekGoal, type ClanWeekKind } from '../../src/data';
+import { B, CLAN, CLAN_LEVELS, CLAN_WEEK, ORES, ORE_WANT, TECH, clanBossHp, clanBossOf, clanEmbOf, clanLevelOf, clanWeekGoal, type ClanWeekKind } from '../../src/data';
 import { clanAttackReward, clanBossChest, clanWeekChest, type ServerReward } from '../../src/engine/clan';
-import type { Reward } from '../../src/engine/types';
+import type { Reward, TechId } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { raidBrief } from './raid';
 import { warBrief, warClock, warOnBossAttack } from './war';
@@ -19,7 +20,8 @@ import { INVALID, NOT_FOUND, PRECONDITION, SYSTEM_USER, err, goldStage, parse, r
 import { clanSeasonSettle, updateClanPower } from './clanrank';
 import { nameOf } from './names';
 
-interface HelpReq { uid: string; n: string; lvl: number; got: string[]; t: number }
+/** Prośba o pomoc: ulepszenie kuźni na poziom `lvl` albo badanie `tk` („id:poziom”, nazwa w `tn`). */
+interface HelpReq { uid: string; n: string; lvl: number; got: string[]; t: number; tk?: string; tn?: string }
 interface OreReq { id: string; uid: string; n: string; ore: number; want: number; got: number; t: number }
 interface Boss { lvl: number; hp: number; max: number; dmg: Record<string, number>; who: Record<string, string>; t: number }
 /** Tydzień klanu: punkty łącznie i każdego członka (`by`), imiona, odebrane skrzynie (numery 0–4). */
@@ -190,6 +192,20 @@ export function readHelped(nk: nkruntime.Nakama, userId: string): Helped {
   const o = nk.storageRead([{ collection: 'clan', key: 'helped', userId }]);
   return o.length ? (o[0].value as unknown as Helped) : {};
 }
+function readHelpedT(nk: nkruntime.Nakama, userId: string): Helped {
+  const o = nk.storageRead([{ collection: 'clan', key: 'helpedT', userId }]);
+  return o.length ? (o[0].value as unknown as Helped) : {};
+}
+/** Badanie „id:poziom” podane przez grę (znane badanie, poziom w jego zakresie) albo pusty napis. */
+function tkOf(raw: unknown): string {
+  const m = /^([a-z_]+):(\d+)$/.exec(String(raw || ''));
+  if (!m) return '';
+  const T = TECH[m[1] as TechId];
+  const lv = Number(m[2]);
+  return T && lv >= 1 && lv <= T.max ? `${m[1]}:${lv}` : '';
+}
+const techName = (tk: string) => { const [id, lv] = tk.split(':'); return `${TECH[id as TechId]?.n ?? 'Badanie'} → poz. ${lv}`; };
+const isTech = (h: HelpReq) => !!h.tk;
 
 export function readPending(nk: nkruntime.Nakama, userId: string): ServerReward[] {
   const o = nk.storageRead([{ collection: 'clan', key: 'rewards', userId }]);
@@ -235,14 +251,14 @@ function deedReward(nk: nkruntime.Nakama, userId: string, now: number, count: nu
 
 /* ---------- widok klanu dla gry ---------- */
 
-interface Ctx { userId: string; g: nkruntime.Group; ids: string[]; st: ClanState; now: number; wk: string; wkEnds: number }
+interface Ctx { userId: string; g: nkruntime.Group; ids: string[]; st: ClanState; now: number; wk: string; wkEnds: number; tk: string }
 
 /** Sprzątanie: wygasłe prośby, prośby byłych członków, własna prośba o pomoc po zakończonym ulepszeniu. */
 function tidy(nk: nkruntime.Nakama, c: Ctx, up: number | null): ClanState {
   const keep = (st: ClanState) => {
     const ids = new Set(c.ids);
     const helps = st.helps.filter(h => ids.has(h.uid) && c.now - h.t < CLAN.HELP_TTL_MS && h.got.length < CLAN.HELP_MAX
-      && !(up !== null && h.uid === c.userId && h.lvl !== up));
+      && !(h.uid === c.userId && (isTech(h) ? h.tk !== c.tk : up !== null && h.lvl !== up)));
     const ores = st.ores.filter(o => ids.has(o.uid) && c.now - o.t < CLAN.ORE_TTL_MS && o.got < o.want);
     return { helps, ores };
   };
@@ -276,7 +292,8 @@ function view(nk: nkruntime.Nakama, c: Ctx, up: number | null, extra: Record<str
   const b = st.boss;
   const top = Object.entries(b.dmg).sort((x, y) => y[1] - x[1]);
   const rank = top.findIndex(([u]) => u === userId);
-  const mine = st.helps.find(h => h.uid === userId) || null;
+  const mine = st.helps.find(h => h.uid === userId && !isTech(h)) || null;
+  const mineT = st.helps.find(h => h.uid === userId && isTech(h)) || null;
   const myOre = st.ores.find(o => o.uid === userId) || null;
   return {
     clan: { id: c.g.id, name: c.g.name, tag: ((c.g.metadata || {}) as { tag?: string }).tag || '', emb: clanEmbOf(((c.g.metadata || {}) as { emb?: unknown }).emb) },
@@ -288,9 +305,13 @@ function view(nk: nkruntime.Nakama, c: Ctx, up: number | null, extra: Record<str
     },
     left: { don: Math.max(0, CLAN.DONATE_PER_DAY - d.don), atk: Math.max(0, CLAN.BOSS_ATTACKS - d.atk), deed: Math.max(0, CLAN.DEEDS_PER_DAY - d.deed) },
     oreNext: d.oreT ? d.oreT + CLAN.ORE_COOLDOWN_MS : 0,
-    helps: st.helps.filter(h => h.uid !== userId).map(h => ({ uid: h.uid, n: h.n, lvl: h.lvl, got: h.got.length, done: h.got.includes(userId) })),
+    helps: st.helps.filter(h => h.uid !== userId).map(h => ({
+      uid: h.uid, n: h.n, lvl: h.lvl, k: isTech(h) ? 't' : 'f', tn: h.tn, got: h.got.length, done: h.got.includes(userId),
+    })),
     myHelp: mine ? { lvl: mine.lvl, got: mine.got.length } : null,
+    myHelpT: mineT ? { tk: mineT.tk, got: mineT.got.length } : null,
     helped: up ? { lvl: up, n: Math.min(CLAN.HELP_MAX, helped[String(up)] || 0) } : null,
+    helpedT: c.tk ? { tk: c.tk, n: Math.min(CLAN.HELP_MAX, readHelpedT(nk, userId)[c.tk] || 0) } : null,
     ores: st.ores.filter(o => o.uid !== userId).map(o => ({ id: o.id, n: o.n, ore: o.ore, want: o.want, got: o.got })),
     myOre: myOre ? { id: myOre.id, ore: myOre.ore, want: myOre.want, got: myOre.got } : null,
     log: st.log.slice(-15).reverse(),
@@ -302,7 +323,7 @@ function view(nk: nkruntime.Nakama, c: Ctx, up: number | null, extra: Record<str
 }
 
 /** Kontekst klanu gracza albo błąd, gdy nie jest w klanie (przy okazji rozlicza skończony tydzień klanu). */
-function clanCtx(nk: nkruntime.Nakama, userId: string, ctx: nkruntime.Context): Ctx {
+function clanCtx(nk: nkruntime.Nakama, userId: string, ctx: nkruntime.Context, payload = ''): Ctx {
   const c = clanOf(nk, userId);
   if (!c) throw err('Nie jesteś w klanie.', PRECONDITION);
   const ids = memberIds(nk, c.g.id);
@@ -310,7 +331,7 @@ function clanCtx(nk: nkruntime.Nakama, userId: string, ctx: nkruntime.Context): 
   const clock = warClock(nk, ctx, now);
   let st = ensureState(nk, c.g.id, ids);
   if (!st.wk || st.wk.id !== clock.week) st = rollWeek(nk, c.g.id, ids, clock.week) || st;
-  return { userId, g: c.g, ids, st, now, wk: clock.week, wkEnds: clock.ends + (6 - clock.day) * DAY_MS };
+  return { userId, g: c.g, ids, st, now, wk: clock.week, wkEnds: clock.ends + (6 - clock.day) * DAY_MS, tk: tkOf(parse(payload).tk) };
 }
 
 /** Poziom ulepszenia kuźni podany przez grę (sprawdzony z zapisem: najwyżej o 2 ponad zapisany poziom). */
@@ -319,7 +340,7 @@ function upOf(nk: nkruntime.Nakama, userId: string, raw: unknown): number | null
   if (!Number.isFinite(up) || up <= 1) return 0;
   const s = readSave(nk, userId);
   const lvl = s ? s.value.state.forge.lvl : 1;
-  return up <= lvl + 2 && up <= 30 ? up : null;
+  return up <= lvl + 2 && up <= B.FORGE_MAX ? up : null;
 }
 
 /* ---------- RPC ---------- */
@@ -337,7 +358,7 @@ export function rpcClanSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
       helped: up ? { lvl: up, n: Math.min(CLAN.HELP_MAX, helped[String(up)] || 0) } : null,
     });
   }
-  const x = clanCtx(nk, userId, ctx);
+  const x = clanCtx(nk, userId, ctx, payload);
   x.st = tidy(nk, x, up);
   try { updateClanPower(nk, x.g, x.ids, clanLevelOf(x.st.xp)); } catch { /* ranking nie jest konieczny */ }
   const extra: Record<string, unknown> = {};
@@ -348,7 +369,7 @@ export function rpcClanSync(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
 /** Datek do Wspólnej Kuźni: Doświadczenie dla klanu, Monety dla gracza. Złoto płaci gra. */
 export function rpcClanDonate(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const x = clanCtx(nk, userId, ctx);
+  const x = clanCtx(nk, userId, ctx, payload);
   const up = upOf(nk, userId, parse(payload).up);
   bumpDaily(nk, userId, x.now, d => (d.don < CLAN.DONATE_PER_DAY ? (d.don++, true) : false));
   const who = myName(nk, userId);
@@ -369,7 +390,7 @@ export function rpcClanDonate(ctx: nkruntime.Context, _logger: nkruntime.Logger,
 /** Atak na bossa klanowego: obrażenia z Mocy liczonej przez serwer. */
 export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const x = clanCtx(nk, userId, ctx);
+  const x = clanCtx(nk, userId, ctx, payload);
   const up = upOf(nk, userId, parse(payload).up);
   const save = readSave(nk, userId);
   const power = Math.max(1, save ? save.value.power || 0 : 0);
@@ -424,32 +445,43 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
   return JSON.stringify(view(nk, x, up, { hit: { dmg: dealt, killed: !!k }, levelUp: after > before ? after : 0 }));
 }
 
-/** Prośba o pomoc przy trwającym ulepszeniu kuźni na poziom `up`. */
+/** Wpis na czacie klanu z przyciskiem „Pomóż” (prośby o pomoc i o rudę). */
+const ask = (nk: nkruntime.Nakama, groupId: string, t: string) => postClan(nk, groupId, { k: 'ask', t, go: 'pomoc' });
+
+/** Prośba o pomoc przy trwającym ulepszeniu kuźni na poziom `up` albo (`what: 'tech'`) przy trwającym badaniu `tk`. */
 export function rpcClanHelpAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const up = upOf(nk, userId, parse(payload).up);
-  if (!up) throw err('Pomoc przydaje się w czasie ulepszenia kuźni.', PRECONDITION);
-  const x = clanCtx(nk, userId, ctx);
-  const have = Math.min(CLAN.HELP_MAX, readHelped(nk, userId)[String(up)] || 0);
-  if (have >= CLAN.HELP_MAX) throw err('To ulepszenie dostało już pełną pomoc klanu.', PRECONDITION);
+  const req = parse(payload);
+  const up = upOf(nk, userId, req.up);
+  const x = clanCtx(nk, userId, ctx, payload);
+  const tech = req.what === 'tech';
+  if (tech ? !x.tk : !up) throw err(tech ? 'Pomoc przydaje się w czasie badania.' : 'Pomoc przydaje się w czasie ulepszenia kuźni.', PRECONDITION);
+  const have = Math.min(CLAN.HELP_MAX, tech ? readHelpedT(nk, userId)[x.tk] || 0 : readHelped(nk, userId)[String(up)] || 0);
+  if (have >= CLAN.HELP_MAX) throw err(tech ? 'To badanie dostało już pełną pomoc klanu.' : 'To ulepszenie dostało już pełną pomoc klanu.', PRECONDITION);
   const who = myName(nk, userId);
+  const tn = tech ? techName(x.tk) : '';
+  let fresh = false;
   x.st = updateObject<ClanState>(nk, STATE, x.g.id, SYSTEM_USER, cur => {
+    fresh = false;
     if (!cur) return null;
-    const old = cur.helps.find(h => h.uid === userId);
-    if (old && old.lvl === up) return null;
-    const helps = cur.helps.filter(h => h.uid !== userId);
-    helps.push({ uid: userId, n: who, lvl: up, got: [], t: x.now });
+    const old = cur.helps.find(h => h.uid === userId && isTech(h) === tech);
+    if (old && (tech ? old.tk === x.tk : old.lvl === up)) return null;
+    const helps = cur.helps.filter(h => !(h.uid === userId && isTech(h) === tech));
+    helps.push(tech ? { uid: userId, n: who, lvl: 0, tk: x.tk, tn, got: [], t: x.now } : { uid: userId, n: who, lvl: up as number, got: [], t: x.now });
+    fresh = true;
     return { ...cur, helps };
   }, perm) as ClanState;
+  if (fresh) ask(nk, x.g.id, tech ? `${who} prosi o pomoc w badaniu: ${tn}.` : `${who} prosi o pomoc: Kuźnia → poziom ${up}.`);
   return JSON.stringify(view(nk, x, up));
 }
 
-/** Pomoc klanowiczom w ulepszeniach (wszystkim naraz albo jednej osobie `uid`). */
+/** Pomoc klanowiczom w ulepszeniach i badaniach (wszystkim naraz albo jednej prośbie: `uid` i `k` — 'f' kuźnia, 't' badanie). */
 export function rpcClanHelp(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
   const req = parse(payload);
   const only = typeof req.uid === 'string' ? req.uid : '';
-  const x = clanCtx(nk, userId, ctx);
+  const kind = req.k === 't' || req.k === 'f' ? req.k : '';
+  const x = clanCtx(nk, userId, ctx, payload);
   const up = upOf(nk, userId, req.up);
   const ids = new Set(x.ids);
   const helper = myName(nk, userId);
@@ -458,7 +490,8 @@ export function rpcClanHelp(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
     if (!cur) return null;
     done = [];
     const helps = cur.helps.map(h => {
-      if (h.uid === userId || (only && h.uid !== only) || !ids.has(h.uid) || h.got.includes(userId) || h.got.length >= CLAN.HELP_MAX) return h;
+      if (h.uid === userId || (only && h.uid !== only) || (kind && (isTech(h) ? 't' : 'f') !== kind)
+        || !ids.has(h.uid) || h.got.includes(userId) || h.got.length >= CLAN.HELP_MAX) return h;
       const n = { ...h, got: h.got.concat(userId) };
       done.push(n);
       return n;
@@ -470,12 +503,19 @@ export function rpcClanHelp(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   }, perm) as ClanState;
   if (!done.length) throw err('Nie ma komu pomóc — wszystkie prośby mają już twoją pomoc.', PRECONDITION);
   for (const h of done) {
-    updateObject<Helped>(nk, 'clan', 'helped', h.uid, cur => {
-      const m: Helped = { ...(cur || {}) };
-      if ((m[String(h.lvl)] || 0) >= h.got.length) return null;
-      m[String(h.lvl)] = Math.min(CLAN.HELP_MAX, h.got.length);
+    const key = isTech(h) ? h.tk as string : String(h.lvl);
+    updateObject<Helped>(nk, 'clan', isTech(h) ? 'helpedT' : 'helped', h.uid, cur => {
+      const m: Helped = {};
+      // Pomoc przy badaniach: tylko kilka ostatnich badań (starsze nie są już potrzebne).
+      const old = Object.entries(cur || {});
+      for (const [k, v] of isTech(h) ? old.slice(-8) : old) m[k] = v;
+      if ((m[key] || 0) >= h.got.length) return null;
+      m[key] = Math.min(CLAN.HELP_MAX, h.got.length);
       return m;
     }, perm);
+    if (h.got.length >= CLAN.HELP_MAX) {
+      postClan(nk, x.g.id, { k: 'sys', t: `${h.n} ma pełną pomoc klanu (${CLAN.HELP_MAX}/${CLAN.HELP_MAX}): ${isTech(h) ? h.tn : `Kuźnia → poziom ${h.lvl}`}. Dzięki!` });
+    }
   }
   const paid = deedReward(nk, userId, x.now, done.length, 'Pomoc w ulepszeniach');
   return JSON.stringify(view(nk, x, up, { helpedNow: done.length, paid }));
@@ -488,7 +528,7 @@ export function rpcClanOreAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   const ore = Math.floor(Number(req.ore));
   if (!ORES[ore]) throw err('Nieznana ruda.', INVALID);
   if (!(ORE_WANT[ore] > 0)) throw err(`O ${ORES[ore].n} nie można prosić klanu.`, INVALID);
-  const x = clanCtx(nk, userId, ctx);
+  const x = clanCtx(nk, userId, ctx, payload);
   const up = upOf(nk, userId, req.up);
   const save = readSave(nk, userId);
   if (!save || ORES[ore].lvl > save.value.state.forge.lvl) throw err(`${ORES[ore].n} odblokujesz na ${ORES[ore].lvl}. poziomie kuźni.`, PRECONDITION);
@@ -505,6 +545,7 @@ export function rpcClanOreAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger,
     return { ...cur, ores };
   }, perm) as ClanState;
   if (open) throw err('Twoja prośba o rudę jeszcze trwa.', PRECONDITION);
+  ask(nk, x.g.id, `${who} prosi o rudę: ${ORE_WANT[ore]} × ${ORES[ore].n}.`);
   updateObject<Daily>(nk, 'clan', 'daily', userId, cur => ({ ...(cur && cur.day === serverDay(x.now) ? cur : freshDaily(serverDay(x.now))), oreT: x.now }), perm);
   return JSON.stringify(view(nk, x, up));
 }
@@ -515,7 +556,7 @@ export function rpcClanOreGive(ctx: nkruntime.Context, _logger: nkruntime.Logger
   const req = parse(payload);
   const id = String(req.id || '');
   const n = Math.max(1, Math.min(CLAN.ORE_GIVE_MAX, Math.floor(Number(req.n)) || 0));
-  const x = clanCtx(nk, userId, ctx);
+  const x = clanCtx(nk, userId, ctx, payload);
   const up = upOf(nk, userId, req.up);
   const ids = new Set(x.ids);
   const giver = myName(nk, userId);
@@ -538,14 +579,17 @@ export function rpcClanOreGive(ctx: nkruntime.Context, _logger: nkruntime.Logger
   const who = myName(nk, userId);
   pushRewards(nk, r.uid, [{ why: `Ruda od: ${who}`, r: { ores: { [r.ore]: given } } }]);
   const paid = deedReward(nk, userId, x.now, 1, 'Dar rudy dla klanu');
-  if (r.got >= r.want) logEvent(nk, x, `${r.n} dostaje komplet rudy (${ORES[r.ore].n} × ${r.want})`);
+  if (r.got >= r.want) {
+    logEvent(nk, x, `${r.n} dostaje komplet rudy (${ORES[r.ore].n} × ${r.want})`);
+    postClan(nk, x.g.id, { k: 'sys', t: `${r.n} ma komplet rudy: ${ORES[r.ore].n} × ${r.want}. Dzięki!` });
+  }
   return JSON.stringify(view(nk, x, up, { given, paid }));
 }
 
 /** Odbiór otwartych skrzyń tygodnia (każdy, kto w tym tygodniu dołożył choć 1 punkt). */
 export function rpcClanWeekClaim(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
-  const x = clanCtx(nk, userId, ctx);
+  const x = clanCtx(nk, userId, ctx, payload);
   const up = upOf(nk, userId, parse(payload).up);
   let tiers: number[] = [];
   let none = '';

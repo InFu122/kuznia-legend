@@ -75,6 +75,7 @@ export function validateSave(s: GameState): string[] {
   for (const [id, n] of Object.entries(s.ach || {})) if (!ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS] || !fin(n) || n < 0 || n > ACHIEVEMENTS[id as keyof typeof ACHIEVEMENTS].tiers.length) bad(`osiągnięcie ${id}`);
   for (const [sl, l] of Object.entries(s.runes || {})) if (!SLOTS[sl as keyof typeof SLOTS] || !fin(l) || l < 0 || l > B.RUNE_MAX || Math.floor(l) !== l) bad(`runa ${sl}`);
   if (!s.clanHelp || !fin(s.clanHelp.n) || s.clanHelp.n < 0 || s.clanHelp.n > CLAN.HELP_MAX) bad('pomoc klanu');
+  if (s.clanHelpT && (!fin(s.clanHelpT.n) || s.clanHelpT.n < 0 || s.clanHelpT.n > CLAN.HELP_MAX)) bad('pomoc klanu w badaniu');
   const l = s.look;
   if (!l || !Array.isArray(l.skins) || !Array.isArray(l.frames) || l.skins.length > SKIN_IDS.length || l.frames.length > FRAME_IDS.length
     || !l.skins.every(x => x in SKINS) || !l.frames.every(x => x in FRAMES) || !l.skins.includes(l.skin) || !l.frames.includes(l.frame)) bad('wygląd');

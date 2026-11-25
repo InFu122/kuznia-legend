@@ -4,6 +4,7 @@ import { CLAN, CLAN_SEASON_REWARDS, CLAN_SHOP, ELEM_KEYS, FRAMES, SKINS, RAID_PH
 import { toast, type Ctx } from './context';
 import { upgradeTime } from './forge';
 import { goldWave, goldWaveOf } from './formulas';
+import { techKey } from './mods';
 import { weekStr } from './missions';
 import { grant } from './reward';
 import type { GameState, Reward } from './types';
@@ -59,6 +60,22 @@ export function applyClanHelp(ctx: Ctx, lvl: number, n: number): number {
   if (add <= 0) return 0;
   s.clanHelp.n += add;
   if (s.forge.up === lvl) s.forge.left = Math.max(0, s.forge.left - (add * CLAN.HELP_PCT / 100) * upgradeTime(s, lvl));
+  ctx.dirty = true;
+  return add;
+}
+
+/**
+ * Pomoc klanu w badaniu `tk` („id:poziom”): serwer liczy `n` pomocy łącznie. Każda nowa pomoc skraca trwające
+ * badanie o 3% jego pełnego czasu. Zwraca liczbę nowych pomocy.
+ */
+export function applyClanHelpTech(ctx: Ctx, tk: string, n: number): number {
+  const s = ctx.s;
+  if (!tk) return 0;
+  if (s.clanHelpT.tk !== tk) s.clanHelpT = { tk, n: 0 };
+  const add = Math.min(CLAN.HELP_MAX, Math.floor(n)) - s.clanHelpT.n;
+  if (add <= 0) return 0;
+  s.clanHelpT = { tk, n: s.clanHelpT.n + add };
+  if (s.tech.cur && techKey(s) === tk) s.tech.cur = { ...s.tech.cur, left: Math.max(0, s.tech.cur.left - (add * CLAN.HELP_PCT / 100) * s.tech.cur.total) };
   ctx.dirty = true;
   return add;
 }

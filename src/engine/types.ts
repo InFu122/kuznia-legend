@@ -166,6 +166,8 @@ export interface GameState {
   clanCoins: number;                                   // Monety klanowe
   clanShop: { week: string; n: Partial<Record<ClanShopId, number>> }; // zakupy w sklepie klanowym w tym tygodniu
   clanHelp: { lvl: number; n: number };                // pomoc klanu już wliczona do ulepszenia kuźni na poziom `lvl`
+  clanHelpT: { tk: string; n: number };                // pomoc klanu już wliczona do badania `tk` (id:poziom)
+  adUp: { forge: number; tech: string };               // przyspieszone reklamą: ulepszenie kuźni na poziom / badanie (id:poziom)
   clanGot: string[];                                   // numery odebranych nagród od serwera (żeby żadnej nie wziąć dwa razy)
   gems: number;                                        // Klejnoty (z serwerem: kopia portfela serwera)
   shop: { day: string; n: Partial<Record<GemItemId, number>>; ads: Partial<Record<AdKind, number>>; gift: string; once: string[] }; // dzienne limity sklepu (UTC)

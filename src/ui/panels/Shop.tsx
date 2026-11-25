@@ -8,7 +8,7 @@ import { dungeonBgUrl, oreUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
 import type { Reward } from '../../engine/types';
 import {
-  addReward, bestOre, gemItemBlock, gemItemLeft, gemItemOpen, gemItemReward, giftReward, passItemsReward, passLevel, passUnclaimed, packReward, passXp, seasonOf, speedupCost,
+  addReward, adUpInfo, bestOre, gemItemBlock, gemItemLeft, gemItemOpen, gemItemReward, giftReward, passItemsReward, passLevel, passUnclaimed, packReward, passXp, seasonOf, speedupCost,
 } from '../../engine/shop';
 import { clanLife } from '../../save/clanlife';
 import { flushSave, getLink, type ServerLink, type ShopResp } from '../../save/server';
@@ -165,6 +165,31 @@ export function SpeedupButton({ game, what, onShop }: { game: Game; what: 'forge
         {lack ? <>Dokończ za <GemIco size={14} /> {fmt(cost)} — kup Klejnoty</> : sure ? <>Na pewno? <GemIco size={14} /> {fmt(cost)}</> : <>Dokończ teraz · <GemIco size={14} /> {fmt(cost)}</>}
       </button>
       <Note msg={a.msg} />
+    </div>
+  );
+}
+
+/**
+ * Przyspieszenie reklamą: raz na jedno ulepszenie kuźni i raz na jedno badanie, −10% pełnego czasu (co najmniej 5 min).
+ * Po użyciu zostaje cicha informacja, żeby było wiadomo, czemu przycisku już nie ma.
+ */
+export function AdUpButton({ game, what }: { game: Game; what: 'forge' | 'tech' }) {
+  const a = useShopAct(game);
+  const ad = useAdWatch();
+  const i = adUpInfo(game.s, what);
+  if (!i) return null;
+  if (i.used) return <p class="adup-used"><Px src={resUrl('reklama')} size={14} /> Przyspieszone reklamą — raz na {what === 'forge' ? 'ulepszenie' : 'badanie'}</p>;
+  if (ad.view) return <div class="speedup">{ad.view}</div>;
+  const key = i.key;
+  const go = () => ad.watch(() => {
+    void a.act(() => game.adUp(what), async l => { await flushSave(); return l.adUp(what, key); }, `Skrócono o ${tfmt(i.cut)}.`);
+  });
+  return (
+    <div class="speedup adup">
+      <button class="btn small" disabled={a.busy || ad.loading} onClick={go}>
+        <Px src={resUrl('reklama')} size={16} /> {ad.loading ? 'Wczytywanie reklamy…' : <>Obejrzyj reklamę · −{tfmt(i.cut)}</>}
+      </button>
+      <Note msg={a.msg || ad.msg} />
     </div>
   );
 }

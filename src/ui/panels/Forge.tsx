@@ -1,6 +1,6 @@
 import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SET_IDS, ORE_ORDER, rAt, rRank } from '../../data';
 import { refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
-import { SpeedupButton } from './Shop';
+import { AdUpButton, SpeedupButton } from './Shop';
 import { JUMP_V, dist, itemName, jumpChances, maxJump, oreBase, oreNominal, pityAllowed } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
@@ -173,6 +173,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
               <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{f.up && FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
               {game.net && <ClanHelpLine game={game} />}
               <SpeedupButton game={game} what="forge" />
+              <AdUpButton game={game} what="forge" />
             </>
           )}
         </section>

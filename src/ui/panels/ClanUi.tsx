@@ -250,3 +250,16 @@ export function ClanWeekCard({ w, now, busy, msg, onClaim }: { w: ClanWeek; now:
     </section>
   );
 }
+
+/* ---------- przejście do zakładki klanu z innego miejsca (np. „Pomóż” na czacie) ---------- */
+
+let wantTab: ClanTab | null = null;
+const tabFns = new Set<(t: ClanTab) => void>();
+/** Otwórz zakładkę klanu `t` (zakładka Klan sama się przełączy, a jeśli jeszcze jej nie ma — wybierze ją przy otwarciu). */
+export function openClanTab(t: ClanTab): void {
+  wantTab = t;
+  for (const fn of tabFns) fn(t);
+}
+/** Zakładka klanu zamówiona przed otwarciem panelu (bierze ją raz). */
+export function takeClanTab(): ClanTab | null { const t = wantTab; wantTab = null; return t; }
+export function onClanTab(fn: (t: ClanTab) => void): () => void { tabFns.add(fn); return () => { tabFns.delete(fn); }; }

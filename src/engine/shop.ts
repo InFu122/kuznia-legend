@@ -2,13 +2,15 @@
 // (server/src/shop.ts) — z serwerem Klejnoty, limity, przepustkę i wzmocnienia prowadzi serwer, a gra tylko je pokazuje.
 // Bez serwera (artefakt, gra w przeglądarce) wszystko dzieje się tutaj.
 import {
-  AD, AD_BUFFS, DAILY_GIFT, DUNGEONS, DUNG_ORDER, GEM_PACKS, GEM_SHOP, DIVINE_ORE, PASS, oreCap, PASS_LEVELS, SEASON_NAMES, STARTER_EXTRA, speedupGems,
+  AD, AD_BUFFS, DAILY_GIFT, DUNGEONS, DUNG_ORDER, GEM_PACKS, GEM_SHOP, DIVINE_ORE, PASS, oreCap, PASS_LEVELS, SEASON_NAMES, STARTER_EXTRA, speedupGems, adUpCut,
   adMax, type AdKind, type FrameId, type SkinId,
   type BuffId, type GemItemId, type PassItem,
 } from '../data';
 import { mountsUnlocked, petsUnlocked, skillsUnlocked } from './companions';
 import { toast, type Ctx } from './context';
 import { goldWaveOf, todayStr } from './formulas';
+import { upgradeTime } from './forge';
+import { techKey } from './mods';
 import { grant } from './reward';
 import type { GameState, PassBase, PassTrack, Reward } from './types';
 
@@ -303,6 +305,34 @@ export function speedupLocal(ctx: Ctx, what: 'forge' | 'tech'): boolean {
   s.gems -= cost;
   if (what === 'forge') s.forge.left = 0;
   else if (s.tech.cur) s.tech.cur = { ...s.tech.cur, left: 0 };
+  ctx.dirty = true;
+  return true;
+}
+
+/* ---------- przyspieszenie reklamą ---------- */
+
+/**
+ * Przyspieszenie reklamą trwającego ulepszenia kuźni albo badania: o ile skróci (`cut`) i czy już było (`used`).
+ * Raz na jedno ulepszenie i raz na jedno badanie. `null` — nic nie trwa.
+ */
+export function adUpInfo(s: GameState, what: 'forge' | 'tech'): { cut: number; used: boolean; key: number | string } | null {
+  if (what === 'forge') {
+    if (!s.forge.up || !(s.forge.left > 0)) return null;
+    return { cut: adUpCut(upgradeTime(s, s.forge.up), s.forge.left), used: s.adUp.forge === s.forge.up, key: s.forge.up };
+  }
+  const c = s.tech.cur;
+  if (!c || !(c.left > 0)) return null;
+  const key = techKey(s);
+  return { cut: adUpCut(c.total, c.left), used: s.adUp.tech === key, key };
+}
+
+/** Przyspieszenie reklamą bez serwera (gra w przeglądarce). */
+export function adUpLocal(ctx: Ctx, what: 'forge' | 'tech'): boolean {
+  const s = ctx.s;
+  const i = adUpInfo(s, what);
+  if (!i || i.used || !(i.cut > 0)) return false;
+  if (what === 'forge') { s.forge.left = Math.max(0, s.forge.left - i.cut); s.adUp = { ...s.adUp, forge: s.forge.up }; }
+  else if (s.tech.cur) { s.tech.cur = { ...s.tech.cur, left: Math.max(0, s.tech.cur.left - i.cut) }; s.adUp = { ...s.adUp, tech: String(i.key) }; }
   ctx.dirty = true;
   return true;
 }

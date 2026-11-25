@@ -21,7 +21,7 @@ import { rpcPlayerProfile } from './profile';
 import { rpcSaveGet, rpcSavePut, rpcSeeds, rpcTime } from './save';
 import { rpcDevGems } from './dev';
 import { rpcAccountDelete, rpcAccountDeleteAdmin } from './account';
-import { rpcAdReward, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
+import { rpcAdReward, rpcAdUp, rpcIapGoogle, rpcIapTest, rpcPassBuy, rpcPassClaim, rpcShopBuy, rpcShopGift, rpcShopState, rpcSpeedup } from './shop';
 import { rpcGoogleLink, rpcGoogleSwitch } from './google';
 import { rpcTransferCode, rpcTransferRedeem } from './transfer';
 import { rpcWarAttack, rpcWarState, rpcWarTestClock } from './war';
@@ -86,6 +86,7 @@ function InitModule(_ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkrun
   initializer.registerRpc('pass_buy', rpcPassBuy);
   initializer.registerRpc('pass_claim', rpcPassClaim);
   initializer.registerRpc('speedup', rpcSpeedup);
+  initializer.registerRpc('ad_up', rpcAdUp);
   initializer.registerRpc('iap_test', rpcIapTest);
   initializer.registerRpc('iap_google', rpcIapGoogle);
   initializer.registerRpc('account_delete', rpcAccountDelete);

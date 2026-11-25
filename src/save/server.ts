@@ -109,7 +109,10 @@ export interface ClanInfo {
 
 /** Życie klanu: Wspólna Kuźnia, boss, prośby o pomoc i rudę, nagrody do odebrania (clan_sync i akcje klanu). */
 export interface ClanBoss { n: string; pal: string; lvl: number; hp: number; max: number; kills: number; mine: number; rank: number; fighters: number; top: { n: string; d: number; me: boolean }[] }
-export interface ClanHelpReq { uid: string; n: string; lvl: number; got: number; done: boolean }
+/** Trwające ulepszenie kuźni i badanie — serwer liczy przy nich pomoc klanu. */
+export interface ClanUp { up: number; tk: string }
+/** Prośba o pomoc: `k` 'f' — kuźnia na poziom `lvl`, 't' — badanie `tn` (np. „Hartowanie → poz. 3”). */
+export interface ClanHelpReq { uid: string; n: string; lvl: number; k?: 'f' | 't'; tn?: string; got: number; done: boolean }
 export interface ClanOreReq { id: string; n: string; ore: number; want: number; got: number }
 /** Skrzynia tygodnia klanu: punkty klanu i moje, progi skrzyń, odebrane, kto prowadzi, Kowal poprzedniego tygodnia. */
 export interface ClanWeek {
@@ -126,7 +129,11 @@ export interface ClanLife {
   oreNext?: number;
   helps?: ClanHelpReq[];
   myHelp?: { lvl: number; got: number } | null;
+  /** Moja prośba o pomoc przy badaniu („id:poziom”). */
+  myHelpT?: { tk: string; got: number } | null;
   helped: { lvl: number; n: number } | null;
+  /** Ile pomocy dostało trwające badanie. */
+  helpedT?: { tk: string; n: number } | null;
   ores?: ClanOreReq[];
   myOre?: { id: string; ore: number; want: number; got: number } | null;
   log?: { t: number; m: string; n?: number }[];
@@ -279,18 +286,20 @@ export class ServerLink {
   clanLeave(cancel?: string): Promise<{ ok: boolean }> { return this.rpc('clan_leave', cancel ? { cancel } : {}); }
   clanManage(action: 'accept' | 'reject' | 'kick' | 'promote' | 'demote' | 'transfer', user: string): Promise<{ ok: boolean }> { return this.rpc('clan_manage', { action, user }); }
   clanSettings(s: { desc?: string; mode?: ClanMode; minPower?: number; lang?: string; ann?: string; emb?: ClanEmb }): Promise<{ ok: boolean }> { return this.rpc('clan_settings', s); }
-  /** Życie klanu. `up` = trwające ulepszenie kuźni (poziom docelowy, 0 bez ulepszenia) — do pomocy klanu. */
-  clanSync(up: number): Promise<ClanLife> { return this.rpc('clan_sync', { up }); }
-  clanDonate(up: number): Promise<ClanLife> { return this.rpc('clan_donate', { up }); }
-  clanBossAttack(up: number): Promise<ClanLife> { return this.rpc('clan_boss_attack', { up }); }
-  clanHelpAsk(up: number): Promise<ClanLife> { return this.rpc('clan_help_ask', { up }); }
+  /** Życie klanu. `u` = trwające ulepszenie kuźni (`up`, 0 bez ulepszenia) i badanie (`tk`, „id:poziom”) — do pomocy klanu. */
+  clanSync(u: ClanUp): Promise<ClanLife> { return this.rpc('clan_sync', u); }
+  clanDonate(u: ClanUp): Promise<ClanLife> { return this.rpc('clan_donate', u); }
+  clanBossAttack(u: ClanUp): Promise<ClanLife> { return this.rpc('clan_boss_attack', u); }
+  /** Prośba o pomoc: przy ulepszeniu kuźni albo (`what: 'tech'`) przy badaniu. */
+  clanHelpAsk(u: ClanUp, what: 'forge' | 'tech' = 'forge'): Promise<ClanLife> { return this.rpc('clan_help_ask', { ...u, what }); }
   /** Narzędzia dewelopera: Klejnoty prowadzi serwer, więc o nie trzeba go poprosić. */
   devGems(n: number): Promise<{ gems: number }> { return this.rpc('dev_gems', { n }); }
-  clanHelp(up: number, uid?: string): Promise<ClanLife> { return this.rpc('clan_help', uid ? { up, uid } : { up }); }
-  clanOreAsk(up: number, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { up, ore }); }
-  clanOreGive(up: number, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { up, id, n }); }
+  /** Pomoc wszystkim albo jednej prośbie (`uid` i rodzaj `k`: 'f' kuźnia, 't' badanie). */
+  clanHelp(u: ClanUp, uid?: string, k?: 'f' | 't'): Promise<ClanLife> { return this.rpc('clan_help', uid ? { ...u, uid, k } : u); }
+  clanOreAsk(u: ClanUp, ore: number): Promise<ClanLife> { return this.rpc('clan_ore_ask', { ...u, ore }); }
+  clanOreGive(u: ClanUp, id: string, n: number): Promise<ClanLife> { return this.rpc('clan_ore_give', { ...u, id, n }); }
   /** Odbiór otwartych skrzyń tygodnia klanu. */
-  clanWeekClaim(up: number): Promise<ClanLife> { return this.rpc('clan_week_claim', { up }); }
+  clanWeekClaim(u: ClanUp): Promise<ClanLife> { return this.rpc('clan_week_claim', u); }
   /** Przekuwanie: serwer losuje nową statystykę i podpisuje przedmiot. */
   reforge(item: Item, i: number): Promise<{ item: Item }> { return this.rpc('reforge', { item, i }); }
   shopState(): Promise<ShopResp> { return this.rpc('shop_state', {}); }
@@ -301,6 +310,7 @@ export class ServerLink {
   passClaim(): Promise<ShopResp> { return this.rpc('pass_claim', {}); }
   /** `key` — poziom trwającego ulepszenia kuźni albo trwające badanie (serwer sprawdza, że zna ten sam stan). */
   speedup(what: 'forge' | 'tech', key?: number | string): Promise<ShopResp> { return this.rpc('speedup', { what, key }); }
+  adUp(what: 'forge' | 'tech', key?: number | string): Promise<ShopResp> { return this.rpc('ad_up', { what, key }); }
   iapTest(id: string): Promise<ShopResp> { return this.rpc('iap_test', { id }); }
   /** Zakup w Google Play: serwer sprawdza token zakupu u Google i wydaje pakiet (raz na zakup). */
   iapGoogle(id: string, token: string): Promise<ShopResp> { return this.rpc('iap_google', { id, token }); }

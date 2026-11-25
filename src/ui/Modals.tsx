@@ -38,6 +38,7 @@ import { LookView } from './panels/Look';
 import { DungInfoView } from './panels/Dungeon';
 import { FeedbackView } from './panels/Feedback';
 import { ChatView } from './panels/Chat';
+import { openClanTab } from './panels/ClanUi';
 import { MenuView } from './Menu';
 import { AutoSheet, OrePicker } from './Dock';
 import { MusicSheet } from './MusicSheet';
@@ -301,7 +302,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
     case 'adOffer':
       return <AdOfferView game={game} what={m.what} close={close} />;
     case 'chat':
-      return <ChatView game={game} initial={m.ch} close={close} goClan={() => { close(); goTab?.('klan'); }} />;
+      return <ChatView game={game} initial={m.ch} close={close} goClan={t => { close(); if (t) openClanTab(t); goTab?.('klan'); }} />;
     case 'draw':
       return <DrawView game={game} m={m} close={close} />;
     case 'menu':

@@ -8,12 +8,22 @@ import type { Game } from '../../engine/game';
 import { getChat, type ChatCh, type ChatMsg } from '../../save/chat';
 import { getLink } from '../../save/server';
 import { f1 } from '../format';
+import type { ClanTab } from './ClanLife';
 
 const hhmm = (t: number) => new Date(t).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
 const STATE: Record<string, string> = { on: 'połączono', connecting: 'łączenie…', off: 'brak połączenia' };
 
-function Message({ m, open, onMenu, onMute, onReport }: { m: ChatMsg; open: boolean; onMenu: () => void; onMute: () => void; onReport: () => void }) {
+function Message({ m, open, onMenu, onMute, onReport, onHelp }: { m: ChatMsg; open: boolean; onMenu: () => void; onMute: () => void; onReport: () => void; onHelp: () => void }) {
   if (m.k === 'sys') return <li class="cm sys">{m.t}</li>;
+  // Prośba klanowicza (o pomoc albo o rudę) — od razu z przejściem do zakładki Pomoc.
+  if (m.k === 'ask') {
+    return (
+      <li class="cm ask">
+        <span class="cm-ask-t"><time>{hhmm(m.time)}</time>{m.t}</span>
+        <button class="btn small primary" onClick={onHelp}>Pomóż ›</button>
+      </li>
+    );
+  }
   if (m.k === 'ann') return <li class="cm ann"><b>Ogłoszenie</b>{m.n ? ` · ${m.n}` : ''}: {m.t}</li>;
   if (m.k === 'drop' && m.it) {
     const it = m.it;
@@ -47,7 +57,7 @@ function Message({ m, open, onMenu, onMute, onReport }: { m: ChatMsg; open: bool
   );
 }
 
-export function ChatView({ game, initial, close, goClan }: { game: Game; initial?: ChatCh; close: () => void; goClan: () => void }) {
+export function ChatView({ game, initial, close, goClan }: { game: Game; initial?: ChatCh; close: () => void; goClan: (tab?: ClanTab) => void }) {
   const chat = getChat();
   // Czat z Menu otwiera się na kanale globalnym; kanał klanu — z zakładki Klan albo z wiadomości klanu w wyskakującym pasku.
   const [ch, setCh] = useState<ChatCh>(initial ?? 'global');
@@ -107,13 +117,13 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
       {noClan ? (
         <div class="lockline">
           Nie należysz do klanu. Czat klanu zobaczysz po dołączeniu.
-          <div style={{ marginTop: '8px' }}><button class="btn small primary" onClick={goClan}>Znajdź klan</button></div>
+          <div style={{ marginTop: '8px' }}><button class="btn small primary" onClick={() => goClan()}>Znajdź klan</button></div>
         </div>
       ) : (
         <ul class="chat-list" ref={listRef} aria-live="polite" aria-label={ch === 'global' ? 'Czat globalny' : 'Czat klanu'}>
           {msgs.length === 0 && <li class="cm sys">{chat.state === 'on' ? 'Jeszcze nikt nic nie napisał.' : 'Łączenie z czatem…'}</li>}
           {msgs.map(m => (
-            <Message key={m.id} m={m} open={menu === m.id} onMenu={() => setMenu(menu === m.id ? null : m.id)}
+            <Message key={m.id} m={m} open={menu === m.id} onMenu={() => setMenu(menu === m.id ? null : m.id)} onHelp={() => goClan('pomoc')}
               onMute={() => { chat.mute(m.uid, true); setMenu(null); setNote(`Wyciszono: ${m.n}.`); }} onReport={() => report(m)} />
           ))}
         </ul>

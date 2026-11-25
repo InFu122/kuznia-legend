@@ -10,7 +10,7 @@ import { getLink, type ClanInfo, type ClanMember, type ClanMode, type ClanRole, 
 import { fmt } from '../format';
 import { ClanBossTab, ClanForgeTab, ClanHelpTab, ClanShopTab, errText, useAction, useClanLife, type ClanTab } from './ClanLife';
 import { ClanRaidTab, ClanWarTab } from './ClanWar';
-import { ClanCard, ClanHero, ClanTabs, ClanToday, ClanWeekCard, EmblemPicker, RoleIcon, icUrl, powerRank, sortMembers, useEmb } from './ClanUi';
+import { ClanCard, ClanHero, ClanTabs, ClanToday, ClanWeekCard, EmblemPicker, RoleIcon, icUrl, onClanTab, powerRank, takeClanTab, sortMembers, useEmb } from './ClanUi';
 import { Px } from '../Px';
 
 const ROLE: Record<ClanRole, string> = { lider: 'Przywódca', zastepca: 'Zastępca', starszy: 'Starszy', czlonek: 'Członek', prosba: 'Prośba' };
@@ -328,7 +328,8 @@ export function ClanPanel({ game, online, openChat }: { game: Game; online: bool
   const [info, setInfo] = useState<ClanInfo | null>(null);
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
-  const [tab, setTab] = useState<ClanTab>('klan');
+  const [tab, setTab] = useState<ClanTab>(() => takeClanTab() ?? 'klan');
+  useEffect(() => onClanTab(t => { takeClanTab(); setTab(t); }), []);
   const reload = (msg?: string) => {
     if (msg) setNote(msg);
     getLink()?.clanInfo()

@@ -3,7 +3,8 @@ import { CLAN } from '../data';
 import type { Game } from '../engine/game';
 import { rewardText } from '../ui/texts';
 import type { ServerReward } from '../engine/clan';
-import { getLink, type ClanLife, type ServerLink } from './server';
+import { techKey } from '../engine/mods';
+import { getLink, type ClanLife, type ClanUp, type ServerLink } from './server';
 
 /** Co ile gra odświeża klan w tle (nagrody, pomoc w ulepszeniu kuźni, poziom klanu). */
 export const CLAN_SYNC_MS = 180000;
@@ -33,6 +34,10 @@ class ClanLifeStore {
       const add = game.clanHelp(r.helped.lvl, r.helped.n);
       if (add) game.notify(`Klan pomógł w ulepszeniu kuźni: −${add * CLAN.HELP_PCT}% czasu.`, 'good');
     }
+    if (r.helpedT) {
+      const add = game.clanHelpTech(r.helpedT.tk, r.helpedT.n);
+      if (add) game.notify(`Klan pomógł w badaniu: −${add * CLAN.HELP_PCT}% czasu.`, 'good');
+    }
     game.setClanLvl(r.clan ? r.lvl ?? 0 : 0);
     this.data = r;
     this.at = Date.now();
@@ -44,14 +49,17 @@ class ClanLifeStore {
   async sync(game: Game): Promise<ClanLife | null> {
     const l = getLink();
     if (!l?.online) return null;
-    return this.take(game, await l.clanSync(game.s.forge.up || 0));
+    return this.take(game, await l.clanSync(this.up(game)));
   }
 
+  /** Trwające ulepszenie kuźni i badanie — serwer liczy przy nich pomoc klanu. */
+  up(game: Game): ClanUp { return { up: game.s.forge.up || 0, tk: techKey(game.s) }; }
+
   /** Akcja klanu na serwerze (datek, atak, pomoc…) — jej wynik od razu trafia do gry. */
-  async act(game: Game, fn: (l: ServerLink, up: number) => Promise<ClanLife>): Promise<ClanLife> {
+  async act(game: Game, fn: (l: ServerLink, up: ClanUp) => Promise<ClanLife>): Promise<ClanLife> {
     const l = getLink();
     if (!l) throw new Error('Brak połączenia z serwerem.');
-    return this.take(game, await fn(l, game.s.forge.up || 0));
+    return this.take(game, await fn(l, this.up(game)));
   }
 
   /** Ile rzeczy czeka w klanie (kropka na zakładce Klan). */

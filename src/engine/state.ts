@@ -41,7 +41,7 @@ export function newState(now: number): GameState {
     opts: { sound: true, vol: 0.6, music: true, mvol: 0.5, notify: true, logSeen: LATEST_LOG },
     stats: { smelted: 0, jumps: 0, kills: 0, bosses: 0, keys: 0, bestR: -1, leg: 0, missions: 0, days: 0 },
     sx: 0, seeds: [], obIn: [], obOut: [],
-    clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanGot: [],
+    clanLvl: 0, clanCoins: 0, clanShop: { week: '', n: {} }, clanHelp: { lvl: 0, n: 0 }, clanHelpT: { tk: '', n: 0 }, adUp: { forge: 0, tech: '' }, clanGot: [],
     gems: 0, shop: { day: '', n: {}, ads: {}, gift: '', once: [] }, buffs: {}, pass: null, event: null, look: { skin: 'zwykly', frame: 'prosta', skins: ['zwykly'], frames: ['prosta'] }, boost: { lvl: 0, ms: 0 },
     runes: {}, codex: [], ach: {}, legacy: { gen: 0, stars: 0, item: null },
     speed: 1, savedAt: 0, lastSeen: now, nid: 1,
@@ -119,6 +119,8 @@ export function migrate(raw: unknown, now: number): GameState {
   if (typeof out.clanCoins !== 'number' || !(out.clanCoins >= 0)) out.clanCoins = 0;
   if (!isObj(out.clanShop) || !isObj(out.clanShop.n)) out.clanShop = fresh.clanShop;
   if (!isObj(out.clanHelp) || typeof out.clanHelp.lvl !== 'number' || typeof out.clanHelp.n !== 'number') out.clanHelp = fresh.clanHelp;
+  if (!isObj(out.clanHelpT) || typeof out.clanHelpT.tk !== 'string' || typeof out.clanHelpT.n !== 'number') out.clanHelpT = fresh.clanHelpT;
+  if (!isObj(out.adUp) || typeof out.adUp.forge !== 'number' || typeof out.adUp.tech !== 'string') out.adUp = fresh.adUp;
   if (!Array.isArray(out.clanGot)) out.clanGot = [];
   if (typeof out.gems !== 'number' || !(out.gems >= 0)) out.gems = 0;
   if (!isObj(out.shop) || !isObj(out.shop.n) || !isObj(out.shop.ads)) out.shop = fresh.shop;

@@ -1,7 +1,8 @@
 // Życie klanu w zakładce Klan: Wspólna Kuźnia, boss klanowy, pomoc (ulepszenia i ruda) oraz sklep klanowy.
 // Stan przychodzi z serwera (clan_sync i akcje klanu); nagrody i pomoc klanu od razu trafiają do gry.
 import { useEffect, useState } from 'preact/hooks';
-import { CLAN, CLAN_LEVELS, CLAN_SHOP, CLAN_SHOP_IDS, CLAN_WEEK, ORES, ORE_ORDER, ORE_WANT, type ClanEff, type ClanShopId } from '../../data';
+import { CLAN, CLAN_LEVELS, CLAN_SHOP, CLAN_SHOP_IDS, CLAN_WEEK, ORES, ORE_ORDER, ORE_WANT, TECH, TECH_UNLOCK_FORGE, type ClanEff, type ClanShopId } from '../../data';
+import { techKey, techLvl } from '../../engine/mods';
 import { bossUrl, dungeonBgUrl, oreUrl, resUrl } from '../../art/render';
 import { icUrl } from './ClanUi';
 
@@ -286,45 +287,61 @@ function OreGive({ game, o }: { game: Game; o: ClanOreReq }) {
   );
 }
 
+/** Twoje ulepszenie kuźni albo badanie: ile pomocy klanu, o ile krócej, prośba do klanu. */
+function MyHelp({ game, d, what }: { game: Game; d: ClanLife; what: 'forge' | 'tech' }) {
+  const a = useAction();
+  const s = game.s;
+  const forge = what === 'forge';
+  const tk = techKey(s);
+  const on = forge ? !!s.forge.up : !!s.tech.cur;
+  const got = forge ? (s.forge.up && s.clanHelp.lvl === s.forge.up ? s.clanHelp.n : 0) : (tk && s.clanHelpT.tk === tk ? s.clanHelpT.n : 0);
+  const asked = forge ? !!(d.myHelp && d.myHelp.lvl === s.forge.up) : !!(d.myHelpT && d.myHelpT.tk === tk);
+  const title = forge
+    ? (s.forge.up ? `Ulepszanie do poz. ${s.forge.up}` : 'Kuźnia czeka na ulepszenie')
+    : (s.tech.cur ? `${TECH[s.tech.cur.id].n} → poz. ${techLvl(s, s.tech.cur.id) + 1}` : 'Akademia czeka na badanie');
+  const left = forge ? s.forge.left : s.tech.cur?.left ?? 0;
+  const ask = () => a.run(async () => { await clanLife.act(game, (l, up) => l.clanHelpAsk(up, what)); return 'Prośba o pomoc wysłana do klanu.'; });
+  return (
+    <section class={`ch-hero hlp-hero${forge ? '' : ' hlp-tech'}`} style={{ '--bg': `url(${dungeonBgUrl(forge ? 'kuznia' : 'wieza')})` } as Record<string, string>}>
+      <div class="ch-top">
+        <span class="hlp-ic"><Px src={icUrl(forge ? 'kowadlo' : 'ksiega')} size={34} /></span>
+        <div class="ch-main">
+          <span class="eyebrow">{forge ? 'Twoja kuźnia' : 'Twoje badanie'}</span>
+          <div class="hlp-t">{title}</div>
+          {on ? <small class="hlp-s">zostało <b class="num">{tfmt(left)}</b></small>
+            : <small class="hlp-s">Poproś klan o pomoc, gdy zaczniesz {forge ? 'ulepszenie' : 'badanie w Akademii'}.</small>}
+        </div>
+        <span class={`hlp-cut${got ? ' on' : ''}`}><b>−{got * CLAN.HELP_PCT}%</b><small>czasu</small></span>
+      </div>
+      <div class="hlp-prog">
+        <Pips n={got} max={CLAN.HELP_MAX} cls="big" />
+        <small>Pomoc klanu <b class="num">{got}/{CLAN.HELP_MAX}</b> · każda skraca {forge ? 'ulepszenie' : 'badanie'} o {CLAN.HELP_PCT}%</small>
+      </div>
+      {on ? (
+        got >= CLAN.HELP_MAX ? <div class="hlp-state ok">✓ Pełna pomoc klanu</div>
+          : asked ? <div class="hlp-state">Prośba wysłana · klan widzi ją w zakładce Pomoc i na czacie</div>
+            : <button class="btn primary big hbig" disabled={a.busy} onClick={ask}>Poproś klan o pomoc</button>
+      ) : null}
+      <Note msg={a.msg} />
+    </section>
+  );
+}
+
 export function ClanHelpTab({ game }: { game: Game }) {
   const d = useClanLife();
-  const a = useAction();
   const h2 = useAction();
   if (!d?.clan || !d.left) return <Loading d={d} />;
-  const f = game.s.forge;
-  const got = f.up && game.s.clanHelp.lvl === f.up ? game.s.clanHelp.n : 0;
-  const asked = !!(d.myHelp && d.myHelp.lvl === f.up);
   const helps = d.helps ?? [];
   const toHelp = helps.filter(h => !h.done);
-  const ask = () => a.run(async () => { await clanLife.act(game, (l, up) => l.clanHelpAsk(up)); return 'Prośba o pomoc wysłana do klanu.'; });
-  const help = (uid?: string) => h2.run(async () => {
-    const r = await clanLife.act(game, (l, up) => l.clanHelp(up, uid));
+  const help = (uid?: string, k?: 'f' | 't') => h2.run(async () => {
+    const r = await clanLife.act(game, (l, up) => l.clanHelp(up, uid, k));
     const n = r.helpedNow ?? 0;
-    return `Pomoc dla ${n} ${n === 1 ? 'osoby' : 'osób'}${r.paid ? ` · +${coins(r.paid * CLAN.DEED_COINS)}` : ''}.`;
+    return `Pomoc dla ${n} ${n === 1 ? 'prośby' : 'próśb'}${r.paid ? ` · +${coins(r.paid * CLAN.DEED_COINS)}` : ''}.`;
   });
   return (
     <>
-      <section class="ch-hero hlp-hero" style={{ '--bg': `url(${dungeonBgUrl('kuznia')})` } as Record<string, string>}>
-        <div class="ch-top">
-          <span class="hlp-ic"><Px src={icUrl('kowadlo')} size={34} /></span>
-          <div class="ch-main">
-            <span class="eyebrow">Twoja kuźnia</span>
-            <div class="hlp-t">{f.up ? `Ulepszanie do poz. ${f.up}` : 'Kuźnia czeka na ulepszenie'}</div>
-            {f.up ? <small class="hlp-s">zostało <b class="num">{tfmt(f.left)}</b></small> : <small class="hlp-s">Poproś klan o pomoc, gdy zaczniesz ulepszenie.</small>}
-          </div>
-          <span class={`hlp-cut${got ? ' on' : ''}`}><b>−{got * CLAN.HELP_PCT}%</b><small>czasu</small></span>
-        </div>
-        <div class="hlp-prog">
-          <Pips n={got} max={CLAN.HELP_MAX} cls="big" />
-          <small>Pomoc klanu <b class="num">{got}/{CLAN.HELP_MAX}</b> · każda skraca ulepszenie o {CLAN.HELP_PCT}%</small>
-        </div>
-        {f.up ? (
-          got >= CLAN.HELP_MAX ? <div class="hlp-state ok">✓ Pełna pomoc klanu</div>
-            : asked ? <div class="hlp-state">Prośba wysłana · klan widzi ją w zakładce Pomoc</div>
-              : <button class="btn primary big hbig" disabled={a.busy} onClick={ask}>Poproś klan o pomoc</button>
-        ) : null}
-        <Note msg={a.msg} />
-      </section>
+      <MyHelp game={game} d={d} what="forge" />
+      {game.s.forge.lvl >= TECH_UNLOCK_FORGE && <MyHelp game={game} d={d} what="tech" />}
       <section class="card">
         <div class="row">
           <div><span class="eyebrow">Kowale proszą o pomoc · {helps.length}</span></div>
@@ -334,14 +351,14 @@ export function ClanHelpTab({ game }: { game: Game }) {
         {helps.length === 0 ? <p class="hempty"><Px src={icUrl('czas')} size={22} />Nikt teraz nie prosi o pomoc.</p> : (
           <ul class="hlist">
             {helps.map(h => (
-              <li key={h.uid} class={`hrow${h.done ? ' done' : ''}`}>
+              <li key={h.uid + (h.k ?? 'f')} class={`hrow${h.done ? ' done' : ''}`}>
                 <span class="mbr-av">{h.n.slice(0, 1)}</span>
                 <div class="cmain">
                   <b class="hname">{h.n}</b>
-                  <small>Kuźnia → poziom {h.lvl}</small>
+                  <small class="hwhat"><Px src={icUrl(h.k === 't' ? 'ksiega' : 'kowadlo')} size={14} />{h.k === 't' ? `Badanie: ${h.tn ?? ''}` : `Kuźnia → poziom ${h.lvl}`}</small>
                   <div class="hbar"><Pips n={h.got} max={CLAN.HELP_MAX} /><small class="num">{h.got}/{CLAN.HELP_MAX}</small></div>
                 </div>
-                {h.done ? <span class="hdone">✓ Pomogłeś</span> : <button class="btn small primary" disabled={h2.busy} onClick={() => help(h.uid)}>Pomóż</button>}
+                {h.done ? <span class="hdone">✓ Pomogłeś</span> : <button class="btn small primary" disabled={h2.busy} onClick={() => help(h.uid, h.k ?? 'f')}>Pomóż</button>}
               </li>
             ))}
           </ul>
@@ -428,15 +445,17 @@ export function ClanShopTab({ game }: { game: Game }) {
   );
 }
 
-/** Wskaźnik pomocy klanu przy ulepszaniu kuźni (zakładka Kuźnia). */
-export function ClanHelpLine({ game }: { game: Game }) {
+/** Wskaźnik pomocy klanu przy ulepszaniu kuźni (zakładka Kuźnia) albo przy badaniu (Akademia). */
+export function ClanHelpLine({ game, what = 'forge' }: { game: Game; what?: 'forge' | 'tech' }) {
   const d = useClanLife();
   const a = useAction();
-  const f = game.s.forge;
-  if (!d?.clan || !f.up) return null;
-  const got = game.s.clanHelp.lvl === f.up ? game.s.clanHelp.n : 0;
-  const asked = !!(d.myHelp && d.myHelp.lvl === f.up);
-  const ask = () => a.run(async () => { await clanLife.act(game, (l, up) => l.clanHelpAsk(up)); });
+  const s = game.s;
+  const forge = what === 'forge';
+  const tk = techKey(s);
+  if (!d?.clan || (forge ? !s.forge.up : !tk)) return null;
+  const got = forge ? (s.clanHelp.lvl === s.forge.up ? s.clanHelp.n : 0) : (s.clanHelpT.tk === tk ? s.clanHelpT.n : 0);
+  const asked = forge ? !!(d.myHelp && d.myHelp.lvl === s.forge.up) : !!(d.myHelpT && d.myHelpT.tk === tk);
+  const ask = () => a.run(async () => { await clanLife.act(game, (l, up) => l.clanHelpAsk(up, what)); });
   return (
     <div class="row clanhelp" style={{ marginTop: '8px' }}>
       <span class="tech-cost">Pomoc klanu: {got}/{CLAN.HELP_MAX}{got ? ` (−${got * CLAN.HELP_PCT}%)` : ''}{a.msg ? ` · ${a.msg}` : ''}</span>

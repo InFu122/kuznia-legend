@@ -1,6 +1,6 @@
 import { ABYSS_FROM, AD, AD_BUFFS, B, DUNG_ORDER, ELEM, FEATURES, ORES, R, RAR, SETS, SET_FORGE_LVL, TECH, TEST_SPEEDS, TUTORIAL, rGe, rTier, type AchId, type FeatureId, type BuffId, type GemItemId, type FrameId, type SkinId } from '../data';
 import { DEFAULT_NAME, NAME_MAX, tidyName } from './nick';
-import { applyClanHelp, buyClanShop, takeServerRewards, type ServerReward } from './clan';
+import { applyClanHelp, applyClanHelpTech, buyClanShop, takeServerRewards, type ServerReward } from './clan';
 import { challengeBoss, goLand } from './combat';
 import { toast, type Ctx } from './context';
 import { dungContinue, dungEnd, dungKeys, dungTick, dungTier, dungUnlocked, labChoose, startDungeon } from './dungeon';
@@ -11,7 +11,7 @@ import { autoHandle, autoTarget, autoTargets, canSmelt, equip, refine, sell, sme
 import { itemName, type AwKey } from './formulas';
 import { setAwakening } from './legend';
 import { devFinish, devForge, devLand, devMax, devResources } from './dev';
-import { allMods } from './mods';
+import { allMods, techKey } from './mods';
 import { startResearch, tickResearch } from './tech';
 import { checkUnlocks, isUnlocked, seenFeature } from './unlocks';
 import { applyOffline } from './offline';
@@ -22,7 +22,7 @@ import { achCount, claimAch, discover } from './achievements';
 import { invalidate, powerDelta, stats } from './stats';
 import { stepCombat } from './combat';
 import {
-  adRewardLocal, applyBoost, buyGemItemLocal, buyPackLocal, buyPassLocal, claimGiftLocal, claimPassLocal, refillKeys, shopToday, speedupLocal, tickPassLocal,
+  adRewardLocal, adUpLocal, applyBoost, buyGemItemLocal, buyPackLocal, buyPassLocal, claimGiftLocal, claimPassLocal, refillKeys, shopToday, speedupLocal, tickPassLocal,
   type PassTrack, type ShopState,
 } from './shop';
 import { claimEvent, dungName, eventUnclaimed, tickEvent } from './events';
@@ -30,7 +30,11 @@ import { setFrame, setSkin } from './cosmetics';
 import type { DungId, ElemKey, EventTrack, GameEvent, GameState, Item, ModalData, MountId, PetId, Reward, SetId, SkillId, SlotId, TechId } from './types';
 
 /** Stan sklepu od serwera (odpowiedzi RPC sklepu i zapisu). */
-export interface ShopSync { gems?: number; shop?: ShopState; pass?: PassTrack | null; buffs?: Partial<Record<BuffId, number>>; boost?: { lvl: number; ms: number } | null; techDone?: boolean }
+export interface ShopSync {
+  gems?: number; shop?: ShopState; pass?: PassTrack | null; buffs?: Partial<Record<BuffId, number>>; boost?: { lvl: number; ms: number } | null; techDone?: boolean;
+  /** Przyspieszenie reklamą od serwera: kuźnia (czas odejmuje `boost`) albo badanie `key` o `cut` ms. */
+  adUp?: { what: 'forge' | 'tech'; key: number | string; cut: number } | null;
+}
 
 /**
  * Fasada silnika dla interfejsu: trzyma stan, prowadzi czas gry i wystawia akcje gracza.
@@ -183,6 +187,12 @@ export class Game {
   buyPack(id: string): boolean { return this.done(buyPackLocal(this.ctx, id)); }
   buyPass(): boolean { return this.done(buyPassLocal(this.ctx)); }
   claimPass(): Reward | null { return this.done(claimPassLocal(this.ctx)); }
+  /** Przyspieszenie reklamą bez serwera. */
+  adUp(what: 'forge' | 'tech'): boolean {
+    const ok = adUpLocal(this.ctx, what);
+    if (ok) { this.tick(0); this.changed(); }
+    return ok;
+  }
   speedup(what: 'forge' | 'tech'): boolean {
     const ok = speedupLocal(this.ctx, what);
     if (ok) { this.tick(0); this.changed(); }
@@ -197,8 +207,16 @@ export class Game {
     if (r.buffs) for (const k of Object.keys(AD_BUFFS) as BuffId[]) { const v = r.buffs[k]; if (typeof v === 'number' && v > (s.buffs[k] ?? 0)) s.buffs = { ...s.buffs, [k]: v }; }
     if (r.boost) applyBoost(this.ctx, r.boost.lvl, r.boost.ms);
     if (r.techDone && s.tech.cur) s.tech.cur = { ...s.tech.cur, left: 0 };
+    if (r.adUp) {
+      if (r.adUp.what === 'forge') s.adUp = { ...s.adUp, forge: Number(r.adUp.key) };
+      else {
+        const key = String(r.adUp.key);
+        if (s.tech.cur && techKey(s) === key && s.adUp.tech !== key) s.tech.cur = { ...s.tech.cur, left: Math.max(0, s.tech.cur.left - Math.max(0, r.adUp.cut)) };
+        s.adUp = { ...s.adUp, tech: key };
+      }
+    }
     // Dane od serwera nie wymagają ponownego zapisu — chyba że przyspieszenie zmieniło kuźnię albo badanie.
-    if (r.boost || r.techDone) { this.ctx.dirty = true; this.tick(0); }
+    if (r.boost || r.techDone || r.adUp) { this.ctx.dirty = true; this.tick(0); }
     this.changed();
   }
 
@@ -508,6 +526,12 @@ export class Game {
   clanHelp(lvl: number, n: number): number {
     const add = applyClanHelp(this.ctx, lvl, n);
     if (add) this.changed();
+    return add;
+  }
+  /** Pomoc klanu w badaniu (liczy ją serwer). Zwraca liczbę nowych pomocy. */
+  clanHelpTech(tk: string, n: number): number {
+    const add = applyClanHelpTech(this.ctx, tk, n);
+    if (add) { this.tick(0); this.changed(); }
     return add;
   }
   /** Płatność złotem lub rudą za akcję klanu (datek, dar rudy). Zwraca false, gdy brakuje. */

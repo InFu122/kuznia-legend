@@ -64,7 +64,11 @@ export const AD = {
   OFFER_SHOW_MS: 90000,       // ikonka znika po 1,5 minuty
   TEST_AD_MS: 5000,           // reklama testowa (zanim gra dostanie prawdziwe reklamy)
   ARENA_DAY: 2,               // +1 walka na arenie za reklamę — tyle razy dziennie
+  UP_PCT: 10,                 // reklama skraca ulepszenie kuźni albo badanie o 10% jego pełnego czasu…
+  UP_MIN_MS: 5 * 60000,       // …co najmniej o 5 minut; raz na jedno ulepszenie i raz na jedno badanie
 } as const;
+/** O ile reklama skraca ulepszenie albo badanie o pełnym czasie `full`, gdy zostało `left`. */
+export const adUpCut = (full: number, left: number) => Math.max(0, Math.min(left, Math.max(AD.UP_MIN_MS, Math.round((full * AD.UP_PCT) / 100))));
 /** Rodzaje reklam z nagrodą (dzienne liczniki w sklepie). */
 export type AdKind = BuffId | 'gems' | 'arena';
 /** Ile reklam danego rodzaju dziennie. */

@@ -7,7 +7,9 @@
 // Magazyn gracza (tylko serwer): shop/daily — dzienne limity (UTC), shop/iap — jednorazowe pakiety i wydane zakupy Google Play,
 // shop/buffs — wzmocnienia z reklam, shop/boost — przyspieszenia ulepszeń kuźni (kontrola tempa kuźni je odejmuje),
 // pass/state — Przepustka Kowala (punkty liczy save_put z różnicy liczników, jak punkty wojny klanów).
-import { AD, AD_BUFFS, GEM_PACKS, GEM_SHOP, PASS, adMax, playId, speedupGems, type AdKind, type BuffId, type GemItemId } from '../../src/data';
+import { AD, AD_BUFFS, GEM_PACKS, GEM_SHOP, PASS, adMax, adUpCut, playId, speedupGems, type AdKind, type BuffId, type GemItemId } from '../../src/data';
+import { upgradeTime } from '../../src/engine/forge';
+import { techKey } from '../../src/engine/mods';
 import {
   buffUntil, gemItemBlock, gemItemReward, giftReward, newShop, packReward, passUnclaimed, passUpdate, shopToday,
   type PassTrack, type ShopState,
@@ -22,6 +24,8 @@ const GEMS = 'gems';
 const perm = { read: 0 as nkruntime.ReadPermissionValues, write: 0 as nkruntime.WritePermissionValues };
 type Buffs = Partial<Record<BuffId, number>>;
 type Boost = Record<string, number>;
+/** Ostatnie ulepszenie kuźni (poziom) i badanie (id:poziom) przyspieszone reklamą — raz na każde. */
+interface AdUp { forge?: number; tech?: string }
 /** `once` — kupione pakiety jednorazowe, `tx` — skróty tokenów zakupów Google Play, za które pakiet już wydano (ostatnie 300). */
 interface Iap { once: string[]; tx?: string[] }
 const TX_KEEP = 300;
@@ -259,6 +263,48 @@ export function rpcSpeedup(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
     boost = { lvl, ms: b[String(lvl)] };
   }
   return JSON.stringify(view(nk, userId, now, { boost, techDone: what === 'tech', cost }));
+}
+
+/**
+ * Przyspieszenie reklamą: raz na jedno ulepszenie kuźni i raz na jedno badanie, o 10% pełnego czasu (co najmniej 5 min).
+ * Kuźnia: skrócony czas trafia do shop/boost (kontrola tempa kuźni go odejmuje). Badanie: gra odejmuje `cut` sama.
+ */
+export function rpcAdUp(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
+  const userId = userOf(ctx);
+  const req = parse(payload);
+  const what = req.what === 'tech' ? 'tech' : 'forge';
+  const now = Date.now();
+  const save = readSave(nk, userId);
+  if (!save) throw err('Najpierw zapisz grę.', PRECONDITION);
+  const st = save.value.state;
+  const key: number | string = what === 'forge' ? st.forge.up : techKey(st);
+  if (!key) throw err(what === 'forge' ? 'Kuźnia nie ma trwającego ulepszenia.' : 'Nie trwa żadne badanie.', PRECONDITION);
+  if (req.key !== undefined && req.key !== null && String(req.key) !== String(key)) {
+    throw err('Serwer nie ma jeszcze zapisu tego ulepszenia — spróbuj ponownie za chwilę.', PRECONDITION);
+  }
+  const left = leftNow(save, what, now);
+  if (left <= 0) throw err(what === 'forge' ? 'Ulepszenie kuźni już się kończy.' : 'Badanie już się kończy.', PRECONDITION);
+  const full = what === 'forge' ? upgradeTime(st, st.forge.up) : st.tech.cur ? st.tech.cur.total : 0;
+  const cut = adUpCut(full, left);
+  let used = false;
+  updateObject<AdUp>(nk, 'shop', 'adup', userId, cur => {
+    used = !!cur && (what === 'forge' ? cur.forge === key : cur.tech === key);
+    if (used) return null;
+    return { ...(cur || {}), [what]: key };
+  }, perm);
+  if (used) throw err(what === 'forge' ? 'To ulepszenie było już przyspieszone reklamą.' : 'To badanie było już przyspieszone reklamą.', PRECONDITION);
+  let boost: { lvl: number; ms: number } | null = null;
+  if (what === 'forge') {
+    const lvl = st.forge.up;
+    const b = updateObject<Boost>(nk, 'shop', 'boost', userId, cur => {
+      const m: Boost = {};
+      for (const [k, v] of Object.entries(cur || {})) if (Number(k) >= lvl - 5) m[k] = v;
+      m[String(lvl)] = (m[String(lvl)] || 0) + cut;
+      return m;
+    }, perm) as Boost;
+    boost = { lvl, ms: b[String(lvl)] };
+  }
+  return JSON.stringify(view(nk, userId, now, { boost, adUp: { what, key, cut } }));
 }
 
 /**

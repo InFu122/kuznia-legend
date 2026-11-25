@@ -8,7 +8,8 @@ import type { TechId } from '../../engine/types';
 import { fmt, tfmt } from '../format';
 import { booksShort } from '../texts';
 import { Res } from '../RewardIcons';
-import { SpeedupButton } from './Shop';
+import { AdUpButton, SpeedupButton } from './Shop';
+import { ClanHelpLine } from './ClanLife';
 
 const BLOCK: Record<Exclude<TechBlock, null>, string> = {
   max: 'Maks.',
@@ -127,7 +128,9 @@ export function ResearchPanel({ game }: { game: Game }) {
               <div class="cmain"><b>{TECH[cur.id].n}</b> · poziom {techLvl(s, cur.id) + 1}<div class="tech-cost"><Costs items={[[resUrl('czas'), `zostało ${tfmt(cur.left)}`]]} /></div></div>
             </div>
             <div class="bar" style={{ marginTop: '6px' }}><i style={{ width: Math.max(0, (1 - cur.left / cur.total) * 100) + '%' }} /></div>
+            {game.net && <ClanHelpLine game={game} what="tech" />}
             <SpeedupButton game={game} what="tech" />
+            <AdUpButton game={game} what="tech" />
           </>
         ) : <p class="sub">Jedno badanie naraz. Czas biegnie także, gdy nie grasz.</p>}
         <p class="sub" style={{ marginTop: '6px' }}>Księgi Wiedzy wypadają z bossów (najwięcej za pierwsze pokonanie), rzadko z fal wrogów i co 5 pięter Wieży Wyzwań.</p>
