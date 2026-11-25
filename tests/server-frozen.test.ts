@@ -16,6 +16,8 @@ const code = buildSync({
   write: false,
   logLevel: 'silent',
 }).outputFiles[0].text;
+// Tryb ścisły jak w Nakamie: zapis do zamrożonego obiektu rzuca błąd, a nie przechodzi po cichu.
+const strict = '"use strict";\n' + code;
 
 function deepFreeze(o: unknown, seen = new Set<unknown>()) {
   if (o === null || (typeof o !== 'object' && typeof o !== 'function') || seen.has(o)) return;
@@ -29,7 +31,7 @@ function deepFreeze(o: unknown, seen = new Set<unknown>()) {
 
 describe('serwer po zamrożeniu zmiennych globalnych (jak w Nakamie)', () => {
   const ctx = vm.createContext({});
-  vm.runInContext(code, ctx);
+  vm.runInContext(strict, ctx);
   const builtins = new Set(Object.getOwnPropertyNames(vm.runInNewContext('globalThis')));
   for (const k of Object.getOwnPropertyNames(ctx)) if (!builtins.has(k)) deepFreeze((ctx as Record<string, unknown>)[k]);
   const g = ctx as Record<string, (...a: number[]) => unknown>;
