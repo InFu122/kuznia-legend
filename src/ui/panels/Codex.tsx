@@ -17,6 +17,7 @@ import { adsNative, privacyOptionsNeeded, showPrivacyOptions } from '../ads';
 import { GoogleLinkBox } from '../GoogleLink';
 import { pageUrl, publicUrl } from '../pages';
 import { googleAvailable } from '../../save/google';
+import { askNotify, notifyState, testNotify, type NotifyState } from '../native';
 
 /** Adres gry do zaproszeń: z ustawień builda (aplikacja) albo adres tej strony. */
 /** Aplikacja i test: wersja gry, instalacja na telefonie, zaproszenie znajomych i zgłaszanie uwag. */
@@ -341,6 +342,42 @@ function Volume({ id, v, set, label }: { id: string; v: number; set: (v: number)
   );
 }
 
+/**
+ * Powiadomienia telefonu: przełącznik gry i stan zgody Androida. Włączenie pyta o zgodę; gdy telefon ją zablokował,
+ * podpowiada, gdzie ją włączyć. „Sprawdź” wysyła próbne powiadomienie za 3 sekundy.
+ */
+function NotifyOpt({ game }: { game: Game }) {
+  const on = game.s.opts.notify;
+  const [st, setSt] = useState<NotifyState | null>(null);
+  const [note, setNote] = useState('');
+  useEffect(() => { void notifyState().then(setSt).catch(() => setSt(null)); }, []);
+  const set = (v: boolean) => {
+    game.setNotify(v);
+    setNote('');
+    if (v) void askNotify().then(setSt).catch(() => {});
+  };
+  const test = () => {
+    setNote('');
+    void testNotify().then(x => {
+      setSt(x);
+      setNote(x === 'granted' ? 'Próbne powiadomienie przyjdzie za 3 sekundy.' : '');
+    }).catch(() => setNote('Nie udało się wysłać próbnego powiadomienia.'));
+  };
+  const blocked = st === 'denied';
+  return (
+    <Opt ic="bell" n="Powiadomienia" d={on && blocked ? 'zablokowane w ustawieniach telefonu' : 'gotowa kuźnia, koniec badania, jajo, pełne łupy za nieobecność'} on={on} set={set}>
+      {on && (
+        <div class="notify-x">
+          {blocked
+            ? <small>Włącz je w telefonie: <b>Ustawienia → Aplikacje → Kuźnia Legend → Powiadomienia</b>.</small>
+            : <button class="btn small" onClick={test}>Wyślij próbne</button>}
+          {note && <small role="status">{note}</small>}
+        </div>
+      )}
+    </Opt>
+  );
+}
+
 /** Ustawienia w trzech grupach: dźwięk, telefon, gra (tempo testowe). */
 function SettingsGroups({ game }: { game: Game }) {
   const s = game.s;
@@ -358,7 +395,7 @@ function SettingsGroups({ game }: { game: Game }) {
       </section>
       <section class="card opt-group">
         <div class="eyebrow">Telefon</div>
-        {isNative() && <Opt ic="bell" n="Powiadomienia" d="kuźnia, badania, jaja" on={s.opts.notify} set={v => game.setNotify(v)} />}
+        {isNative() && <NotifyOpt game={game} />}
         <Opt ic="awake" n="Ekran nie gaśnie" d="dopóki gra jest włączona" on={s.opts.awake !== false} set={v => game.setAwake(v)} />
         {s.opts.awake !== false && <Opt ic="dim" n="Przyciemnianie" d="po minucie bez dotyku" on={s.opts.dim !== false} set={v => game.setDim(v)} />}
       </section>

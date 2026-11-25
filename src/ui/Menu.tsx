@@ -5,6 +5,7 @@ import type { JSX } from 'preact';
 import { FEATURES, FEATURE_IDS, type FeatureId } from '../data';
 import type { Game } from '../engine/game';
 import { passUnclaimed } from '../engine/shop';
+import { eventIcon, eventOf } from '../engine/events';
 import { unlockProgress, unlockWhen } from '../engine/unlocks';
 import { clanLife } from '../save/clanlife';
 import { getChat } from '../save/chat';
@@ -12,7 +13,7 @@ import { resUrl } from '../art/render';
 import { Px } from './Px';
 import { LockIcon, TabIcon, type Tab } from './icons';
 import { toast } from '../engine/context';
-import { fmt } from './format';
+import { fmt, tfmt } from './format';
 
 /** Funkcje tylko z serwerem (klan, czat, ranking) w wersji bez serwera. */
 const onlineOnly = (n: string) => `${n} działa tylko w grze połączonej z serwerem (aplikacja na telefonie). Ta wersja gra bez serwera.`;
@@ -30,8 +31,8 @@ const passWaiting = (game: Game) => {
 export function menuTodo(game: Game): { n: number; dot: boolean; fresh: boolean } {
   const n = (game.unlocked('zadania') ? game.claimable() : 0) + (game.unlocked('klan') ? clanLife.todo() : 0);
   // Kropka: prezent w sklepie, przepustka albo nieprzeczytane w czacie klanu (świat bywa zbyt gadatliwy na kropkę).
-  // Kropka tylko za rzeczy do odebrania (prezent, nagrody Przepustki); nowe wiadomości liczy kafelek Czat w Menu.
-  const dot = game.unlocked('sklep') && (giftWaiting(game) || passWaiting(game));
+  // Kropka tylko za rzeczy do odebrania (prezent, nagrody Przepustki i wydarzenia); nowe wiadomości liczy kafelek Czat w Menu.
+  const dot = (game.unlocked('sklep') && (giftWaiting(game) || passWaiting(game))) || game.eventTodo() > 0;
   const fresh = MENU_FEATURES.some(id => game.s.unlNew.includes(id));
   return { n, dot, fresh };
 }
@@ -91,13 +92,20 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
     add('zadania', { key: 'zadania', n: 'Zadania', d: n ? `${n} do odebrania` : 'dzienne i tygodniowe', ic: <Px src={resUrl('trofeum')} size={36} />, go: seen('zadania', show({ kind: 'missions' })), badge: n, fresh: s.unlNew.includes('zadania'), attrs: { 'data-btn': 'zadania' } });
   }
   add('klan', { key: 'klan', n: 'Klan', d: 'smok, wojna, boss', ic: <Px src={resUrl('moneta')} size={36} />, go: view('klan'), badge: game.unlocked('klan') ? clanLife.todo() : 0, fresh: s.unlNew.includes('klan'), attrs: { 'data-tab': 'klan' } }, true);
+  // Rząd „na czasie”: Sklep, Przepustka i trwające wydarzenie (nazwa i czas do końca; kropka, gdy nagrody czekają).
+  const shopOn = game.unlocked('sklep');
+  add('sklep', { key: 'sklep', n: 'Sklep', d: shopOn && giftWaiting(game) ? 'prezent czeka' : 'klejnoty, pakiety', ic: <Px src={resUrl('klejnot')} size={36} />, go: seen('sklep', show({ kind: 'shop' })), dot: shopOn && giftWaiting(game), fresh: s.unlNew.includes('sklep'), attrs: { 'data-menu': 'sklep' } });
+  if (s.pass || !shopOn) add('sklep', { key: 'pass', n: 'Przepustka', d: 'nagrody za postęp', ic: <Px src={resUrl('przepustka')} size={36} />, go: show({ kind: 'shop', tab: 'przepustka' }), dot: shopOn && passWaiting(game), attrs: { 'data-menu': 'przepustka' } });
+  {
+    const now = game.ctx.now();
+    const ev = eventOf(now);
+    const todo = game.eventTodo();
+    add(null, { key: 'event', n: 'Wydarzenie', d: `${ev.def.n}\n${todo ? 'nagrody czekają' : tfmt(ev.end - now).replace(/ /g, '\u00a0')}`, ic: <Px src={resUrl(eventIcon(ev.kind))} size={36} />, go: show({ kind: 'event' }), dot: todo > 0, attrs: { 'data-menu': 'wydarzenie' } });
+  }
   {
     const n = game.net && game.unlocked('czat') ? getChat()?.unreadTotal ?? 0 : 0;
     add('czat', { key: 'czat', n: 'Czat', d: n ? `${n} nowych` : 'świat i klan', ic: <span class="mt-svg"><TabIcon tab="czat" /></span>, go: seen('czat', show({ kind: 'chat' })), badge: n, fresh: s.unlNew.includes('czat'), attrs: { 'data-btn': 'czat' } }, true);
   }
-  const shopOn = game.unlocked('sklep');
-  add('sklep', { key: 'sklep', n: 'Sklep', d: shopOn && giftWaiting(game) ? 'prezent czeka' : 'klejnoty, pakiety', ic: <Px src={resUrl('klejnot')} size={36} />, go: seen('sklep', show({ kind: 'shop' })), dot: shopOn && giftWaiting(game), fresh: s.unlNew.includes('sklep'), attrs: { 'data-menu': 'sklep' } });
-  if (s.pass || !shopOn) add('sklep', { key: 'pass', n: 'Przepustka', d: 'nagrody za postęp', ic: <Px src={resUrl('przepustka')} size={36} />, go: show({ kind: 'shop', tab: 'przepustka' }), dot: shopOn && passWaiting(game), attrs: { 'data-menu': 'przepustka' } });
   add(null, { key: 'ranking', n: 'Ranking', d: 'moc, wieża, arena', ic: <Px src={resUrl('puchar')} size={36} />, go: show({ kind: 'ranking' }), attrs: { 'data-menu': 'ranking' } }, true);
   add(null, { key: 'look', n: 'Wygląd', d: 'stroje i ramki', ic: <Px src={resUrl('runa')} size={36} />, go: show({ kind: 'look' }), attrs: { 'data-menu': 'look' } });
   add(null, { key: 'kodeks', n: 'Kodeks', d: 'kolekcja, konto, ustawienia', ic: <span class="mt-svg"><TabIcon tab="ustawienia" /></span>, go: view('kodeks'), attrs: { 'data-tab': 'kodeks' } });
