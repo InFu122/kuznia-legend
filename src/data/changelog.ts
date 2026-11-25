@@ -18,6 +18,30 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-25-2',
+    date: '25 listopada 2026 (wieczór)',
+    add: [
+      'Przyspieszenie reklamą: ulepszenie kuźni i badanie w Akademii można raz skrócić reklamą o 10% pełnego czasu (co najmniej o 5 minut).',
+      'Pomoc klanu także przy badaniach: do 10 pomocy, każda skraca badanie o 3%.',
+      'Czat klanu pokazuje prośby o pomoc i o rudę z przyciskiem „Pomóż” oraz wiadomość, gdy ktoś zbierze pełną pomoc albo komplet rudy.',
+      'Wydarzenie w Menu, obok Przepustki — z czasem do końca i kropką, gdy nagrody czekają.',
+      'W oknie „i” krainy można przewijać sąsiednie krainy (strzałki albo przesunięcie palcem), żeby porównać łupy, i od razu przenieść się do walki.',
+    ],
+    change: [
+      'Arena w nowej odsłonie: ocena, liga i walki na dziś w jednym nagłówku, przy rywalach trudność i stawka oceny, liga ze strefami awansu i spadku oraz osobna zakładka Obrona.',
+      'Powiadomienia: włączenie w Kodeksie pyta telefon o zgodę, przełącznik pokazuje, czy naprawdę działają, a „Wyślij próbne” sprawdza je od razu. Po pierwszej krainie gra raz przypomni, co dają.',
+      'Rzadkie przedmioty świecą i mają promienie także w siatce ekwipunku, nie tylko w szczegółach.',
+      'Runy przed 10. poziomem kuźni mówią wprost, kiedy się odblokują, a karta Rafinacji jest widoczna od początku.',
+      'Stare wiadomości czatu znikają: globalnego po dobie, klanowego po 3 dniach.',
+      'Bez paska przewijania po prawej stronie ekranu.',
+    ],
+    fix: [
+      'Powiadomienia telefonu (gotowa kuźnia, koniec badania, jajo, pełne łupy) wcześniej w ogóle nie przychodziły — teraz działają.',
+      'Ataki na bossa klanowego i smoka oraz walki na arenie znów działają (wcześniej kończyły się błędem i nie dawały nagrody).',
+      'Pomoc klanu działa też przy ulepszeniach kuźni powyżej 30. poziomu.',
+    ],
+  },
+  {
     id: '2026-11-25',
     date: '25 listopada 2026',
     add: [
