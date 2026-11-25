@@ -86,6 +86,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          # Biblioteki Gradle z poprzednich budowań — mniej pobrań z Maven Central (który czasem odrzuca je kodem 429).
+          cache: gradle
 
       - name: Gra (web)
         run: |
@@ -110,7 +112,8 @@ jobs:
           KL_UPLOAD_KEY_PASSWORD: ${{ secrets.KL_UPLOAD_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew bundleRelease --no-daemon --stacktrace
+          # Maven Central potrafi chwilowo odrzucić pobieranie (429 Too Many Requests) — wtedy jedna próba więcej po minucie.
+          ./gradlew bundleRelease --no-daemon --stacktrace || { echo "Budowanie nieudane — ponawiam za 60 s"; sleep 60; ./gradlew bundleRelease --no-daemon --stacktrace; }
 
       - name: Plik do wgrania
         run: |

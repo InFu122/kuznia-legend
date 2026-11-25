@@ -58,6 +58,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          # Biblioteki Gradle z poprzednich budowań — mniej pobrań z Maven Central (który czasem odrzuca je kodem 429).
+          cache: gradle
 
       - name: Gra (web)
         run: |
@@ -71,7 +73,8 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          # Maven Central potrafi chwilowo odrzucić pobieranie (429 Too Many Requests) — wtedy jedna próba więcej po minucie.
+          ./gradlew assembleRelease --no-daemon --stacktrace || { echo "Budowanie nieudane — ponawiam za 60 s"; sleep 60; ./gradlew assembleRelease --no-daemon --stacktrace; }
 
       - name: Plik do pobrania
         run: cp android/app/build/outputs/apk/release/app-release.apk kuznia-legend.apk
