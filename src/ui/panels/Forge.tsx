@@ -1,14 +1,14 @@
 import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SET_IDS, ORE_ORDER, rAt, rRank } from '../../data';
 import { refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
 import { AdUpButton, SpeedupButton } from './Shop';
-import { JUMP_V, dist, itemName, jumpChances, maxJump, oreBase, oreNominal, pityAllowed } from '../../engine/formulas';
+import { JUMP_V, dist, itemLevelFor, itemName, maxJump, oreBase, oreNominal, pityAllowed } from '../../engine/formulas';
 import type { Game } from '../../engine/game';
 import { techMods } from '../../engine/mods';
 import { Brag } from '../Decision';
 import { ClanHelpLine } from './ClanLife';
 import { Costs, Px } from '../Px';
 import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
-import { fmt, pct, tfmt } from '../format';
+import { fmt, pct, pctS, tfmt } from '../format';
 
 export const Dist = ({ d }: { d: [number, number][] }) => (
   <>{d.map(([r, p], i) => <span key={r}>{i > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n}&nbsp;{pct(p)}</span></span>)}</>
@@ -103,31 +103,65 @@ function Refine({ game }: { game: Game }) {
   );
 }
 
+/**
+ * Co da ulepszenie kuźni: poziom nowych przedmiotów i szansa na każdą rzadkość z wybranej rudy (teraz → po ulepszeniu),
+ * ta sama co w pasku szans wytopu. Bez wyniku poniżej zwykłego (spadku) — to nie cel, tylko ryzyko.
+ */
+function UpgradeGains({ o, from, to, rel }: { o: number; from: number; to: number; rel: number }) {
+  const a0 = Math.max(from, ORES[o].lvl), a1 = Math.max(to, ORES[o].lvl);
+  const d0 = dist(o, a0, rel), d1 = dist(o, a1, rel);
+  const p = (d: [number, number][], r: number) => d.find(([x]) => x === r)?.[1] ?? 0;
+  const base = rRank(rAt(oreNominal(o, a0)));
+  const rows = [...new Set([...d0, ...d1].map(([r]) => r))].filter(r => rRank(r) >= base).sort((x, y) => rRank(x) - rRank(y))
+    .map(r => ({ r, a: p(d0, r), b: p(d1, r) }));
+  const lo0 = itemLevelFor(from, 0), hi0 = itemLevelFor(from, 2), lo1 = itemLevelFor(to, 0), hi1 = itemLevelFor(to, 2);
+  const locked = from < ORES[o].lvl;
+  /** Para procentów: gdy po zaokrągleniu wyszłyby takie same (2,7% → 2,7%), z dwoma miejscami po przecinku. */
+  const two = (a: number, b: number): [string, string] => (pct(a) === pct(b) && a !== b
+    ? [a.toFixed(2).replace('.', ',') + '%', b.toFixed(2).replace('.', ',') + '%'] : [pctS(a), pctS(b)]);
+  const diff = (d: number) => {
+    const v = Math.abs(d);
+    return (d > 0 ? '+' : '−') + (v < 0.095 ? v.toFixed(2) : v.toFixed(1)).replace('.', ',');
+  };
+  return (
+    <>
+      <li class="fu-lvl"><Px src={resUrl('moc')} size={20} /><span>Nowe przedmioty</span><b>poz. {lo0}–{hi0} → <em>{lo1}–{hi1}</em></b></li>
+      {rows.length > 0 && (
+        <li class="fu-odds">
+          <div class="fo-h"><Px src={oreUrl(o)} size={20} /><span>{ORES[o].n}: szansa na rzadkość{locked ? ` (od ${ORES[o].lvl}. poz.)` : ''}</span></div>
+          <ul>
+            {rows.map(x => {
+              const d = x.b - x.a;
+              const [ta, tb] = two(x.a, x.b);
+              return (
+                <li key={x.r}>
+                  <span><span class={`rt${x.r}`}>{RAR[x.r].n}</span></span>
+                  <b>{ta} → <em class={d < -0.005 ? 'down' : ''}>{tb}</em></b>
+                  <small class={`fo-d${d > 0.005 ? ' up' : ''}`}>{Math.abs(d) > 0.005 ? diff(d) : '—'}</small>
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+      )}
+    </>
+  );
+}
+
 export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
   game: Game; onInfo: (k: 'forge' | 'level') => void; onFound: () => void; onMix: (what: 'el' | 'set') => void; onDecide: () => void; onPick: () => void;
 }) {
   const s = game.s;
   const f = s.forge;
   const o = s.oreSel;
-  const mj = maxJump(o);
   const set = uniqActive(s);
   const rel = techMods(s).jumpRel;
   const n = f.lvl + 1;
   const cost = game.upgradeCost();
   const elOn = f.lvl >= B.ELEM_FORGE_LVL;
   const setOn = f.lvl >= SET_FORGE_LVL;
-  // Szansa na przeskok dla wybranej rudy (rzadsze wyniki są trudniejsze, a przeskok do Boskiego zależy od rudy).
-  const jo = mj >= 1 ? o : -1;
-  const jn = jo >= 0 ? ` (${ORES[jo].n})` : '';
-  const [j1, j2] = jumpChances(f.lvl, rel, jo);
-  const [k1, k2] = jumpChances(n, rel, jo);
-  // Ruda bez sztywnego minimum (zasady v6): wynik bez przeskoku teraz (do szansy „co najmniej” przy ulepszeniu).
   const at = Math.max(f.lvl, ORES[o].lvl);
-  const nom = rAt(oreNominal(o, at));
-  const growing = oreBase(o, at) < ORES[o].v6[1] - 1e-9;
   const pityOk = pityAllowed(o, JUMP_V, f.lvl);
-  /** Szansa (%) na co najmniej rzadkość `nom` z wybranej rudy na poziomie `lvl`. */
-  const atLeast = (lvl: number) => dist(o, Math.max(lvl, ORES[o].lvl), rel).reduce((a, [r, p]) => a + (rRank(r) >= rRank(nom) ? p : 0), 0);
 
   return (
     <>
@@ -151,8 +185,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
             <span class="lvl-badge"><small>poziom</small><b>{f.lvl}</b></span>
           </div>
           <ul class="fu-gains">
-            <li><Px src={resUrl('kowadlo')} size={20} /><span>Szansa na przeskok{jn}</span><b>{pct(j1 + j2)} → <em>{pct(k1 + k2)}</em></b></li>
-            {growing && <li><Px src={oreUrl(o)} size={20} /><span>{ORES[o].n}: co najmniej <span class={`rt${nom}`}>{RAR[nom].n}</span></span><b>{pct(atLeast(f.lvl))} → <em>{pct(atLeast(n))}</em></b></li>}
+            <UpgradeGains o={o} from={f.lvl} to={n} rel={rel} />
             {FORGE_UNLOCKS[n] && <li class="unl"><span class="fu-star" aria-hidden="true">✦</span><span>Odblokowuje: <b>{FORGE_UNLOCKS[n]}</b></span></li>}
           </ul>
           <div class="fu-buy">
@@ -170,7 +203,11 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
             <>
               <div class="row"><div><div class="eyebrow">Ulepszanie kuźni</div><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
               <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
-              <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu: szansa na przeskok{jn} {pct(j1 + j2)} → <b>{pct(k1 + k2)}</b>{f.up && FORGE_UNLOCKS[f.up] ? `, ${FORGE_UNLOCKS[f.up]}` : ''}.</p>
+              <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu:</p>
+              <ul class="fu-gains fu-gains-sm">
+                <UpgradeGains o={o} from={f.lvl} to={f.up} rel={rel} />
+                {FORGE_UNLOCKS[f.up] && <li class="unl"><span class="fu-star" aria-hidden="true">✦</span><span>Odblokowuje: <b>{FORGE_UNLOCKS[f.up]}</b></span></li>}
+              </ul>
               {game.net && <ClanHelpLine game={game} />}
               <SpeedupButton game={game} what="forge" />
               <AdUpButton game={game} what="forge" />

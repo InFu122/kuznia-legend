@@ -2162,6 +2162,19 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .fu-gains li > b em{font-style:normal; color:var(--good)}
 .fu-gains li.unl{grid-template-columns:22px minmax(0,1fr)}
 .fu-gains .fu-star{color:var(--straw); text-align:center}
+.fu-gains li > b small{font-size:11px; color:var(--good); font-weight:700}
+.fu-gains li.fu-odds{display:flex; flex-direction:column; align-items:stretch; gap:5px}
+.fo-h{display:grid; grid-template-columns:22px minmax(0,1fr); align-items:center; gap:8px; color:var(--frost)}
+.fu-odds ul{list-style:none; margin:0; padding:0 0 0 30px; display:flex; flex-direction:column; gap:3px}
+.fu-gains .fu-odds ul li{display:grid; grid-template-columns:minmax(0,1fr) auto 44px; align-items:center; gap:8px; padding:3px 0; border-radius:0; background:none; font-size:12.5px}
+.fu-gains .fu-odds ul li + li{border-top:1px solid rgba(255,255,255,.06)}
+.fu-odds ul li > span small{color:var(--ash); font-size:11px}
+.fu-odds ul li > b{font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--ash); font-weight:600}
+.fu-odds ul li > b em{font-style:normal; color:var(--good); font-weight:700}
+.fu-odds ul li > b em.down{color:var(--frost); font-weight:600}
+.fo-d{text-align:right; font-size:11px; color:var(--ash); font-variant-numeric:tabular-nums}
+.fo-d.up{color:var(--good); font-weight:700}
+.fu-gains-sm{margin-top:4px}
 .fu-buy{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px}
 .fu-buy .costs{display:flex; flex-wrap:wrap; gap:4px 12px; font-size:13px}
 .fu-buy .upgrade-btn{min-width:120px; justify-content:center}
