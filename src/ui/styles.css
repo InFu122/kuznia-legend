@@ -2121,6 +2121,10 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .rlist2{list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:6px}
 .rlist2 li{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto; align-items:center; gap:6px; padding:8px; border-radius:12px; background:var(--plate-2)}
 .rlist2 li.off{opacity:.55}
+.rlist2 li.rf2-next{background:transparent; border:1px dashed var(--rivet); opacity:.7}
+.rlist2 li.rf2-next .px{filter:grayscale(.6)}
+.rf2-lock{font-size:11.5px; font-weight:700; color:var(--ash); text-align:right; white-space:nowrap}
+.refine.locked .h{color:var(--ash)}
 .rf2-ore{display:flex; align-items:center; gap:6px; min-width:0}
 .rf2-ore > span{display:flex; flex-direction:column; min-width:0; line-height:1.15}
 .rf2-ore b{font-size:13px; font-variant-numeric:tabular-nums}

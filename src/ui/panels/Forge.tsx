@@ -1,4 +1,4 @@
-import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, SETS, SET_FORGE_LVL, SET_IDS, ORE_ORDER, rAt, rRank } from '../../data';
+import { B, ELEM, ELEM_KEYS, FORGE_UNLOCKS, ORES, RAR, REFINE, SETS, SET_FORGE_LVL, SET_IDS, ORE_ORDER, rAt, rRank } from '../../data';
 import { refineRatio, refineTo, sellFor, uniqActive } from '../../engine/forge';
 import { SpeedupButton } from './Shop';
 import { JUMP_V, dist, itemName, jumpChances, maxJump, oreBase, oreNominal, pityAllowed } from '../../engine/formulas';
@@ -58,14 +58,17 @@ function OreFacts({ game }: { game: Game }) {
   );
 }
 
-/** Rafinacja: skąd → dokąd, ile wyjdzie, „+1” i „Wszystko” (np. 600 Miedzi —8:1→ +75 Żelaza). */
+/** Rafinacja: skąd → dokąd, ile wyjdzie, „+1” i „Wszystko” (np. 600 Miedzi —8:1→ +75 Żelaza).
+ *  Przed odblokowaniem karta też jest widoczna: pokazuje, od którego poziomu kuźni ruszy, i następną parę rud. */
 function Refine({ game }: { game: Game }) {
   const s = game.s;
-  if (s.forge.lvl < B.REFINE_FORGE_LVL) return null;
-  const rows = ORE_ORDER.filter(i => refineRatio(s, i) > 0);
-  if (!rows.length) return null;
+  const locked = s.forge.lvl < B.REFINE_FORGE_LVL;
+  const rows = locked ? [] : ORE_ORDER.filter(i => refineRatio(s, i) > 0);
+  // Następna para rud do rafinacji, której docelowa ruda jest jeszcze zamknięta (albo pierwsza, gdy całość zamknięta).
+  const next = ORE_ORDER.find(i => REFINE[i] && (locked || s.forge.lvl < ORES[REFINE[i].to].lvl));
+  const nextLvl = next === undefined ? 0 : Math.max(B.REFINE_FORGE_LVL, ORES[REFINE[next].to].lvl);
   return (
-    <section class="card refine" aria-label="Rafinacja rud">
+    <section class={`card refine${locked ? ' locked' : ''}`} aria-label="Rafinacja rud">
       <div class="eyebrow">Rafinacja rud</div>
       <div class="h">Zamień nadmiar na lepszą rudę</div>
       <p class="sub">Na zapasy, których już nie wytapiasz — wytop rudy wprost daje więcej. Słabsze rudy przydają się też do run.</p>
@@ -86,7 +89,16 @@ function Refine({ game }: { game: Game }) {
             </li>
           );
         })}
+        {next !== undefined && (
+          <li class="rf2-next">
+            <span class="rf2-ore"><Px src={oreUrl(next)} size={26} /><span><b>{fmt(s.ores[next] ?? 0)}</b><small>{ORES[next].n}</small></span></span>
+            <span class="rf2-ar" aria-label={`${REFINE[next].k} za 1`}><small>{REFINE[next].k} : 1</small><i aria-hidden="true">→</i></span>
+            <span class="rf2-ore"><Px src={oreUrl(REFINE[next].to)} size={26} /><span><b>—</b><small>{ORES[REFINE[next].to].n}</small></span></span>
+            <span class="rf2-lock">od {nextLvl}. poz. kuźni</span>
+          </li>
+        )}
       </ul>
+      {locked && <div class="lockline">Rafinację odblokujesz na <b>{B.REFINE_FORGE_LVL}. poziomie kuźni</b> — teraz masz {s.forge.lvl}.</div>}
     </section>
   );
 }
