@@ -43,13 +43,25 @@ function useServerState<T>(load: () => Promise<T> | undefined, take: (r: T) => v
 
 /* ---------- wojna klanów ---------- */
 
+/**
+ * Ostatni stan wojny i Smoczego Leża (z klanem, którego dotyczy): po powrocie na zakładkę widać go od razu, a świeży
+ * dochodzi w tle. Bez tego zakładka na chwilę kurczyła się do „Wczytywanie…”, a strona podskakiwała do góry.
+ */
+const cache: { war: { clan: string; v: WarState } | null; raid: { clan: string; v: RaidState } | null } = { war: null, raid: null };
+const clanId = () => clanLife.data?.clan?.id ?? '';
+/** Pierwsze wczytanie: karta tak wysoka jak ekran, żeby strona nie skróciła się i nie przewinęła do góry. */
+const Waiting = ({ err, text }: { err: string; text: string }) => (
+  <section class="card clan-wait">{err ? <p class="sub" role="alert">{err}</p> : <p class="sub">{text}</p>}</section>
+);
+
 export function ClanWarTab({ game }: { game: Game }) {
-  const [w, setW] = useState<WarState | null>(null);
+  const [w, setW] = useState<WarState | null>(() => (cache.war && cache.war.clan === clanId() ? cache.war.v : null));
   const [fight, setFight] = useState<WarState['fight'] | null>(null);
   const a = useAction();
   const take = (r: WarState) => {
     clanLife.rewards(game, r.rewards);
     clanLife.brief({ day: r.day, atk: r.me.atkLeft });
+    cache.war = { clan: clanId(), v: r };
     setW(r);
   };
   const { err, live } = useServerState(() => getLink()?.warState(), take);
@@ -61,7 +73,7 @@ export function ClanWarTab({ game }: { game: Game }) {
       </section>
     );
   }
-  if (!w) return <section class="card">{err ? <p class="sub" role="alert">{err}</p> : <p class="sub">Wczytywanie wojny…</p>}</section>;
+  if (!w) return <Waiting err={err} text="Wczytywanie wojny…" />;
 
   const D = WAR_DAYS[w.day];
   const left = w.ends - game.ctx.now();
@@ -240,16 +252,17 @@ export function ClanWarTab({ game }: { game: Game }) {
 /* ---------- Smocze Leże ---------- */
 
 export function ClanRaidTab({ game }: { game: Game }) {
-  const [r, setR] = useState<RaidState | null>(null);
+  const [r, setR] = useState<RaidState | null>(() => (cache.raid && cache.raid.clan === clanId() ? cache.raid.v : null));
   const [hit, setHit] = useState<{ dmg: number; key: number; big: boolean } | null>(null);
   const a = useAction();
   const take = (x: RaidState) => {
     clanLife.rewards(game, x.rewards);
     clanLife.brief(undefined, { left: x.left, done: x.done });
+    cache.raid = { clan: clanId(), v: x };
     setR(x);
   };
   const { err, live } = useServerState(() => getLink()?.raidState(), take);
-  if (!r) return <section class="card">{err ? <p class="sub" role="alert">{err}</p> : <p class="sub">Wczytywanie Smoczego Leża…</p>}</section>;
+  if (!r) return <Waiting err={err} text="Wczytywanie Smoczego Leża…" />;
 
   const ph = Math.min(r.ph, RAID_PHASES.length - 1);
   const P = RAID_PHASES[ph];

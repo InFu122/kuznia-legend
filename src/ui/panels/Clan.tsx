@@ -1,6 +1,6 @@
 // Zakładka Klan: wyszukiwanie i zakładanie klanu, a w klanie — ogłoszenie, członkowie z rolami,
 // prośby o przyjęcie, ustawienia Przywódcy i odejście z klanu oraz życie klanu (Wspólna Kuźnia, boss, pomoc, sklep).
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { B, landDef } from '../../data';
 import type { Game } from '../../engine/game';
 import { getChat } from '../../save/chat';
@@ -341,9 +341,15 @@ export function ClanPanel({ game, online, openChat }: { game: Game; online: bool
       })
       .catch(e => setErr(errText(e)));
   };
+  /** Pasek zakładek — po zmianie zakładki ekran zostaje na miejscu; gdy pasek był już nad ekranem, wraca do niego. */
+  const segRef = useRef<HTMLDivElement>(null);
   const pick = (t: ClanTab) => {
     setTab(t);
     if (Date.now() - clanLife.at > 20000) clanLife.sync(game).catch(() => {});
+    requestAnimationFrame(() => {
+      const el = segRef.current;
+      if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start' });
+    });
   };
   useEffect(() => {
     if (!online) return;
@@ -365,7 +371,7 @@ export function ClanPanel({ game, online, openChat }: { game: Game; online: bool
       {info && !info.clan && <Finder info={info} reload={reload} />}
       {info?.clan && (
         <>
-          <ClanSeg tab={tab} setTab={pick} />
+          <div ref={segRef} class="clan-seg-anchor"><ClanSeg tab={tab} setTab={pick} /></div>
           {tab === 'klan' && <MyClan key={info.clan.id} game={game} info={info} reload={reload} openChat={openChat} onTab={pick} />}
           {tab === 'kuznia' && <ClanForgeTab game={game} />}
           {tab === 'wojna' && <ClanWarTab game={game} />}

@@ -2921,3 +2921,6 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 .ar-shop{margin:0}
 .ar-shop .ar-need{color:#ef8a7c}
 @media (max-width:360px){ .ar-stats{grid-template-columns:1fr 1fr} .ar-stats .ar-st:first-child{grid-column:1 / -1} .ar-rules{grid-template-columns:1fr 1fr} }
+/* Klan: pierwsze wczytanie Wojny i Smoka nie skraca strony (inaczej przeglądarka przewijała ją do góry). */
+.card.clan-wait{min-height:calc(100vh - 120px)}
+.clan-seg-anchor{scroll-margin-top:8px}
