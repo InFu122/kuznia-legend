@@ -6,7 +6,6 @@ import { TECH, landDef } from '../data';
 import type { Game } from '../engine/game';
 import { offlineCapMs } from '../engine/offline';
 import { utcDay } from '../engine/shop';
-import { itemLevelFor } from '../engine/formulas';
 import { isNative, isStandalone } from './pwa';
 import { EXIT_WINDOW_MS } from './back';
 import { toast } from '../engine/context';
@@ -27,7 +26,7 @@ export function upcoming(game: Game): { id: number; at: number; title: string; b
   const sp = Math.max(1, s.speed || 1);
   const out: { id: number; at: number; title: string; body: string }[] = [];
   // Treści: krótko i konkretnie, co się stało; bez ponaglania i bez długich myślników.
-  if (s.forge.up && s.forge.left > 0) out.push({ id: 1, at: s.forge.left / sp, title: 'Kuźnia ulepszona', body: `Kuźnia ma teraz ${s.forge.up}. poziom. Od teraz wykuwasz mocniejsze przedmioty, od ${itemLevelFor(s.forge.up, 0)}. do ${itemLevelFor(s.forge.up, 2)}. poziomu.` });
+  if (s.forge.up && s.forge.left > 0) out.push({ id: 1, at: s.forge.left / sp, title: 'Kuźnia ulepszona', body: `Kuźnia ma teraz ${s.forge.up}. poziom. Nowe wytopy dadzą mocniejszy ekwipunek.` });
   if (s.tech.cur && s.tech.cur.left > 0) out.push({ id: 2, at: s.tech.cur.left / sp, title: 'Badanie ukończone', body: `${TECH[s.tech.cur.id].n} ma teraz ${(s.tech.lv[s.tech.cur.id] ?? 0) + 1}. poziom. Akademia czeka na kolejne badanie.` });
   if (s.hatch && s.hatch.left > 0) out.push({ id: 3, at: s.hatch.left / sp, title: 'Jajo się wykluło', body: 'Nowy chowaniec jest w zakładce Bohater.' });
   const cap = offlineCapMs(s);

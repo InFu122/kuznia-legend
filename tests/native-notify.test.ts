@@ -53,7 +53,7 @@ describe('Powiadomienia telefonu', () => {
     st.tech.cur = { id: 'k_hart', left: 600000, total: 3600000 };
     const ns = upcoming({ s: st, unlocked: () => false } as never);
     expect(ns.map(n => n.id)).toEqual([1, 2, 4]);
-    expect(ns[0].body).toBe('Kuźnia ma teraz 39. poziom. Od teraz wykuwasz mocniejsze przedmioty, od 78. do 80. poziomu.');
+    expect(ns[0].body).toBe('Kuźnia ma teraz 39. poziom. Nowe wytopy dadzą mocniejszy ekwipunek.');
     expect(ns[1].body).toContain('ma teraz 1. poziom');
     for (const n of ns) expect(n.title + n.body).not.toMatch(/—/);
   });
