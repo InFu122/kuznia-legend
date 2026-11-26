@@ -3009,3 +3009,34 @@ button.card.dung.tile{font:inherit; color:var(--frost); text-align:left; cursor:
 
 /* Przygoda: pasek Krainy · Lochy · Arena po przewinięciu tuż pod górną krawędzią ekranu. */
 .adv-seg{scroll-margin-top:8px}
+
+/* ---------- Runy: zwarte wiersze (przedmiot w miejscu, premia, pasek, koszt, „+1”), brakująca ruda raz nad listą ---------- */
+.rsum.rsum2{padding:8px 10px; gap:1px}
+.rsum.rsum2 b{font-size:18px}
+.rfarm2{display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; margin-top:8px; padding:8px 10px; border-radius:10px;
+  background:rgba(224,103,90,.08); border:1px solid rgba(224,103,90,.35); font-size:12.5px; color:var(--frost)}
+.rfarm2 > span{display:flex; flex-direction:column; gap:1px; min-width:0}
+.rfarm2 small{font-size:11.5px; color:var(--ash)}
+.rfarm2 b{color:#ffb4a6}
+.rfarm2 small b{color:var(--frost)}
+.runelist.rl2{gap:5px}
+.runelist.rl2 li{display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; padding:7px 8px}
+.rsock2{position:relative; display:grid; place-items:center; width:44px; height:44px; flex:none}
+.rglyph{display:grid; place-items:center; width:44px; height:44px; border-radius:10px; background:#140f0c; box-shadow:inset 0 0 0 1px var(--rivet)}
+/* Jednolity rysunek miejsca w jednym kolorze: szary bez runy, w kolorze run z runą (nie wygląd założonego przedmiotu). */
+.rglyph .px{filter:grayscale(1) brightness(.95) contrast(1.1); opacity:.7}
+.rglyph.on{background:radial-gradient(circle at 50% 55%, rgba(110,215,235,.2), #140f0c 72%); box-shadow:inset 0 0 0 1px rgba(110,215,235,.55), 0 0 10px -4px rgba(110,215,235,.6)}
+.rglyph.on .px{filter:grayscale(1) sepia(1) hue-rotate(150deg) saturate(2.6) brightness(1.25) contrast(1.05); opacity:1}
+.rsock2 .rune-badge{position:absolute; right:-6px; bottom:-6px}
+.rmain{display:flex; flex-direction:column; gap:3px; min-width:0}
+.rtop2{display:flex; align-items:baseline; gap:6px; min-width:0}
+.rtop2 > b{font-size:14px; color:var(--frost); white-space:nowrap}
+.rnow2{font-size:11.5px; color:var(--good); white-space:nowrap}
+.rtop2 .rbonus{margin-left:auto; white-space:nowrap}
+.rl2 .rbar{margin:2px 0}
+.rcost{display:flex; flex-wrap:wrap; gap:2px 12px; font-size:12px; color:var(--frost); font-variant-numeric:tabular-nums}
+.rcost > span{display:inline-flex; align-items:center; gap:4px}
+.rcost .lack{color:#ff8a7a}
+.rcost .lack small{color:#d0786a}
+.rl2 .btn.rup{min-width:64px; padding:8px 6px}
+.rl2 .rbar i{height:6px; background:linear-gradient(90deg, var(--c) calc(var(--f) * 100%), #0d0907 calc(var(--f) * 100%)); box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
