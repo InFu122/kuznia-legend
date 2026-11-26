@@ -18,6 +18,17 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-26',
+    date: '26 listopada 2026',
+    change: [
+      'Ulepszenie kuźni pokazuje, jaki poziom będą miały nowe przedmioty, i jak zmieni się szansa na każdą rzadkość z wybranej rudy.',
+    ],
+    fix: [
+      'Po wyjściu z gry nie otwiera się już ekran „Alarmy i przypomnienia”, a próbne powiadomienie przychodzi od razu.',
+      'Zmiana zakładki Wojna albo Smok w klanie nie przewija już ekranu na samą górę.',
+    ],
+  },
+  {
     id: '2026-11-25-2',
     date: '25 listopada 2026 (wieczór)',
     add: [
