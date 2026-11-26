@@ -165,6 +165,14 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     setTab(t);
     if (scroll) panelRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   };
+  /** Krainy · Lochy · Arena: po przełączeniu pasek zakładek jedzie na górę ekranu — widać go i treść od początku. */
+  const advSegRef = useRef<HTMLDivElement>(null);
+  const pickAdv = (t: Tab) => {
+    const f = TAB_FEATURE[t];
+    goTab(t);
+    if (f && !game.unlocked(f)) return;
+    requestAnimationFrame(() => advSegRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' }));
+  };
   // Dla przycisku „wstecz” (rejestrowanego raz przy starcie) — bieżąca zakładka i przełączanie.
   const tabRef = useRef(tab);
   tabRef.current = tab;
@@ -288,12 +296,12 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
         <main class="panel" ref={panelRef}>
           {nav === 'przygoda' && <AdventureBanners game={game} onEvent={() => open({ kind: 'event' })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} />}
           {nav === 'przygoda' && (
-            <div class={`seg ${ADVENTURE.length === 3 ? 'seg3' : 'seg2'} adv-seg`} role="tablist" aria-label="Przygoda">
+            <div ref={advSegRef} class={`seg ${ADVENTURE.length === 3 ? 'seg3' : 'seg2'} adv-seg`} role="tablist" aria-label="Przygoda">
               {ADVENTURE.map(t => {
                 const f = TAB_FEATURE[t]!;
                 const locked = !game.unlocked(f);
                 return (
-                  <button key={t} role="tab" data-tab={t} aria-selected={tab === t} class={`${tab === t ? 'on' : ''}${locked ? ' locked' : ''}`} onClick={() => goTab(t)}>
+                  <button key={t} role="tab" data-tab={t} aria-selected={tab === t} class={`${tab === t ? 'on' : ''}${locked ? ' locked' : ''}`} onClick={() => pickAdv(t)}>
                     {locked && <LockIcon />}{VIEW_NAME[t]}
                     {t === 'lochy' && tab !== 'lochy' && game.eventTodo() > 0 && <i class="seg-badge">!</i>}
                   </button>

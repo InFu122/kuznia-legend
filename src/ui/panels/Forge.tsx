@@ -201,7 +201,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
             <div class="row"><div><div class="eyebrow">Kuźnia</div><div class="h">Poziom {B.FORGE_MAX} — najwyższy</div><p class="sub">Kuźnia osiągnęła szczyt. Siłę bohatera rozwijaj teraz w Otchłani, Nauce, runach i legendach przedmiotów.</p></div></div>
           ) : (
             <>
-              <div class="row"><div><div class="eyebrow">Ulepszanie kuźni</div><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="num">{tfmt(f.left)}</span></div>
+              <div class="row fu-run"><div><div class="eyebrow">Ulepszanie kuźni</div><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="fu-left num"><Px src={resUrl('czas')} size={13} />{tfmt(f.left)}</span></div>
               <div class="bar" style={{ marginTop: '8px' }}><i style={{ width: Math.max(0, (1 - f.left / game.upgradeTotal()) * 100) + '%' }} /></div>
               <p class="sub" style={{ marginTop: '6px' }}>Kuźnia działa dalej w trakcie ulepszania. Po ulepszeniu:</p>
               <ul class="fu-gains fu-gains-sm">
