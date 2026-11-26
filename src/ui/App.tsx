@@ -284,7 +284,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
           <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmt(game.stats.power)}</b></div>
         </header>
         <GoalStrip game={game} step={step} onShow={showStep} onMissions={t => headBtn('zadania', () => open({ kind: 'missions', tab: t }))()} />
-        <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} />
+        <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} onEvent={() => open({ kind: 'event' })} />
         <main class="panel" ref={panelRef}>
           {nav === 'przygoda' && <AdventureBanners game={game} onEvent={() => open({ kind: 'event' })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} />}
           {nav === 'przygoda' && (

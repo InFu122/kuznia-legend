@@ -1061,6 +1061,10 @@ a.linkbtn{display:inline-block}
 .sideic.spent{opacity:.55; filter:grayscale(.6)}
 .sideic.pass{border-color:rgba(240,122,90,.7); background:radial-gradient(circle at 50% 40%, rgba(216,67,58,.35), rgba(20,14,10,.78) 72%)}
 .sideic.pass b{background:#f07a5a; color:#1b0806}
+.sideic.event{border-color:rgba(176,162,255,.7); background:radial-gradient(circle at 50% 40%, rgba(140,124,240,.35), rgba(20,14,10,.78) 72%)}
+.sideic.event b{background:#c9bdff; color:#140f2a}
+/* Przepustka i wydarzenie po lewej (nad bohaterem), reklamy po prawej — żadna kolumna nie zasłania nazw ani HP. */
+.side-icons.left{right:auto; left:4px; flex-direction:row}
 .sideic.offer{animation:adBob 1.6s ease-in-out infinite; box-shadow:0 0 16px rgba(242,193,78,.6)}
 @media (prefers-reduced-motion:reduce){ .sideic.offer{animation:none} }
 

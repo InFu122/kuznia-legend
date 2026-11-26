@@ -1,4 +1,4 @@
-import { dungScene } from '../engine/events';
+import { dungScene, eventIcon, eventOf, eventReached } from '../engine/events';
 import { skinOr } from '../engine/cosmetics';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { AD_BUFFS, BUFF_IDS, ORES, SETS, SKILLS, SLOT_ORDER, TUTORIAL, type BuffId, actName, landDef, rRank } from '../data';
@@ -61,13 +61,18 @@ export function FoeSprite({ e, now = 0 }: { e: Enemy; now?: number }) {
  * Ikonki po prawej stronie pola walki: ×2 ruda i ×2 złoto za reklamę (godzina; gdy trwa — zostały minuty)
  * i Przepustka Kowala (poziom, czerwona kropka, gdy są nagrody do odebrania).
  */
-function SideIcons({ game, onAd, onPass, ads }: { game: Game; onAd?: (what: BuffId) => void; onPass?: () => void; ads: boolean }) {
+function SideIcons({ game, onAd, onPass, onEvent, ads }: { game: Game; onAd?: (what: BuffId) => void; onPass?: () => void; onEvent?: () => void; ads: boolean }) {
   const s = game.s;
   const now = game.ctx.now();
   const sh = game.shopNow;
   const p = s.pass;
   const un = p ? passUnclaimed(p, s) : null;
+  // Wydarzenie: ikona waluty wydarzenia, liczba zdobytych progów i kropka, gdy nagrody czekają.
+  const ev = eventOf(now);
+  const evTodo = game.eventTodo();
+  const evGot = eventReached(game.event());
   return (
+    <>
     <div class="side-icons">
       {ads && onAd && BUFF_IDS.map(k => {
         const until = s.buffs[k] ?? 0;
@@ -83,6 +88,8 @@ function SideIcons({ game, onAd, onPass, ads }: { game: Game; onAd?: (what: Buff
           </button>
         );
       })}
+    </div>
+    <div class="side-icons left">
       {p && onPass && (
         <button class="sideic pass" onClick={onPass} aria-label={`Przepustka Kowala: poziom ${passLevel(p)}${un && un.free + un.prem ? ', nagrody do odebrania' : ''}`}>
           <Px src={resUrl('przepustka')} size={22} />
@@ -90,11 +97,19 @@ function SideIcons({ game, onAd, onPass, ads }: { game: Game; onAd?: (what: Buff
           {un && un.free + un.prem > 0 && <i class="dot" aria-hidden="true" />}
         </button>
       )}
+      {onEvent && (
+        <button class={`sideic event ev-${ev.kind}`} onClick={onEvent} aria-label={`${ev.def.n}: zdobyte nagrody ${evGot}${evTodo ? ', nagrody do odebrania' : ''}`}>
+          <Px src={resUrl(eventIcon(ev.kind))} size={22} />
+          <b>{evGot}</b>
+          {evTodo > 0 && <i class="dot" aria-hidden="true" />}
+        </button>
+      )}
     </div>
+    </>
   );
 }
 
-export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void; onAd?: (what: BuffId) => void; onPass?: () => void }) {
+export function Arena({ game, onTab, onInfo, onAd, onPass, onEvent }: { game: Game; onTab: (t: Tab) => void; onInfo: (land: number) => void; onAd?: (what: BuffId) => void; onPass?: () => void; onEvent?: () => void }) {
   const [, setFrame] = useState(0);
   const [floats, setFloats] = useState<Float[]>([]);
   const [loots, setLoots] = useState<Loot[]>([]);
@@ -202,7 +217,7 @@ export function Arena({ game, onTab, onInfo, onAd, onPass }: { game: Game; onTab
             <div class="enter"><FoeSprite e={shown} now={dead ? 0 : tnow + 230} /></div>
           </div>
         )}
-        {side && <SideIcons game={game} onAd={onAd} onPass={onPass} ads={!dung} />}
+        {side && <SideIcons game={game} onAd={onAd} onPass={onPass} onEvent={onEvent} ads={!dung} />}
         <div class="floats">
           {floats.map(f => <span key={f.id} class={`fl ${f.cls}`} style={{ left: f.x + '%', top: f.y + '%' }}>{f.text}</span>)}
         </div>
