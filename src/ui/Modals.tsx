@@ -622,7 +622,8 @@ function NotifyAskView({ game, close }: { game: Game; close: () => void }) {
   const rows: [string, string, string][] = [
     [resUrl('kowadlo'), 'Kuźnia gotowa', 'ulepszenie skończone, możesz kuć lepsze przedmioty'],
     [resUrl('ksiega'), 'Badanie zakończone', 'wybierasz następne, zamiast tracić godziny Akademii'],
-    [resUrl('zloto'), 'Pełne łupy', 'bohater walczy bez ciebie tylko do limitu, więc wiesz, kiedy zajrzeć'],
+    [resUrl('czas'), 'Pełne łupy', 'bohater walczy bez ciebie tylko do limitu, więc wiesz, kiedy zajrzeć'],
+    [resUrl('zloto'), 'Prezent dnia', 'rano, gdy w sklepie czeka darmowe złoto i ruda'],
     [resUrl('jajo0'), 'Jajo się wykluło', 'nowy chowaniec czeka na odbiór'],
   ];
   return (

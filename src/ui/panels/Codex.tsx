@@ -377,7 +377,7 @@ function NotifyOpt({ game }: { game: Game }) {
   };
   const blocked = st === 'denied' && (game.s.opts.notify || want.current);
   return (
-    <Opt ic="bell" n="Powiadomienia" d={blocked ? 'telefon nie pozwala grze ich wysyłać' : 'gotowa kuźnia, koniec badania, jajo, pełne łupy za nieobecność'} on={on} set={set}>
+    <Opt ic="bell" n="Powiadomienia" d={blocked ? 'telefon nie pozwala grze ich wysyłać' : 'gotowa kuźnia, koniec badania, jajo, pełne łupy, prezent dnia'} on={on} set={set}>
       {(on || blocked) && (
         <div class="notify-x">
           {blocked

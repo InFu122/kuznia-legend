@@ -1,10 +1,11 @@
 // Tylko w aplikacji na telefon (Capacitor): lokalne powiadomienia i przycisk „wstecz” Androida.
 // Powiadomienia planuje sam telefon, gdy gra schodzi w tło — serwer nie jest do tego potrzebny:
-// koniec ulepszenia kuźni, koniec badania, wyklucie jaja i limit nagród za nieobecność. W ustawieniach: stan zgody
+// koniec ulepszenia kuźni, koniec badania, wyklucie jaja, limit nagród za nieobecność i (rano) prezent dnia w sklepie. W ustawieniach: stan zgody
 // telefonu i próbne powiadomienie.
 import { TECH, landDef } from '../data';
 import type { Game } from '../engine/game';
 import { offlineCapMs } from '../engine/offline';
+import { utcDay } from '../engine/shop';
 import { itemLevelFor } from '../engine/formulas';
 import { isNative, isStandalone } from './pwa';
 import { EXIT_WINDOW_MS } from './back';
@@ -18,16 +19,29 @@ let mod: LNMod | null = null;
 const ASKED = 'kl-notify-asked';
 
 /** Co i kiedy przypomnieć (ms od teraz, w czasie rzeczywistym — z tempem testowym krócej). */
+/** Godzina przypomnienia o prezencie dnia (czas telefonu). */
+const GIFT_HOUR = 9;
+
 export function upcoming(game: Game): { id: number; at: number; title: string; body: string }[] {
   const s = game.s;
   const sp = Math.max(1, s.speed || 1);
   const out: { id: number; at: number; title: string; body: string }[] = [];
   // Treści: krótko i konkretnie, co się stało; bez ponaglania i bez długich myślników.
-  if (s.forge.up && s.forge.left > 0) out.push({ id: 1, at: s.forge.left / sp, title: 'Kuźnia ulepszona', body: `Kuźnia ma teraz ${s.forge.up}. poziom. Nowe przedmioty wykujesz do ${itemLevelFor(s.forge.up, 2)}. poziomu.` });
+  if (s.forge.up && s.forge.left > 0) out.push({ id: 1, at: s.forge.left / sp, title: 'Kuźnia ulepszona', body: `Kuźnia ma teraz ${s.forge.up}. poziom. Od teraz wykuwasz mocniejsze przedmioty, od ${itemLevelFor(s.forge.up, 0)}. do ${itemLevelFor(s.forge.up, 2)}. poziomu.` });
   if (s.tech.cur && s.tech.cur.left > 0) out.push({ id: 2, at: s.tech.cur.left / sp, title: 'Badanie ukończone', body: `${TECH[s.tech.cur.id].n} ma teraz ${(s.tech.lv[s.tech.cur.id] ?? 0) + 1}. poziom. Akademia czeka na kolejne badanie.` });
   if (s.hatch && s.hatch.left > 0) out.push({ id: 3, at: s.hatch.left / sp, title: 'Jajo się wykluło', body: 'Nowy chowaniec jest w zakładce Bohater.' });
   const cap = offlineCapMs(s);
   out.push({ id: 4, at: cap, title: 'Łupy za nieobecność są pełne', body: `Bohater zebrał limit łupów w krainie ${landDef(s.cur.land).n}. Odbierzesz je po powrocie do gry.` });
+  // Prezent dnia w sklepie: nowy jest od północy UTC (w Polsce 1:00 albo 2:00), ale przypomnienie dopiero rano, o 9:00
+  // na zegarze telefonu. Gdy dzisiejszy jest już odebrany, dopiero następnego dnia.
+  if (game.unlocked('sklep')) {
+    const now = Date.now();
+    const t = new Date(now);
+    t.setHours(GIFT_HOUR, 0, 0, 0);
+    if (t.getTime() <= now + 60000) t.setDate(t.getDate() + 1);
+    if (s.shop?.gift && s.shop.gift === utcDay(t.getTime())) t.setDate(t.getDate() + 1);
+    out.push({ id: 5, at: t.getTime() - now, title: 'Prezent w sklepie', body: 'Darmowy prezent dnia czeka w sklepie: złoto i ruda.' });
+  }
   return out.filter(n => n.at > 30000);
 }
 
@@ -66,7 +80,7 @@ export async function testNotify(): Promise<NotifyState> {
   const x = await plugin();
   if (!x || st !== 'granted') return st;
   // Od razu, bez alarmu (i bez „dokładnego alarmu”, o który wtyczka inaczej pyta ekranem ustawień telefonu).
-  await x.p.schedule({ notifications: [{ id: 9, title: 'Kuźnia Legend', body: 'Powiadomienia działają. Dam znać, gdy kuźnia, badanie albo łupy będą gotowe.', isExactNotification: false }] });
+  await x.p.schedule({ notifications: [{ id: 9, title: 'Kuźnia Legend', body: 'Powiadomienia działają. Dam znać, gdy kuźnia, badanie albo łupy będą gotowe, a rano o prezencie dnia.', isExactNotification: false }] });
   return st;
 }
 
