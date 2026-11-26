@@ -58,12 +58,13 @@ export async function askNotify(): Promise<NotifyState> {
   return stateOf(st.display);
 }
 
-/** Próbne powiadomienie za 3 sekundy (z ustawień) — żeby gracz zobaczył, że działają. */
+/** Próbne powiadomienie od razu (z ustawień) — żeby gracz zobaczył, że działają. */
 export async function testNotify(): Promise<NotifyState> {
   const st = await askNotify();
   const x = await plugin();
   if (!x || st !== 'granted') return st;
-  await x.p.schedule({ notifications: [{ id: 9, title: 'Kuźnia Legend', body: 'Tak przyjdzie wiadomość o gotowej kuźni, końcu badania i pełnych łupach za nieobecność.', schedule: { at: new Date(Date.now() + 3000), allowWhileIdle: true } }] });
+  // Od razu, bez alarmu (i bez „dokładnego alarmu”, o który wtyczka inaczej pyta ekranem ustawień telefonu).
+  await x.p.schedule({ notifications: [{ id: 9, title: 'Kuźnia Legend', body: 'Tak przyjdzie wiadomość o gotowej kuźni, końcu badania i pełnych łupach za nieobecność.', isExactNotification: false }] });
   return st;
 }
 
@@ -113,7 +114,9 @@ async function schedule(game: Game): Promise<void> {
   if (st.display !== 'granted') return;
   const now = Date.now();
   await x.p.schedule({
-    notifications: upcoming(game).map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(now + n.at), allowWhileIdle: true } })),
+    // Bez „dokładnych alarmów”: wtyczka (8.3+) przy domyślnym isExactNotification otwierała przy każdym planowaniu
+    // ekran „Alarmy i przypomnienia” — a tego uprawnienia gra celowo nie ma (manifest). Przypomnienie może przyjść parę minut później.
+    notifications: upcoming(game).map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(now + n.at), allowWhileIdle: true }, isExactNotification: false })),
   });
 }
 

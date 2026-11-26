@@ -8,7 +8,13 @@ let perm = 'granted';
 const impl: Record<string, (...a: unknown[]) => Promise<unknown>> = {
   checkPermissions: async () => ({ display: perm === 'granted' ? 'granted' : 'prompt' }),
   requestPermissions: async () => ({ display: perm }),
-  schedule: async (o: unknown) => { calls.push('schedule:' + JSON.stringify((o as { notifications: { id: number }[] }).notifications.map(n => n.id))); return {}; },
+  schedule: async (o: unknown) => {
+    const ns = (o as { notifications: { id: number; isExactNotification?: boolean }[] }).notifications;
+    // Każde powiadomienie bez dokładnego alarmu — inaczej Android otwiera ekran „Alarmy i przypomnienia”.
+    if (ns.some(n => n.isExactNotification !== false)) throw new Error('isExactNotification musi być false');
+    calls.push('schedule:' + JSON.stringify(ns.map(n => n.id)));
+    return {};
+  },
   getPending: async () => ({ notifications: [] }),
   cancel: async () => ({}),
 };
