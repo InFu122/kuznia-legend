@@ -9,7 +9,7 @@ import { Px } from '../Px';
 import { rewardChips } from '../RewardIcons';
 import { Avatar } from '../Avatar';
 import type { Reward } from '../../engine/types';
-import { ClaimReveal, RewardCard, Track, rewardTier } from './Track';
+import { ClaimReveal, RewardCard, Track, TrackHead, rewardTier } from './Track';
 
 export function EventView({ game, close, onDung }: { game: Game; close: () => void; onDung: () => void }) {
   const [msg, setMsg] = useState('');
@@ -62,7 +62,7 @@ export function EventView({ game, close, onDung }: { game: Game; close: () => vo
         </div>
       </section>
 
-      <div class="trk-head"><span class="eyebrow">Progi nagród</span>{todo > 0 && <span class="trk-todo">do odebrania: {todo}</span>}</div>
+      <TrackHead title="Linia nagród" done={reached} total={EVENT_MILESTONES.length} part={nm ? (pts - prev) / (nm.pts - prev) : 1} todo={todo} />
       <Track focus={Math.min(e.got, reached)} cls="ev">
         {EVENT_MILESTONES.map((m, i) => {
           const p0 = i ? EVENT_MILESTONES[i - 1].pts : 0;
@@ -71,7 +71,7 @@ export function EventView({ game, close, onDung }: { game: Game; close: () => vo
           return (
             <li key={i} class={`tcol${i < reached ? ' done' : ''}${i === reached ? ' cur' : ''}${i === last ? ' big' : ''}`} style={{ '--fill': fill } as Record<string, number>}>
               <RewardCard r={milestoneReward(e.ev, i, game.s)} state={st} prem={i === last} onClaim={claim} />
-              <span class="tk-node pts"><b>{fmt(m.pts)}</b></span>
+              <span class="tk-node pts"><b>{fmt(m.pts)}</b>{i === reached && <i class="tk-me" aria-label={`Ty: ${fmt(pts)}`}><span>{fmt(pts)}</span></i>}</span>
             </li>
           );
         })}

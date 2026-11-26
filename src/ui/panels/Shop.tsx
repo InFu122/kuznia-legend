@@ -20,7 +20,7 @@ import { Note, errText, useAction } from './ClanLife';
 import { Res, RewardIcons, rewardChips } from '../RewardIcons';
 import { Avatar } from '../Avatar';
 import { LockIcon } from '../icons';
-import { ClaimReveal, RewardCard, Track, rewardTier, seasonScene, type CardState } from './Track';
+import { ClaimReveal, RewardCard, Track, TrackHead, rewardTier, seasonScene, type CardState } from './Track';
 import { adsNative, showRewarded } from '../ads';
 import { billingNative, buyPack, recoverPurchases, storePrices } from '../billing';
 import { OddsTable, type OddsWhat } from '../Odds';
@@ -367,29 +367,28 @@ function PassTabView({ game, goGems }: { game: Game; goGems: () => void }) {
       </section>
 
       {!p.prem && (
-        <section class="ps-offer">
-          <div class="pso-main">
-            <div class="pso-t">Złota ścieżka</div>
-            <ul class="pso-pts">
-              {waiting > 0 && <li class="hot">Od razu odbierzesz <b>{waiting}</b> {waiting === 1 ? 'złotą nagrodę' : waiting < 5 ? 'złote nagrody' : 'złotych nagród'}</li>}
-              <li>Druga, bogatsza nagroda na każdym z {PASS.LEVELS} poziomów</li>
-              <li>Zwraca <Res r={{ gems: total.gems ?? 0 }} size={14} /></li>
+        <section class="ps-offer2">
+          <span class="pso2-av" aria-hidden="true"><Avatar skin="szkarlat" frame="przepustka" size={44} /></span>
+          <div class="pso2-main">
+            <b>Złota ścieżka</b>
+            <small>{waiting > 0 ? <>od razu <b>{waiting}</b> {waiting === 1 ? 'nagroda' : waiting < 5 ? 'nagrody' : 'nagród'} · </> : null}druga nagroda na każdym poziomie · <span class="nowrap">zwraca <GemIco size={11} /> {fmt(total.gems ?? 0)}</span></small>
+          </div>
+          <button class="btn gold pso2-buy" disabled={a.busy} onClick={buy}><GemIco size={14} /> {PASS.PREM_COST}</button>
+          <div class="pso2-more">
+            <span class="eyebrow">Co zawiera złota ścieżka</span>
+            <ul class="pso-show">
+              {show.map(c => (
+                <li key={c.key} class={`t-${rewardTier([c])}`} title={c.t}>
+                  {c.frame ? <Avatar frame={c.frame} size={28} /> : c.key.startsWith('skin') ? <Avatar skin={c.key.slice(4)} size={28} /> : <Px src={c.ic!} size={24} />}
+                  {c.n && c.n !== '1' && <b>{c.n}</b>}
+                </li>
+              ))}
             </ul>
           </div>
-          <div class="pso-hero" aria-hidden="true"><Avatar skin="szkarlat" frame="przepustka" size={66} /></div>
-          <ul class="pso-show">
-            {show.map(c => (
-              <li key={c.key} class={`t-${rewardTier([c])}`} title={c.t}>
-                {c.frame ? <Avatar frame={c.frame} size={28} /> : c.key.startsWith('skin') ? <Avatar skin={c.key.slice(4)} size={28} /> : <Px src={c.ic!} size={24} />}
-                {c.n && c.n !== '1' && <b>{c.n}</b>}
-              </li>
-            ))}
-          </ul>
-          <button class="btn gold big pso-buy" disabled={a.busy} onClick={buy}>Odblokuj złotą ścieżkę · <GemIco size={16} /> {PASS.PREM_COST}</button>
         </section>
       )}
 
-      <div class="trk-head"><span class="eyebrow">Nagrody sezonu</span>{todo > 0 && <span class="trk-todo">do odebrania: {todo}</span>}</div>
+      <TrackHead title="Linia nagród" done={lvl} total={PASS.LEVELS} part={inLvl / PASS.XP_PER_LVL} todo={todo} />
       <div class="trk-wrap">
         <div class="trk-lab" aria-hidden="true">
           <span class="tl-prem">{!p.prem && <LockIcon />}<i>Złota</i></span>
@@ -403,7 +402,7 @@ function PassTabView({ game, goGems }: { game: Game; goGems: () => void }) {
             return (
               <li key={n} class={`tcol${n <= lvl ? ' done' : ''}${n === lvl + 1 ? ' cur' : ''}${n % 5 === 0 ? ' big' : ''}`} style={{ '--fill': fill } as Record<string, number>}>
                 <RewardCard r={passItemsReward(L.prem, s)} prem state={st(n, p.cp, p.prem)} onClaim={() => void claim()} />
-                <span class="tk-node"><b>{n}</b></span>
+                <span class="tk-node"><b>{n}</b>{n === lvl + 1 && <i class="tk-me" aria-label="Twój postęp"><span>Ty</span></i>}</span>
                 <RewardCard r={passItemsReward(L.free, s)} state={st(n, p.cf, true)} onClaim={() => void claim()} />
               </li>
             );

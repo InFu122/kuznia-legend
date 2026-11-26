@@ -76,6 +76,29 @@ export function Track({ focus, children, cls = '' }: { focus: number; children: 
   return <div class={`trk ${cls}`} ref={ref}><ol class="trk-in">{children}</ol></div>;
 }
 
+/** Pasek w odcinkach: każdy próg nagrody to jeden odcinek (osiągnięte pełne, bieżący częściowo). */
+export function SegBar({ n, full, part }: { n: number; full: number; part: number }) {
+  return (
+    <span class="segbar" aria-hidden="true">
+      {Array.from({ length: n }, (_, i) => <i key={i} class={i < full ? 'on' : ''} style={i === full ? { '--p': Math.max(0, Math.min(1, part)) } as Record<string, number> : undefined} />)}
+    </span>
+  );
+}
+
+/** Nad torem: tytuł, ile progów zdobyte z ilu, ile czeka do odebrania, i cała linia w odcinkach. */
+export function TrackHead({ title, done, total, part, todo }: { title: string; done: number; total: number; part: number; todo: number }) {
+  return (
+    <div class="trk-head2">
+      <div class="th-row">
+        <span class="eyebrow">{title}</span>
+        <span class="th-n"><b class="num">{done}</b>/{total}</span>
+        {todo > 0 && <span class="trk-todo">do odebrania: {todo}</span>}
+      </div>
+      <SegBar n={total} full={done} part={part} />
+    </div>
+  );
+}
+
 /** Okno „Odebrano!”: promienie, tytuł i kafelki nagród wyskakujące po kolei. */
 export function ClaimReveal({ r, title = 'Nagrody odebrane!', onClose }: { r: Reward; title?: string; onClose: () => void }) {
   return (

@@ -2,24 +2,28 @@
 // niezależnie od tego, która podzakładka jest otwarta.
 import { EVENT_MILESTONES, PASS } from '../../data';
 import { dungeonBgUrl, resUrl } from '../../art/render';
-import { eventIcon, eventOf, eventPts, eventReached, evText } from '../../engine/events';
+import { eventIcon, eventOf, eventPts, eventReached, evText, evWord } from '../../engine/events';
 import { passLevel, passUnclaimed, passXp, seasonOf } from '../../engine/shop';
 import type { Game } from '../../engine/game';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
+import { SegBar } from './Track';
 
-/** Kafelek wydarzenia albo sezonu: tło, ikona, czas do końca, nazwa, postęp i przycisk. */
-function Tile({ bg, cls, icon, eyebrow, name, sub, pct, btn, ready, onClick }: {
-  bg: string; cls: string; icon: string; eyebrow: string; name: string; sub: preact.ComponentChildren; pct: number; btn: string; ready: boolean; onClick: () => void;
+/** Wiersz wydarzenia albo sezonu na całą szerokość: ikona, nazwa i czas, postęp z liczbami, przycisk z liczbą nagród. */
+function Row({ bg, cls, icon, eyebrow, time, name, bar, sub, btn, n, onClick }: {
+  bg: string; cls: string; icon: string; eyebrow: string; time: string; name: string; bar: preact.ComponentChildren; sub: preact.ComponentChildren;
+  btn: string; n: number; onClick: () => void;
 }) {
   return (
-    <button class={`adv-tile ${cls}${ready ? ' ready' : ''}`} onClick={onClick} style={{ '--bg': `url(${bg})` } as Record<string, string>}>
-      <span class="at-top"><Px src={icon} size={26} /><span class="eyebrow">{eyebrow}</span></span>
-      <b class="at-name">{name}</b>
-      <span class="at-sub">{sub}</span>
-      <span class="bar"><i style={{ width: Math.max(0, Math.min(100, pct)) + '%' }} /></span>
-      <span class={`at-btn${ready ? ' on' : ''}`}>{btn}</span>
-      {ready && <i class="tab-dot" aria-hidden="true" />}
+    <button class={`adv-row ${cls}${n ? ' ready' : ''}`} onClick={onClick} style={{ '--bg': `url(${bg})` } as Record<string, string>}>
+      <span class="ar-ic"><Px src={icon} size={34} /></span>
+      <span class="ar-main">
+        <span class="ar-top"><span class="eyebrow">{eyebrow}</span><span class="ar-time"><Px src={resUrl('czas')} size={11} />{time}</span></span>
+        <b class="ar-name">{name}</b>
+        {bar}
+        <small class="ar-sub">{sub}</small>
+      </span>
+      <span class={`ar-btn${n ? ' on' : ''}`}>{n ? <>Odbierz<b>{n}</b></> : <>{btn} ›</>}</span>
     </button>
   );
 }
@@ -33,7 +37,6 @@ export function AdventureBanners({ game, onEvent, onPass }: { game: Game; onEven
   const todo = game.eventTodo();
   const next = EVENT_MILESTONES[reached];
   const prev = reached ? EVENT_MILESTONES[reached - 1].pts : 0;
-  const evPct = next ? ((pts - prev) / (next.pts - prev)) * 100 : 100;
 
   const season = seasonOf(now);
   const p = game.s.pass;
@@ -43,16 +46,18 @@ export function AdventureBanners({ game, onEvent, onPass }: { game: Game; onEven
   const claim = un ? un.free + un.prem : 0;
 
   return (
-    <div class="adv-banners">
-      <Tile bg={dungeonBgUrl('ev_' + ev.kind)} cls={`ev-${ev.kind}`} icon={resUrl(eventIcon(ev.kind))}
-        eyebrow={`Wydarzenie · ${tfmt(ev.end - now)}`} name={ev.def.n}
-        sub={<><b>{evText(pts, ev.def)}</b>{next ? ` · do nagrody ${fmt(next.pts - pts)}` : ' · wszystko zdobyte'}</>}
-        pct={evPct} btn={todo ? `Odbierz (${todo})` : 'Nagrody'} ready={todo > 0} onClick={onEvent} />
+    <div class="adv-banners rows">
+      <Row bg={dungeonBgUrl('ev_' + ev.kind)} cls={`ev-${ev.kind}`} icon={resUrl(eventIcon(ev.kind))}
+        eyebrow="Wydarzenie" time={tfmt(ev.end - now)} name={ev.def.n}
+        bar={<SegBar n={EVENT_MILESTONES.length} full={reached} part={next ? (pts - prev) / (next.pts - prev) : 1} />}
+        sub={next ? <><b>{fmt(pts)}</b> / {fmt(next.pts)} {evWord(next.pts, ev.def)} do następnej nagrody</> : <>Wszystkie nagrody zdobyte · <b>{evText(pts, ev.def)}</b></>}
+        btn="Zobacz" n={todo} onClick={onEvent} />
       {p && (
-        <Tile bg={dungeonBgUrl('wieza')} cls="season" icon={resUrl('przepustka')}
-          eyebrow={`Sezon ${season.n} · ${tfmt(season.end - now)}`} name={season.name}
-          sub={<>Przepustka: <b>poziom {lvl}/{PASS.LEVELS}</b></>}
-          pct={(inLvl / PASS.XP_PER_LVL) * 100} btn={claim ? `Odbierz (${claim})` : 'Przepustka'} ready={claim > 0} onClick={onPass} />
+        <Row bg={dungeonBgUrl('wieza')} cls="season" icon={resUrl('przepustka')}
+          eyebrow={`Przepustka · sezon ${season.n}`} time={tfmt(season.end - now)} name={season.name}
+          bar={<span class="bar ar-bar"><i style={{ width: (inLvl / PASS.XP_PER_LVL) * 100 + '%' }} /></span>}
+          sub={lvl >= PASS.LEVELS ? <><b>Poziom {lvl}/{PASS.LEVELS}</b> · ukończona</> : <><b>Poziom {lvl}/{PASS.LEVELS}</b> · do {lvl + 1}. poziomu {fmt(PASS.XP_PER_LVL - inLvl)} pkt</>}
+          btn="Zobacz" n={claim} onClick={onPass} />
       )}
     </div>
   );
