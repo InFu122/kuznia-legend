@@ -607,7 +607,7 @@ function LandInfoView({ game, land: start, close }: { game: Game; land: number; 
 function NotifyAskView({ game, close }: { game: Game; close: () => void }) {
   const [st, setSt] = useState<NotifyState | null>(null);
   const [busy, setBusy] = useState(false);
-  const done = () => { toast(game.ctx, 'Powiadomienia włączone — telefon da znać, gdy coś będzie gotowe.', 'good'); close(); };
+  const done = () => { toast(game.ctx, 'Powiadomienia włączone. Telefon da znać, gdy coś będzie gotowe.', 'good'); close(); };
   // Powrót z ustawień telefonu: zgoda włączona — gotowe.
   useEffect(() => onComeBack(() => {
     void notifyState().then(x => { if (x === 'granted') { game.setNotify(true); done(); } else setSt(x); }).catch(() => {});
@@ -620,9 +620,9 @@ function NotifyAskView({ game, close }: { game: Game; close: () => void }) {
     } catch { setSt('denied'); } finally { setBusy(false); }
   };
   const rows: [string, string, string][] = [
-    [resUrl('kowadlo'), 'Kuźnia gotowa', 'ulepszenie skończone — od razu kujesz lepsze przedmioty'],
+    [resUrl('kowadlo'), 'Kuźnia gotowa', 'ulepszenie skończone, możesz kuć lepsze przedmioty'],
     [resUrl('ksiega'), 'Badanie zakończone', 'wybierasz następne, zamiast tracić godziny Akademii'],
-    [resUrl('zloto'), 'Pełne łupy', 'bohater walczy bez ciebie tylko do limitu — wiesz, kiedy wrócić'],
+    [resUrl('zloto'), 'Pełne łupy', 'bohater walczy bez ciebie tylko do limitu, więc wiesz, kiedy zajrzeć'],
     [resUrl('jajo0'), 'Jajo się wykluło', 'nowy chowaniec czeka na odbiór'],
   ];
   return (
@@ -630,7 +630,7 @@ function NotifyAskView({ game, close }: { game: Game; close: () => void }) {
       <div class="na-head" aria-hidden="true"><span class="na-bell"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg></span></div>
       <div class="eyebrow">Pierwsza kraina zdobyta!</div>
       <div class="h">Nie przegap gotowej kuźni</div>
-      <p class="sub">Kuźnia, Akademia i bohater pracują także wtedy, gdy nie grasz. Telefon da znać tylko w tych chwilach — bez reklam i bez zasypywania wiadomościami:</p>
+      <p class="sub">Kuźnia, Akademia i bohater pracują także wtedy, gdy nie grasz. Telefon da znać tylko w tych chwilach, bez reklam i bez zasypywania wiadomościami:</p>
       <ul class="na-list">
         {rows.map(([ic, t, d]) => <li key={t}><Px src={ic} size={28} /><span><b>{t}</b><small>{d}</small></span></li>)}
       </ul>

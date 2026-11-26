@@ -5,6 +5,7 @@
 import { TECH, landDef } from '../data';
 import type { Game } from '../engine/game';
 import { offlineCapMs } from '../engine/offline';
+import { itemLevelFor } from '../engine/formulas';
 import { isNative, isStandalone } from './pwa';
 import { EXIT_WINDOW_MS } from './back';
 import { toast } from '../engine/context';
@@ -21,11 +22,12 @@ export function upcoming(game: Game): { id: number; at: number; title: string; b
   const s = game.s;
   const sp = Math.max(1, s.speed || 1);
   const out: { id: number; at: number; title: string; body: string }[] = [];
-  if (s.forge.up && s.forge.left > 0) out.push({ id: 1, at: s.forge.left / sp, title: 'Kuźnia gotowa!', body: `Ulepszenie do ${s.forge.up}. poziomu się skończyło — wracaj kuć lepszy ekwipunek.` });
-  if (s.tech.cur && s.tech.cur.left > 0) out.push({ id: 2, at: s.tech.cur.left / sp, title: 'Badanie zakończone', body: `${TECH[s.tech.cur.id].n} — nowy poziom czeka. Wybierz następne badanie.` });
-  if (s.hatch && s.hatch.left > 0) out.push({ id: 3, at: s.hatch.left / sp, title: 'Jajo się wykluwa!', body: 'Nowy chowaniec czeka w zakładce Bohater.' });
+  // Treści: krótko i konkretnie, co się stało; bez ponaglania i bez długich myślników.
+  if (s.forge.up && s.forge.left > 0) out.push({ id: 1, at: s.forge.left / sp, title: 'Kuźnia ulepszona', body: `Kuźnia ma teraz ${s.forge.up}. poziom. Nowe przedmioty wykujesz do ${itemLevelFor(s.forge.up, 2)}. poziomu.` });
+  if (s.tech.cur && s.tech.cur.left > 0) out.push({ id: 2, at: s.tech.cur.left / sp, title: 'Badanie ukończone', body: `${TECH[s.tech.cur.id].n} ma teraz ${(s.tech.lv[s.tech.cur.id] ?? 0) + 1}. poziom. Akademia czeka na kolejne badanie.` });
+  if (s.hatch && s.hatch.left > 0) out.push({ id: 3, at: s.hatch.left / sp, title: 'Jajo się wykluło', body: 'Nowy chowaniec jest w zakładce Bohater.' });
   const cap = offlineCapMs(s);
-  out.push({ id: 4, at: cap, title: 'Łupy za nieobecność są pełne', body: `Bohater zebrał już wszystko, co mógł w krainie ${landDef(s.cur.land).n}. Wróć, odbierz łupy i walcz dalej!` });
+  out.push({ id: 4, at: cap, title: 'Łupy za nieobecność są pełne', body: `Bohater zebrał limit łupów w krainie ${landDef(s.cur.land).n}. Odbierzesz je po powrocie do gry.` });
   return out.filter(n => n.at > 30000);
 }
 
@@ -64,7 +66,7 @@ export async function testNotify(): Promise<NotifyState> {
   const x = await plugin();
   if (!x || st !== 'granted') return st;
   // Od razu, bez alarmu (i bez „dokładnego alarmu”, o który wtyczka inaczej pyta ekranem ustawień telefonu).
-  await x.p.schedule({ notifications: [{ id: 9, title: 'Kuźnia Legend', body: 'Tak przyjdzie wiadomość o gotowej kuźni, końcu badania i pełnych łupach za nieobecność.', isExactNotification: false }] });
+  await x.p.schedule({ notifications: [{ id: 9, title: 'Kuźnia Legend', body: 'Powiadomienia działają. Dam znać, gdy kuźnia, badanie albo łupy będą gotowe.', isExactNotification: false }] });
   return st;
 }
 

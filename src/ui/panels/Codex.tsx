@@ -372,7 +372,7 @@ function NotifyOpt({ game }: { game: Game }) {
     setNote('');
     void testNotify().then(x => {
       setSt(x);
-      setNote(x === 'granted' ? 'Wysłane — zobacz pasek powiadomień telefonu.' : '');
+      setNote(x === 'granted' ? 'Wysłane. Zobacz pasek powiadomień telefonu.' : '');
     }).catch(() => setNote('Nie udało się wysłać próbnego powiadomienia.'));
   };
   const blocked = st === 'denied' && (game.s.opts.notify || want.current);
