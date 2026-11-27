@@ -5,7 +5,7 @@ import type { Game } from '../engine/game';
 import { GoogleCancelled, GoogleError, googleToken } from '../save/google';
 import { ServerError, getLink, googleSwitch } from '../save/server';
 
-const errText = (e: unknown) => (e instanceof GoogleCancelled ? '' : e instanceof Error ? e.message : 'Coś poszło nie tak — spróbuj ponownie.');
+const errText = (e: unknown) => (e instanceof GoogleCancelled ? '' : e instanceof Error ? e.message : 'Coś poszło nie tak, spróbuj ponownie.');
 const errDiag = (e: unknown) => (e instanceof GoogleError ? e.detail : '');
 
 /** Szczegóły błędu Google (komunikat i SHA-1 podpisu aplikacji) — do porównania z Google Cloud. */
@@ -45,7 +45,7 @@ export function GoogleLinkBox({ game, online, onDone }: { game: Game; online: bo
     try {
       await googleSwitch(clash.token);
       setClash(null);
-      setMsg(`Gotowe — grasz kowalem ${game.s.name}.`);
+      setMsg(`Gotowe, grasz kowalem ${game.s.name}.`);
       onDone?.();
     } catch (e) { setMsg(errText(e)); } finally { setBusy(false); }
   };
@@ -53,7 +53,7 @@ export function GoogleLinkBox({ game, online, onDone }: { game: Game; online: bo
   if (link.google && !clash) {
     return (
       <div class="gl-box">
-        <p class="gl-ok"><b>✓ Połączono z Google.</b> Na nowym telefonie wybierz „Zaloguj przez Google” w oknie powitalnym — wczyta się ten kowal.</p>
+        <p class="gl-ok"><b>✓ Połączono z Google.</b> Na nowym telefonie wybierz „Zaloguj przez Google” w oknie powitalnym, wczyta się ten kowal.</p>
         {msg && <p class="sub" role="status">{msg}</p>}
       </div>
     );

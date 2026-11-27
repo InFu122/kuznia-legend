@@ -75,7 +75,7 @@ export function tickEvent(ctx: Ctx): EventTrack {
     const u = eventUnclaimed(old, s);
     if (u.n) {
       grant(ctx, u.r);
-      toast(ctx, `${eventByIndex(old.ev).def.n} dobiegł końca — nieodebrane nagrody (${u.n}) trafiły do ciebie.`, 'good');
+      toast(ctx, `${eventByIndex(old.ev).def.n} dobiegł końca, nieodebrane nagrody (${u.n}) trafiły do ciebie.`, 'good');
       ctx.dirty = true;
     }
   }

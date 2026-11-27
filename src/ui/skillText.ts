@@ -17,6 +17,6 @@ export function skillFx(id: SkillId, lvl: number): SkillFx {
     case 'buffDmg': return { tag: 'Wzmocnienie', kind: 'buff', main: `+${v}%`, label: 'obrażeń', text: `Przez ${dur} zadajesz o ${v}% większe obrażenia.` };
     case 'buffSpd': return { tag: 'Wzmocnienie', kind: 'buff', main: `+${v}%`, label: 'szybkości ataku', text: `Przez ${dur} atakujesz o ${v}% szybciej.` };
     case 'buffLs': return { tag: 'Wzmocnienie', kind: 'buff', main: `+${v}%`, label: 'kradzieży życia', text: `Przez ${dur} każdy cios leczy cię o dodatkowe ${v}% zadanych obrażeń.` };
-    case 'stun': return { tag: 'Kontrola', kind: 'ctl', main: `${v} s`, label: 'zamrożenia', text: `Zamraża wroga na ${v} s — w tym czasie nie atakuje.` };
+    case 'stun': return { tag: 'Kontrola', kind: 'ctl', main: `${v} s`, label: 'zamrożenia', text: `Zamraża wroga na ${v} s, w tym czasie nie atakuje.` };
   }
 }

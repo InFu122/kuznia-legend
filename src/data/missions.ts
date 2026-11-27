@@ -52,10 +52,10 @@ export interface TutStep {
 /** Pierwsze 15 minut według dokumentu projektowego: wytop, walka, ulepszenie kuźni, umiejętność, boss. */
 export const TUTORIAL: TutStep[] = [
   { id: 'smelt1', t: 'Pierwszy wytop', d: 'Przetop Żelazo od starego mistrza. Pierwszy wytop to zawsze broń.', tab: 'kuznia', target: '.btn-forge' },
-  { id: 'equip1', t: 'Załóż broń', d: 'Porównaj Moc i załóż nowy przedmiot — bohater od razu zacznie bić mocniej.', tab: 'kuznia', target: ['.result-actions .btn', '.dock-go.decide'] },
+  { id: 'equip1', t: 'Załóż broń', d: 'Porównaj Moc i załóż nowy przedmiot, bohater od razu zacznie bić mocniej.', tab: 'kuznia', target: ['.result-actions .btn', '.dock-go.decide'] },
   { id: 'smelt3', t: 'Kuj dalej', d: 'Przetop jeszcze dwie rudy. Trzeci wytop na pewno przeskoczy rzadkość wyżej.', tab: 'kuznia', target: '.btn-forge' },
   { id: 'upgrade', t: 'Ulepsz kuźnię', d: 'Ulepsz kuźnię do 2. poziomu za 150 złota z walki. Ulepszenie trwa 30 sekund i podnosi szanse na przeskok.', tab: 'kuznia', target: '.upgrade-btn' },
-  { id: 'stage5', t: 'Naprzód', d: 'Bohater walczy sam — każda fala to złoto, a czasem ruda. Dojdź do 5. etapu Spalonej Wioski: tam odblokujesz umiejętności.', tab: 'kuznia', target: '.arena .track', act: 'look' },
+  { id: 'stage5', t: 'Naprzód', d: 'Bohater walczy sam, każda fala to złoto, a czasem ruda. Dojdź do 5. etapu Spalonej Wioski: tam odblokujesz umiejętności.', tab: 'kuznia', target: '.arena .track', act: 'look' },
   { id: 'skill', t: 'Pierwsza umiejętność', d: 'Otwórz Zwój zaklęć: Bohater → Umiejętności.', tab: 'bohater', target: ['.btn-scroll', '[data-sub="skills"]'] },
   { id: 'boss1', t: 'Boss Spalonej Wioski', d: 'Na 10. etapie wyzwij Herszta Bandytów. Jeśli przegrasz, wzmocnij ekwipunek i wróć.', tab: 'kuznia', target: ['.arena-actions .btn', '.arena .track'] },
   { id: 'dung1', t: 'Pierwszy loch', d: 'Wejdź do Skarbca Złota w zakładce Lochy.', tab: 'lochy', target: ['.di-go', '.dungrow'] },

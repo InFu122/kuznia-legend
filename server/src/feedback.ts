@@ -30,7 +30,7 @@ export function rpcFeedback(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
     return l;
   });
   if (refused === 'dup') return JSON.stringify({ ok: true, dup: true });
-  if (refused) throw err('Na dziś to już dużo zgłoszeń — dziękujemy! Wróć jutro.', EXHAUSTED);
+  if (refused) throw err('Na dziś to już dużo zgłoszeń, dziękujemy! Wróć jutro.', EXHAUSTED);
   const m = (req.meta && typeof req.meta === 'object' ? req.meta : {}) as Record<string, unknown>;
   const meta: Record<string, string | number> = {};
   for (const k of ['version', 'ua', 'screen', 'tab', 'forge', 'land', 'power', 'mode', 'url']) {

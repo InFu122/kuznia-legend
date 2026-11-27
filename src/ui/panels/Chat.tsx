@@ -95,7 +95,7 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
   const report = (m: ChatMsg) => {
     setMenu(null);
     getLink()?.chatReport({ channel: chat.ids[m.ch] ?? '', message: m.id, sender: m.uid, name: m.n, text: m.t })
-      .then(() => setNote('Dziękujemy — zgłoszenie trafiło do administratora.'))
+      .then(() => setNote('Dziękujemy, zgłoszenie trafiło do administratora.'))
       .catch(() => setNote('Nie udało się wysłać zgłoszenia.'));
   };
 
@@ -140,7 +140,7 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
       {note && <p class="sub" role="status">{note}</p>}
       {chat.muted.size > 0 && (
         <button class="linkbtn" onClick={() => { for (const u of [...chat.muted]) chat.mute(u, false); setNote('Wyciszeni gracze znów są widoczni.'); }}>
-          Wyciszeni gracze: {chat.muted.size} — pokaż ich wiadomości
+          Wyciszeni gracze: {chat.muted.size}, pokaż ich wiadomości
         </button>
       )}
       <button class="btn" onClick={close}>Zamknij</button>

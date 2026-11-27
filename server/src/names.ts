@@ -102,7 +102,7 @@ export function rpcNameSet(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
   if (mine.n === n) return JSON.stringify({ name: n, next: mine.t + RENAME_COOLDOWN_MS, serverTime: now });
   if (!mine.gen && now - mine.t < RENAME_COOLDOWN_MS) {
     const h = Math.ceil((mine.t + RENAME_COOLDOWN_MS - now) / 3600000);
-    throw err(`Nick możesz zmienić raz na dobę — spróbuj za ${h} h.`, PRECONDITION);
+    throw err(`Nick możesz zmienić raz na dobę, spróbuj za ${h} h.`, PRECONDITION);
   }
   const key = nameKey(n);
   if (!claim(nk, userId, n)) throw err('Ten nick jest zajęty.', INVALID);

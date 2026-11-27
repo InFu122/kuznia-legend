@@ -98,7 +98,7 @@ export function RunesTab({ game }: { game: Game }) {
         <div class="rhead"><Px src={resUrl('runa')} size={30} /><div><div class="eyebrow">Runy bohatera · na zawsze</div><div class="h">Wzmocnienie miejsc ekwipunku</div></div></div>
       </div>
       {s.forge.lvl < B.RUNE_FORGE_LVL && (
-        <div class="lockline rlock"><LockIcon /><span>Runy odblokujesz na <b>{B.RUNE_FORGE_LVL}. poziomie kuźni</b> — teraz masz {s.forge.lvl}. Ulepszaj kuźnię w zakładce Kuźnia.</span></div>
+        <div class="lockline rlock"><LockIcon /><span>Runy odblokujesz na <b>{B.RUNE_FORGE_LVL}. poziomie kuźni</b>, teraz masz {s.forge.lvl}. Ulepszaj kuźnię w zakładce Kuźnia.</span></div>
       )}
       {all && all.power > 0 ? (
         <div class="rsum rsum2">

@@ -31,7 +31,7 @@ export function LegacyCard({ game, onItem }: { game: Game; onItem: (it: Item) =>
         </button>
       )}
       <p class="sub" style={{ marginTop: '6px' }}>
-        Nowych pokoleń już nie ma — kuźnia rośnie do {B.FORGE_MAX}. poziomu. Premie z twojego Dziedzictwa zostają na zawsze.
+        Nowych pokoleń już nie ma, kuźnia rośnie do {B.FORGE_MAX}. poziomu. Premie z twojego Dziedzictwa zostają na zawsze.
       </p>
     </section>
   );

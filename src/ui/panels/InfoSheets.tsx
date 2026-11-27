@@ -54,13 +54,13 @@ export function RuneInfo({ game, close }: { game: Game; close: () => void }) {
       eyebrow="Bohater · runy" title="Jak działają runy" close={close}
       steps={[
         [resUrl('runa'), '1. Miejsce, nie przedmiot', 'runa siedzi w miejscu ekwipunku (Broń, Hełm…), a nie w samym przedmiocie'],
-        [weapon ? itemUrl(weapon.kind, weapon.ore, weapon.r) : itemUrl('Miecz', 1, 1), '2. Wymiana nic nie zabiera', 'zakładasz nowy przedmiot — runa od razu działa na niego'],
-        [resUrl('moc'), '3. Cały bohater, na zawsze', `+${B.RUNE_PCT}% głównej statystyki za poziom (do ${B.RUNE_MAX}) — trwałe wzmocnienie do końca gry`],
+        [weapon ? itemUrl(weapon.kind, weapon.ore, weapon.r) : itemUrl('Miecz', 1, 1), '2. Wymiana nic nie zabiera', 'zakładasz nowy przedmiot, runa od razu działa na niego'],
+        [resUrl('moc'), '3. Cały bohater, na zawsze', `+${B.RUNE_PCT}% głównej statystyki za poziom (do ${B.RUNE_MAX}), trwałe wzmocnienie do końca gry`],
       ]}
       tips={[
-        [oreUrl(0), 'Brakuje rudy?', <>Każdy slot płaci dokładnie rudą ze swojego poziomu — po kolei Miedź, Żelazo, Srebro… aż do Boskiej Rudy (rzadkie rudy kosztują mniej sztuk). Słabsze rudy farmisz we wcześniejszych krainach (karta runy podpowiada gdzie). Zanim zamienisz zapasy w Rafinacji, zostaw trochę na runy.</>],
+        [oreUrl(0), 'Brakuje rudy?', <>Każdy slot płaci dokładnie rudą ze swojego poziomu: po kolei Miedź, Żelazo, Srebro… aż do Boskiej Rudy (rzadkie rudy kosztują mniej sztuk). Słabsze rudy farmisz we wcześniejszych krainach (karta runy podpowiada gdzie). Zanim zamienisz zapasy w Rafinacji, zostaw trochę na runy.</>],
         [itemUrl('Miecz', 3, 3), 'Co najpierw', <>Broń, Pierścień i Amulet dają obrażenia, reszta zdrowie. Runa mnoży główną statystykę, więc najwięcej daje w slocie z najsilniejszym przedmiotem.</>],
-        [resUrl('zloto'), 'Złoto', <>Każdy poziom kosztuje też złoto — tym więcej, im wyższy poziom runy i im dalej jesteś w kampanii.</>],
+        [resUrl('zloto'), 'Złoto', <>Każdy poziom kosztuje też złoto, tym więcej, im wyższy poziom runy i im dalej jesteś w kampanii.</>],
         [resUrl('kowadlo'), `Przekuwanie · od ${B.REFORGE_FORGE_LVL}. poziomu`, <>W oknie założonego przedmiotu losujesz od nowa jedną statystykę dodatkową (za rudę przedmiotu i złoto) i wybierasz, którą wersję zostawić.</>],
       ]}
     >
@@ -86,8 +86,8 @@ export function RuneInfo({ game, close }: { game: Game; close: () => void }) {
 /** Gwiazdki i kopie: co daje kopia i ile Kamieni po komplecie gwiazdek (według rzadkości). */
 const StarsTip = () => (
   <>
-    Kopia tego samego daje gwiazdkę: +{Math.round(STAR_BONUS * 100)}% siły, do {STARS_MAX} gwiazdek (widać je przy każdym: złote — zdobyte, szare — brakujące).
-    Kopia ponad komplet zamienia się w Kamienie — tym więcej, im rzadszy:{' '}
+    Kopia tego samego daje gwiazdkę: +{Math.round(STAR_BONUS * 100)}% siły, do {STARS_MAX} gwiazdek (widać je przy każdym: złote to zdobyte, szare to brakujące).
+    Kopia ponad komplet zamienia się w Kamienie, tym więcej, im rzadszy:{' '}
     {DUPE_STONES.map((n, r) => <span key={r}>{r > 0 && ', '}<span class={`rt${r}`}>{RAR[r].n.toLowerCase()}</span> {n}</span>)}.
   </>
 );
@@ -104,8 +104,8 @@ export function PetsInfo({ close }: { close: () => void }) {
       tips={[
         [resUrl('kamien'), 'Poziomy', <>Kamienie podnoszą poziom (do {COMPANION_MAX}): +5% siły za poziom. Kamienie dają bossowie, lochy, sklep, klan i arena.</>],
         [resUrl('trofeum'), 'Gwiazdki i kopie', <StarsTip />],
-        [resUrl('moc'), 'Walczy jeden', <>Wybierasz jednego chowańca. Jego atak to % obrażeń bohatera, a cecha działa cały czas — także za nieobecność.</>],
-        [resUrl('pieczec'), 'Na zawsze', <>Chowańce zostają z tobą na całą grę — warto inwestować w ulubionego.</>],
+        [resUrl('moc'), 'Walczy jeden', <>Wybierasz jednego chowańca. Jego atak to % obrażeń bohatera, a cecha działa cały czas, także za nieobecność.</>],
+        [resUrl('pieczec'), 'Na zawsze', <>Chowańce zostają z tobą na całą grę, warto inwestować w ulubionego.</>],
       ]}
     >
       <div class="fi-sec">Czas wykluwania</div>
@@ -147,8 +147,8 @@ export function MountsInfo({ close }: { close: () => void }) {
       tips={[
         [resUrl('kamien'), 'Poziomy', <>Kamienie podnoszą poziom (do {COMPANION_MAX}): +5% premii wierzchowca za poziom.</>],
         [resUrl('trofeum'), 'Gwiazdki i kopie', <StarsTip />],
-        [resUrl('lapa'), 'Razem z chowańcem', <>Wierzchowiec i chowaniec działają jednocześnie — to dwie osobne premie.</>],
-        [resUrl('pieczec'), 'Na zawsze', <>Wierzchowce zostają z tobą na całą grę — warto inwestować w ulubionego.</>],
+        [resUrl('lapa'), 'Razem z chowańcem', <>Wierzchowiec i chowaniec działają jednocześnie, to dwie osobne premie.</>],
+        [resUrl('pieczec'), 'Na zawsze', <>Wierzchowce zostają z tobą na całą grę, warto inwestować w ulubionego.</>],
       ]}
     >
       <div class="fi-sec">Wierzchowce</div>
@@ -203,16 +203,16 @@ export function ForgeLevelInfo({ game, close }: { game: Game; close: () => void 
         [weapon ? itemUrl(weapon.kind, weapon.ore, weapon.r) : itemUrl('Miecz', 1, 1), '3. Moc przedmiotów', 'każdy poziom to +2 poziomy nowych przedmiotów'],
       ]}
       tips={[
-        [resUrl('czas'), 'Ile to trwa', <>Pierwsze 20 poziomów mija w kilka dni, dalej każdy poziom to od półtora do prawie trzech dni — cała kuźnia to mniej więcej rok gry. Kuźnia działa normalnie w trakcie ulepszania.</>],
+        [resUrl('czas'), 'Ile to trwa', <>Pierwsze 20 poziomów mija w kilka dni, dalej każdy poziom to od półtora do prawie trzech dni, cała kuźnia to mniej więcej rok gry. Kuźnia działa normalnie w trakcie ulepszania.</>],
         [techUrl('k_miech'), 'Jak skrócić', <>{miech.n} w Nauce skracają każde ulepszenie, pomoc klanu odejmuje minuty, a przyspieszenie kosztuje 1 Klejnot za minutę.</>],
         [oreUrl(4), 'Ruda dojrzewa z kuźnią', <>Każda ruda tuż po odblokowaniu daje mieszankę dwóch sąsiednich rzadkości, a z każdym poziomem kuźni wyniki przesuwają się w górę, aż do jakości docelowej rudy.</>],
-        [resUrl('klejnot'), 'Rzadsze — trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT_RANK[6])} szansy, na Mityczny ×{f2(JUMP_TO_MULT_RANK[8])}, a na Boski zależy od rudy (najwięcej z Boskiej Rudy).{rel ? ` Hartowanie dodaje +${pct(rel)} względnie — już wliczone.` : ''}</>],
+        [resUrl('klejnot'), 'Im rzadsze, tym trudniej', <>Przeskok na Legendarny ma ×{f2(JUMP_TO_MULT_RANK[6])} szansy, na Mityczny ×{f2(JUMP_TO_MULT_RANK[8])}, a na Boski zależy od rudy (najwięcej z Boskiej Rudy).{rel ? ` Hartowanie dodaje +${pct(rel)} względnie, już wliczone.` : ''}</>],
       ]}
     >
       <div class="fl-prog">
         <div class="fl-row"><b>Poziom {lvl}</b><small>{B.FORGE_MAX - lvl > 0 ? `do ${B.FORGE_MAX}. poziomu: ${longT(timeTo(game, lvl, B.FORGE_MAX))}` : 'najwyższy poziom'}</small></div>
         <div class="bar"><i style={{ width: (lvl / B.FORGE_MAX) * 100 + '%' }} /></div>
-        {next && <small class="muted">Następny kamień milowy: <b>{next}. poziom</b> — {FORGE_UNLOCKS[next]} (za {next - lvl} {next - lvl === 1 ? 'poziom' : next - lvl < 5 ? 'poziomy' : 'poziomów'}, {longT(timeTo(game, lvl, next))}).</small>}
+        {next && <small class="muted">Następny kamień milowy: <b>{next}. poziom</b>: {FORGE_UNLOCKS[next]} (za {next - lvl} {next - lvl === 1 ? 'poziom' : next - lvl < 5 ? 'poziomy' : 'poziomów'}, {longT(timeTo(game, lvl, next))}).</small>}
       </div>
       <div class="fi-sec">Kamienie milowe</div>
       <ul class="fi-odds fl-miles">

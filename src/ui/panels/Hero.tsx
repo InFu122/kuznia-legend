@@ -76,7 +76,7 @@ function Bonuses({ c }: { c: Game['stats'] }) {
   if (c.holy) rows.push({ ic: elemUrl('jasn'), v: `+${f1(c.holy)}%`, n: 'Światło: wobec Nieumarłych i Demonów' });
   if (c.slow) rows.push({ ic: elemUrl('szron'), v: `−${f1(c.slow)}%`, n: 'Spowolnienie wrogów', d: 'wrogowie atakują wolniej' });
   if (c.abyss) rows.push({ ic: techUrl('w_otchlan'), v: `+${f1(c.abyss)}%`, n: 'Obrażenia wobec wrogów Otchłani' });
-  if (c.aura > 0) rows.push({ ic: resUrl('klejnot'), v: `+${c.aura * B.DIVINE_AURA}%`, n: `Boska aura ×${c.aura}`, d: `obrażenia i zdrowie — po ${B.DIVINE_AURA}% za każdy założony Boski przedmiot` });
+  if (c.aura > 0) rows.push({ ic: resUrl('klejnot'), v: `+${c.aura * B.DIVINE_AURA}%`, n: `Boska aura ×${c.aura}`, d: `obrażenia i zdrowie, po ${B.DIVINE_AURA}% za każdy założony Boski przedmiot` });
   if (!rows.length) return null;
   return (
     <div class={`bonus${open ? ' open' : ''}`}>
@@ -149,7 +149,7 @@ function Equipment({ game, onItem }: { game: Game; onItem: (it: Item) => void })
             return (
               <button key={slot} class={`eqc r${it.r}`} onClick={() => onItem(it)}
                 aria-label={`${SLOTS[slot].n}: ${itemName(it)}, ${RAR[it.r].n}, ${qText(it.q)}${rl ? `, runa +${rl * B.RUNE_PCT}%` : ''}${it.aw && !it.awc ? ', możesz wybrać cechę' : ''}`}>
-                <span class="eqc-ic"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} /><QBadge q={it.q} size="sm" /><RuneBadge lvl={rl} cls="on-slot" />{it.aw && !it.awc && <i class="slot-aw" title="Wybierz cechę przebudzenia — za darmo" />}</span>
+                <span class="eqc-ic"><Px src={itemUrl(it.kind, it.ore, it.r)} size={36} /><QBadge q={it.q} size="sm" /><RuneBadge lvl={rl} cls="on-slot" />{it.aw && !it.awc && <i class="slot-aw" title="Wybierz cechę przebudzenia, za darmo" />}</span>
                 <span class="eqc-t">
                   <small>{SLOTS[slot].n}</small>
                   <b class={`rt${it.r}`}>{itemName(it)}</b>

@@ -105,7 +105,7 @@ export function ProfileView({ game, id, close }: { game: Game; id: string | null
           {p.mount && <span class="pf-skill"><Px src={resUrl('siodlo')} size={22} /><small>{MOUNTS[p.mount].n}</small></span>}
         </div>
       )}
-      {!p.me && <p class="sub">Statystyki liczą się z przedmiotów, których pochodzenie sprawdził serwer — tak samo jak na arenie.</p>}
+      {!p.me && <p class="sub">Statystyki liczą się z przedmiotów, których pochodzenie sprawdził serwer, tak samo jak na arenie.</p>}
       <button class="btn" onClick={close}>Zamknij</button>
     </>
   );

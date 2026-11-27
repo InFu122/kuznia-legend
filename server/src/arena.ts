@@ -166,10 +166,10 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   const now = Date.now();
   const hero = myHero(nk, userId);
   const { me, version } = loadMe(nk, userId, now);
-  if (me.left <= 0) throw err('Na dziś koniec walk na arenie — wróć jutro.', PRECONDITION);
+  if (me.left <= 0) throw err('Na dziś koniec walk na arenie, wróć jutro.', PRECONDITION);
   const i = Math.floor(Number(req.i));
   const opp = me.opp[i];
-  if (!opp || (typeof req.id === 'string' && req.id !== opp.id)) throw err('Nie ma takiego przeciwnika — odśwież listę.', INVALID);
+  if (!opp || (typeof req.id === 'string' && req.id !== opp.id)) throw err('Nie ma takiego przeciwnika, odśwież listę.', INVALID);
 
   let foe: Fighter;
   let foeLook: Look | undefined = hero.look;
@@ -177,7 +177,7 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   if (opp.ghost) foe = scaleFighter(hero.f, opp.k ?? 1, opp.name);
   else {
     const h = readHero(nk, opp.id);
-    if (!h) throw err('Przeciwnik zniknął z areny — odśwież listę.', NOT_FOUND);
+    if (!h) throw err('Przeciwnik zniknął z areny, odśwież listę.', NOT_FOUND);
     foe = h.f;
     foeLook = h.look;
     foeSk = skinOr(h.sk); foeFr = frameOr(h.fr);

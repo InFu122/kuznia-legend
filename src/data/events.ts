@@ -27,12 +27,12 @@ export const EVENTS: Record<EventKind, EventDef> = {
     w: { sm: 1, k: 0.02, b: 10, keys: 10, tw: 1 },
   },
   lowy: {
-    n: 'Wielkie Łowy', cur1: 'Trofeum', cur: 'Trofea', curGen: 'Trofeów', d: 'Co 10 pokonanych wrogów to Trofeum, boss krainy — 30. Liczą się też nagrody za nieobecność.',
+    n: 'Wielkie Łowy', cur1: 'Trofeum', cur: 'Trofea', curGen: 'Trofeów', d: 'Co 10 pokonanych wrogów to Trofeum, boss krainy: 30. Liczą się też nagrody za nieobecność.',
     dung: 'Lodowa Grota', foes: ['Lodowy wilk', 'Śnieżny troll', 'Mroźny niedźwiedź', 'Szronowy gryf'], boss: 'Pradawny Mamut', type: 'Bestie', skin: 'lowca', frame: 'szron',
     w: { sm: 0.2, k: 0.1, b: 30, keys: 10, tw: 1 },
   },
   upiory: {
-    n: 'Noc Upiorów', cur1: 'Świeca', cur: 'Świece', curGen: 'Świec', d: 'Każdy klucz zużyty w lochu to 40 Świec, piętro Wieży Wyzwań — 5.',
+    n: 'Noc Upiorów', cur1: 'Świeca', cur: 'Świece', curGen: 'Świec', d: 'Każdy klucz zużyty w lochu to 40 Świec, piętro Wieży Wyzwań: 5.',
     dung: 'Nawiedzone Katakumby', foes: ['Błędny ognik', 'Upiór', 'Kościany rycerz', 'Banshee'], boss: 'Królowa Upiorów', type: 'Nieumarli', skin: 'upiorny', frame: 'widmo',
     w: { sm: 0.2, k: 0.02, b: 10, keys: 40, tw: 5 },
   },

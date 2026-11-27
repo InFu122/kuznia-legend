@@ -130,7 +130,7 @@ export function ArenaPanel({ game, online }: { game: Game; online: boolean }) {
   const open = game.s.maxLand >= B.ARENA_UNLOCK_LAND;
   const blocked = !game.net ? 'Arena działa w aplikacji połączonej z serwerem gry.'
     : !open ? `Arenę odblokujesz po pokonaniu bossa krainy ${landDef(B.ARENA_UNLOCK_LAND - 1)?.n ?? landDef(0).n}.`
-      : !online ? 'Brak połączenia z serwerem — arena wróci, gdy gra się połączy.' : '';
+      : !online ? 'Brak połączenia z serwerem, arena wróci, gdy gra się połączy.' : '';
   if (!blocked) return <ArenaView game={game} close={() => {}} inline />;
   return (
     <>
@@ -289,9 +289,9 @@ function Fights({ game, st, busy, attack, refresh, toShop, adBtn }: {
                 <Avatar skin={o.ghost ? game.s.look.skin : o.sk} frame={o.ghost ? 'prosta' : o.fr} size={44} />
               </button>
               <div class="ao-main">
-                <div class="ao-name">{o.name}{o.ghost && <span class="tag">Duch</span>}</div>
-                <div class="ao-pow"><span class={`ao-dif ${dif.cls}`}>{dif.n}</span><span>Moc <b class="num">{fmt(o.power)}</b> <small title="w porównaniu z twoją Mocą na arenie">({pctDiff(o.power, st.power)})</small></span></div>
-                <div class="ao-stake">Ocena: wygrana <b class="good">+{win}</b> · porażka <b class="bad">−{Math.abs(lose)}</b></div>
+                <div class="ao-name"><span class="ao-nm">{o.name}</span>{o.ghost && <span class="tag">Duch</span>}</div>
+                <div class="ao-pow"><span class={`ao-dif ${dif.cls}`}>{dif.n}</span><span class="ao-p">Moc <b class="num">{fmt(o.power)}</b> <small class="ao-pct" title="w porównaniu z twoją Mocą na arenie">({pctDiff(o.power, st.power)})</small></span></div>
+                <div class="ao-stake"><span class="ao-lbl">Ocena: </span>wygrana <b class="good">+{win}</b> · porażka <b class="bad">−{Math.abs(lose)}</b></div>
               </div>
               <button class="btn primary ao-go" disabled={busy || st.left < 1} onClick={() => attack(i)}>Walcz</button>
             </li>
@@ -304,9 +304,9 @@ function Fights({ game, st, busy, attack, refresh, toShop, adBtn }: {
       </div>
       {st.left > 0 && adBtn}
       {gamePower > st.power * 1.02 && (
-        <div class="lockline">Na arenie walczysz Mocą <b>{fmt(st.power)}</b>, mniejszą niż w grze — część przedmiotów wykuto przed aktualizacją serwera albo bez połączenia. Nowe wytopy liczą się od razu.</div>
+        <div class="lockline">Na arenie walczysz Mocą <b>{fmt(st.power)}</b>, mniejszą niż w grze: część przedmiotów wykuto przed aktualizacją serwera albo bez połączenia. Nowe wytopy liczą się od razu.</div>
       )}
-      <p class="sub ar-foot">Walczysz z kopią bohatera z ostatniego zapisu.{st.opp.some(o => o.ghost) ? ' Duchy to kopie twojego bohatera — zastępują graczy, gdy na serwerze jest ich mało.' : ''}</p>
+      <p class="sub ar-foot">Walczysz z kopią bohatera z ostatniego zapisu.{st.opp.some(o => o.ghost) ? ' Duchy to kopie twojego bohatera, zastępują graczy, gdy na serwerze jest ich mało.' : ''}</p>
     </>
   );
 }
@@ -316,7 +316,7 @@ function Defense({ log }: { log: ArenaState['log'] }) {
   const now = Date.now();
   return (
     <>
-      <p class="sub">Twój bohater broni się sam — inni gracze walczą z kopią z twojego ostatniego zapisu. Obrona daje lub zabiera połowę tego, co atak.</p>
+      <p class="sub">Twój bohater broni się sam, inni gracze walczą z kopią z twojego ostatniego zapisu. Obrona daje lub zabiera połowę tego, co atak.</p>
       {log.length ? (
         <ul class="ar-log">
           {log.map((l, i) => (

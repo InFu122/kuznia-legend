@@ -6,7 +6,7 @@ export const WAR_DAYS: { k: WarDayKind; short: string; n: string; how: string }[
   { k: 'dobor', short: 'Pn', n: 'Dobór przeciwnika', how: 'Klany o podobnej sile dostają przeciwnika na cały tydzień. Od jutra liczą się punkty.' },
   { k: 'kucie', short: 'Wt', n: 'Dzień kucia', how: 'Każdy wytop (także auto-wytop i seryjny) to 1 punkt.' },
   { k: 'fale', short: 'Śr', n: 'Dzień walki', how: 'Co 5 pokonanych wrogów w krainach (także w nagrodach za nieobecność) to 1 punkt.' },
-  { k: 'lochy', short: 'Czw', n: 'Dzień lochów', how: 'Każdy klucz zużyty w lochu to 25 punktów, każde piętro Wieży Wyzwań — 5.' },
+  { k: 'lochy', short: 'Czw', n: 'Dzień lochów', how: 'Każdy klucz zużyty w lochu to 25 punktów, każde piętro Wieży Wyzwań: 5.' },
   { k: 'boss', short: 'Pt', n: 'Dzień bossa', how: 'Każdy atak na bossa klanowego to 60 punktów (3 ataki dziennie).' },
   { k: 'bitwa', short: 'So', n: 'Bitwa', how: 'Masz 3 ataki na obrońców wrogiego klanu. Wygrana daje punkty zależne od siły obrońcy.' },
   { k: 'nagrody', short: 'Nd', n: 'Wyniki i nagrody', how: 'Zwycięski klan dostaje większe skrzynie. Nagrody trafiają do każdego, kto zdobył punkty.' },
@@ -52,10 +52,10 @@ export const GHOST_NAMES = ['Grimwald', 'Ostrogar', 'Wiedmira', 'Borzywoj', 'Kal
 
 /** Cztery fazy smoka. Każda ma słabość: przedmioty z tym żywiołem zadają więcej obrażeń. */
 export const RAID_PHASES = [
-  { n: 'Ognisty Oddech', foe: 'Czerwony Smok', weak: 'szron', d: 'Smok zieje ogniem — słabość: Lód (Szronit).' },
-  { n: 'Lodowe Skrzydła', foe: 'Lodowy Smok', weak: 'zar', d: 'Łuski pokrywa szron — słabość: Ogień (Żarowiec).' },
-  { n: 'Gromowy Ryk', foe: 'Smok błyskawic', weak: 'jad', d: 'Wokół smoka szaleje burza — słabość: Trucizna (Jadowit).' },
-  { n: 'Cień Smoka', foe: 'Gwiezdny Pożeracz', weak: 'jasn', d: 'Smok znika w mroku — słabość: Światło (Jasnokwarc).' },
+  { n: 'Ognisty Oddech', foe: 'Czerwony Smok', weak: 'szron', d: 'Smok zieje ogniem. Słabość: Lód (Szronit).' },
+  { n: 'Lodowe Skrzydła', foe: 'Lodowy Smok', weak: 'zar', d: 'Łuski pokrywa szron. Słabość: Ogień (Żarowiec).' },
+  { n: 'Gromowy Ryk', foe: 'Smok błyskawic', weak: 'jad', d: 'Wokół smoka szaleje burza. Słabość: Trucizna (Jadowit).' },
+  { n: 'Cień Smoka', foe: 'Gwiezdny Pożeracz', weak: 'jasn', d: 'Smok znika w mroku. Słabość: Światło (Jasnokwarc).' },
 ] as const;
 
 export const RAID = {

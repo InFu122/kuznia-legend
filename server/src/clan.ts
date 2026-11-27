@@ -101,7 +101,7 @@ export function rpcClanCreate(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   const userId = userOf(ctx);
   const req = parse(payload);
   requireUnlocked(nk, userId);
-  if (clanOf(nk, userId)) throw err('Jesteś już w klanie — najpierw go opuść.', PRECONDITION);
+  if (clanOf(nk, userId)) throw err('Jesteś już w klanie, najpierw go opuść.', PRECONDITION);
   const name = typeof req.name === 'string' ? req.name.replace(/\s+/g, ' ').trim() : '';
   const tag = typeof req.tag === 'string' ? req.tag.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
   if (name.length < 3 || name.length > 20 || !CLAN_NAME.test(name)) throw err('Nazwa klanu: 3–20 znaków (litery, cyfry, spacja, _ . - \').', INVALID);
@@ -138,7 +138,7 @@ export function rpcClanJoin(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const userId = userOf(ctx);
   const id = String(parse(payload).id || '');
   requireUnlocked(nk, userId);
-  if (clanOf(nk, userId)) throw err('Jesteś już w klanie — najpierw go opuść.', PRECONDITION);
+  if (clanOf(nk, userId)) throw err('Jesteś już w klanie, najpierw go opuść.', PRECONDITION);
   const g = (nk.groupsGetId([id]) || [])[0];
   if (!g) throw err('Nie ma takiego klanu.', NOT_FOUND);
   const m = meta(g);

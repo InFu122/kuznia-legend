@@ -58,7 +58,7 @@ export function track(ctx: Ctx, kind: MissionKind, n = 1): void {
   for (const m of [...ctx.s.missions.daily, ...ctx.s.missions.weekly]) {
     if (m.kind !== kind || m.n >= m.goal) continue;
     m.n = Math.min(m.goal, m.n + n);
-    if (m.n >= m.goal) toast(ctx, `Misja wykonana: ${missionText(m.kind, m.goal)} — odbierz nagrodę w Zadaniach`, 'good');
+    if (m.n >= m.goal) toast(ctx, `Misja wykonana: ${missionText(m.kind, m.goal)}. Odbierz nagrodę w Zadaniach`, 'good');
   }
 }
 

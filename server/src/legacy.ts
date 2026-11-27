@@ -13,5 +13,5 @@ export function readLegacy(nk: nkruntime.Nakama, userId: string): Legacy {
 
 /** Dziedzictwo wycofane (kuźnia rośnie do 200. poziomu) — stara wersja gry dostaje czytelną odmowę. */
 export function rpcLegacy(_ctx: nkruntime.Context, _logger: nkruntime.Logger, _nk: nkruntime.Nakama, _payload: string): string {
-  throw err('Dziedzictwa już nie ma — kuźnia rośnie teraz do 200. poziomu. Zaktualizuj grę.', PRECONDITION);
+  throw err('Dziedzictwa już nie ma, kuźnia rośnie teraz do 200. poziomu. Zaktualizuj grę.', PRECONDITION);
 }

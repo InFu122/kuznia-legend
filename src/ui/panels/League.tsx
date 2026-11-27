@@ -32,7 +32,7 @@ function zoneInfo(lg: LeagueState): { cls: 'up' | 'down' | ''; n: string; d: str
     return { cls: 'down', n: 'Strefa spadku', d: safe && me ? `Do bezpiecznego miejsca brakuje ${fmt(Math.max(1, safe.pts - me.pts + 1))} pkt.` : 'Wygrywaj, żeby wyjść ze strefy spadku.' };
   }
   const cut = lg.rows[LEAGUE.PROMO - 1];
-  return { cls: '', n: 'Bezpiecznie', d: top && cut && me ? `Do strefy awansu brakuje ${fmt(Math.max(1, cut.pts - me.pts + 1))} pkt.` : 'Najwyższa liga — walcz o jak najlepsze miejsce.' };
+  return { cls: '', n: 'Bezpiecznie', d: top && cut && me ? `Do strefy awansu brakuje ${fmt(Math.max(1, cut.pts - me.pts + 1))} pkt.` : 'Najwyższa liga: walcz o jak najlepsze miejsce.' };
 }
 
 export function LeagueTab({ lg, now }: { lg: LeagueState; now: number }) {
@@ -54,12 +54,12 @@ export function LeagueTab({ lg, now }: { lg: LeagueState; now: number }) {
       {last && (
         <p class={`lgnote ${last.move > 0 ? 'up' : last.move < 0 ? 'down' : ''}`} role="status">
           Zeszły tydzień: <b>{last.rank}. miejsce</b> w lidze {LEAGUES[last.tier].n}
-          {last.move > 0 ? ` — awans do ligi ${LEAGUES[last.tier + 1].n}!` : last.move < 0 ? ` — spadek do ligi ${LEAGUES[last.tier - 1].n}.` : ' — utrzymanie ligi.'}
+          {last.move > 0 ? `, awans do ligi ${LEAGUES[last.tier + 1].n}!` : last.move < 0 ? `, spadek do ligi ${LEAGUES[last.tier - 1].n}.` : ', utrzymanie ligi.'}
           {' '}+<Tokens n={last.tokens} />.
         </p>
       )}
       {lg.lastSeason && lg.lastSeason.gems > 0 && (
-        <p class="lgnote up">Sezon {lg.lastSeason.n}: najwyższa liga {LEAGUES[lg.lastSeason.best].n} — +<Res r={{ gems: lg.lastSeason.gems }} />.</p>
+        <p class="lgnote up">Sezon {lg.lastSeason.n}: najwyższa liga {LEAGUES[lg.lastSeason.best].n}, +<Res r={{ gems: lg.lastSeason.gems }} />.</p>
       )}
       <ul class="ar-rules">
         <li><small>Wygrana</small><b>do {Math.round(LEAGUE.WIN_PTS * 1.5)} pkt</b></li>
@@ -95,7 +95,7 @@ export function LeagueTab({ lg, now }: { lg: LeagueState; now: number }) {
       <div class="eyebrow" style={{ marginTop: '4px' }}>Sezon {lg.season.n} · {lg.season.name}</div>
       <p class="sub">
         Kończy się za <b>{tfmt(Math.max(0, lg.season.end - now))}</b>. Klejnoty za najwyższą ligę sezonu
-        {lg.season.gems > 0 ? <> — na razie <Res r={{ gems: lg.season.gems }} /></> : <> — od ligi {LEAGUES[1].n} wzwyż</>}. Nowy sezon zaczyna się ligę niżej.
+        {lg.season.gems > 0 ? <>, na razie <Res r={{ gems: lg.season.gems }} /></> : <>, od ligi {LEAGUES[1].n} wzwyż</>}. Nowy sezon zaczyna się ligę niżej.
       </p>
       <ul class="lgseason ar-season">
         {LEAGUES.map((_, i) => (

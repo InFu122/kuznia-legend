@@ -86,7 +86,7 @@ export function EventView({ game, close, onDung }: { game: Game; close: () => vo
           <div class="bar"><i style={{ width: Math.min(100, (e.dpts / EVENT.DAY_CAP) * 100) + '%' }} /></div>
           <b class="num">{fmt(e.dpts)}/{fmt(EVENT.DAY_CAP)}</b>
         </div>
-        {capped && <small class="evcap-note">Dzienny limit zdobyty — dalej tylko loch sezonowy (bez limitu).</small>}
+        {capped && <small class="evcap-note">Dzienny limit zdobyty, dalej tylko loch sezonowy (bez limitu).</small>}
         <button class="ev-dung" style={{ '--bg': scene } as Record<string, string>} onClick={onDung}>
           <span class="evd-main">
             <span class="eyebrow">Loch sezonowy · bez limitu</span>

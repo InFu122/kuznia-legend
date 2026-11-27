@@ -82,7 +82,7 @@ export function chatSend(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: 
   const key = 'chat_' + userId + '_' + ch.kind;
   const last = Number(nk.localcacheGet(key)) || 0;
   const now = Date.now();
-  if (now - last < slow) throw err(`Zwolnij — ${Math.ceil(slow / 1000)} s między wiadomościami.`, PRECONDITION);
+  if (now - last < slow) throw err(`Zwolnij, ${Math.ceil(slow / 1000)} s między wiadomościami.`, PRECONDITION);
   nk.localcachePut(key, now, 60);
 
   m.content = JSON.stringify({ k: 'msg', t: censor(text).text, n: nameOf(nk, userId) || 'Kowal' });

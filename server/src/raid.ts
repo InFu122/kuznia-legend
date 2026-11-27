@@ -92,11 +92,11 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   const now = Date.now();
   const clock = warClock(nk, ctx, now);
   let r = ensureRaid(nk, clock.week, g.id, now);
-  if (r.done) throw err('Smok pokonany — następny pojawi się w poniedziałek.', PRECONDITION);
+  if (r.done) throw err('Smok pokonany, następny pojawi się w poniedziałek.', PRECONDITION);
   const save = readSave(nk, userId);
   const power = Math.max(1, save ? save.value.power || 0 : 0);
   const bestG = goldStage(save && save.value.state);
-  if (usedToday(r, userId, clock) >= RAID.ATTACKS) throw err('Na dziś ataki na smoka wykorzystane — wróć jutro.', PRECONDITION);
+  if (usedToday(r, userId, clock) >= RAID.ATTACKS) throw err('Na dziś ataki na smoka wykorzystane, wróć jutro.', PRECONDITION);
   const w = weakOf(save ? save.value.state : null, r.ph);
   const roll = Math.round(power * RAID.DMG_MULT * (1 - RAID.SPREAD + 2 * RAID.SPREAD * serverRng(nk).next()) * (1 + w.bonus));
   const who = nameOf(nk, userId) || 'Kowal';
@@ -122,14 +122,14 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
       x.log.push({ t: now, m: `${who} przełamuje fazę „${RAID_PHASES[x.ph].n}”` });
       x.ph++;
       x.pd = {};
-      if (x.ph >= RAID_PHASES.length) { x.done = true; killed = true; x.hp = 0; x.log.push({ t: now, m: `${who} zadaje ostatni cios — smok pokonany!` }); }
+      if (x.ph >= RAID_PHASES.length) { x.done = true; killed = true; x.hp = 0; x.log.push({ t: now, m: `${who} zadaje ostatni cios, smok pokonany!` }); }
       else x.hp = x.max;
     }
     if (x.log.length > LOG_MAX) x.log.splice(0, x.log.length - LOG_MAX);
     return x;
   }, perm) as Raid;
-  if (limit) throw err('Na dziś ataki na smoka wykorzystane — wróć jutro.', PRECONDITION);
-  if (!dealt) throw err('Smok pokonany — następny pojawi się w poniedziałek.', PRECONDITION);
+  if (limit) throw err('Na dziś ataki na smoka wykorzystane, wróć jutro.', PRECONDITION);
+  if (!dealt) throw err('Smok pokonany, następny pojawi się w poniedziałek.', PRECONDITION);
   pushRewards(nk, userId, [{ why: 'Atak na smoka', r: reward }]);
   try { addWeekPoints(nk, ctx, g.id, userId, 'raid'); } catch { /* skrzynia tygodnia nie blokuje ataku */ }
 

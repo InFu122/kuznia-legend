@@ -6,7 +6,7 @@ import { ModalShell, ModalView } from './Modals';
 import { ProfileView } from './panels/Profile';
 import { onProfile } from './profile';
 import { Toasts } from './Toasts';
-import { fmt } from './format';
+import { fmt, fmtShort } from './format';
 import { LockIcon, TabIcon, type Tab } from './icons';
 import { toast } from '../engine/context';
 import { ADVENTURE, NAVS, NAV_OF, VIEW_NAME, reachText, reachTarget, type Nav } from './nav';
@@ -240,7 +240,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
     } else if (gear && !waiting) {
       // Zamiast czekać na bohatera: kuj dalej, póki są puste miejsca i ruda.
       mark = { key: `${step.id}:gear`, target: '.dock-go', title: 'Wypełnij ekwipunek',
-        text: `Bohater nosi ${gear.worn}/8 przedmiotów, a masz ${fmt(gear.ore)} × ${ORES[s.oreSel].n}. Kuj dalej — każdy nowy przedmiot to więcej Mocy na bossa.` };
+        text: `Bohater nosi ${gear.worn}/8 przedmiotów, a masz ${fmt(gear.ore)} × ${ORES[s.oreSel].n}. Kuj dalej, każdy nowy przedmiot to więcej Mocy na bossa.` };
     } else if (step.id === 'boss1') {
       // Przycisk bossa jest dopiero na 10. etapie — wcześniej tylko obwódka paska etapów, bez dłoni.
       mark = waiting ? { key: 'boss1:go', target: '.arena-actions .btn', title: step.t, text: step.d }
@@ -262,10 +262,10 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
       {/* Na Kuźni od poziomu domieszek nad przyciskiem rudy wystaje „dobudówka” — treść i dymek czatu robią jej miejsce. */}
       <div class={`app${elTab ? ' el-tab' : ''}`}>
         <header class="hud">
-          <div class="hud-chip gold" title="Złoto"><Px src={resUrl('zloto')} size={22} /><b>{fmt(s.gold)}</b></div>
+          <div class="hud-chip gold" title="Złoto"><Px src={resUrl('zloto')} size={22} /><b>{fmtShort(s.gold)}</b></div>
           <button class={`hud-chip gems${game.unlocked('sklep') ? '' : ' locked'}`} data-btn="sklep" onClick={headBtn('sklep', () => open({ kind: 'shop', tab: 'klejnoty' }))}
             aria-label={game.unlocked('sklep') ? `Klejnoty: ${fmt(s.gems)}. Kup w sklepie` : `Klejnoty: ${fmt(s.gems)}. Sklep zablokowany`}>
-            <Px src={resUrl('klejnot')} size={22} /><b>{fmt(s.gems)}</b>
+            <Px src={resUrl('klejnot')} size={22} /><b>{fmtShort(s.gems)}</b>
             {game.unlocked('sklep') ? <i class="plus" aria-hidden="true">+</i> : <LockIcon />}
           </button>
           <span class="hud-gap" />
@@ -280,7 +280,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
                   save.retry();
                   return;
                 }
-                toast(game.ctx, save.reason || (save.mode === 'connecting' ? 'Łączenie z serwerem…' : 'Brak połączenia z serwerem — gra zapisuje się na telefonie.'));
+                toast(game.ctx, save.reason || (save.mode === 'connecting' ? 'Łączenie z serwerem…' : 'Brak połączenia z serwerem, gra zapisuje się na telefonie.'));
               }}>
               {save.error ? 'Zapis odrzucony' : save.mode === 'connecting' ? 'Łączenie…' : 'Offline'}
             </button>
@@ -289,7 +289,7 @@ export function App({ game, save, onReady }: { game: Game; save: SaveInfo; onRea
             aria-label={s.opts.music ? 'Muzyka: wybierz utwór' : 'Muzyka wyłączona. Włącz albo wybierz utwór'}>
             <NoteIcon off={!s.opts.music} />
           </button>
-          <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmt(game.stats.power)}</b></div>
+          <div class="hud-chip moc" title="Moc bohatera"><Px src={resUrl('moc')} size={20} /><b>{fmtShort(game.stats.power)}</b></div>
         </header>
         <GoalStrip game={game} step={step} onShow={showStep} onMissions={t => headBtn('zadania', () => open({ kind: 'missions', tab: t }))()} />
         <Arena game={game} onTab={t => goTab(t, true)} onInfo={land => open({ kind: 'landinfo', land })} onAd={what => open({ kind: 'adOffer', what })} onPass={() => open({ kind: 'shop', tab: 'przepustka' })} onEvent={() => open({ kind: 'event' })} />

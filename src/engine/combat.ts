@@ -1,4 +1,5 @@
 import { ABYSS_FROM, B, DIVINE_ORE, LANDS, MOUNTS_UNLOCK_LAND, ORES, PETS_UNLOCK_LAND, SETS, SKILLS, SKILLS_UNLOCK_G, isAbyss, isRareOre, oreShares, setOfLand, skillValue, landDef } from '../data';
+import { shortNum } from './num';
 import { buffMult } from './shop';
 import { toast, type Ctx } from './context';
 import { dungFloor, dungEnd, spawnDung } from './dungeon';
@@ -11,7 +12,8 @@ import { grant } from './reward';
 import { track } from './missions';
 import type { Enemy, Fx, LootDrop, Reward, Stats } from './types';
 
-const fmtN = (n: number) => Math.round(n).toLocaleString('pl-PL');
+/** Liczby nad walczącymi: krótko (np. „115 mld”), żeby duże obrażenia nie wychodziły poza pole walki. */
+const fmtN = shortNum;
 
 export function spawnNext(ctx: Ctx): void {
   const { s, b } = ctx;
@@ -219,6 +221,7 @@ function onEnemyDown(ctx: Ctx, e: Enemy): void {
   s.stats.kills += e.count;
   track(ctx, 'wave');
   b.heroHp = Math.min(b.heroMax, b.heroHp + B.WAVE_HEAL * b.heroMax);
+  b.stuck = undefined; // fala pokonana — bohater daje sobie radę
   s.cur.wave++;
   if (s.cur.wave > B.WAVES_PER_STAGE) {
     s.cur.wave = 1;
@@ -269,7 +272,7 @@ function bossWon(ctx: Ctx, e: Enemy): void {
     s.cur = { land: land + 1, stage: 1, wave: 1 };
     s.frontStage = 1;
     s.bestG = Math.max(s.bestG, gOf(land + 1, 1));
-    if (land + 1 === ABYSS_FROM) toast(ctx, 'Kampania ukończona! Przed bohaterem Otchłań — kręgi bez dna, coraz silniejsi wrogowie i lepsze łupy.', 'good');
+    if (land + 1 === ABYSS_FROM) toast(ctx, 'Kampania ukończona! Przed bohaterem Otchłań: kręgi bez dna, coraz silniejsi wrogowie i lepsze łupy.', 'good');
     ctx.emit({ t: 'modal', m: { kind: 'boss', land, gold, n, books, uniq, extra } });
   } else {
     s.cur.stage = 1;
@@ -282,7 +285,7 @@ function bossWon(ctx: Ctx, e: Enemy): void {
       (uniq && set ? ` · ${SETS[set].ore}!` : ''), 'good');
   }
   if (extra.ores?.[DIVINE_ORE]) {
-    toast(ctx, `${ORES[DIVINE_ORE].n}! ${L.boss} zostawia bardzo rzadką rudę — największa szansa na Boski przedmiot.`, 'good');
+    toast(ctx, `${ORES[DIVINE_ORE].n}! ${L.boss} zostawia bardzo rzadką rudę: największa szansa na Boski przedmiot.`, 'good');
     ctx.emit({ t: 'sfx', k: 'rare' });
   }
 }
@@ -329,9 +332,17 @@ function onHeroDown(ctx: Ctx, e: Enemy): void {
     ctx.emit({ t: 'sfx', k: 'lose' });
     if (s.cleared[s.cur.land]) { s.cur.stage = 1; s.cur.wave = 1; }
   } else {
-    if (s.cur.stage > 1) s.cur.stage--;
     s.cur.wave = 1;
-    toast(ctx, 'Bohater padł — cofasz się o jeden etap. Wykuj lepszy sprzęt.', 'bad');
+    if (s.cur.stage > 1) {
+      s.cur.stage--;
+      toast(ctx, 'Bohater padł. Cofasz się o jeden etap. Wykuj lepszy sprzęt.', 'bad');
+    } else if (s.cur.land > 0) {
+      // 1. etap: nie ma gdzie się cofnąć — ekran walki pokaże przycisk powrotu do poprzedniej krainy.
+      b.stuck = s.cur.land;
+      toast(ctx, 'Bohater padł. Ta kraina jest jeszcze za trudna: wróć do łatwiejszej albo wykuj lepszy sprzęt.', 'bad');
+    } else {
+      toast(ctx, 'Bohater padł. Wykuj lepszy sprzęt.', 'bad');
+    }
   }
   b.enemy = null;
   b.heroHp = b.heroMax;
@@ -346,6 +357,7 @@ export function goLand(ctx: Ctx, i: number): boolean {
   if (b.mode === 'dung') { toast(ctx, 'Najpierw wyjdź z lochu.', 'bad'); return false; }
   const front = i === s.maxLand && !s.cleared[i];
   s.cur = { land: i, stage: front ? s.frontStage : 1, wave: 1 };
+  b.stuck = undefined;
   b.enemy = null;
   b.pause = 200;
   b.heroHp = b.heroMax;

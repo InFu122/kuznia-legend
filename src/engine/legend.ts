@@ -57,7 +57,7 @@ export function setAwakening(ctx: Ctx, slot: SlotId, key: AwKey): boolean {
   s.gold -= cost;
   it.aw = awakeningOf(key);
   it.awc = (it.awc ?? 0) + 1;
-  if (!same) toast(ctx, `${baseName(it)} — nowa cecha: ${it.aw.name}`, 'good');
+  if (!same) toast(ctx, `${baseName(it)}, nowa cecha: ${it.aw.name}`, 'good');
   ctx.dirty = true;
   invalidate(ctx);
   return true;

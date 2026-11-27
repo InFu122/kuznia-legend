@@ -55,7 +55,7 @@ export function rpcTransferRedeem(ctx: nkruntime.Context, logger: nkruntime.Logg
   // Ograniczenie prób, żeby nie dało się zgadywać kodów.
   updateObject<Tries>(nk, 'transfer', 'tries', userId, cur => {
     const t = cur && now - cur.t < TRIES_WINDOW_MS ? cur : { n: 0, t: now };
-    if (t.n >= MAX_TRIES) throw err('Za dużo prób — spróbuj za godzinę.', EXHAUSTED);
+    if (t.n >= MAX_TRIES) throw err('Za dużo prób, spróbuj za godzinę.', EXHAUSTED);
     return { n: t.n + 1, t: t.t };
   });
 
@@ -63,7 +63,7 @@ export function rpcTransferRedeem(ctx: nkruntime.Context, logger: nkruntime.Logg
   const objs = code.length === CODE_LEN ? nk.storageRead([{ collection: 'transfer', key: code, userId: SYSTEM_USER }]) : [];
   const entry = objs.length ? (objs[0].value as CodeEntry) : null;
   if (!entry || entry.exp < now) throw err('Kod jest nieprawidłowy albo wygasł. Wygeneruj nowy na drugim urządzeniu.', INVALID);
-  if (entry.u === userId) throw err('To kod tego samego konta — wpisz go na innym urządzeniu.', INVALID);
+  if (entry.u === userId) throw err('To kod tego samego konta, wpisz go na innym urządzeniu.', INVALID);
 
   nk.linkDevice(entry.u, device);
   nk.storageDelete([

@@ -219,6 +219,8 @@ export interface Battle {
   dung: DungRun | null;
   autoT: number;
   fx: Fx;
+  /** Kraina, w której bohater padł na 1. etapie (nie ma gdzie się cofnąć) — ekran walki proponuje łatwiejszą krainę. */
+  stuck?: number;
 }
 
 export interface Stats {

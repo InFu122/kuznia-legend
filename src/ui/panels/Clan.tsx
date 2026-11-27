@@ -129,7 +129,7 @@ function Finder({ info, reload }: { info: ClanInfo; reload: (msg?: string) => vo
         </form>
         {msg && <p class="sub" role="status" style={{ marginTop: '8px' }}>{msg}</p>}
         {!list && <p class="sub">Wczytywanie…</p>}
-        {list && !list.length && <p class="sub" style={{ marginTop: '8px' }}>{q ? 'Nie ma klanu o takiej nazwie.' : 'Na serwerze nie ma jeszcze klanów — załóż pierwszy.'}</p>}
+        {list && !list.length && <p class="sub" style={{ marginTop: '8px' }}>{q ? 'Nie ma klanu o takiej nazwie.' : 'Na serwerze nie ma jeszcze klanów, załóż pierwszy.'}</p>}
         {list && list.length > 0 && (
           <ul class="cflist">
             {[...list].sort((a, b) => Number(power < a.minPower || a.mode === 'closed' || a.members >= a.max) - Number(power < b.minPower || b.mode === 'closed' || b.members >= b.max)).map(c => {
@@ -189,7 +189,7 @@ function MyClan({ game, info, reload, openChat, onTab }: { game: Game; info: Cla
   const claimWeek = () => wa.run(async () => {
     const r = await clanLife.act(game, (l, up) => l.clanWeekClaim(up));
     const n = r.claimed ?? 0;
-    return `Odebrano ${n === 1 ? 'skrzynię' : `${n} skrzynie`} tygodnia — nagrody są już u ciebie.`;
+    return `Odebrano ${n === 1 ? 'skrzynię' : `${n} skrzynie`} tygodnia, nagrody są już u ciebie.`;
   });
   const topId = d?.week?.top?.uid;
   const [menu, setMenu] = useState<string | null>(null);
@@ -203,7 +203,7 @@ function MyClan({ game, info, reload, openChat, onTab }: { game: Game; info: Cla
   const act = async (a: Action, m: ClanMember) => {
     if ((a === 'kick' || a === 'transfer') && !(confirm && confirm !== 'leave' && confirm.a === a && confirm.m.id === m.id)) { setConfirm({ a, m }); return; }
     setBusy(true); setMsg(''); setConfirm(null); setMenu(null);
-    try { await getLink()!.clanManage(a, m.id); reload(`${ACTION_N[a]}: ${m.name} — gotowe.`); } catch (e) { setMsg(errText(e)); } finally { setBusy(false); }
+    try { await getLink()!.clanManage(a, m.id); reload(`${ACTION_N[a]}: ${m.name}. Gotowe.`); } catch (e) { setMsg(errText(e)); } finally { setBusy(false); }
   };
   const leave = async () => {
     setBusy(true);
@@ -303,7 +303,7 @@ function MyClan({ game, info, reload, openChat, onTab }: { game: Game; info: Cla
       <div class="c-leave">
         {confirm === 'leave' ? (
           <div class="confirm">
-            <span>{me === 'lider' && (info.members?.length ?? 0) > 1 ? 'Opuścić klan? Przywództwo przejmie Zastępca, Starszy albo najdawniejszy członek.' : (info.members?.length ?? 0) <= 1 ? 'Jesteś ostatnim członkiem — klan zostanie rozwiązany. Opuścić?' : 'Opuścić klan?'}</span>
+            <span>{me === 'lider' && (info.members?.length ?? 0) > 1 ? 'Opuścić klan? Przywództwo przejmie Zastępca, Starszy albo najdawniejszy członek.' : (info.members?.length ?? 0) <= 1 ? 'Jesteś ostatnim członkiem, klan zostanie rozwiązany. Opuścić?' : 'Opuścić klan?'}</span>
             <div class="btnrow"><button class="btn danger small" disabled={busy} onClick={leave}>Tak, opuść</button><button class="btn small" onClick={() => setConfirm(null)}>Anuluj</button></div>
           </div>
         ) : <button class="linkbtn danger-link" onClick={() => setConfirm('leave')}>Opuść klan</button>}

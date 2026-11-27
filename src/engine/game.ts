@@ -139,7 +139,7 @@ export class Game {
       if (this.passT <= 0) {
         this.passT = 5000;
         const r = tickPassLocal(ctx);
-        if (r) toast(ctx, 'Nowy sezon Przepustki Kowala — nieodebrane nagrody trafiły do ciebie.', 'good');
+        if (r) toast(ctx, 'Nowy sezon Przepustki Kowala, nieodebrane nagrody trafiły do ciebie.', 'good');
       }
     }
     if (this.adOffer && this.adOffer.until <= now) { this.adOffer = null; this.changed(); }
@@ -238,7 +238,7 @@ export class Game {
       const O = ORES[s.oreSel];
       s.auto = false;
       ctx.dirty = true;
-      toast(ctx, s.forge.lvl < O.lvl ? `Auto-wytop wyłączony: ${O.n} od ${O.lvl}. poziomu kuźni.` : `Auto-wytop wyłączony — skończyła się ruda: ${O.n}.`, 'bad');
+      toast(ctx, s.forge.lvl < O.lvl ? `Auto-wytop wyłączony: ${O.n} od ${O.lvl}. poziomu kuźni.` : `Auto-wytop wyłączony, skończyła się ruda: ${O.n}.`, 'bad');
       this.changed();
       return;
     }
@@ -379,7 +379,7 @@ export class Game {
   /** „Załóż najlepsze”: umiejętności, chowaniec albo wierzchowiec dające najwięcej Mocy. */
   equipBest(what: 'skills' | 'pet' | 'mount'): boolean {
     const ok = what === 'skills' ? equipBestSkills(this.ctx) : what === 'pet' ? selectBestPet(this.ctx) : selectBestMount(this.ctx);
-    toast(this.ctx, ok ? 'Założono najlepsze — Moc: ' + Math.round(this.stats.power).toLocaleString('pl-PL') : 'Masz już założone najlepsze.', ok ? 'good' : undefined);
+    toast(this.ctx, ok ? 'Założono najlepsze. Moc: ' + Math.round(this.stats.power).toLocaleString('pl-PL') : 'Masz już założone najlepsze.', ok ? 'good' : undefined);
     this.changed();
     return ok;
   }

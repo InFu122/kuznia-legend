@@ -68,7 +68,7 @@ function Verdict({ d, empty, id }: { d: number; empty: boolean; id: number }) {
     <div class={`dv ${up ? 'up' : 'down'}`} role="status">
       {empty && <span class="dv-new">Nowe miejsce!</span>}
       <b><Tri up={up} />{up ? '+' : '−'}{fmt(n)} <small>Mocy</small></b>
-      {!empty && <span>{up ? 'Lepszy od założonego' : 'Słabszy od założonego — najlepiej sprzedać'}</span>}
+      {!empty && <span>{up ? 'Lepszy od założonego' : 'Słabszy od założonego, najlepiej sprzedać'}</span>}
     </div>
   );
 }
@@ -112,7 +112,7 @@ function Ladder({ it, cur }: { it: Item; cur: Item | undefined }) {
         ))}
       </div>
       {it.jump > 0 && it.flvl > 0 && (
-        <div class="dlad-f">{ORES[it.ore].n} zwykle daje <b class={`rt${rAt(nominal)}`}>{RAR[rAt(nominal)].n}</b> — wyszło <b class={`rt${it.r}`}>{RAR[it.r].n}</b>, {it.jump} {it.jump === 1 ? 'szczebel' : 'szczeble'} wyżej</div>
+        <div class="dlad-f">{ORES[it.ore].n} zwykle daje <b class={`rt${rAt(nominal)}`}>{RAR[rAt(nominal)].n}</b>, wyszło <b class={`rt${it.r}`}>{RAR[it.r].n}</b>, {it.jump} {it.jump === 1 ? 'szczebel' : 'szczeble'} wyżej</div>
       )}
     </div>
   );
@@ -364,13 +364,13 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
             <span class={`dc-arrow${better ? '' : ' back'}`} aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4" /></svg></span>
             <DCard it={it} tag="Nowy" win={better} first={first} cls="new" iconRef={icon} />
           </div>
-          {it.jump < 0 && <div class="jump low">Kuźnia jeszcze nie opanowała tej rudy — tym razem o rzadkość niżej. Od {ORES[it.ore].v6[2]}. poziomu kuźni to się nie zdarza.</div>}
+          {it.jump < 0 && <div class="jump low">Kuźnia jeszcze nie opanowała tej rudy, tym razem o rzadkość niżej. Od {ORES[it.ore].v6[2]}. poziomu kuźni to się nie zdarza.</div>}
           <Ladder it={it} cur={cur} />
         </>
       )}
       <Stats cur={cur} it={it} />
       {runeLvl(s, it.slot) > 0 && (
-        <p class="dec-rune"><Px src={resUrl('runa')} size={18} />Runa {SLOTS[it.slot].n} (+{runeLvl(s, it.slot) * B.RUNE_PCT}%) działa na każdy przedmiot w tym miejscu, więc i na ten — po wymianie nic nie tracisz.</p>
+        <p class="dec-rune"><Px src={resUrl('runa')} size={18} />Runa {SLOTS[it.slot].n} (+{runeLvl(s, it.slot) * B.RUNE_PCT}%) działa na każdy przedmiot w tym miejscu, więc i na ten, po wymianie nic nie tracisz.</p>
       )}
       {empty && !big && <GearFill s={s} it={it} />}
       {!better && s.forge.lvl < B.AUTO_FORGE_LVL && <p class="sub dec-tip">Takie przedmioty od {B.AUTO_FORGE_LVL}. poziomu kuźni sprzedaje sam auto-wytop.</p>}
@@ -379,8 +379,8 @@ export function DecisionView({ game, src, close }: { game: Game; src: 'pending' 
         <div class="result-actions dec-acts dec-ask" role="alertdialog" aria-labelledby="dec-ask-q">
           <p id="dec-ask-q" class="ask-q">
             {ask === 'sell'
-              ? <>Ten przedmiot jest <b class="good">lepszy</b>{empty ? ' i trafiłby na puste miejsce' : ''} — dałby <b>+{fmt(Math.abs(d))} Mocy</b>. Na pewno sprzedać?</>
-              : <>Ten przedmiot jest <b class="bad">słabszy</b> — Moc bohatera spadnie o <b>{fmt(Math.abs(d))}</b>. Na pewno założyć?</>}
+              ? <>Ten przedmiot jest <b class="good">lepszy</b>{empty ? ' i trafiłby na puste miejsce' : ''}, dałby <b>+{fmt(Math.abs(d))} Mocy</b>. Na pewno sprzedać?</>
+              : <>Ten przedmiot jest <b class="bad">słabszy</b>, Moc bohatera spadnie o <b>{fmt(Math.abs(d))}</b>. Na pewno założyć?</>}
           </p>
           <button class="btn primary" onClick={() => setAsk(null)}>{ask === 'sell' ? 'Nie, zostaw go' : 'Nie, nie zakładaj'}</button>
           {ask === 'sell'

@@ -34,9 +34,9 @@ export function oddsRows(what: OddsWhat): { r: number; p: number; n: number; eac
 
 const TITLE: Record<OddsWhat, string> = { zwoj: 'Zwój zaklęć', siodlo: 'Siodło', jajo: 'Rzadkie jajo' };
 const NOTE: Record<OddsWhat, string> = {
-  zwoj: 'Najpierw losuje się rzadkość, potem jedna z umiejętności tej rzadkości — każda tak samo. Powtórka podnosi poziom umiejętności.',
-  siodlo: 'Najpierw losuje się rzadkość, potem jeden z wierzchowców tej rzadkości — każdy tak samo. Powtórka daje gwiazdkę albo Kamienie.',
-  jajo: 'Z jaja zawsze wykluwa się chowaniec rzadki — losuje się tylko który, każdy tak samo. Powtórka daje gwiazdkę albo Kamienie.',
+  zwoj: 'Najpierw losuje się rzadkość, potem jedna z umiejętności tej rzadkości, każda tak samo. Powtórka podnosi poziom umiejętności.',
+  siodlo: 'Najpierw losuje się rzadkość, potem jeden z wierzchowców tej rzadkości, każdy tak samo. Powtórka daje gwiazdkę albo Kamienie.',
+  jajo: 'Z jaja zawsze wykluwa się chowaniec rzadki, losuje się tylko który, każdy tak samo. Powtórka daje gwiazdkę albo Kamienie.',
 };
 
 export function OddsTable({ what }: { what: OddsWhat }) {

@@ -184,7 +184,7 @@ function bumpDaily(nk: nkruntime.Nakama, userId: string, now: number, fn: (d: Da
     ok = fn(d);
     return ok ? d : null;
   }, perm);
-  if (!ok) throw err('Na dziś limit wyczerpany — wróć jutro.', PRECONDITION);
+  if (!ok) throw err('Na dziś limit wyczerpany, wróć jutro.', PRECONDITION);
   return out as Daily;
 }
 
@@ -501,7 +501,7 @@ export function rpcClanHelp(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
     bumpWeek(st, x.wk, userId, helper, CLAN_WEEK.PTS.help * done.length);
     return st;
   }, perm) as ClanState;
-  if (!done.length) throw err('Nie ma komu pomóc — wszystkie prośby mają już twoją pomoc.', PRECONDITION);
+  if (!done.length) throw err('Nie ma komu pomóc, wszystkie prośby mają już twoją pomoc.', PRECONDITION);
   for (const h of done) {
     const key = isTech(h) ? h.tk as string : String(h.lvl);
     updateObject<Helped>(nk, 'clan', isTech(h) ? 'helpedT' : 'helped', h.uid, cur => {
@@ -600,7 +600,7 @@ export function rpcClanWeekClaim(ctx: nkruntime.Context, _logger: nkruntime.Logg
   x.st = updateObject<ClanState>(nk, STATE, x.g.id, SYSTEM_USER, cur => {
     tiers = []; none = '';
     if (!cur || !cur.wk || cur.wk.id !== x.wk) { none = 'Tydzień klanu dopiero się zaczął.'; return null; }
-    if (!(cur.wk.by[userId] > 0)) { none = 'Skrzynie odbiera każdy, kto w tym tygodniu dołożył choć 1 punkt — zrób coś dla klanu.'; return null; }
+    if (!(cur.wk.by[userId] > 0)) { none = 'Skrzynie odbiera każdy, kto w tym tygodniu dołożył choć 1 punkt. Zrób coś dla klanu.'; return null; }
     const got = cur.wk.got[userId] || [];
     for (let t = 0; t < opened(cur.wk, x.ids.length); t++) if (!got.includes(t)) tiers.push(t);
     if (!tiers.length) { none = 'Nie ma nowej skrzyni do odebrania.'; return null; }

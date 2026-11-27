@@ -64,6 +64,6 @@ export async function googleToken(): Promise<string> {
     );
   }
   const res = r.result as { idToken?: string | null };
-  if (!res.idToken) throw new Error('Google nie przekazał danych logowania — spróbuj ponownie.');
+  if (!res.idToken) throw new Error('Google nie przekazał danych logowania, spróbuj ponownie.');
   return res.idToken;
 }

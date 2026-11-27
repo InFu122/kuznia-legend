@@ -109,6 +109,6 @@ export function runHint(d: DungRun): string {
     case 'labirynt': return d.floor >= LAB_ROOMS ? 'Minotaur! Pokonaj go, żeby zabrać największy łup.' : 'Po każdej komnacie wybierasz kolejne drzwi.';
     case 'zbrojownia': return 'Pokonany duch oddaje przedmiot ze swoją historią.';
     case 'krypta': return d.rule ? `Walczą tylko przedmioty z legendą · ${KRYPTA_RULES[d.rule].d}.` : 'Walczą tylko przedmioty z legendą.';
-    case 'sezon': { const ev = eventOf(Date.now()).def; return d.floor >= EVENT.FLOORS ? `${ev.boss}! Pokonaj go, żeby otworzyć skrzynię.` : `Każde piętro daje ${ev.cur} od razu — nawet jeśli bohater padnie dalej.`; }
+    case 'sezon': { const ev = eventOf(Date.now()).def; return d.floor >= EVENT.FLOORS ? `${ev.boss}! Pokonaj go, żeby otworzyć skrzynię.` : `Każde piętro daje ${ev.cur} od razu, nawet jeśli bohater padnie dalej.`; }
   }
 }

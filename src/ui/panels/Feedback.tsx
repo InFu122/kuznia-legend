@@ -18,7 +18,7 @@ export function FeedbackView({ game, close }: { game: Game; close: () => void })
       await link.feedback(kind, text.trim(), reportMeta(game));
       setDone(true);
     } catch (e) {
-      setMsg(e instanceof ServerError ? e.message : 'Brak połączenia z serwerem — spróbuj za chwilę.');
+      setMsg(e instanceof ServerError ? e.message : 'Brak połączenia z serwerem, spróbuj za chwilę.');
     } finally { setBusy(false); }
   };
   if (done) {
@@ -44,7 +44,7 @@ export function FeedbackView({ game, close }: { game: Game; close: () => void })
         <textarea id="fb" class="fb-text" rows={6} maxLength={1000} value={text} onInput={e => setText(e.currentTarget.value)}
           placeholder={kind === 'blad' ? 'Np. po otwarciu Lochów gra się zawiesiła na ekranie…' : 'Np. za długo czekam na ulepszenie kuźni…'} />
       </label>
-      <p class="sub">Do zgłoszenia dołączamy wersję gry, model przeglądarki, rozmiar ekranu, twój nick, poziom kuźni i krainę — żeby łatwiej znaleźć problem.</p>
+      <p class="sub">Do zgłoszenia dołączamy wersję gry, model przeglądarki, rozmiar ekranu, twój nick, poziom kuźni i krainę, żeby łatwiej znaleźć problem.</p>
       {msg && <p class="sub" role="alert">{msg}</p>}
       <div class="result-actions">
         <button class="btn" onClick={close}>Anuluj</button>

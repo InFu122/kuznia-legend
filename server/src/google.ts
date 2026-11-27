@@ -33,12 +33,12 @@ export function verifyGoogle(nk: nkruntime.Nakama, token: unknown): string {
   try {
     res = nk.httpRequest('https://oauth2.googleapis.com/tokeninfo?id_token=' + token, 'get', {}, undefined, 8000);
   } catch {
-    throw err('Google nie odpowiada — spróbuj za chwilę.', UNAVAILABLE);
+    throw err('Google nie odpowiada, spróbuj za chwilę.', UNAVAILABLE);
   }
   let claims: Claims = {};
   try { claims = JSON.parse(res.body) as Claims; } catch { /* zostaje puste — odrzucone niżej */ }
   const sub = res.code === 200 ? googleSub(claims, Date.now()) : null;
-  if (!sub) throw err('Logowanie przez Google nie powiodło się — spróbuj ponownie.', INVALID);
+  if (!sub) throw err('Logowanie przez Google nie powiodło się, spróbuj ponownie.', INVALID);
   return sub;
 }
 

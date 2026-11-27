@@ -49,15 +49,15 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
   const check = async () => {
     setMsg('Sprawdzam w Google Play…');
     const r = await checkStoreUpdate();
-    setMsg(r === true ? 'Jest nowa wersja — naciśnij „Aktualizuj”.' : r === false ? 'Masz najnowszą wersję gry.'
+    setMsg(r === true ? 'Jest nowa wersja, naciśnij „Aktualizuj”.' : r === false ? 'Masz najnowszą wersję gry.'
       : 'Nie udało się sprawdzić (gra nie jest zainstalowana ze Sklepu Play albo brak internetu).');
   };
   const invite = async () => {
-    const text = `Zagraj ze mną w Kuźnię Legend — wykuwamy legendarny ekwipunek! Mój nick: ${game.s.name}.`;
+    const text = `Zagraj ze mną w Kuźnię Legend, wykuwamy legendarny ekwipunek! Mój nick: ${game.s.name}.`;
     try {
       if (navigator.share) { await navigator.share({ title: 'Kuźnia Legend', text, url }); return; }
       await navigator.clipboard.writeText(`${text} ${url}`);
-      setMsg('Skopiowano zaproszenie — wklej je znajomym.');
+      setMsg('Skopiowano zaproszenie, wklej je znajomym.');
     } catch { /* anulowane */ }
   };
   return (
@@ -76,7 +76,7 @@ function AppCard({ game, onFeedback }: { game: Game; onFeedback: () => void }) {
       {nv && <p class="sub" style={{ marginTop: '8px' }}>Kompilacja gry: {APP_VERSION}</p>}
       {!isNative() && !isStandalone() && !canInstall() && (
         <p class="sub" style={{ marginTop: '8px' }}>
-          {isIOS() ? 'Na iPhonie: w Safari stuknij „Udostępnij”, potem „Do ekranu początkowego” — gra otworzy się jak aplikacja.' : 'Grę możesz dodać do ekranu głównego z menu przeglądarki („Zainstaluj aplikację” albo „Dodaj do ekranu głównego”).'}
+          {isIOS() ? 'Na iPhonie: w Safari stuknij „Udostępnij”, potem „Do ekranu początkowego”. Gra otworzy się jak aplikacja.' : 'Grę możesz dodać do ekranu głównego z menu przeglądarki („Zainstaluj aplikację” albo „Dodaj do ekranu głównego”).'}
         </p>
       )}
       {isStandalone() && <p class="sub" style={{ marginTop: '8px' }}>Gra jest zainstalowana na tym urządzeniu.</p>}
@@ -227,7 +227,7 @@ function NickField({ game, online }: { game: Game; online: boolean }) {
         <input id="nick" maxLength={16} value={v} autoComplete="off" onInput={e => { setV(e.currentTarget.value); setMsg(''); }} />
         <button class="btn small" disabled={!online || busy || v.trim() === game.s.name || v.trim().length < 3}>Zmień</button>
       </div>
-      <small class="muted">{msg || '3–16 znaków: litery, cyfry, spacja, _ . -. Zmiana raz na dobę (pierwsza zmiana nadanego nicku — od razu).'}</small>
+      <small class="muted">{msg || '3–16 znaków: litery, cyfry, spacja, _ . -. Zmiana raz na dobę (pierwsza zmiana nadanego nicku od razu).'}</small>
     </form>
   );
 }
@@ -254,7 +254,7 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
     setBusy(true); setMsg('');
     try {
       await save.redeem(clean);
-      setMsg(`Gotowe — grasz kowalem ${game.s.name} z drugiego urządzenia.`);
+      setMsg(`Gotowe, grasz kowalem ${game.s.name} z drugiego urządzenia.`);
       setInput(''); setConfirm(false); setCode(null);
     } catch (e) { setMsg(errText(e)); setConfirm(false); } finally { setBusy(false); }
   };
@@ -265,13 +265,13 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
       {googleAvailable() && link && (
         <>
           <div class="h">Konto Google</div>
-          <p class="sub">Postęp połączony z kontem Google wczytasz na nowym telefonie albo po ponownej instalacji gry — bez kodu.</p>
+          <p class="sub">Postęp połączony z kontem Google wczytasz na nowym telefonie albo po ponownej instalacji gry, bez kodu.</p>
           <GoogleLinkBox game={game} online={online} />
           <div class="h" style={{ marginTop: '14px' }}>Kod przeniesienia</div>
         </>
       )}
       {!(googleAvailable() && link) && <div class="h">Gra na kilku urządzeniach</div>}
-      <p class="sub">Na urządzeniu, na którym masz postęp, pokaż kod. Na drugim urządzeniu wpisz go poniżej — od tej chwili oba grają tym samym kowalem.</p>
+      <p class="sub">Na urządzeniu, na którym masz postęp, pokaż kod. Na drugim urządzeniu wpisz go poniżej. Od tej chwili oba grają tym samym kowalem.</p>
       {code && left > 0 ? (
         <>
           <div class="tcode" aria-label="Kod przeniesienia">{showCode(code.code)}</div>
@@ -279,7 +279,7 @@ function AccountCard({ game, save }: { game: Game; save: SaveInfo }) {
         </>
       ) : (
         <div style={{ marginTop: '10px' }}>
-          <button class="btn primary small" disabled={!online || busy} onClick={make}>{code ? 'Kod wygasł — pokaż nowy' : 'Pokaż kod'}</button>
+          <button class="btn primary small" disabled={!online || busy} onClick={make}>{code ? 'Kod wygasł, pokaż nowy' : 'Pokaż kod'}</button>
         </div>
       )}
       <label class="field" for="tcode" style={{ marginTop: '12px' }}>
@@ -531,7 +531,7 @@ function ResetCard({ save, onReset }: { save: SaveInfo; onReset: () => void }) {
   return (
     <section class="card">
       <div class="row">
-        <span class="sub">{m === 'server' ? 'Postęp zapisuje się na serwerze gry.' : m === 'cloud' ? 'Postęp zapisuje się w chmurze — zagrasz dalej na innym urządzeniu.' : 'Postęp zapisuje się w tej przeglądarce.'}</span>
+        <span class="sub">{m === 'server' ? 'Postęp zapisuje się na serwerze gry.' : m === 'cloud' ? 'Postęp zapisuje się w chmurze, zagrasz dalej na innym urządzeniu.' : 'Postęp zapisuje się w tej przeglądarce.'}</span>
         <button class="btn danger small" onClick={onReset}>Zacznij od nowa</button>
       </div>
     </section>

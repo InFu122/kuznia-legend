@@ -116,7 +116,7 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
       <div class="menu-grid">
         {tiles.map(t => (
           <button key={t.key} class={`mtile${t.badge || t.dot ? ' todo' : ''}${t.locked ? ' locked' : ''}${t.next ? ' next' : ''}`} onClick={t.go} {...t.attrs}
-            aria-label={t.locked ? `${t.n}: zablokowane — ${t.d}` : undefined}>
+            aria-label={t.locked ? `${t.n}: zablokowane, ${t.d}` : undefined}>
             <span class="mt-ic">{t.ic}{t.locked && <i class="mt-lock" aria-hidden="true"><LockIcon /></i>}</span>
             <b>{t.n}</b>
             <small>{t.d}</small>
@@ -128,7 +128,7 @@ export function MenuView({ game, close, goTab }: { game: Game; close: () => void
       {next && (
         <button class="menu-next" onClick={show({ kind: 'locked', id: next })}>
           <Px src={resUrl('klucz')} size={20} />
-          <span>Następne: <b>{FEATURES[next].n}</b> — {unlockWhen(next)}</span>
+          <span>Następne: <b>{FEATURES[next].n}</b>, {unlockWhen(next)}</span>
         </button>
       )}
     </>

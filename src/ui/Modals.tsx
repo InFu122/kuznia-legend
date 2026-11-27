@@ -68,7 +68,7 @@ export function ModalShell({ locked, onClose, children, cls = '' }: { locked: bo
       <div class="modal-box" role="dialog" aria-modal="true">
         {!locked && (
           <div class="modal-top">
-            <button class="modal-back" onClick={onClose} aria-label="Wróć — zamknij okno"><span aria-hidden="true">‹</span> Wróć</button>
+            <button class="modal-back" onClick={onClose} aria-label="Wróć, zamknij okno"><span aria-hidden="true">‹</span> Wróć</button>
           </div>
         )}
         {children}
@@ -145,7 +145,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
           {set && m.uniq > 0 && (
             <p class="sub">{SETS[set].ore} to ruda unikalna: od {SET_FORGE_LVL}. poziomu kuźni wytopisz z niej przedmiot o pewnej jakości IV albo V. Więcej dają Leża Bossów.</p>
           )}
-          {m.land + 1 === ABYSS_FROM && <p class="sub"><b>Kampania ukończona!</b> Dalej Otchłań — kręgi bez dna z coraz silniejszymi wrogami i rudami z końca gry.</p>}
+          {m.land + 1 === ABYSS_FROM && <p class="sub"><b>Kampania ukończona!</b> Dalej Otchłań: kręgi bez dna z coraz silniejszymi wrogami i rudami z końca gry.</p>}
           <p>Odblokowana kraina: <b>{next.n}</b> ({actName(next.act)}). Rudy: {next.drops.map(([o, p]) => `${ORES[o].n} ${pctS(p)}`).join(' · ')}.</p>
           <Close onClose={close} label="Dalej" />
         </>
@@ -156,7 +156,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
         <>
           <div class="eyebrow">Przebudzenie · {fmt(LEGEND[3].at)} Sławy Czynów</div>
           <div class="h">{baseName(m.item)}</div>
-          <p class="sub">Przedmiot się przebudził: +{Math.round(LEGEND[3].b * 100)}% do statystyki głównej i <b>cecha do wyboru</b> — przeciw komu ma być silniejszy. Cecha da mu też nowe imię.</p>
+          <p class="sub">Przedmiot się przebudził: +{Math.round(LEGEND[3].b * 100)}% do statystyki głównej i <b>cecha do wyboru</b>: przeciw komu ma być silniejszy. Cecha da mu też nowe imię.</p>
           {s.eq[m.item.slot]?.id === m.item.id
             ? <AwakenChoice game={game} slot={m.item.slot} onDone={close} />
             : <><ItemCard it={m.item} /><Close onClose={close} label="Dalej" /></>}
@@ -190,8 +190,8 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
           <div class="h">{head}</div>
           <p class="sub">
             {m.lost && halves ? 'Uciekasz z połową łupu. ' : ''}
-            {m.id === 'leza' && m.lost ? 'Boss był za silny. Klucz przepadł — spróbuj jutro albo wzmocnij ekwipunek.' : null}
-            {m.items > 0 ? ` Przedmioty ze skrzyń: ${m.items} — zdecyduj, które założyć.` : ''}
+            {m.id === 'leza' && m.lost ? 'Boss był za silny. Klucz przepadł, spróbuj jutro albo wzmocnij ekwipunek.' : null}
+            {m.items > 0 ? ` Przedmioty ze skrzyń: ${m.items}. Zdecyduj, które założyć.` : ''}
             {m.id === 'sezon' ? <> Wydarzenie {ev.n}: <b>+{evText(m.evp ?? 0, ev)}</b>.</> : null}
           </p>
           {!(m.id === 'leza' && m.lost) && (Object.keys(m.reward).some(k => { const v = (m.reward as Record<string, unknown>)[k]; return typeof v === 'number' ? v > 0 : !!v && Object.values(v as object).some(x => x); })
@@ -225,7 +225,7 @@ export function ModalView({ m, game, close, goTab, onFeature }: { m: ModalData; 
             {r.hatched && <li class="hl"><Px src={resUrl('jajo2')} size={22} /><span>Z jaja wykluł się chowaniec: <b>{PETS[r.hatched].n}</b></span></li>}
             {r.capped && (
               <li><Px src={resUrl('czas')} size={22} /><span>Łupy liczą się najwyżej za <b>{tfmt(r.ms)}</b> nieobecności (kuźnia i badania biegną cały czas).
-                {techLvl(s, 'e_noc') < TECH.e_noc.max ? <> Wydłużysz limit badaniem <b>{TECH.e_noc.n}</b> w Akademii — do {tfmt(B.OFFLINE_CAP_MS + TECH.e_noc.per * TECH.e_noc.max * 60000)}.</> : null}</span></li>
+                {techLvl(s, 'e_noc') < TECH.e_noc.max ? <> Wydłużysz limit badaniem <b>{TECH.e_noc.n}</b> w Akademii, do {tfmt(B.OFFLINE_CAP_MS + TECH.e_noc.per * TECH.e_noc.max * 60000)}.</> : null}</span></li>
             )}
           </ul>
           {r.chestCount > 0 && (
@@ -367,10 +367,10 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
   const moved = (a: number, b: number) => Math.abs(a - b) >= 0.05;
   const tips: [string, string, JSX.Element][] = [
     [resUrl('czas'), 'Gwarancja przeskoku', <>Po {B.PITY_MAX} wytopach bez przeskoku następny przeskakuje na pewno o 1 (ale nie na Boski). Twój licznik: <b>{s.pity}/{B.PITY_MAX}</b>.</>],
-    [resUrl('kowadlo'), 'Rzadsze — trudniej', <>Przeskok na Heroiczny ma ×{f2(JUMP_TO_MULT_RANK[5])} szansy bazowej, na Legendarny ×{f2(JUMP_TO_MULT_RANK[6])}, Pradawny ×{f2(JUMP_TO_MULT_RANK[7])}, Mityczny ×{f2(JUMP_TO_MULT_RANK[8])}, a na Boski {divMults}. Paski wyżej już to uwzględniają.</>],
-    [oreUrl(4), 'Ruda dojrzewa z kuźnią', <>Ruda nie ma sztywnego minimum: tuż po odblokowaniu daje mieszankę dwóch sąsiednich rzadkości, a z każdym poziomem kuźni wyniki przesuwają się w górę — aż do jakości docelowej rudy (wyżej przełącz poziom, żeby to zobaczyć).</>],
+    [resUrl('kowadlo'), 'Im rzadsze, tym trudniej', <>Przeskok na Heroiczny ma ×{f2(JUMP_TO_MULT_RANK[5])} szansy bazowej, na Legendarny ×{f2(JUMP_TO_MULT_RANK[6])}, Pradawny ×{f2(JUMP_TO_MULT_RANK[7])}, Mityczny ×{f2(JUMP_TO_MULT_RANK[8])}, a na Boski {divMults}. Paski wyżej już to uwzględniają.</>],
+    [oreUrl(4), 'Ruda dojrzewa z kuźnią', <>Ruda nie ma sztywnego minimum: tuż po odblokowaniu daje mieszankę dwóch sąsiednich rzadkości, a z każdym poziomem kuźni wyniki przesuwają się w górę, aż do jakości docelowej rudy (wyżej przełącz poziom, żeby to zobaczyć).</>],
     [oreUrl(DIVINE_ORE), 'Boski przedmiot', <>Żadna ruda nie daje go na pewno. Ma własne imię, złotą ramkę i Boską aurę (+{B.DIVINE_AURA}% obrażeń i zdrowia za każdy założony), a serwer ogłasza go na czacie. {ORES[DIVINE_ORE].n}: bossowie aktu IV, loch sezonowy, wydarzenia i Przepustka.</>],
-    [resUrl('iskra'), 'Jakość I–V', <>Każdy wytop losuje też jakość: {QUAL.map(q => `${q.n} ${q.p}%`).join(' · ')}. Wyższa jakość to więcej głównej i dodatkowych statystyk — od +{QUAL[1].b}% (II) do +{QUAL[4].b}% (V).</>],
+    [resUrl('iskra'), 'Jakość I–V', <>Każdy wytop losuje też jakość: {QUAL.map(q => `${q.n} ${q.p}%`).join(' · ')}. Wyższa jakość to więcej głównej i dodatkowych statystyk, od +{QUAL[1].b}% (II) do +{QUAL[4].b}% (V).</>],
     [elemUrl('zar'), `Domieszki · od ${B.ELEM_FORGE_LVL}. poziomu`, <>Nadają przedmiotowi żywioł i mały efekt (np. +{ELEM.burz.v.toLocaleString('pl-PL')}% obrażeń). Każda założona część z domieszką dodaje swój. Nie zmieniają szans.</>],
     [setOreUrl('lowca'), `Rudy unikalne · od ${SET_FORGE_LVL}. poziomu`, <>Dają wytopowi pewną jakość IV albo V. Wypadają z bossów i Leży Bossów.</>],
     [techUrl('k_hart'), `Hartowanie · od ${TECH_UNLOCK_FORGE}. poziomu`, <>Badanie w Nauce mnoży szanse na przeskok.{rel ? <> Twoja premia: <b>+{pct(rel)}</b>, już w paskach.</> : ''}</>],
@@ -429,7 +429,7 @@ function ForgeInfo({ game, close }: { game: Game; close: () => void }) {
           );
         })}
       </ul>
-      {lv !== cur && <p class="fi-lv-n">Strzałki: zmiana względem twojego poziomu. Przeskok — szansa na rzadkość wyższą niż wynik bez przeskoku; niżej — szansa na rzadkość poniżej niego, gdy ruda jeszcze dojrzewa.</p>}
+      {lv !== cur && <p class="fi-lv-n">Strzałki: zmiana względem twojego poziomu. Przeskok w górę: szansa na rzadkość wyższą niż wynik bez przeskoku; w dół: szansa na rzadkość poniżej niego, gdy ruda jeszcze dojrzewa.</p>}
       <div class="fi-sec">Warto wiedzieć</div>
       <div class="fi-tips">
         {tips.map(([ic, h, d]) => (
@@ -496,7 +496,7 @@ function DrawView({ game, m, close }: { game: Game; m: Extract<ModalData, { kind
       </div>
     );
   } else {
-    change = m.stones ? <div class="draw-tag">Komplet gwiazdek — dostajesz {m.stones} Kamieni</div>
+    change = m.stones ? <div class="draw-tag">Komplet gwiazdek: dostajesz {m.stones} Kamieni</div>
       : <div class="draw-tag up"><span class="stars">{stars(to, to - 1)}</span> {from} → <b>{to}</b> gwiazdek</div>;
   }
   return (
@@ -572,7 +572,7 @@ function LandInfoView({ game, land: start, close }: { game: Game; land: number; 
       <div class="eyebrow">Z każdej fali</div>
       <ul class="droplist">
         <li><Px src={resUrl('zloto')} size={24} /><span>Złoto</span><b>ok. {fmt(wave)} na falę</b></li>
-        <li class="dl-sub"><span>Ruda — z {pct(B.ORE_DROP * 100)} fal (główna 1–{B.ORE_MAIN_MAX} sztuki, rzadsze po 1):</span></li>
+        <li class="dl-sub"><span>Ruda: z {pct(B.ORE_DROP * 100)} fal (główna 1–{B.ORE_MAIN_MAX} sztuki, rzadsze po 1):</span></li>
         {shares.map(([o, p]) => (
           <li key={o} class={isRareOre(L, o) ? 'rare' : ''}>
             <Px src={oreUrl(o)} size={24} /><span>{ORES[o].n}{o === L.main ? ' · główna' : isRareOre(L, o) ? ' · rzadka' : ''}</span><b>{pctS(p)} dropów</b>
@@ -660,7 +660,7 @@ function MixView({ game, what, close }: { game: Game; what: 'el' | 'set'; close:
       <>
         <div class="eyebrow">Domieszka żywiołu</div>
         <div class="h">Co dodać do wytopu?</div>
-        <p class="sub">Domieszka nadaje przedmiotowi żywioł i mały efekt — każda założona część z domieszką dodaje swój. Każdy wytop zużywa jedną sztukę. Nie zmienia szans na rzadkość ani jakość.</p>
+        <p class="sub">Domieszka nadaje przedmiotowi żywioł i mały efekt, każda założona część z domieszką dodaje swój. Każdy wytop zużywa jedną sztukę. Nie zmienia szans na rzadkość ani jakość.</p>
         <div class="mixlist">
           <button class={`mixopt${!s.elSel ? ' on' : ''}`} onClick={() => pick(() => game.setElem(null))}><span class="mx-n">Bez domieszki</span></button>
           {keys.map(k => (
@@ -681,7 +681,7 @@ function MixView({ game, what, close }: { game: Game; what: 'el' | 'set'; close:
     <>
       <div class="eyebrow">Ruda unikalna</div>
       <div class="h">Pewna jakość?</div>
-      <p class="sub">Wytop z rudą unikalną ma na pewno jakość <b>IV</b> (+{QUAL[3].b}% statystyk) albo <b>V</b> (+{QUAL[4].b}%) — V w {100 - QUAL_UNIQ_IV}% wytopów. Rzadkość losuje się zwyczajnie. Każdy wytop zużywa jedną sztukę.</p>
+      <p class="sub">Wytop z rudą unikalną ma na pewno jakość <b>IV</b> (+{QUAL[3].b}% statystyk) albo <b>V</b> (+{QUAL[4].b}%), V w {100 - QUAL_UNIQ_IV}% wytopów. Rzadkość losuje się zwyczajnie. Każdy wytop zużywa jedną sztukę.</p>
       <div class="mixlist">
         <button class={`mixopt${!s.uniqSel ? ' on' : ''}`} onClick={() => pick(() => game.setUniq(null))}><span class="mx-n">Bez rudy unikalnej</span></button>
         {keys.map(k => (
@@ -730,11 +730,11 @@ function IntroView({ game, close }: { game: Game; close: () => void }) {
     <>
       <div class="eyebrow">Spalona Wioska</div>
       <div class="h">Kuźnia Legend</div>
-      <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i worek rudy: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie — nie pozwól mu iść z gołymi rękami”.</p>
+      <p class="sub">Z kuźni zostały zgliszcza. Stary mistrz wciska ci w dłonie swój młot i worek rudy: „Teraz ty jesteś kowalem. Bohater wyrusza o świcie, nie pozwól mu iść z gołymi rękami”.</p>
       <ul class="list">
         <li>Bohater walczy sam. Ty przetapiasz rudy, które wypadają z wrogów, na ekwipunek.</li>
         <li>Lepsza ruda to rzadsze przedmioty, a kuźnia daje szansę na przeskok o rzadkość wyżej. Z każdym poziomem kuźni wyniki są coraz lepsze.</li>
-        <li>Na początku masz tylko kuźnię i walkę — reszta odblokowuje się po kolei. Przy zablokowanych funkcjach zobaczysz kłódkę.</li>
+        <li>Na początku masz tylko kuźnię i walkę, reszta odblokowuje się po kolei. Przy zablokowanych funkcjach zobaczysz kłódkę.</li>
         <li>Założone przedmioty zbierają Sławę Czynów i w końcu budzą się z własnym imieniem.</li>
       </ul>
       <form class="field intro-name" onSubmit={go}>

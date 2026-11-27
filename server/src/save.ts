@@ -138,7 +138,7 @@ export function rpcSavePut(ctx: nkruntime.Context, logger: nkruntime.Logger, nk:
   const req = parse(payload);
   const raw = req.state as Record<string, unknown> | undefined;
   if (!raw || typeof raw !== 'object') throw err('Brak stanu gry.', INVALID);
-  if (typeof raw.v === 'number' && raw.v > SAVE_VERSION) throw err('Zapis z nowszej wersji gry — zaktualizuj serwer.', PRECONDITION);
+  if (typeof raw.v === 'number' && raw.v > SAVE_VERSION) throw err('Zapis z nowszej wersji gry, zaktualizuj serwer.', PRECONDITION);
   const now = Date.now();
   const s = migrate(raw, now);
   s.name = cleanName(s.name);

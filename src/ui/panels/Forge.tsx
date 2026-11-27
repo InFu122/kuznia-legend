@@ -8,7 +8,7 @@ import { Brag } from '../Decision';
 import { ClanHelpLine } from './ClanLife';
 import { Costs, Px } from '../Px';
 import { dungeonBgUrl, elemUrl, itemUrl, oreUrl, resUrl, setOreUrl } from '../../art/render';
-import { fmt, pct, pctS, tfmt } from '../format';
+import { fmt, pct, tfmt } from '../format';
 
 export const Dist = ({ d }: { d: [number, number][] }) => (
   <>{d.map(([r, p], i) => <span key={r}>{i > 0 && ' · '}<span class={`rt${r}`}>{RAR[r].n}&nbsp;{pct(p)}</span></span>)}</>
@@ -51,7 +51,7 @@ function OreFacts({ game }: { game: Game }) {
       {(ORES[o].d || growing) && (
         <p class="sub ore-note">
           {ORES[o].d}{ORES[o].d && growing ? ' · ' : ''}
-          {growing && <>na niskiej kuźni czasem o rzadkość niżej — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></>}
+          {growing && <>na niskiej kuźni czasem o rzadkość niżej, od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></>}
         </p>
       )}
     </>
@@ -71,7 +71,7 @@ function Refine({ game }: { game: Game }) {
     <section class={`card refine${locked ? ' locked' : ''}`} aria-label="Rafinacja rud">
       <div class="eyebrow">Rafinacja rud</div>
       <div class="h">Zamień nadmiar na lepszą rudę</div>
-      <p class="sub">Na zapasy, których już nie wytapiasz — wytop rudy wprost daje więcej. Słabsze rudy przydają się też do run.</p>
+      <p class="sub">Na zapasy, których już nie wytapiasz, wytop rudy wprost daje więcej. Słabsze rudy przydają się też do run.</p>
       <ul class="rlist2">
         {rows.map(i => {
           const k = refineRatio(s, i);
@@ -98,7 +98,7 @@ function Refine({ game }: { game: Game }) {
           </li>
         )}
       </ul>
-      {locked && <div class="lockline">Rafinację odblokujesz na <b>{B.REFINE_FORGE_LVL}. poziomie kuźni</b> — teraz masz {s.forge.lvl}.</div>}
+      {locked && <div class="lockline">Rafinację odblokujesz na <b>{B.REFINE_FORGE_LVL}. poziomie kuźni</b>, teraz masz {s.forge.lvl}.</div>}
     </section>
   );
 }
@@ -116,12 +116,17 @@ function UpgradeGains({ o, from, to, rel }: { o: number; from: number; to: numbe
     .map(r => ({ r, a: p(d0, r), b: p(d1, r) }));
   const lo0 = itemLevelFor(from, 0), hi0 = itemLevelFor(from, 2), lo1 = itemLevelFor(to, 0), hi1 = itemLevelFor(to, 2);
   const locked = from < ORES[o].lvl;
-  /** Para procentów: gdy po zaokrągleniu wyszłyby takie same (2,7% → 2,7%), z dwoma miejscami po przecinku. */
-  const two = (a: number, b: number): [string, string] => (pct(a) === pct(b) && a !== b
-    ? [a.toFixed(2).replace('.', ',') + '%', b.toFixed(2).replace('.', ',') + '%'] : [pctS(a), pctS(b)]);
-  const diff = (d: number) => {
-    const v = Math.abs(d);
-    return (d > 0 ? '+' : '−') + (v < 0.095 ? v.toFixed(2) : v.toFixed(1)).replace('.', ',');
+  /**
+   * Para procentów i ich różnica, wszystko z tą samą dokładnością: jedno miejsce po przecinku, a dwa, gdy po
+   * zaokrągleniu wyszłyby takie same (2,7% → 2,7%) albo szansa jest bardzo mała. Różnica liczy się z pokazanych
+   * liczb, więc „71,0% → 70,9%” daje „−0,1”, a nie „−0,2”.
+   */
+  const show = (a: number, b: number) => {
+    const dec = (a !== b && Math.round(a * 10) === Math.round(b * 10)) || Math.min(a, b) < 0.1 ? 2 : 1;
+    const r = (v: number) => Math.round(v * 10 ** dec) / 10 ** dec;
+    const f = (v: number) => v.toFixed(dec).replace('.', ',');
+    const d = r(r(b) - r(a));
+    return { ta: f(r(a)) + '%', tb: f(r(b)) + '%', d, td: d === 0 ? '±0' : (d > 0 ? '+' : '−') + f(Math.abs(d)) };
   };
   return (
     <>
@@ -131,13 +136,12 @@ function UpgradeGains({ o, from, to, rel }: { o: number; from: number; to: numbe
           <div class="fo-h"><Px src={oreUrl(o)} size={20} /><span>{ORES[o].n}: szansa na rzadkość{locked ? ` (od ${ORES[o].lvl}. poz.)` : ''}</span></div>
           <ul>
             {rows.map(x => {
-              const d = x.b - x.a;
-              const [ta, tb] = two(x.a, x.b);
+              const v = show(x.a, x.b);
               return (
                 <li key={x.r}>
                   <span><span class={`rt${x.r}`}>{RAR[x.r].n}</span></span>
-                  <b>{ta} → <em class={d < -0.005 ? 'down' : ''}>{tb}</em></b>
-                  <small class={`fo-d${d > 0.005 ? ' up' : ''}`}>{Math.abs(d) > 0.005 ? diff(d) : '—'}</small>
+                  <b>{v.ta} → <em class={v.d < 0 ? 'down' : ''}>{v.tb}</em></b>
+                  <small class={`fo-d${v.d > 0 ? ' up' : ''}`}>{v.td}</small>
                 </li>
               );
             })}
@@ -198,7 +202,7 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
         <section class="card forgeup has-info" style={{ '--bg': `url(${dungeonBgUrl('ulepszenie')})` } as Record<string, string>}>
           <InfoBtn corner onClick={() => onInfo('level')} label="Jak działa poziom kuźni" />
           {f.lvl >= B.FORGE_MAX ? (
-            <div class="row"><div><div class="eyebrow">Kuźnia</div><div class="h">Poziom {B.FORGE_MAX} — najwyższy</div><p class="sub">Kuźnia osiągnęła szczyt. Siłę bohatera rozwijaj teraz w Otchłani, Nauce, runach i legendach przedmiotów.</p></div></div>
+            <div class="row"><div><div class="eyebrow">Kuźnia</div><div class="h">Poziom {B.FORGE_MAX}, najwyższy</div><p class="sub">Kuźnia osiągnęła szczyt. Siłę bohatera rozwijaj teraz w Otchłani, Nauce, runach i legendach przedmiotów.</p></div></div>
           ) : (
             <>
               <div class="row fu-run"><div><div class="eyebrow">Ulepszanie kuźni</div><div class="h">Poziom {f.lvl} → {f.up}</div></div><span class="fu-left num"><Px src={resUrl('czas')} size={13} />{tfmt(f.left)}</span></div>
@@ -240,14 +244,14 @@ export function ForgePanel({ game, onInfo, onFound, onMix, onDecide, onPick }: {
             {elOn && (
               <button class={`mixbtn${s.elSel ? ' on' : ''}`} onClick={() => onMix('el')} aria-haspopup="dialog">
                 <small>Domieszka</small>
-                <span>{s.elSel ? <><Px src={elemUrl(s.elSel)} size={16} />{ELEM[s.elSel].n} · {s.els[s.elSel] ?? 0}</> : 'brak — wybierz'}</span>
+                <span>{s.elSel ? <><Px src={elemUrl(s.elSel)} size={16} />{ELEM[s.elSel].n} · {s.els[s.elSel] ?? 0}</> : 'brak, wybierz'}</span>
                 <i class="caret" aria-hidden="true">▾</i>
               </button>
             )}
             {setOn ? (
               <button class={`mixbtn${s.uniqSel ? ' on' : ''}`} onClick={() => onMix('set')} aria-haspopup="dialog">
                 <small>Ruda unikalna</small>
-                <span>{s.uniqSel ? <><Px src={setOreUrl(s.uniqSel)} size={16} /><b style={{ color: SETS[s.uniqSel].col }}>{SETS[s.uniqSel].ore}</b> · {s.uniq[s.uniqSel] ?? 0}</> : 'brak — wybierz'}</span>
+                <span>{s.uniqSel ? <><Px src={setOreUrl(s.uniqSel)} size={16} /><b style={{ color: SETS[s.uniqSel].col }}>{SETS[s.uniqSel].ore}</b> · {s.uniq[s.uniqSel] ?? 0}</> : 'brak, wybierz'}</span>
                 <i class="caret" aria-hidden="true">▾</i>
               </button>
             ) : SET_IDS.some(k => (s.uniq[k] ?? 0) > 0) && <span class="sub">Rudy unikalne wytopisz od {SET_FORGE_LVL}. poziomu kuźni.</span>}
@@ -277,7 +281,7 @@ export function OreSummary({ game }: { game: Game }) {
     <>
       <div class="o2-sel">
         <b>{ORES[o].n}</b> · zwykle <span class={`rt${nom}`}>{RAR[nom].n}</span>{mj === 0 ? ' · ta ruda nie przeskakuje' : mj === 1 ? ' · przeskok najwyżej o 1' : ''}{ORES[o].d ? ` · ${ORES[o].d}` : ''}
-        {growing && <> · <span class="rampnote">na niskiej kuźni czasem o rzadkość niżej — od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></span></>}
+        {growing && <> · <span class="rampnote">na niskiej kuźni czasem o rzadkość niżej, od {ORES[o].v6[2]}. poziomu zawsze co najmniej <span class={`rt${goal}`}>{RAR[goal].n}</span></span></>}
       </div>
       <OddsBar d={dist(o, at, rel)} note={f.lvl < ORES[o].lvl ? `od ${ORES[o].lvl}. poziomu kuźni` : undefined} />
       {pityOk && (
@@ -312,7 +316,7 @@ export function AutoElem({ game }: { game: Game }) {
         ))}
       </div>
       {keys.length === 0 && <small class="sub">Domieszki wypadają w krainach z żywiołem.</small>}
-      {s.autoEl && (s.els[s.autoEl] ?? 0) === 0 && <small class="sub">Ta domieszka się skończyła — auto kuje bez niej.</small>}
+      {s.autoEl && (s.els[s.autoEl] ?? 0) === 0 && <small class="sub">Ta domieszka się skończyła, auto kuje bez niej.</small>}
     </div>
   );
 }

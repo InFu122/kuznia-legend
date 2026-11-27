@@ -103,8 +103,8 @@ export function useAdWatch() {
     void showRewarded().then(r => {
       setLoading(false);
       if (r === 'ok') reward();
-      else if (r === 'cancel') setMsg('Reklama przerwana — nagroda tylko za obejrzenie do końca.');
-      else setMsg('Reklama nie jest teraz dostępna — spróbuj za chwilę.');
+      else if (r === 'cancel') setMsg('Reklama przerwana. Nagroda tylko za obejrzenie do końca.');
+      else setMsg('Reklama nie jest teraz dostępna, spróbuj za chwilę.');
     });
   };
   const view = test ? <TestAd onDone={() => { setTest(null); test(); }} onCancel={() => setTest(null)} /> : null;
@@ -132,7 +132,7 @@ export function AdOfferView({ game, what, close }: { game: Game; what: BuffId; c
         <span class="adoffer big" aria-hidden="true"><Px src={buffIcon(game, what)} size={40} /><b>×{B.mult}</b></span>
         <div><div class="h">{B.n}</div><p class="sub">{B.d}. Działa też w nagrodach za nieobecność.</p></div>
       </div>
-      {until > now && <p class="sub">Już trwa jeszcze {tfmt(until - now)} — kolejna reklama przedłuży je o godzinę (najwyżej do 3 h naprzód).</p>}
+      {until > now && <p class="sub">Już trwa jeszcze {tfmt(until - now)}, kolejna reklama przedłuży je o godzinę (najwyżej do 3 h naprzód).</p>}
       <p class="tech-cost">Dziś: {used}/{B.day}</p>
       <Note msg={a.msg || ad.msg} />
       <button class="btn primary" disabled={a.busy || ad.loading || used >= B.day} onClick={() => ad.watch(reward)}>
@@ -162,7 +162,7 @@ export function SpeedupButton({ game, what, onShop }: { game: Game; what: 'forge
   return (
     <div class="speedup">
       <button class={`btn small${sure ? ' primary' : ''}`} disabled={a.busy} onClick={go}>
-        {lack ? <>Dokończ za <GemIco size={14} /> {fmt(cost)} — kup Klejnoty</> : sure ? <>Na pewno? <GemIco size={14} /> {fmt(cost)}</> : <>Dokończ teraz · <GemIco size={14} /> {fmt(cost)}</>}
+        {lack ? <>Potrzeba <GemIco size={14} /> {fmt(cost)} · kup Klejnoty</> : sure ? <>Na pewno? <GemIco size={14} /> {fmt(cost)}</> : <>Dokończ teraz · <GemIco size={14} /> {fmt(cost)}</>}
       </button>
       <Note msg={a.msg} />
     </div>
@@ -178,7 +178,7 @@ export function AdUpButton({ game, what }: { game: Game; what: 'forge' | 'tech' 
   const ad = useAdWatch();
   const i = adUpInfo(game.s, what);
   if (!i) return null;
-  if (i.used) return <p class="adup-used"><Px src={resUrl('reklama')} size={14} /> Przyspieszone reklamą — raz na {what === 'forge' ? 'ulepszenie' : 'badanie'}</p>;
+  if (i.used) return <p class="adup-used"><Px src={resUrl('reklama')} size={14} /> Przyspieszone reklamą, raz na {what === 'forge' ? 'ulepszenie' : 'badanie'}</p>;
   if (ad.view) return <div class="speedup">{ad.view}</div>;
   const key = i.key;
   const go = () => ad.watch(() => {
@@ -450,7 +450,7 @@ function GemsTabView({ game }: { game: Game }) {
     const p = GEM_PACKS.find(x => x.id === id)!;
     const r = await buyPack(lk, id);
     if (r.k === 'cancel') return '';
-    if (r.k === 'pending') return 'Płatność czeka na potwierdzenie w Google Play. Klejnoty dostaniesz, gdy płatność dojdzie — gra sprawdzi to sama.';
+    if (r.k === 'pending') return 'Płatność czeka na potwierdzenie w Google Play. Klejnoty dostaniesz, gdy płatność dojdzie, gra sprawdzi to sama.';
     applyResp(game, r.r);
     return r.r.given ? `${p.n}: +${gemsText(p.gems + p.bonus)}. Dziękujemy za wsparcie Kuźni!` : 'Ten zakup był już wydany wcześniej.';
   });
@@ -496,7 +496,7 @@ function GemsTabView({ game }: { game: Game }) {
         <p class="sub">Dotyczy też Zwojów i jaj z pakietów i przepustki.</p>
         {RANDOM.map(w => <OddsTable key={w} what={w} />)}
       </details>
-      <p class="sub">Klejnoty kupione za pieniądze trzyma serwer — nie przepadają przy nowej grze ani zmianie telefonu (z kontem Google albo kodem przeniesienia).</p>
+      <p class="sub">Klejnoty kupione za pieniądze trzyma serwer, nie przepadają przy nowej grze ani zmianie telefonu (z kontem Google albo kodem przeniesienia).</p>
     </>
   );
 }

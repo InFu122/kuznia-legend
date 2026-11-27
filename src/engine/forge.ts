@@ -228,7 +228,7 @@ export function tickForge(ctx: Ctx, ms: number, quiet = false): boolean {
   const look = ctx.s.look;
   if (f.lvl >= GOLD_SKIN_FORGE && look && !look.skins.includes('zloty')) {
     ctx.s.look = { ...look, skins: [...look.skins, 'zloty'] };
-    if (!quiet) toast(ctx, 'Nowy strój: Złoty Kowal — za 100. poziom kuźni!', 'good');
+    if (!quiet) toast(ctx, 'Nowy strój: Złoty Kowal za 100. poziom kuźni!', 'good');
   }
   if (!quiet) ctx.emit({ t: 'sfx', k: 'levelup' });
   if (!quiet) toast(ctx, `Kuźnia osiągnęła poziom ${f.lvl}` + (FORGE_UNLOCKS[f.lvl] ? ': ' + FORGE_UNLOCKS[f.lvl] : ''), 'good');

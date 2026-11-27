@@ -243,7 +243,7 @@ export function ClanWeekCard({ w, now, busy, msg, onClaim }: { w: ClanWeek; now:
         <span class="cw-crown"><Px src={icUrl('kowadlo')} size={24} /></span>
         <div class="cw-sm-main">
           <span class="eyebrow">Kowal tygodnia</span>
-          {w.top ? <b>{w.top.n}{w.top.me ? ' (ty!)' : ''} <small class="num">· {w.top.pts} pkt w zeszłym tygodniu</small></b> : <b class="muted">jeszcze nikt — to może być ty</b>}
+          {w.top ? <b>{w.top.n}{w.top.me ? ' (ty!)' : ''} <small class="num">· {w.top.pts} pkt w zeszłym tygodniu</small></b> : <b class="muted">jeszcze nikt, to może być ty</b>}
           <small>{w.lead ? <>Teraz prowadzi: <b>{w.lead.n}{w.lead.me ? ' (ty)' : ''}</b> · {w.lead.pts} pkt.</> : 'W tym tygodniu jeszcze nikt nie zdobył punktów.'} Nagroda: +{CLAN_WEEK.TOP_REWARD.coins} Monet i Pieczęć Legendy.</small>
         </div>
       </div>

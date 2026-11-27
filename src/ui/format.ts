@@ -2,11 +2,15 @@ import { RAR } from '../data';
 
 export function fmt(n: number): string {
   const v = Math.round(n);
+  if (v >= 1e15) return (v / 1e15).toFixed(2).replace('.', ',') + ' bld';
+  if (v >= 1e12) return (v / 1e12).toFixed(2).replace('.', ',') + ' bln';
   if (v >= 1e9) return (v / 1e9).toFixed(2).replace('.', ',') + ' mld';
   if (v >= 1e6) return (v / 1e6).toFixed(2).replace('.', ',') + ' mln';
   if (v >= 1e5) return Math.round(v / 1000) + ' tys.';
   return v.toLocaleString('pl-PL');
 }
+/** Krótka liczba do ciasnych miejsc (górny pasek): trzy cyfry znaczące, np. „1,54 bln”, „421 mld”, „50,0 mln”. */
+export { shortNum as fmtShort } from '../engine/num';
 export const f1 = (v: number) => (Math.round(v * 10) / 10).toString().replace('.', ',');
 export const pct = (v: number) => f1(v) + '%';
 /** Procent z dwoma miejscami po przecinku dla bardzo małych szans (np. 0,03%). */

@@ -57,7 +57,7 @@ export function ForgeDock({ game, onPick, onDecide, onAuto, onElem, onUniq }: { 
       {uqOn && (
         <button class={`dock-uq${uq ? ' on' : ''}`} onClick={onUniq} aria-haspopup="dialog"
           style={uq ? { '--uc': SETS[uq].col } as Record<string, string> : undefined}
-          aria-label={uq ? `Ruda unikalna: ${SETS[uq].ore}, ${s.uniq[uq]} sztuk — pewna jakość IV albo V. Zmień` : 'Bez rudy unikalnej. Wybierz rudę unikalną'}>
+          aria-label={uq ? `Ruda unikalna: ${SETS[uq].ore}, ${s.uniq[uq]} sztuk, pewna jakość IV albo V. Zmień` : 'Bez rudy unikalnej. Wybierz rudę unikalną'}>
           {uq ? <><Px src={setOreUrl(uq)} size={20} /><span>{SETS[uq].ore}</span><b>· {fmt(s.uniq[uq] ?? 0)}</b></> : <span>+ ruda unikalna</span>}
         </button>
       )}
@@ -150,7 +150,7 @@ export function AutoSheet({ game, close }: { game: Game; close: () => void }) {
     <>
       <div class="eyebrow">Kuźnia · poziom {s.forge.lvl}</div>
       <div class="h">Auto-wytop</div>
-      <p class="sub">{on ? 'Kuźnia kuje sama.' : 'Kuźnia będzie kuć sama.'} Słabsze przedmioty sprzedaje, do pustych miejsc zakłada. Zatrzymuje się na wybranej rzadkości (albo rzadszej) i na przedmiocie z rudy unikalnej, a gdy skończy się ruda — wyłącza się.</p>
+      <p class="sub">{on ? 'Kuźnia kuje sama.' : 'Kuźnia będzie kuć sama.'} Słabsze przedmioty sprzedaje, do pustych miejsc zakłada. Zatrzymuje się na wybranej rzadkości (albo rzadszej) i na przedmiocie z rudy unikalnej, a gdy skończy się ruda, wyłącza się.</p>
       {on && game.autoWaiting && <p class="tech-cost warn">{s.forge.lvl < ORES[o].lvl ? `${ORES[o].n} od ${ORES[o].lvl}. poziomu kuźni` : `Czeka na rudę: ${ORES[o].n}`}</p>}
       {on && game.autoPaused && <p class="tech-cost warn">Czeka na twoją decyzję o przedmiocie.</p>}
       <AutoStop game={game} />

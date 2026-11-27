@@ -68,7 +68,7 @@ function AbyssSection({ list, done, card }: { list: number[]; done: number; card
   return (
     <section class="act abyss-act">
       <div class="act-h">Otchłań</div>
-      <p class="sub">Po ostatniej krainie kampanii: kręgi bez dna. Każdy krąg to znane krainy w mroczniejszej wersji — silniejsi wrogowie,
+      <p class="sub">Po ostatniej krainie kampanii: kręgi bez dna. Każdy krąg to znane krainy w mroczniejszej wersji, silniejsi wrogowie,
         rudy z końca gry i większa szansa na Boską Rudę u bossów.{done > 0 ? ` Pokonane kręgi: ${done}.` : ''}</p>
       {list.map(card)}
     </section>

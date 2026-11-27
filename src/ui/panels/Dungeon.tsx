@@ -47,11 +47,11 @@ function reward(game: Game, id: DungId): [string, string] {
 export function rewardList(game: Game, id: DungId): [string, string][] {
   const now = game.ctx.now();
   switch (id) {
-    case 'skarbiec': return [[resUrl('zloto'), 'Złoto — każdy kolejny goblin daje więcej']];
-    case 'sztolnia': return [[oreUrl(game.dungTier()), `${ORES[game.dungTier()].n} — ruda o poziom lepsza niż w twojej krainie`]];
+    case 'skarbiec': return [[resUrl('zloto'), 'Złoto: każdy kolejny goblin daje więcej']];
+    case 'sztolnia': return [[oreUrl(game.dungTier()), `${ORES[game.dungTier()].n}: ruda o poziom lepsza niż w twojej krainie`]];
     case 'wieza': return [[resUrl('ksiega'), 'Księgi Wiedzy co 5 pięter'], [resUrl('zloto'), 'Złoto z każdego piętra']];
-    case 'leza': return lezaBosses(game.ctx).map(land => { const set = setOfLand(land)!; return [setOreUrl(set), `${SETS[set].ore} — ${landDef(land).boss}`] as [string, string]; });
-    case 'oltarze': { const el = elementOfDay(now); return [[elemUrl(el), `${ELEM[el].n} — żywioł dnia (${ELEM[el].el})`]]; }
+    case 'leza': return lezaBosses(game.ctx).map(land => { const set = setOfLand(land)!; return [setOreUrl(set), `${SETS[set].ore} · ${landDef(land).boss}`] as [string, string]; });
+    case 'oltarze': { const el = elementOfDay(now); return [[elemUrl(el), `${ELEM[el].n}: żywioł dnia (${ELEM[el].el})`]]; }
     case 'kopalnia': return [[resUrl('kamien'), 'Kamienie z każdej fali'], [resUrl('siodlo'), 'Siodło za 10. falę (od aktu III)']];
     case 'labirynt': return [[oreUrl(Math.min(6, game.dungTier())), 'Rzadkie rudy'], [resUrl('ksiega'), 'Księgi Wiedzy'], [resUrl('zwoj'), 'Zwoje zaklęć']];
     case 'zbrojownia': return [[itemUrl('Miecz', 3, 3), 'Przedmioty z historią dawnych kowali (do decyzji)']];
@@ -59,7 +59,7 @@ export function rewardList(game: Game, id: DungId): [string, string][] {
     case 'sezon': {
       const ev = eventOf(now);
       return [
-        [resUrl(eventIcon(ev.kind)), `${ev.def.cur} za każde piętro (od ${eventFloorPts(1)} do ${eventFloorPts(EVENT.FLOORS)}) — od razu, także gdy bohater padnie`],
+        [resUrl(eventIcon(ev.kind)), `${ev.def.cur} za każde piętro (od ${eventFloorPts(1)} do ${eventFloorPts(EVENT.FLOORS)}), od razu, także gdy bohater padnie`],
         [resUrl('ksiega'), `Skrzynia za ${ev.def.boss}: Księgi, Kamienie, złoto i Zwój`],
       ];
     }
@@ -174,7 +174,7 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
   const keys = game.dungKeys(id);
   const unlimited = !Number.isFinite(keys);
   const run = game.b.mode === 'dung' ? game.b.dung : null;
-  const blocked = run ? (run.id === id ? 'Trwa — walka u góry' : 'Trwa inny loch') : !unlimited && keys < 1 ? 'Klucze wrócą o północy' : '';
+  const blocked = run ? (run.id === id ? 'Trwa: walka u góry' : 'Trwa inny loch') : !unlimited && keys < 1 ? 'Klucze wrócą o północy' : '';
   const enter = (land?: number) => { if (game.startDung(id, land)) { close(); window.scrollTo?.({ top: 0, behavior: 'smooth' }); } };
   return (
     <>
@@ -184,7 +184,7 @@ export function DungInfoView({ game, id, close }: { game: Game; id: DungId; clos
         <div class="h">{D.n}</div>
       </div>
       <p class="sub">{D.how}</p>
-      {id === 'sezon' && <p class="sub"><b>{eventOf(game.ctx.now()).def.n}:</b> wrogowie to {eventOf(game.ctx.now()).def.foes.join(', ')}; na 10. piętrze — {eventOf(game.ctx.now()).def.boss}.</p>}
+      {id === 'sezon' && <p class="sub"><b>{eventOf(game.ctx.now()).def.n}:</b> wrogowie to {eventOf(game.ctx.now()).def.foes.join(', ')}; na 10. piętrze czeka {eventOf(game.ctx.now()).def.boss}.</p>}
       {id === 'krypta' && unlocked && <p class="sub"><b>W tym tygodniu:</b> {KRYPTA_RULES[kryptaRule(game.ctx.now())].d}.</p>}
       <div class="eyebrow">Nagrody</div>
       <ul class="droplist">

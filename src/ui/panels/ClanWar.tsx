@@ -118,7 +118,7 @@ export function ClanWarTab({ game }: { game: Game }) {
             </div>
             <div class="wr-tug" aria-hidden="true"><i style={{ flexGrow: Math.max(1, us.total) }} /><u style={{ flexGrow: Math.max(1, them.total) }} /></div>
             <div class={`wr-lead${diff > 0 ? ' up' : diff < 0 ? ' down' : ''}`}>
-              {diff > 0 ? `Prowadzicie o ${fmt(diff)} pkt` : diff < 0 ? `Przeciwnik prowadzi o ${fmt(-diff)} pkt` : 'Remis — każdy punkt się liczy'}
+              {diff > 0 ? `Prowadzicie o ${fmt(diff)} pkt` : diff < 0 ? `Przeciwnik prowadzi o ${fmt(-diff)} pkt` : 'Remis, każdy punkt się liczy'}
             </div>
           </>
         ) : (
@@ -154,7 +154,7 @@ export function ClanWarTab({ game }: { game: Game }) {
         </div>
         <p class="wr-how">{D.how}</p>
         {!w.me.in ? (
-          <div class="lockline">Dołączyłeś do klanu po doborze przeciwnika — w wojnie walczysz od przyszłego poniedziałku.</div>
+          <div class="lockline">Dołączyłeś do klanu po doborze przeciwnika, w wojnie walczysz od przyszłego poniedziałku.</div>
         ) : (
           <>
             {w.day >= 1 && w.day <= 4 && (
@@ -163,8 +163,8 @@ export function ClanWarTab({ game }: { game: Game }) {
                 <small>Dziś <b class="num">{fmt(w.me.today)} / {fmt(w.me.cap)}</b> pkt (dzienny limit)</small>
               </div>
             )}
-            {w.day === 4 && <p class="hnote">Atakuj bossa klanowego w zakładce Boss — każdy atak to {WAR.BOSS_PTS} punktów.</p>}
-            {w.day === 0 && <p class="hnote">Jutro dzień kucia: przygotuj rudę — każdy wytop to punkt.</p>}
+            {w.day === 4 && <p class="hnote">Atakuj bossa klanowego w zakładce Boss, każdy atak to {WAR.BOSS_PTS} punktów.</p>}
+            {w.day === 0 && <p class="hnote">Jutro dzień kucia: przygotuj rudę, każdy wytop to punkt.</p>}
             {w.day === 5 && <div class="wr-atk"><span>Ataki na obrońców</span><Pips n={w.me.atkLeft} max={WAR.ATTACKS} /></div>}
           </>
         )}
@@ -240,7 +240,7 @@ export function ClanWarTab({ game }: { game: Game }) {
           <ul>
             {WAR_DAYS.map(x => <li key={x.k}><b>{x.short} · {x.n}.</b> {x.how}</li>)}
             <li>W dni aktywności jedna osoba zdobywa najwyżej {WAR.DAY_CAP} punktów dziennie. Skład klanu ustala się w poniedziałek.</li>
-            <li>Skrzynia (Monety, złoto, księgi, kamienie) rośnie z twoim udziałem; zwycięzcy dostają więcej i zwój, trzy najlepsze osoby w klanie — premię. Klan dostaje {WAR.WIN_XP} Doświadczenia za wygraną i {WAR.LOSS_XP} za porażkę.</li>
+            <li>Skrzynia (Monety, złoto, księgi, kamienie) rośnie z twoim udziałem; zwycięzcy dostają więcej i zwój, a trzy najlepsze osoby w klanie premię. Klan dostaje {WAR.WIN_XP} Doświadczenia za wygraną i {WAR.LOSS_XP} za porażkę.</li>
             <li>Każdy atak w bitwie to też +{CLAN_WEEK.PTS.war} punktów Skrzyni tygodnia klanu.</li>
           </ul>
         </details>

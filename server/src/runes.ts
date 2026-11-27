@@ -23,7 +23,7 @@ export function rpcReforge(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
   let ok = false;
   if (typeof it.sx === 'number') ok = smeltOk(proofFor(nk, userId, s, save.value.meta), it, s.sx);
   else if (typeof it.sig === 'string') ok = it.sig === signItem(nk, key, it);
-  if (!ok) throw err('Tego przedmiotu serwer nie uznaje (wykuty bez połączenia, zmieniony albo jeszcze niezapisany) — spróbuj po zapisie gry.', PRECONDITION);
+  if (!ok) throw err('Tego przedmiotu serwer nie uznaje (wykuty bez połączenia, zmieniony albo jeszcze niezapisany), spróbuj po zapisie gry.', PRECONDITION);
   // Najwyżej REFORGE_DAY przekuć dziennie (koszt płaci gra, więc serwer ogranicza liczbę losowań).
   let over = false;
   const day = serverDay(Date.now());
@@ -32,7 +32,7 @@ export function rpcReforge(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
     over = d.n >= REFORGE_DAY;
     return over ? null : { day, n: d.n + 1 };
   }, { read: 0, write: 0 });
-  if (over) throw err('Na dziś koniec przekuwania — wróć jutro.', PRECONDITION);
+  if (over) throw err('Na dziś koniec przekuwania, wróć jutro.', PRECONDITION);
   const out = rerollSub(serverRng(nk), it, i) as Item;
   delete out.sx;
   out.sig = signItem(nk, key, out);

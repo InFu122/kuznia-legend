@@ -34,7 +34,7 @@ export function AchievementsView({ game }: { game: Game }) {
         </div>
         <span class="ah-num" aria-label={`Zdobyte progi: ${done} z ${all}`}><b>{done}</b>/{all}</span>
       </div>
-      <p class="sub">Długie cele na całą grę. Każdy próg daje nagrodę i Sławę kowala (wyższe progi — więcej), a Sława daje tytuły.</p>
+      <p class="sub">Długie cele na całą grę. Każdy próg daje nagrodę i Sławę kowala (wyższe progi, więcej), a Sława daje tytuły.</p>
       <ul class="clist achlist">
         {list.map(({ id, got, reached, A }) => {
           const max = got >= A.tiers.length;

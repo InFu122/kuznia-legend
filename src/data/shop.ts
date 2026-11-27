@@ -6,7 +6,7 @@
 /** `play` — identyfikator produktu w Google Play, gdy jest inny niż `id` (usuniętego identyfikatora Google nie pozwala użyć drugi raz). */
 export interface GemPack { id: string; n: string; gems: number; bonus: number; pln: number; once?: boolean; d?: string; play?: string }
 export const GEM_PACKS: GemPack[] = [
-  { id: 'starter', play: 'starter_pack', n: 'Pakiet Nowicjusza', gems: 300, bonus: 0, pln: 9.99, once: true, d: '300 Klejnotów, 10 Ksiąg Wiedzy, 2 Zwoje zaklęć i Rzadkie jajo — tylko raz' },
+  { id: 'starter', play: 'starter_pack', n: 'Pakiet Nowicjusza', gems: 300, bonus: 0, pln: 9.99, once: true, d: '300 Klejnotów, 10 Ksiąg Wiedzy, 2 Zwoje zaklęć i Rzadkie jajo, tylko raz' },
   { id: 'gems_100', n: 'Garść Klejnotów', gems: 100, bonus: 0, pln: 4.99 },
   { id: 'gems_550', n: 'Sakiewka Klejnotów', gems: 500, bonus: 50, pln: 22.99 },
   { id: 'gems_1200', n: 'Szkatuła Klejnotów', gems: 1000, bonus: 200, pln: 44.99 },

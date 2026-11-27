@@ -51,7 +51,7 @@ function PlayerBoard({ board }: { board: BoardId }) {
     <>
       {board === 'wieza' && <p class="sub">Ranking Wieży Wyzwań zaczyna się od nowa w każdy poniedziałek.</p>}
       {board === 'moc' && <p class="sub">Liczą się przedmioty, których pochodzenie sprawdził serwer (wytop z ziarnem serwera albo przedmiot ze Zbrojowni).</p>}
-      {board === 'arena' && <p class="sub">Ocena rośnie za wygrane walki i spada za przegrane — także w obronie.</p>}
+      {board === 'arena' && <p class="sub">Ocena rośnie za wygrane walki i spada za przegrane, także w obronie.</p>}
       {err && <p class="sub">{err}</p>}
       {!err && !data && <p class="sub">Wczytywanie…</p>}
       {data && (
@@ -103,7 +103,7 @@ function ClanBoards() {
       {kind === 'sezon' && se && (
         <>
           <p class="sub">
-            Sezon {se.n} · {se.name} — koniec za <b>{tfmt(Math.max(0, se.end - Date.now()))}</b>.
+            Sezon {se.n} · {se.name}, koniec za <b>{tfmt(Math.max(0, se.end - Date.now()))}</b>.
             Puchary za każdą wojnę: wygrana {WAR_TROPHIES.win}, remis {WAR_TROPHIES.draw}, porażka {WAR_TROPHIES.loss} i 1 za każde {fmt(WAR_TROPHIES.perPts)} punktów klanu (do {WAR_TROPHIES.bonusMax}).
           </p>
           <ul class="cseason">
@@ -114,7 +114,7 @@ function ClanBoards() {
               </li>
             ))}
           </ul>
-          <p class="sub">Nagrodę dostaje każdy, kto zdobył punkty w wojnie tego sezonu — według miejsca klanu, za który walczył.</p>
+          <p class="sub">Nagrodę dostaje każdy, kto zdobył punkty w wojnie tego sezonu, według miejsca klanu, za który walczył.</p>
         </>
       )}
       {kind === 'moc' && <p class="sub">Suma Mocy członków klanu. Odświeża się, gdy członkowie zaglądają do klanu.</p>}

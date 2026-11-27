@@ -10,7 +10,7 @@ import { Px } from './Px';
 export function QBadge({ q, size = '' }: { q?: number; size?: '' | 'big' | 'sm' }) {
   const n = qOf({ q });
   const Q = QUAL[n - 1];
-  return <span class={`qb q${n}${size ? ' ' + size : ''}`} title={`Jakość ${Q.n}${Q.b ? ` — +${Q.b}% statystyk` : ''}`} aria-label={`jakość ${Q.n}`}>{Q.n}</span>;
+  return <span class={`qb q${n}${size ? ' ' + size : ''}`} title={`Jakość ${Q.n}${Q.b ? `, +${Q.b}% statystyk` : ''}`} aria-label={`jakość ${Q.n}`}>{Q.n}</span>;
 }
 /** Ile z wartości statystyki daje jakość (statystyka dodatkowa jest zapisana już z premią). */
 export const qShare = (v: number, q?: number) => { const m = qMult(q); return m > 1 ? Math.round((v - v / m) * 10) / 10 : 0; };
@@ -66,8 +66,8 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
       {it.subs.length > 0 && <ul class="isubs">{it.subs.map(s => <li key={s.id}>{SUBS[s.id].n} +{f1(s.v)}{SUBS[s.id].u}{qShare(s.v, it.q) > 0 && <span class="iq-plus" title="z jakości"> +{f1(qShare(s.v, it.q))}</span>}</li>)}</ul>}
       <QualityScale it={it} />
       {it.r === R.BOSKI && <div class="iaura"><span aria-hidden="true">✦</span><span><b>Boska aura:</b> +{B.DIVINE_AURA}% obrażeń i zdrowia całego bohatera, gdy ten przedmiot jest założony.</span></div>}
-      {it.el && <div class="iel">Żywioł: {ELEM[it.el].el} — {ELEM[it.el].d}</div>}
-      {it.aw && <div class="itrait">Cecha: {it.aw.name} — {awText(it.aw)}</div>}
+      {it.el && <div class="iel">Żywioł: {ELEM[it.el].el}, {ELEM[it.el].d}</div>}
+      {it.aw && <div class="itrait">Cecha: {it.aw.name}, {awText(it.aw)}</div>}
       <div class="ileg">
         <div class="ileg-h">
           <span>Legenda: <b>{st >= 3 ? 'Przebudzony' : st ? LEGEND[st].n : 'jeszcze brak'}</b></span>
@@ -85,7 +85,7 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
         </ol>
         {history && (
           <small class="ileg-how">
-            Sława: 1 za każdego wroga, {B.FAME_BOSS} za bossa — zbierają ją tylko założone przedmioty. Przy wymianie połowa
+            Sława: 1 za każdego wroga, {B.FAME_BOSS} za bossa. Zbierają ją tylko założone przedmioty. Przy wymianie połowa
             przechodzi na nowy. Na progu Przebudzony sam wybierasz cechę: przeciw jednemu rodzajowi wrogów albo bossom.
           </small>
         )}
@@ -95,7 +95,7 @@ export function ItemCard({ it, delta, reveal, history, proof }: Props) {
         Kowal: <b>{it.smith}</b>{it.npc ? ' (kowal-widmo)' : ''} · {ORES[it.ore].n} · {it.land}
         {history && it.owners.length > 1 && <><br />Właściciele: {it.owners.join(' → ')}</>}
       </div>
-      {proof === false && <div class="inote">Serwer nie zna pochodzenia tego przedmiotu (wykuty przed aktualizacją albo bez połączenia) — nie liczy się do rankingu Mocy i na arenie.</div>}
+      {proof === false && <div class="inote">Serwer nie zna pochodzenia tego przedmiotu (wykuty przed aktualizacją albo bez połączenia), nie liczy się do rankingu Mocy i na arenie.</div>}
     </div>
   );
 }

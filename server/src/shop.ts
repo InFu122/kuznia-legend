@@ -168,7 +168,7 @@ export function rpcShopGift(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const userId = userOf(ctx);
   const now = Date.now();
   const s = saveOf(nk, userId);
-  bumpShop(nk, userId, now, sh => (sh.gift === sh.day ? false : (sh.gift = sh.day, true)), 'Prezent na dziś już odebrany — wróć jutro.');
+  bumpShop(nk, userId, now, sh => (sh.gift === sh.day ? false : (sh.gift = sh.day, true)), 'Prezent na dziś już odebrany, wróć jutro.');
   giveReward(nk, userId, 'Prezent dnia', giftReward(s));
   return JSON.stringify(view(nk, userId, now));
 }
@@ -184,7 +184,7 @@ export function rpcAdReward(ctx: nkruntime.Context, _logger: nkruntime.Logger, n
   const now = Date.now();
   if (kind === 'arena' && !readHero(nk, userId)) throw err('Arena otwiera się po pokonaniu pierwszego bossa i zapisie gry.', PRECONDITION);
   const max = adMax(kind);
-  bumpShop(nk, userId, now, sh => ((sh.ads[kind] ?? 0) < max ? (sh.ads[kind] = (sh.ads[kind] ?? 0) + 1, true) : false), 'Na dziś koniec tych reklam — wróć jutro.');
+  bumpShop(nk, userId, now, sh => ((sh.ads[kind] ?? 0) < max ? (sh.ads[kind] = (sh.ads[kind] ?? 0) + 1, true) : false), 'Na dziś koniec tych reklam, wróć jutro.');
   let left: number | undefined;
   if (kind === 'gems') addGems(nk, userId, AD.GEMS, 'reklama');
   else if (kind === 'arena') left = addArenaFight(nk, userId, now);
@@ -220,7 +220,7 @@ export function rpcPassClaim(ctx: nkruntime.Context, logger: nkruntime.Logger, n
     return u.next;
   }, perm);
   const g = got as { r: Reward; free: number; prem: number } | null;
-  if (!g) throw err('Nie ma nagród do odebrania — zdobywaj punkty przepustki.', PRECONDITION);
+  if (!g) throw err('Nie ma nagród do odebrania, zdobywaj punkty przepustki.', PRECONDITION);
   giveReward(nk, userId, `Przepustka Kowala: ${g.free + g.prem} ${g.free + g.prem === 1 ? 'nagroda' : 'nagród'}`, g.r);
   return JSON.stringify(view(nk, userId, now));
 }
@@ -245,7 +245,7 @@ export function rpcSpeedup(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk
   const st = save.value.state;
   const known = what === 'forge' ? st.forge.up : st.tech.cur ? st.tech.cur.id : null;
   if (req.key !== undefined && req.key !== null && String(req.key) !== String(known)) {
-    throw err('Serwer nie ma jeszcze zapisu tego ulepszenia — spróbuj ponownie za chwilę.', PRECONDITION);
+    throw err('Serwer nie ma jeszcze zapisu tego ulepszenia, spróbuj ponownie za chwilę.', PRECONDITION);
   }
   const left = leftNow(save, what, now);
   if (left <= 0) throw err(what === 'forge' ? 'Kuźnia nie ma trwającego ulepszenia.' : 'Nie trwa żadne badanie.', PRECONDITION);
@@ -280,7 +280,7 @@ export function rpcAdUp(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: n
   const key: number | string = what === 'forge' ? st.forge.up : techKey(st);
   if (!key) throw err(what === 'forge' ? 'Kuźnia nie ma trwającego ulepszenia.' : 'Nie trwa żadne badanie.', PRECONDITION);
   if (req.key !== undefined && req.key !== null && String(req.key) !== String(key)) {
-    throw err('Serwer nie ma jeszcze zapisu tego ulepszenia — spróbuj ponownie za chwilę.', PRECONDITION);
+    throw err('Serwer nie ma jeszcze zapisu tego ulepszenia, spróbuj ponownie za chwilę.', PRECONDITION);
   }
   const left = leftNow(save, what, now);
   if (left <= 0) throw err(what === 'forge' ? 'Ulepszenie kuźni już się kończy.' : 'Badanie już się kończy.', PRECONDITION);
@@ -324,7 +324,7 @@ function grantPack(nk: nkruntime.Nakama, userId: string, id: string, how: string
     }, perm);
     if (!fresh) {
       if (!paid) throw err('Ten pakiet można kupić tylko raz.', PRECONDITION);
-      giveReward(nk, userId, `${p.n}${how} — ponowny zakup: same Klejnoty`, { gems: p.gems + p.bonus });
+      giveReward(nk, userId, `${p.n}${how}, ponowny zakup: same Klejnoty`, { gems: p.gems + p.bonus });
       return;
     }
   }
@@ -368,14 +368,14 @@ export function rpcIapGoogle(ctx: nkruntime.Context, logger: nkruntime.Logger, n
   const cred = playCredentials(nk);
   if (!cred) {
     logger.error('Zakup Google gracza %s (%s) czeka: brak pliku sekrety/google-play.json z kluczem konta usługi (albo Nakama nie może go odczytać).', userId, id);
-    throw err('Płatności nie są jeszcze włączone na serwerze gry. Zakup poczeka — Klejnoty dostaniesz po włączeniu (albo Google zwróci pieniądze po 3 dniach).', PRECONDITION);
+    throw err('Płatności nie są jeszcze włączone na serwerze gry. Zakup poczeka, Klejnoty dostaniesz po włączeniu (albo Google zwróci pieniądze po 3 dniach).', PRECONDITION);
   }
   let res: nkruntime.ValidatePurchaseResponse;
   try {
     res = nk.purchaseValidateGoogle(userId, playReceipt(pid, token), true, cred.email, cred.key);
   } catch (e) {
     logger.warn('Zakup Google gracza %s (%s): %s', userId, id, String(e));
-    throw err('Nie udało się potwierdzić zakupu w Google Play — spróbuj za chwilę.', PRECONDITION);
+    throw err('Nie udało się potwierdzić zakupu w Google Play, spróbuj za chwilę.', PRECONDITION);
   }
   const p = (res.validatedPurchases || [])[0];
   const v = purchaseVerdict(p, userId, pid);

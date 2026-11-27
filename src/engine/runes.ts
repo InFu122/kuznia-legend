@@ -112,7 +112,7 @@ export function upgradeRune(ctx: Ctx, slot: SlotId): boolean {
   s.runes = { ...s.runes, [slot]: L };
   invalidate(ctx);
   ctx.dirty = true;
-  toast(ctx, `Runa ${SLOTS[slot].n} ${L}: +${L * B.RUNE_PCT}% ${runeStat(slot)} dla ${RUNE_FOR[slot]} — na zawsze.`, 'good');
+  toast(ctx, `Runa ${SLOTS[slot].n} ${L}: +${L * B.RUNE_PCT}% ${runeStat(slot)} dla ${RUNE_FOR[slot]}, na zawsze.`, 'good');
   return true;
 }
 

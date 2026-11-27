@@ -11,7 +11,7 @@ import { SegBar } from './Track';
 
 /** Wiersz wydarzenia albo sezonu na całą szerokość: ikona, nazwa i czas, postęp z liczbami, przycisk z liczbą nagród. */
 function Row({ bg, cls, icon, eyebrow, time, name, bar, sub, btn, n, onClick }: {
-  bg: string; cls: string; icon: string; eyebrow: string; time: string; name: string; bar: preact.ComponentChildren; sub: preact.ComponentChildren;
+  bg: string; cls: string; icon: string; eyebrow: preact.ComponentChildren; time: string; name: string; bar: preact.ComponentChildren; sub: preact.ComponentChildren;
   btn: string; n: number; onClick: () => void;
 }) {
   return (
@@ -50,13 +50,13 @@ export function AdventureBanners({ game, onEvent, onPass }: { game: Game; onEven
       <Row bg={dungeonBgUrl('ev_' + ev.kind)} cls={`ev-${ev.kind}`} icon={resUrl(eventIcon(ev.kind))}
         eyebrow="Wydarzenie" time={tfmt(ev.end - now)} name={ev.def.n}
         bar={<SegBar n={EVENT_MILESTONES.length} full={reached} part={next ? (pts - prev) / (next.pts - prev) : 1} />}
-        sub={next ? <><b>{fmt(pts)}</b> / {fmt(next.pts)} {evWord(next.pts, ev.def)} do następnej nagrody</> : <>Wszystkie nagrody zdobyte · <b>{evText(pts, ev.def)}</b></>}
+        sub={next ? <><b>{fmt(pts)}</b> / {fmt(next.pts)} {evWord(next.pts, ev.def)}<span class="ar-wide"> do następnej nagrody</span></> : <>Wszystkie nagrody zdobyte · <b>{evText(pts, ev.def)}</b></>}
         btn="Zobacz" n={todo} onClick={onEvent} />
       {p && (
         <Row bg={dungeonBgUrl('wieza')} cls="season" icon={resUrl('przepustka')}
-          eyebrow={`Przepustka · sezon ${season.n}`} time={tfmt(season.end - now)} name={season.name}
+          eyebrow={<>Przepustka<span class="ar-wide"> · sezon {season.n}</span></>} time={tfmt(season.end - now)} name={season.name}
           bar={<span class="bar ar-bar"><i style={{ width: (inLvl / PASS.XP_PER_LVL) * 100 + '%' }} /></span>}
-          sub={lvl >= PASS.LEVELS ? <><b>Poziom {lvl}/{PASS.LEVELS}</b> · ukończona</> : <><b>Poziom {lvl}/{PASS.LEVELS}</b> · do {lvl + 1}. poziomu {fmt(PASS.XP_PER_LVL - inLvl)} pkt</>}
+          sub={lvl >= PASS.LEVELS ? <><b>Poziom {lvl}/{PASS.LEVELS}</b> · ukończona</> : <><b>Poziom {lvl}/{PASS.LEVELS}</b> · jeszcze {fmt(PASS.XP_PER_LVL - inLvl)} pkt<span class="ar-wide"> do {lvl + 1}.</span></>}
           btn="Zobacz" n={claim} onClick={onPass} />
       )}
     </div>

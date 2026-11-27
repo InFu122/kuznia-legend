@@ -12,7 +12,7 @@ export function LookView({ game, close }: { game: Game; close: () => void }) {
         <div><div class="eyebrow">Wygląd</div><div class="h">Stroje i ramki</div></div>
         <Avatar skin={l.skin} frame={l.frame} size={48} />
       </div>
-      <p class="sub">Tylko ozdoby — nie zmieniają statystyk. Strój to kolory bohatera i płaszcz (spod ekwipunku widać głównie płaszcz). Strój i ramkę widzą inni gracze na arenie i w rankingach.</p>
+      <p class="sub">Tylko ozdoby, nie zmieniają statystyk. Strój to kolory bohatera i płaszcz (spod ekwipunku widać głównie płaszcz). Strój i ramkę widzą inni gracze na arenie i w rankingach.</p>
       <div class="eyebrow" style={{ marginTop: '6px' }}>Stroje ({l.skins.length}/{SKIN_IDS.length})</div>
       <ul class="lookgrid">
         {SKIN_IDS.map(id => {

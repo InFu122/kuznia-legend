@@ -93,7 +93,7 @@ function SkillsBook({ game }: { game: Game }) {
       {rest.length > 0 && (
         <section class="card">
           <div class="row"><IconEyebrow icon={<Px src={resUrl('zwoj')} size={16} />}>Pozostałe umiejętności · {rest.length}</IconEyebrow><span class="num sub">masz {owned.length}/{SKILL_IDS.length}</span></div>
-          <p class="sub sk-hint">{full ? 'Sloty pełne — zdejmij jedną wyżej, żeby założyć inną. ' : ''}Dotknij, żeby zobaczyć opis.</p>
+          <p class="sub sk-hint">{full ? 'Sloty pełne, zdejmij jedną wyżej, żeby założyć inną. ' : ''}Dotknij, żeby zobaczyć opis.</p>
           <ul class="skrows">
             {rest.map(id => {
               const S = SKILLS[id];
@@ -156,7 +156,7 @@ export function CompPortrait({ id, r, size = 48, locked = false }: { id: string;
   );
 }
 
-const StoneChip = ({ n }: { n: number }) => <span class="reschip" title="Kamienie — ulepszają chowańce i wierzchowce"><Px src={resUrl('kamien')} size={16} /><b>{fmt(n)}</b> Kamieni</span>;
+const StoneChip = ({ n }: { n: number }) => <span class="reschip" title="Kamienie: ulepszają chowańce i wierzchowce"><Px src={resUrl('kamien')} size={16} /><b>{fmt(n)}</b> Kamieni</span>;
 
 /** Kolekcja: wszystkie chowańce albo wierzchowce, nieposiadane jako cienie. */
 function Collection({ ids, have, r, label }: { ids: string[]; have: (id: string) => boolean; r: (id: string) => number; label: string }) {
@@ -201,7 +201,7 @@ export function PetsView({ game }: { game: Game }) {
               <>
                 <b>Wykluwa się jajo <span class={`rt${h.r}`}>{RAR[h.r].n}</span></b>
                 <div class="bar" style={{ marginTop: '6px' }}><i style={{ width: Math.max(0, (1 - h.left / h.total) * 100) + '%' }} /></div>
-                <small class="muted">zostało {tfmt(h.left)} — wykluwa się także, gdy nie grasz</small>
+                <small class="muted">zostało {tfmt(h.left)}, wykluwa się także, gdy nie grasz</small>
               </>
             ) : (
               <>

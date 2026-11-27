@@ -83,7 +83,7 @@ function LoginView({ game }: { game: Game }) {
   const can = canClaimLogin(game.ctx);
   return (
     <>
-      <p class="sub">Zaglądaj codziennie: każdego dnia jedna nagroda, a 7. dnia epicki Zwój zaklęć. Opuszczony dzień nie przepada — kalendarz czeka.</p>
+      <p class="sub">Zaglądaj codziennie: każdego dnia jedna nagroda, a 7. dnia epicki Zwój zaklęć. Opuszczony dzień nie przepada, kalendarz czeka.</p>
       <div class="cal">
         {LOGIN_DAYS.map((d, i) => {
           const state = i < s.login.idx ? 'got' : i === s.login.idx ? (can ? 'now' : 'next') : '';
@@ -92,7 +92,7 @@ function LoginView({ game }: { game: Game }) {
             <div key={i} class={`calday ${state}${i === 6 ? ' big' : ''}`}>
               <small>Dzień {i + 1}{state === 'got' && <span class="cal-ok"> · ✓ odebrano</span>}</small>
               <b>{d.n}</b>
-              <span>{i === 6 && !Object.keys(r).length ? <span class="rwi"><span class="rwc"><Px src={resUrl('zwoj')} size={16} /><span>Zwój zaklęć — epicki lub lepszy</span></span></span> : <RewardIcons r={r} size={16} />}</span>
+              <span>{i === 6 && !Object.keys(r).length ? <span class="rwi"><span class="rwc"><Px src={resUrl('zwoj')} size={16} /><span>Zwój zaklęć (epicki lub lepszy)</span></span></span> : <RewardIcons r={r} size={16} />}</span>
             </div>
           );
         })}

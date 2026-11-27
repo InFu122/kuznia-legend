@@ -76,10 +76,10 @@ export async function buyPack(link: ServerLink, id: string): Promise<BuyResult> 
       // Poprzedni zakup tego pakietu czeka na wydanie — dokończ go.
       const done = await recoverPurchases(link);
       if (done.length) return { k: 'ok', r: done[done.length - 1] };
-      throw new PlayError('Poprzedni zakup tego pakietu jeszcze czeka na serwer — spróbuj za chwilę.');
+      throw new PlayError('Poprzedni zakup tego pakietu jeszcze czeka na serwer, spróbuj za chwilę.');
     }
     if (code === 'BILLING_UNAVAILABLE' || code === 'SERVICE_UNAVAILABLE' || code === 'SERVICE_DISCONNECTED' || code === 'NETWORK_ERROR') {
-      throw new PlayError('Google Play jest teraz niedostępny — sprawdź internet i konto Google w Sklepie Play.');
+      throw new PlayError('Google Play jest teraz niedostępny, sprawdź internet i konto Google w Sklepie Play.');
     }
     if (code === 'ITEM_UNAVAILABLE' || /not found/i.test(msg)) throw new PlayError('Ten pakiet nie jest jeszcze dostępny w Google Play.');
     throw new PlayError('Zakup nie doszedł do skutku.');

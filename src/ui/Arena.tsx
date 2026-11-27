@@ -241,6 +241,12 @@ export function Arena({ game, onTab, onInfo, onAd, onPass, onEvent }: { game: Ga
           <div class="hpnum">{e ? `${fmt(Math.max(0, e.hp))} / ${fmt(e.max)}` : '\u00a0'}</div>
         </div>
       </div>
+      {!dung && b.stuck === s.cur.land && s.cur.land > 0 && s.cur.stage === 1 && (
+        <div class="stuck-bar">
+          <p><b>Za trudna kraina.</b> Bohater pada już na 1. etapie.</p>
+          <button class="sb-go" onClick={() => game.goLand(s.cur.land - 1)}>Wróć do: {landDef(s.cur.land - 1).n} ›</button>
+        </div>
+      )}
       <div class="kit">
         <div class="skicons" aria-label="Umiejętności">
           {s.skills.eq.some(Boolean) && s.skills.eq.map((id, i) => {

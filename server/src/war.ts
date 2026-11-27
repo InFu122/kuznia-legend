@@ -442,7 +442,7 @@ export function rpcWarAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
   if (!hero) throw err('Zapisz grę, żeby twój bohater mógł stanąć do bitwy.', PRECONDITION);
   const o = rec.opp !== 'ghost' ? readWar(nk, rec.week, rec.opp) : null;
   const d = defendersOf(nk, rec, o).find(x => x.id === id);
-  if (!d) throw err('Nie ma takiego obrońcy — odśwież.', INVALID);
+  if (!d) throw err('Nie ma takiego obrońcy, odśwież.', INVALID);
 
   const foeHero = d.ghost ? null : readHero(nk, d.id);
   const foe = foeHero ? foeHero.f : scaleFighter(hero.f, d.power / Math.max(1, hero.power), d.n);
