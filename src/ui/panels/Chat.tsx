@@ -8,19 +8,48 @@ import type { Game } from '../../engine/game';
 import { freshMsgs, getChat, type ChatCh, type ChatMsg } from '../../save/chat';
 import { getLink } from '../../save/server';
 import { f1 } from '../format';
-import type { ClanTab } from './ClanLife';
+import { clanLife } from '../../save/clanlife';
+import type { ClanLife } from '../../save/server';
+import { useClanLife, type ClanTab } from './ClanLife';
 
 const hhmm = (t: number) => new Date(t).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
 const STATE: Record<string, string> = { on: 'połączono', connecting: 'łączenie…', off: 'brak połączenia' };
 
-function Message({ m, open, onMenu, onMute, onReport, onHelp }: { m: ChatMsg; open: boolean; onMenu: () => void; onMute: () => void; onReport: () => void; onHelp: () => void }) {
+/**
+ * Prośby z czatu klanu, przy których jeszcze można pomóc: prośba jest wciąż na liście w zakładce Pomoc
+ * (nie spełniona, nie wygasła, a gracz jeszcze w niej nie pomógł), a przy kilku takich samych — tylko najnowsza.
+ * Prośbę rozpoznajemy po treści (tak jak pisze ją serwer). Bez stanu klanu — nie wiadomo, więc wszystkie zostają.
+ */
+export function openAsks(msgs: ChatMsg[], life: Pick<ClanLife, 'helps' | 'ores'> | null): Set<string> {
+  const out = new Set<string>();
+  const seen = new Set<string>();
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    const m = msgs[i];
+    if (m.k !== 'ask') continue;
+    if (!life) { out.add(m.id); continue; }
+    let key = '';
+    let ok = false;
+    const f = /^(.+) prosi o pomoc: Kuźnia → poziom (\d+)\.$/.exec(m.t);
+    const t = /^(.+) prosi o pomoc w badaniu: (.+)\.$/.exec(m.t);
+    const o = /^(.+) prosi o rudę: \d+ × (.+)\.$/.exec(m.t);
+    if (f) { key = `f|${f[1]}|${f[2]}`; ok = (life.helps ?? []).some(h => h.n === f[1] && h.k !== 't' && h.lvl === Number(f[2]) && !h.done); }
+    else if (t) { key = `t|${t[1]}|${t[2]}`; ok = (life.helps ?? []).some(h => h.n === t[1] && h.k === 't' && h.tn === t[2] && !h.done); }
+    else if (o) { key = `o|${o[1]}|${o[2]}`; ok = (life.ores ?? []).some(r => r.n === o[1] && ORES[r.ore]?.n === o[2] && r.got < r.want); }
+    else { out.add(m.id); continue; } // nieznany wzór — przycisk zostaje
+    if (ok && !seen.has(key)) out.add(m.id);
+    seen.add(key);
+  }
+  return out;
+}
+
+function Message({ m, open, canHelp, onMenu, onMute, onReport, onHelp }: { m: ChatMsg; open: boolean; canHelp: boolean; onMenu: () => void; onMute: () => void; onReport: () => void; onHelp: () => void }) {
   if (m.k === 'sys') return <li class="cm sys">{m.t}</li>;
-  // Prośba klanowicza (o pomoc albo o rudę) — od razu z przejściem do zakładki Pomoc.
+  // Prośba klanowicza (o pomoc albo o rudę) — od razu z przejściem do zakładki Pomoc; spełniona albo nieaktualna — bez przycisku.
   if (m.k === 'ask') {
     return (
-      <li class="cm ask">
+      <li class={`cm ask${canHelp ? '' : ' done'}`}>
         <span class="cm-ask-t"><time>{hhmm(m.time)}</time>{m.t}</span>
-        <button class="btn small primary" onClick={onHelp}>Pomóż ›</button>
+        {canHelp && <button class="btn small primary" onClick={onHelp}>Pomóż ›</button>}
       </li>
     );
   }
@@ -68,6 +97,11 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
   const [menu, setMenu] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const count = chat ? chat.msgs[ch].length : 0;
+  const life = useClanLife();
+  // Na kanale klanu odświeżamy listę próśb, gdy jest starsza niż pół minuty (żeby przyciski „Pomóż” były aktualne).
+  useEffect(() => {
+    if (ch === 'clan' && Date.now() - clanLife.at > 30000) clanLife.sync(game).catch(() => { /* bez sieci — zostaje stary stan */ });
+  }, [ch, count]);
 
   useEffect(() => chat?.on(() => force(x => x + 1)), [chat]);
   useEffect(() => {
@@ -84,6 +118,7 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
   // Własnych próśb o pomoc nie pokazujemy (starsze, sprzed pola `by`, rozpoznajemy po nicku na początku).
   const ownAsk = (m: ChatMsg) => m.k === 'ask' && (m.mine || (!!game.s.name && m.t.startsWith(game.s.name + ' prosi o')));
   const msgs = freshMsgs(ch, chat.msgs[ch]).filter(m => !chat.muted.has(m.uid) && !ownAsk(m));
+  const canHelp = openAsks(msgs, life?.clan ? life : null);
   const noClan = ch === 'clan' && !chat.clanId;
   const lockGlobal = ch === 'global' && game.s.forge.lvl < B.CHAT_GLOBAL_FORGE;
 
@@ -125,7 +160,7 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
         <ul class="chat-list" ref={listRef} aria-live="polite" aria-label={ch === 'global' ? 'Czat globalny' : 'Czat klanu'}>
           {msgs.length === 0 && <li class="cm sys">{chat.state === 'on' ? (ch === 'global' ? 'Nikt nic nie napisał przez ostatnią dobę.' : 'Nikt nic nie napisał przez ostatnie 3 dni.') : 'Łączenie z czatem…'}</li>}
           {msgs.map(m => (
-            <Message key={m.id} m={m} open={menu === m.id} onMenu={() => setMenu(menu === m.id ? null : m.id)} onHelp={() => goClan('pomoc')}
+            <Message key={m.id} m={m} open={menu === m.id} canHelp={canHelp.has(m.id)} onMenu={() => setMenu(menu === m.id ? null : m.id)} onHelp={() => goClan('pomoc')}
               onMute={() => { chat.mute(m.uid, true); setMenu(null); setNote(`Wyciszono: ${m.n}.`); }} onReport={() => report(m)} />
           ))}
         </ul>
