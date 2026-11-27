@@ -1,5 +1,5 @@
 import {
-  B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, GOLD_WAVES_STEP, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
+  B, DIVINE_JUMP, ENEMY_SCALE_AT_BOSS, FORGE_AT_BOSS, GOLD_CUT, GOLD_CUT_FROM, GOLD_CUT_TO, GOLD_TIME_K, GOLD_WAVES, GOLD_WAVES_GROWTH, ITEM_LVL_GROWTH, ITEM_LVL_GROWTH_HI, ITEM_LVL_SOFT,
   FOE_GENITIVE, JUMP_TABLE, LANDS, LEGEND, ORES, ORE_LVL_V4, ORE_ORDER, RANK_MAX, RARITY_AT_BOSS, RAR, R, SLOTS, SMITH_TITLES, UPGRADE_MIN, oreRank, qMult, rAt,
 } from '../data';
 import type { Awakening, FoeType, GameState, Item } from './types';
@@ -61,7 +61,8 @@ export const early = (g: number) => (g < 10 ? 0.4 + 0.06 * g : 1);
 
 /** Koszt ulepszenia kuźni do poziomu n: ×1,5 na poziom do 30., dalej ×1,04. */
 export const upCost = (n: number) =>
-  Math.round(B.UPGRADE_COST_BASE * Math.pow(B.UPGRADE_COST_MULT, Math.min(n, B.UPGRADE_COST_SOFT) - 1) * Math.pow(B.UPGRADE_COST_MULT_HI, Math.max(0, n - B.UPGRADE_COST_SOFT)));
+  Math.round(B.UPGRADE_COST_BASE * Math.pow(B.UPGRADE_COST_MULT, Math.min(n, B.UPGRADE_COST_SOFT) - 1) * Math.pow(B.UPGRADE_COST_MULT_HI, Math.max(0, n - B.UPGRADE_COST_SOFT))
+    * Math.pow(B.UPGRADE_COST_MULT_MID / B.UPGRADE_COST_MULT, Math.max(0, Math.min(n, B.UPGRADE_COST_MID_TO) - 10)));
 /** Czas ulepszenia kuźni do poziomu n (tabela UPGRADE_MIN). Pierwsze ulepszenie trwa 30 s (samouczek). */
 export const upTime = (n: number) => (UPGRADE_MIN[Math.max(2, Math.min(B.FORGE_MAX, n))] ?? 0) * 60000;
 /** Fale złota na minutę czasu ulepszenia: GOLD_TIME_K do poziomu GOLD_CUT_FROM, potem płynnie do GOLD_TIME_K × GOLD_CUT. */
@@ -71,14 +72,21 @@ export const goldTimeK = (f: number) =>
 export const goldWaves = (f: number) =>
   Math.max(GOLD_WAVES * Math.pow(GOLD_WAVES_GROWTH, Math.max(0, Math.min(f, B.UPGRADE_COST_SOFT) - 1)), goldTimeK(f) * (UPGRADE_MIN[Math.min(B.FORGE_MAX, f + 1)] ?? 0));
 /**
- * Fale na ulepszenie po wygładzeniu: rosną najwyżej ×GOLD_WAVES_STEP na poziom kuźni, więc złoto z fali nigdy nie maleje
- * z postępem (dawniej między 10. a 20. poziomem kuźni spadało, bo czas ulepszeń rósł szybciej niż koszt).
+ * Fale na ulepszenie po wygładzeniu: tyle, ile zakłada cel (`goldWaves`), ale tak, żeby złoto z fali nigdy nie malało
+ * z postępem — gdy cel spada szybciej niż rośnie koszt (między 10. a ok. 18. poziomem kuźni czas ulepszeń rośnie
+ * najszybciej), złoto z fali stoi w miejscu, aż koszty je dogonią. Listopad 2026: dawniej fale mogły rosnąć najwyżej
+ * ×1,4 na poziom, przez co od 12. do 21. poziomu złota było 3–4 razy więcej, niż zakładał cel.
  */
 // Tabela liczona od razu przy wczytaniu: serwer gry (Nakama) zamraża zmienne globalne po starcie,
 // więc pamięci podręcznej uzupełnianej w trakcie gry nie wolno trzymać w tablicy czy obiekcie.
 const smoothWaves: readonly number[] = (() => {
   const a = [0, goldWaves(1)];
-  for (let k = 2; k <= B.FORGE_MAX; k++) a[k] = Math.min(goldWaves(k), a[k - 1] * GOLD_WAVES_STEP);
+  let per = upCost(2) / a[1]; // złoto z fali przy poprzednim poziomie
+  for (let k = 2; k <= B.FORGE_MAX; k++) {
+    const cost = upCost(Math.min(B.FORGE_MAX, k + 1));
+    per = Math.max(per, cost / goldWaves(k));
+    a[k] = cost / per;
+  }
   return a;
 })();
 export function goldWavesSmooth(f: number): number {

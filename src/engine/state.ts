@@ -1,7 +1,8 @@
 import { unlockedNow } from './unlocks';
-import { ACHIEVEMENTS, ELEM, LATEST_LOG, achFame, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
+import { ACHIEVEMENTS, ELEM, LATEST_LOG, achFame, DUNGEONS, DUNG_ORDER, FRAMES, LANDS, SKILL_SLOTS, SKINS, TECH, TUTORIAL, type AchId, type FrameId, type SkinId, rRank } from '../data';
 import { awakeningFor, normAwakening } from './formulas';
-import type { Battle, DungId, Fx, GameState } from './types';
+import { techCost, techMaxAll } from './tech';
+import type { Battle, DungId, Fx, GameState, TechId } from './types';
 
 /**
  * Wersje zapisu:
@@ -64,6 +65,28 @@ function mergeSentLog(log: GameState['smith']['log']): GameState['smith']['log']
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 
 /** Uzupełnia brakujące pola starszego zapisu, żeby nowe wersje gry go wczytały. */
+/**
+ * Badania ponad obecny limit poziomów (listopad 2026: Nocna zmiana z 18 do 12 poziomów) — wracają do limitu,
+ * a Księgi za nadmiarowe poziomy wracają do gracza. Trwające badanie ponad limit zostaje przerwane (zwrot Ksiąg i złota).
+ */
+function capTech(s: GameState): void {
+  const ids = Object.keys(TECH) as TechId[];
+  for (const id of ids) {
+    const lv = s.tech.lv[id] ?? 0;
+    const max = techMaxAll(id);
+    if (!(lv > max)) continue;
+    for (let l = max; l < lv; l++) s.books += techCost(id, l).books;
+    s.tech.lv[id] = max;
+  }
+  const cur = s.tech.cur;
+  if (cur && TECH[cur.id] && (s.tech.lv[cur.id] ?? 0) >= techMaxAll(cur.id)) {
+    const c = techCost(cur.id, techMaxAll(cur.id));
+    s.books += c.books;
+    s.gold += c.gold;
+    s.tech.cur = null;
+  }
+}
+
 export function migrate(raw: unknown, now: number): GameState {
   const d = newState(now);
   if (!isObj(raw)) return d;
@@ -77,6 +100,8 @@ export function migrate(raw: unknown, now: number): GameState {
   out.stats = Object.assign(fresh.stats, isObj(raw.stats) ? raw.stats : {});
   out.tech = Object.assign(fresh.tech, isObj(raw.tech) ? raw.tech : {});
   if (!isObj(out.tech.lv)) out.tech.lv = {};
+  if (typeof out.books !== 'number') out.books = 0;
+  capTech(out);
   const dungeons = isObj(raw.dungeons) ? raw.dungeons : {};
   out.dungeons = fresh.dungeons;
   for (const id of DUNG_ORDER) if (isObj(dungeons[id])) Object.assign(out.dungeons[id as DungId], dungeons[id]);

@@ -127,7 +127,7 @@ describe('nagrody offline i technologie', () => {
     s.tech.lv.e_noc = 2;
     s.tech.cur = { id: 'w_ostrze', left: 3600000, total: 3600000 };
     const r = applyOffline(ctx, 24 * 3600 * 1000)!;
-    expect(r.ms).toBe(B.OFFLINE_CAP_MS + 60 * 60000);
+    expect(r.ms).toBe(B.OFFLINE_CAP_MS + 2 * TECH.e_noc.per * 60000);
     expect(r.tech).toBe('w_ostrze');
     expect(s.tech.lv.w_ostrze).toBe(1);
     expect(s.tech.cur).toBeNull();
@@ -146,14 +146,16 @@ describe('nagrody offline i technologie', () => {
     expect(r.tech).toBe('w_ostrze');
   });
 
-  it('Nocna zmiana na najwyższym poziomie daje 8 h łupów', () => {
+  it('Nocna zmiana na najwyższym poziomie daje 4 h łupów (12 poziomów po 15 min)', () => {
     const { ctx, s } = makeGame();
     s.tech.lv.e_noc = TECH.e_noc.max;
+    expect(TECH.e_noc.max).toBe(12);
     const r = applyOffline(ctx, 24 * 3600 * 1000)!;
-    expect(r.ms).toBe(8 * 3600 * 1000);
-    expect(offlineCapMs(s)).toBe(8 * 3600 * 1000);
-    expect(techText('e_noc', 3)).toBe('+1 h 30 min limitu nagród offline (bazowo 1 h)');
-    expect(techText('e_noc', TECH.e_noc.max)).toMatch(/^\+7 h limitu/);
+    expect(r.ms).toBe(4 * 3600 * 1000);
+    expect(offlineCapMs(s)).toBe(4 * 3600 * 1000);
+    expect(techText('e_noc', 3)).toBe('+45 min limitu nagród offline (bazowo 1 h)');
+    expect(techText('e_noc', 6)).toBe('+1 h 30 min limitu nagród offline (bazowo 1 h)');
+    expect(techText('e_noc', TECH.e_noc.max)).toMatch(/^\+3 h limitu/);
   });
 });
 

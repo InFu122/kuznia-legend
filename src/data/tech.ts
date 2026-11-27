@@ -46,9 +46,11 @@ export const TECH: Record<TechId, TechDef> = {
   w_pancerz: { n: 'Pancerz', branch: 'walka', eff: 'hpPct', per: 3, max: 20, req: 3, b0: 1, d: '+{v}% zdrowia', tiers: [[II, 5], [III, 5]] },
   w_precyzja: { n: 'Precyzja', branch: 'walka', eff: 'crit', per: 1, max: 10, req: 7, b0: 2, d: '+{v}% szansy na krytyk', tiers: [[II, 3], [III, 3]] },
   w_pogromca: { n: 'Łowca bossów', branch: 'walka', eff: 'bossPct', per: 3, max: 10, req: 10, b0: 2, d: '+{v}% obrażeń wobec bossów', tiers: [[II, 3], [III, 3]] },
-  e_kupiec: { n: 'Kupiec', branch: 'ekonomia', eff: 'goldPct', per: 5, max: 10, req: 4, b0: 1, d: '+{v}% złota z walki i sprzedaży' }, // bez kolejnych stopni: złota w późnej grze i tak jest dość
+  // Listopad 2026: +2,5% na poziom (dawniej +5%, razem do +50% — złota było kilka razy za dużo).
+  e_kupiec: { n: 'Kupiec', branch: 'ekonomia', eff: 'goldPct', per: 2.5, max: 10, req: 4, b0: 1, d: '+{v}% złota z walki i sprzedaży' }, // bez kolejnych stopni: złota w późnej grze i tak jest dość
   e_gornik: { n: 'Górnik', branch: 'ekonomia', eff: 'extraOre', per: 2, max: 10, req: 4, b0: 1, d: '{v}% szansy na dodatkową rudę z fali', tiers: [[II, 3], [III, 3]] },
-  e_noc: { n: 'Nocna zmiana', branch: 'ekonomia', eff: 'offlineMin', per: 30, max: 14, req: 5, b0: 1, d: '+{v} limitu nagród offline (bazowo 1 h)', tiers: [[II, 2], [III, 2]] },
+  // Listopad 2026: 12 poziomów po 15 min, limit offline najwyżej 4 h (dawniej 14 + 4 poziomy po 30 min, do 10 h).
+  e_noc: { n: 'Nocna zmiana', branch: 'ekonomia', eff: 'offlineMin', per: 15, max: 12, req: 5, b0: 1, d: '+{v} limitu nagród offline (bazowo 1 h)' },
   e_poszuk: { n: 'Poszukiwacz', branch: 'ekonomia', eff: 'rarePct', per: 5, max: 10, req: 9, b0: 2, d: '+{v}% szansy na rzadką rudę (względnie)', tiers: [[II, 3], [III, 3]] },
   t_hodowca: { n: 'Hodowca', branch: 'towarzysze', eff: 'eggPct', per: 10, max: 10, req: 8, b0: 2, d: '+{v}% szansy na jajo z bossów i lochów (względnie)', tiers: [[II, 3], [III, 3]] },
   t_wylegarnia: { n: 'Wylęgarnia', branch: 'towarzysze', eff: 'hatchTime', per: 5, max: 10, req: 9, b0: 2, d: '−{v}% czasu wykluwania jaj', tiers: [[II, 2], [III, 2]] },

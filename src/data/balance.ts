@@ -94,18 +94,15 @@ export const UPGRADE_MIN: number[] = Array.from({ length: 201 }, (_, n) =>
  * Złoto: ile fal walki „kosztuje” następne ulepszenie kuźni przy kuźni na poziomie f — więcej z dwóch:
  * GOLD_WAVES × GOLD_WAVES_GROWTH^(f−1) (na starcie 50 fal) albo K fal na minutę czasu następnego ulepszenia,
  * gdzie K rośnie od GOLD_TIME_K (do poziomu GOLD_CUT_FROM — pierwsze godziny gry są hojne) do GOLD_TIME_K × GOLD_CUT
- * (od poziomu GOLD_CUT_TO). Gracz grający ok. 3 h dziennie (plus nagrody offline z Nocną zmianą) zarabia niewiele
- * więcej, niż kosztują ulepszenia — zapas złota to kilka kolejnych ulepszeń, a nie kilkadziesiąt.
+ * (od poziomu GOLD_CUT_TO). Cel (listopad 2026, symulator `tools/balance-sim.ts`): gracz grający ok. 3 h dziennie
+ * z Kupcem, Krukiem i premią klanu, bez reklam, ma złoto akurat na kolejne ulepszenie (zapas ok. 1 ulepszenia);
+ * z reklamami trochę więcej, a bez żadnych premii czasem czeka na złoto (ok. 10% czasu gry). Dawniej (K × 2,5, wygładzenie fal ×1,4
+ * na poziom, Kupiec +50%, Kruk bez limitu, offline do 8,5 h) taki gracz miał zapas na 12–24 ulepszeń.
  */
 export const GOLD_WAVES = 50;
-/**
- * Fale na ulepszenie rosną najwyżej tyle razy na poziom kuźni (wygładzenie). Bez tego między 10. a 20. poziomem
- * czas ulepszeń rósł szybciej niż koszt i złoto z fali w nowej krainie spadało (21 → 12 → 8 zł) poniżej złota z poprzedniej.
- */
-export const GOLD_WAVES_STEP = 1.4;
 export const GOLD_WAVES_GROWTH = 1.2;
 export const GOLD_TIME_K = 4.5;
-export const GOLD_CUT = 2.5;
+export const GOLD_CUT = 4.5;
 export const GOLD_CUT_FROM = 10;
 export const GOLD_CUT_TO = 20;
 
@@ -114,6 +111,8 @@ export const B = {
   FORGE_MAX: 200,
   UPGRADE_COST_BASE: 100,       // koszt(n) = 100 × 1,5^(n−1) do 30. poziomu…
   UPGRADE_COST_MULT: 1.5,
+  UPGRADE_COST_MULT_MID: 1.7,   // …z tym że od 11. do 24. poziomu ×1,7 (tam czas ulepszeń rośnie najszybciej)…
+  UPGRADE_COST_MID_TO: 24,
   UPGRADE_COST_MULT_HI: 1.04,   // …dalej ×1,04 na poziom
   UPGRADE_COST_SOFT: 30,
   AUTO_FORGE_LVL: 5,
@@ -148,7 +147,7 @@ export const B = {
   CHAT_SLOW_CLAN_MS: 1000,
   FAME_BOSS: 50,
   FAME_DUNGEON: 30,
-  OFFLINE_CAP_MS: 1 * 3600 * 1000, // łupy za nieobecność: 1 h, dłużej z badaniem Nocna zmiana (do 8 h) i premią klanu
+  OFFLINE_CAP_MS: 1 * 3600 * 1000, // łupy za nieobecność: 1 h, dłużej z badaniem Nocna zmiana (do 4 h) i premią klanu (+30 min)
   OFFLINE_EFFICIENCY: 0.5,
   OFFLINE_ORE: 0.35,            // ruda za nieobecność: 35% tego, co dałyby fale offline (złoto bez zmian)
   OFFLINE_WAVE_MS: 3500,

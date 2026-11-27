@@ -1,4 +1,4 @@
-import { B, CODEX_PCT, MOUNTS, PETS, TECH, TECH_IDS, clanBonus, companionMult, petTraitValue } from '../data';
+import { B, CODEX_PCT, MOUNTS, PETS, TECH, TECH_IDS, capTrait, clanBonus, companionMult, petTraitValue } from '../data';
 import type { GameState, Mods } from './types';
 
 export const techLvl = (s: GameState, id: keyof GameState['tech']['lv']) => s.tech.lv[id] ?? 0;
@@ -25,7 +25,7 @@ export function petTrait(s: GameState): { trait: (typeof PETS)[keyof typeof PETS
   const c = id ? s.pets[id] : null;
   if (!id || !c) return null;
   const k = 1 + techMods(s).compPct / 100; // Więź
-  return { trait: PETS[id].trait, v: Math.round(petTraitValue(id, c.lvl, c.stars) * k * 10) / 10 };
+  return { trait: PETS[id].trait, v: capTrait(PETS[id].trait, Math.round(petTraitValue(id, c.lvl, c.stars) * k * 10) / 10) };
 }
 
 /** Premie wierzchowca: +% obrażeń i zdrowia. */

@@ -49,7 +49,7 @@ export interface PetDef {
 
 export const PETS: Record<PetId, PetDef> = {
   wilczek: { n: 'Wilczek', r: 0, atk: 12, int: 1500, trait: 'crit', tv: 3, d: '+{v}% szansy na krytyk' },
-  kruk: { n: 'Kruk', r: 0, atk: 8, int: 1200, trait: 'goldPct', tv: 10, d: '+{v}% złota' },
+  kruk: { n: 'Kruk', r: 0, atk: 8, int: 1200, trait: 'goldPct', tv: 2, d: '+{v}% złota (najwyżej 10%)' },
   zolw: { n: 'Żółw Skalny', r: 1, atk: 9, int: 2000, trait: 'hpPct', tv: 10, d: '+{v}% zdrowia' },
   salamandra: { n: 'Salamandra', r: 1, atk: 13, int: 1500, trait: 'eldmg', tv: 8, d: '+{v}% obrażeń z żywiołów' },
   sowa: { n: 'Sowa Śnieżna', r: 2, atk: 11, int: 1300, trait: 'rarePct', tv: 15, d: '+{v}% szansy na rzadką rudę (względnie)' },
@@ -104,4 +104,10 @@ export const skillValue = (id: SkillId, lvl: number) => Math.round(SKILLS[id].v 
 export const petAtkPct = (id: PetId, lvl: number, stars: number) => PETS[id].atk * companionMult(lvl, stars);
 /** Wartość cechy chowańca na danym poziomie i z gwiazdkami. */
 export const petTraitValue = (id: PetId, lvl: number, stars: number) =>
-  Math.round(PETS[id].tv * (1 + 0.05 * (lvl - 1)) * (1 + STAR_BONUS * stars) * 10) / 10;
+  capTrait(PETS[id].trait, Math.round(PETS[id].tv * (1 + 0.05 * (lvl - 1)) * (1 + STAR_BONUS * stars) * 10) / 10);
+/**
+ * Premia do złota z cechy chowańca (Kruk) najwyżej tyle — także z badaniem Więź. Listopad 2026: dawniej bez limitu
+ * (na 40. poziomie z 5 gwiazdkami i Więzią ok. +62%), złota było kilka razy za dużo.
+ */
+export const PET_GOLD_MAX = 10;
+export const capTrait = (trait: PetTrait, v: number) => (trait === 'goldPct' ? Math.min(PET_GOLD_MAX, v) : v);
