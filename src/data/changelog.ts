@@ -18,6 +18,24 @@ export interface LogEntry {
 
 export const CHANGELOG: LogEntry[] = [
   {
+    id: '2026-11-27-b',
+    date: '27 listopada 2026',
+    add: [
+      'Walki na arenie i bitwy wojny klanów pokazują cały przebieg: ciosy, trafienia krytyczne, uniki i umiejętności. Odtwarzanie można przyspieszyć albo pominąć.',
+      'Seria wygranych na arenie: od 3 wygranych z rzędu więcej złota, a za 3. i 5. wygraną z rzędu dodatkowe Żetony.',
+      'Rewanż: przez 24 h możesz zaatakować kogoś, kto pokonał twoją obronę. Wygrana daje podwójne złoto i 3 Żetony.',
+      'Atak na smoka i bossa klanowego to teraz seria ciosów z oceną ciosu, awansem w rankingu i rekordem.',
+      'Łup z ataku: każdy atak na smoka albo bossa klanowego ma szansę na dodatkową nagrodę.',
+      'Cios ostateczny: kto dobije bossa klanowego albo fazę smoka, dostaje dodatkową skrzynię.',
+    ],
+    change: [
+      'Nowy balans złota: ulepszenia kuźni od 11. poziomu są droższe, a złota jest mniej, więc znowu trzeba nim gospodarować.',
+      'Badanie Kupiec daje +2,5% złota na poziom (najwyżej +25%).',
+      'Kruk daje najwyżej 10% złota.',
+      'Nocna zmiana ma 12 poziomów po 15 min: nagrody offline najwyżej za 4 h. Za zbadane poziomy ponad limit wracają Księgi.',
+    ],
+  },
+  {
     id: '2026-11-27',
     date: '27 listopada 2026',
     add: [
