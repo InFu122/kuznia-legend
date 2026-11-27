@@ -1,69 +1,112 @@
 // Okno areny: ocena, walki na dziś, przeciwnicy, odtworzenie pojedynku (liczy go serwer) i dziennik obrony.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { DUEL_FRAME_MS, eloDelta } from '../../engine/duel';
+import { eloDelta } from '../../engine/duel';
 import type { Game } from '../../engine/game';
-import { AD, ARENA_SHOP, B, LEAGUE, landDef, type ArenaShopId } from '../../data';
+import { AD, ARENA_REVENGE, ARENA_SHOP, ARENA_STREAK, B, LEAGUE, landDef, streakBonus, type ArenaShopId } from '../../data';
 import { dungeonBgUrl, resUrl } from '../../art/render';
 import { Px } from '../Px';
 import { useAdWatch } from './Shop';
 import { clanLife } from '../../save/clanlife';
-import { getLink, ServerError, type ArenaFight, type ArenaState, type DuelShow, type LeagueState } from '../../save/server';
-import { fmt } from '../format';
-import { HeroSprite } from '../Arena';
-import { Res, Tokens } from '../RewardIcons';
+import { getLink, ServerError, type ArenaFight, type ArenaState, type LeagueState } from '../../save/server';
+import { fmt, fmtShort, tfmt } from '../format';
 import type { ComponentChildren } from 'preact';
+import { DuelReplay } from './DuelReplay';
 import { Avatar } from '../Avatar';
 import { showProfile } from '../profile';
 import { ArenaShopTab, LeagueBadge, LeagueTab, TokenIco } from './League';
 import { icUrl } from './ClanUi';
 
-/** Odtworzenie walki jest 3× szybsze niż sama walka. */
-const REPLAY_SPEED = 3;
-
 const errText = (e: unknown) => (e instanceof ServerError ? e.message : 'Brak połączenia z serwerem.');
 const signed = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n);
 
-/** Odtworzenie pojedynku rozegranego przez serwer (arena, bitwa wojny klanów). */
-export function DuelReplay({ f, summary, title = 'Pojedynek', onDone }: { f: DuelShow; summary: ComponentChildren; title?: string; onDone: () => void }) {
-  const [i, setI] = useState(0);
-  const done = i >= f.frames.length - 1;
+export { DuelReplay } from './DuelReplay';
+
+/** Płomyk serii wygranych (piksele). */
+export const Flame = ({ size = 16 }: { size?: number }) => (
+  <svg class="flame" width={size} height={Math.round(size * 1.25)} viewBox="0 0 8 10" shape-rendering="crispEdges" aria-hidden="true">
+    <path fill="#e8542f" d="M3 0h1v1h1v1h1v1h1v4h-1v1h-1v1h-1v1h-2v-1h-1v-1h-1v-1h-1v-3h1v-1h1v1h1v-2h1z" />
+    <path fill="#ffb347" d="M3 3h1v1h1v1h1v2h-1v1h-1v1h-1v-1h-1v-1h-1v-2h1v1h1z" />
+    <path fill="#fff1b8" d="M3 6h1v1h1v1h-2v-1h-1v-1z" />
+  </svg>
+);
+
+/** „3 wygrane”, „5 wygranych”. */
+const wins = (n: number) => `${n} ${n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'wygrane' : 'wygranych'}`;
+
+/** „1 Żeton”, „3 Żetony”, „5 Żetonów”. */
+const zet = (n: number) => `${n} ${n === 1 ? 'Żeton' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'Żetony' : 'Żetonów'}`;
+
+/** Liczba, która przez `ms` dochodzi od `from` do `to`. */
+function useCount(from: number, to: number, ms = 900): number {
+  const [v, setV] = useState(from);
   useEffect(() => {
-    if (done) return;
-    const t = setTimeout(() => setI(x => x + 1), DUEL_FRAME_MS / REPLAY_SPEED);
-    return () => clearTimeout(t);
-  }, [i, done]);
-  const [a, b] = f.frames[Math.min(i, f.frames.length - 1)];
+    let raf = 0;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / ms);
+      setV(Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [from, to]);
+  return v;
+}
+
+/** Podsumowanie walki na arenie: ocena nabijana licznikiem, nagrody z premiami, seria i rewanż. */
+function ArenaOutro({ r, prevStreak }: { r: ArenaFight; prevStreak: number }) {
+  const from = r.rating - r.d;
+  const shown = useCount(from, r.rating);
+  const b = r.bonus;
+  const streak = r.streak ?? 0;
+  const tk = r.tk + (b?.tk ?? 0);
+  const next = streak < ARENA_STREAK.FROM ? ARENA_STREAK.FROM : streak < 5 ? 5 : null;
+  const nb = next ? streakBonus(next) : null;
   return (
     <>
-      <div class="eyebrow">{title}</div>
-      <div class="duel-box">
-        <div class="stage duel">
-          <div class="st-tag">{done ? (f.win ? 'Wygrana' : 'Porażka') : `${Math.round((i * DUEL_FRAME_MS) / 1000)} s`}</div>
-          <div class={`actor hero${!done ? ' fighting' : ''}${done && !f.win ? ' dead' : ''}`}><HeroSprite eq={f.me.look ?? {}} skin={f.me.sk} /></div>
-          <div class={`actor foe pvp${!done ? ' fighting' : ''}${done && f.win ? ' dead' : ''}${f.foe.ghost ? ' ghost' : ''}`}><HeroSprite eq={f.foe.look ?? {}} skin={f.foe.sk} flip /></div>
-        </div>
-        <div class="bars">
-          <div class="bar-side">
-            <div class="fname">{f.me.name}</div>
-            <div class="hp"><i style={{ width: a + '%' }} /></div>
-            <div class="hpnum">Moc {fmt(f.me.power)}</div>
-          </div>
-          <div class="bar-side foe">
-            <div class="fname">{f.foe.name}</div>
-            <div class="hp foe"><i style={{ width: b + '%' }} /></div>
-            <div class="hpnum">Moc {fmt(f.foe.power)}</div>
-          </div>
-        </div>
+      <div class="ao-rate">
+        <small>Ocena</small>
+        <b class="num">{fmt(shown)}</b>
+        <span class={`ao-d ${r.d > 0 ? 'good' : r.d < 0 ? 'bad' : ''}`}>{signed(r.d)}</span>
       </div>
-      {done ? (
-        <div class={`duel-result ${f.win ? 'win' : 'lose'}`} role="status">
-          <b>{f.win ? 'Zwycięstwo!' : 'Porażka'}</b>
-          <span>{summary}</span>
-          <small>Walka trwała {Math.round(f.ms / 1000)} s · trafienia krytyczne {f.crits[0]}:{f.crits[1]} · umiejętności {f.skills[0]}:{f.skills[1]}</small>
+      <div class="ao-gain">
+        <span class="ao-chip"><Px src={resUrl('zloto')} size={18} />+{fmtShort(r.gold)}{b && b.gold > 0 && <em>+{Math.round(b.gold * 100)}%</em>}</span>
+        {tk > 0 && <span class="ao-chip"><TokenIco size={16} />+{tk}{b && b.tk > 0 && <em>w tym +{b.tk}</em>}</span>}
+        {r.lp > 0 && <span class="ao-chip"><Px src={resUrl('puchar')} size={18} />+{r.lp} pkt ligi</span>}
+      </div>
+      {r.win && streak >= 2 && (
+        <div class={`ao-streak${b?.streak ? ' hot' : ''}`}>
+          <Flame size={18} />
+          <span>
+            <b>Seria: {wins(streak)} z rzędu</b>
+            <small>
+              {b?.streak ? `+${Math.round(streakBonus(streak).gold * 100)}% złota za serię${streakBonus(streak).tk ? `, +${zet(streakBonus(streak).tk)}` : ''}. ` : ''}
+              {next && nb ? `Wygraj jeszcze ${next - streak}: +${Math.round(nb.gold * 100)}% złota i +${zet(nb.tk)}.` : 'Każda kolejna wygrana: +100% złota.'}
+            </small>
+          </span>
         </div>
-      ) : <button class="linkbtn" onClick={() => setI(f.frames.length - 1)}>Pomiń</button>}
-      {done && <button class="btn primary" onClick={onDone}>Dalej</button>}
+      )}
+      {!r.win && prevStreak >= 2 && <div class="ao-streak off"><Flame size={18} /><span><b>Seria {prevStreak} wygranych przerwana</b><small>Nowa seria zaczyna się od następnej wygranej.</small></span></div>}
+      {r.win && b?.rv && <div class="ao-rv">Rewanż: +{Math.round(ARENA_REVENGE.GOLD * 100)}% złota i +{zet(ARENA_REVENGE.TK)}.</div>}
     </>
+  );
+}
+
+/** Rewanż na kimś, kto pokonał twoją obronę (najnowszy możliwy). */
+function RevengeCard({ log, left, busy, go }: { log: ArenaState['log']; left: number; busy: boolean; go: (rv: string) => void }) {
+  const now = Date.now();
+  const l = log.find(x => x.rv && (x.until ?? 0) > now);
+  if (!l) return null;
+  return (
+    <div class="ar-rv">
+      <span class="ar-rv-ic"><Px src={icUrl('tarcza')} size={28} /></span>
+      <div class="cmain">
+        <span class="eyebrow">Rewanż · jeszcze {tfmt((l.until ?? now) - now)}</span>
+        <b>{l.who}</b>
+        <small>Twoja obrona przegrała {ago(l.t, now)}. Za wygraną +{Math.round(ARENA_REVENGE.GOLD * 100)}% złota i +{zet(ARENA_REVENGE.TK)}.</small>
+      </div>
+      <button class="btn primary ao-go" disabled={busy || left < 1} onClick={() => go(l.rv!)}>Rewanż</button>
+    </div>
   );
 }
 
@@ -114,7 +157,7 @@ function ArenaHero({ game, st, brief }: { game: Game; st: ArenaState | null; bri
         </div>
         <div class="ar-st">
           <small>Bilans</small>
-          <span>{st ? <b class="num"><span class="good">{st.wins}</span> – <span class="bad">{st.losses}</span></b> : <b>—</b>}</span>
+          <span>{st ? <b class="num"><span class="good">{st.wins}</span> – <span class="bad">{st.losses}</span></b> : <b>—</b>}{st && (st.streak ?? 0) >= 2 && <em class="ar-streak" title="wygrane z rzędu"><Flame size={12} />{st.streak}</em>}</span>
         </div>
         <div class="ar-st">
           <small>Żetony</small>
@@ -154,6 +197,7 @@ export function ArenaView({ game, close, inline = false }: { game: Game; close: 
   const [lg, setLg] = useState<LeagueState | null>(null);
   const [tab, setTab] = useState<ArenaTab>('walki');
   const [fight, setFight] = useState<ArenaFight | null>(null);
+  const [prevStreak, setPrevStreak] = useState(0);
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -179,15 +223,18 @@ export function ArenaView({ game, close, inline = false }: { game: Game; close: 
   useEffect(() => load(), []);
   useEffect(() => { if ((tab === 'liga' || tab === 'sklep') && !lg) loadLeague(); }, [tab]);
 
+  const fought = (r: ArenaFight) => {
+    game.arenaReward(r.gold);
+    setPrevStreak(st?.streak ?? 0);
+    setFight(r);
+    setSt(r);
+    setLg(null); // tabela ligi zmieniła się — wczytaj ją od nowa przy wejściu na kartę
+  };
   const attack = (i: number) => {
     if (!st) return;
-    call(l => l.arenaFight(i, st.opp[i].id), r => {
-      game.arenaReward(r.gold);
-      setFight(r);
-      setSt(r);
-      setLg(null); // tabela ligi zmieniła się — wczytaj ją od nowa przy wejściu na kartę
-    });
+    call(l => l.arenaFight(i, st.opp[i].id), fought);
   };
+  const revenge = (rv: string) => call(l => l.arenaRevenge(rv), fought);
   const buy = (id: ArenaShopId) => call(l => l.arenaShopBuy(id), r => {
     takeLeague(r);
     clanLife.rewards(game, r.rewards);
@@ -205,13 +252,7 @@ export function ArenaView({ game, close, inline = false }: { game: Game; close: 
   };
   if (ad.view) return ad.view;
   if (fight) {
-    const summary = (
-      <>
-        Ocena {signed(fight.d)} (teraz {fmt(fight.rating)}) · +<Res r={{ gold: fight.gold }} />
-        {fight.tk ? <> · +{fight.lp} pkt ligi · +<Tokens n={fight.tk} /></> : null}
-      </>
-    );
-    const replay = <DuelReplay f={fight} summary={summary} onDone={() => setFight(null)} />;
+    const replay = <DuelReplay f={fight} title={fight.bonus?.rv ? 'Rewanż' : 'Pojedynek'} ko={fight.bonus?.rv ? (fight.win ? 'Rewanż udany!' : 'Rewanż nieudany') : undefined} outro={<ArenaOutro r={fight} prevStreak={prevStreak} />} onDone={() => setFight(null)} />;
     return inline ? <section class="card arena-inline">{replay}</section> : replay;
   }
   const brief = lg ? { tier: lg.tier, rank: lg.rank, tokens: lg.tokens } : st?.league ?? null;
@@ -235,7 +276,7 @@ export function ArenaView({ game, close, inline = false }: { game: Game; close: 
       {tab === 'walki' && (
         <section class="card ar-card">
           {!st && !err && <p class="sub">Wczytywanie…</p>}
-          {st && <Fights game={game} st={st} busy={busy} attack={attack} refresh={() => load(true)} toShop={() => setTab('sklep')} adBtn={adBtn} />}
+          {st && <Fights game={game} st={st} busy={busy} attack={attack} revenge={revenge} refresh={() => load(true)} toShop={() => setTab('sklep')} adBtn={adBtn} />}
           {ad.msg && <p class="sub" role="status">{ad.msg}</p>}
           {note && <p class="sub" role="status">{note}</p>}
         </section>
@@ -251,7 +292,7 @@ export function ArenaView({ game, close, inline = false }: { game: Game; close: 
       {tab === 'obrona' && (
         <section class="card ar-card">
           {!st && !err && <p class="sub">Wczytywanie…</p>}
-          {st && <Defense log={st.log} />}
+          {st && <Defense log={st.log} left={st.left} busy={busy} revenge={revenge} />}
         </section>
       )}
       {!inline && <button class="btn" onClick={close}>Zamknij</button>}
@@ -261,8 +302,8 @@ export function ArenaView({ game, close, inline = false }: { game: Game; close: 
 }
 
 /** Walki: lista rywali z trudnością i stawką oceny, a gdy walk zabrakło — skąd wziąć następne. */
-function Fights({ game, st, busy, attack, refresh, toShop, adBtn }: {
-  game: Game; st: ArenaState; busy: boolean; attack: (i: number) => void; refresh: () => void; toShop: () => void; adBtn: ComponentChildren;
+function Fights({ game, st, busy, attack, revenge, refresh, toShop, adBtn }: {
+  game: Game; st: ArenaState; busy: boolean; attack: (i: number) => void; revenge: (rv: string) => void; refresh: () => void; toShop: () => void; adBtn: ComponentChildren;
 }) {
   const gamePower = game.stats.power;
   return (
@@ -274,6 +315,7 @@ function Fights({ game, st, busy, attack, refresh, toShop, adBtn }: {
           <div class="ar-out-btns">{adBtn}<button class="btn small" onClick={toShop}><TokenIco size={14} /> Bilet w sklepie</button></div>
         </div>
       )}
+      <RevengeCard log={st.log} left={st.left} busy={busy} go={revenge} />
       <div class="row">
         <div class="eyebrow">Wybierz rywala</div>
         <button class="btn small" disabled={busy} onClick={refresh}>↻ Inni rywale</button>
@@ -301,6 +343,7 @@ function Fights({ game, st, busy, attack, refresh, toShop, adBtn }: {
       <div class="ar-prize">
         <span>Za wygraną: <TokenIco size={14} /> <b>+{LEAGUE.WIN_TOKENS}</b> · pkt ligi · złoto</span>
         <span>Za porażkę: <TokenIco size={14} /> <b>+{LEAGUE.LOSS_TOKENS}</b></span>
+        <span><Flame size={12} /> Seria od {ARENA_STREAK.FROM} wygranych z rzędu: więcej złota i Żetonów</span>
       </div>
       {st.left > 0 && adBtn}
       {gamePower > st.power * 1.02 && (
@@ -312,7 +355,7 @@ function Fights({ game, st, busy, attack, refresh, toShop, adBtn }: {
 }
 
 /** Obrona: kto zaatakował kopię twojego bohatera i jak poszło. */
-function Defense({ log }: { log: ArenaState['log'] }) {
+function Defense({ log, left, busy, revenge }: { log: ArenaState['log']; left: number; busy: boolean; revenge: (rv: string) => void }) {
   const now = Date.now();
   return (
     <>
@@ -324,6 +367,7 @@ function Defense({ log }: { log: ArenaState['log'] }) {
               <span class="al-ic" aria-hidden="true">{l.won ? '✓' : '✗'}</span>
               <span class="al-main"><b>{l.who}</b><small>{ago(l.t, now)}</small></span>
               <span class="al-res"><b>{l.won ? 'Obroniono' : 'Przegrana'}</b><small class="num">ocena {signed(l.d)}</small></span>
+              {l.rv && (l.until ?? 0) > now && <button class="btn primary small al-rv" disabled={busy || left < 1} onClick={() => revenge(l.rv!)}>Rewanż</button>}
             </li>
           ))}
         </ul>

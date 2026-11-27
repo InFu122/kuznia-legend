@@ -1,6 +1,6 @@
 // Arena: walki z kopiami bohaterów innych graczy. Serwer trzyma kopię bohatera z ostatniego zapisu
 // (tylko z uznanych przedmiotów), sam rozgrywa pojedynek i zmienia ocenę obu stron.
-import { B, FAKE_PLAYERS, ORES, landDef } from '../../src/data';
+import { ARENA_REVENGE, B, FAKE_PLAYERS, ORES, landDef, streakBonus } from '../../src/data';
 import { duel, eloDelta, fighterStats, scaleFighter, type Fighter } from '../../src/engine/duel';
 import { goldWave } from '../../src/engine/formulas';
 import { allMods } from '../../src/engine/mods';
@@ -8,7 +8,8 @@ import { shuffle } from '../../src/engine/rng';
 import { computeStats, extraOf } from '../../src/engine/stats';
 import type { GameState } from '../../src/engine/types';
 import { INVALID, NOT_FOUND, PRECONDITION, err, goldStage, parse, readSave, serverDay, serverRng, userOf } from './common';
-import { leagueBrief, leagueOnFight } from './league';
+import { TOKENS, leagueBrief, leagueOnFight } from './league';
+import { walletAdd } from './shop';
 import { boardMeta, ownRecord } from './ranking';
 import { frameOr, skinOr } from '../../src/engine/cosmetics';
 import { cleanName } from './validate';
@@ -34,7 +35,11 @@ function lookOf(eq: GameState['eq']): Look {
   return o;
 }
 interface Opp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean; k?: number; sk?: string; fr?: string }
-interface ArenaMe { day: string; left: number; wins: number; losses: number; opp: Opp[]; extra?: number }
+interface ArenaMe {
+  day: string; left: number; wins: number; losses: number; opp: Opp[]; extra?: number;
+  streak?: number;   // wygrane z rzędu
+  rv?: string[];     // wieści o obronie, na które już był rewanż
+}
 
 const arenaOpen = (s: GameState) => s.maxLand >= B.ARENA_UNLOCK_LAND;
 
@@ -121,23 +126,34 @@ function saveMe(nk: nkruntime.Nakama, userId: string, me: ArenaMe, version: stri
   }
 }
 
-/** Ostatnie obrony: kto zaatakował twojego bohatera. Starsze wieści serwer usuwa. */
-function defenseLog(nk: nkruntime.Nakama, userId: string) {
+interface DefenseNote { id: string; from: string; who: string; won: boolean; d: number; t: number }
+
+/** Wieści o obronie: kto zaatakował twojego bohatera (najnowsze najpierw). Starsze niż 10 ostatnich serwer usuwa. */
+function defenseNotes(nk: nkruntime.Nakama, userId: string): DefenseNote[] {
   const list = nk.notificationsList(userId, 100).notifications || [];
   const mine = list.filter(n => n.code === NOTE_DEFENSE).sort((a, b) => Number(b.createTime) - Number(a.createTime));
   const old = mine.slice(10).map(n => n.id).filter((x): x is string => !!x);
   if (old.length) nk.notificationsDeleteId(old, userId);
   return mine.slice(0, 10).map(n => {
     const c = (typeof n.content === 'string' ? JSON.parse(n.content) : n.content) as { who: string; won: boolean; d: number };
-    return { who: c.who, won: c.won, d: c.d, t: Number(n.createTime) * 1000 };
+    return { id: n.id || '', from: n.senderId || '', who: c.who, won: c.won, d: c.d, t: Number(n.createTime) * 1000 };
   });
+}
+
+/** Czy na tę przegraną obronę można jeszcze odpowiedzieć rewanżem. */
+const canRevenge = (n: DefenseNote, me: ArenaMe, now: number) =>
+  !n.won && !!n.id && !!n.from && now - n.t < ARENA_REVENGE.HOURS * 3600000 && !(me.rv ?? []).includes(n.id);
+
+/** Dziennik obrony dla gry: `rv` — numer wieści, gdy rewanż jest możliwy. */
+function defenseLog(nk: nkruntime.Nakama, userId: string, me: ArenaMe, now: number) {
+  return defenseNotes(nk, userId).map(n => ({ who: n.who, won: n.won, d: n.d, t: n.t, ...(canRevenge(n, me, now) ? { rv: n.id, until: n.t + ARENA_REVENGE.HOURS * 3600000 } : {}) }));
 }
 
 function view(nk: nkruntime.Nakama, userId: string, me: ArenaMe, hero: Hero) {
   const rec = ownRecord(nk, 'arena', userId);
   return {
     rating: rec ? rec.score : START_RATING, rank: rec ? rec.rank : 0, left: me.left, max: B.ARENA_FIGHTS + (me.extra ?? 0),
-    wins: me.wins, losses: me.losses, power: hero.power, opp: me.opp, log: defenseLog(nk, userId), serverTime: Date.now(),
+    wins: me.wins, losses: me.losses, streak: me.streak ?? 0, power: hero.power, opp: me.opp, log: defenseLog(nk, userId, me, Date.now()), serverTime: Date.now(),
   };
 }
 
@@ -159,7 +175,7 @@ export function rpcArenaList(ctx: nkruntime.Context, _logger: nkruntime.Logger, 
   return JSON.stringify({ ...view(nk, userId, me, hero), league: leagueBrief(nk, ctx, userId) });
 }
 
-/** Walka z przeciwnikiem numer `i` z listy. Wynik, zmiana oceny i nagroda liczy serwer. */
+/** Walka z przeciwnikiem numer `i` z listy albo (`rv`: numer wieści o obronie) rewanż. Wynik, zmiana oceny i nagroda liczy serwer. */
 export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
   const userId = userOf(ctx);
   const req = parse(payload);
@@ -167,9 +183,18 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   const hero = myHero(nk, userId);
   const { me, version } = loadMe(nk, userId, now);
   if (me.left <= 0) throw err('Na dziś koniec walk na arenie, wróć jutro.', PRECONDITION);
-  const i = Math.floor(Number(req.i));
-  const opp = me.opp[i];
-  if (!opp || (typeof req.id === 'string' && req.id !== opp.id)) throw err('Nie ma takiego przeciwnika, odśwież listę.', INVALID);
+  const rvId = typeof req.rv === 'string' ? req.rv : '';
+  let opp: Opp | undefined;
+  if (rvId) {
+    const n = defenseNotes(nk, userId).find(x => x.id === rvId);
+    if (!n || !canRevenge(n, me, now)) throw err('Ten rewanż nie jest już możliwy.', PRECONDITION);
+    const h = readHero(nk, n.from);
+    if (!h) throw err('Przeciwnik zniknął z areny.', NOT_FOUND);
+    opp = { id: n.from, name: h.f.name, rating: rating(nk, n.from), power: h.power, land: h.land, ghost: false, sk: skinOr(h.sk), fr: frameOr(h.fr) };
+  } else {
+    opp = me.opp[Math.floor(Number(req.i))];
+    if (!opp || (typeof req.id === 'string' && req.id !== opp.id)) throw err('Nie ma takiego przeciwnika, odśwież listę.', INVALID);
+  }
 
   let foe: Fighter;
   let foeLook: Look | undefined = hero.look;
@@ -191,6 +216,11 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   const d = eloDelta(mine, theirs, res.win);
   const next = Math.max(0, mine + d);
   if (res.win) me.wins++; else me.losses++;
+  me.streak = res.win ? (me.streak ?? 0) + 1 : 0;
+  if (rvId) me.rv = [...(me.rv ?? []).slice(-19), rvId];
+  const sb = res.win ? streakBonus(me.streak) : { gold: 0, tk: 0 };
+  const rvWin = !!rvId && res.win;
+  const bonus = { gold: sb.gold + (rvWin ? ARENA_REVENGE.GOLD : 0), tk: sb.tk + (rvWin ? ARENA_REVENGE.TK : 0), streak: sb.gold > 0, rv: !!rvId };
   const save = readSave(nk, userId);
   const meta = save ? boardMeta(save.value.state, hero.power) : { name: hero.f.name, land: hero.land, power: hero.power };
   nk.leaderboardRecordWrite('arena', userId, ctx.username ?? '', next, me.wins, meta);
@@ -210,9 +240,9 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   }
 
   // Nagroda w złocie: jak za kilkadziesiąt fal na najdalszym etapie kampanii.
-  const gold = goldWave(goldStage(save && save.value.state)) * (res.win ? 30 : 8);
+  const gold = Math.round(goldWave(goldStage(save && save.value.state)) * (res.win ? 30 : 8) * (1 + bonus.gold));
   me.left--;
-  me.opp = pickOpponents(nk, userId, next, hero);
+  if (!rvId) me.opp = pickOpponents(nk, userId, next, hero);
   saveMe(nk, userId, me, version);
   // Liga: punkty i Żetony (walka już się odbyła — błąd ligi nie cofa walki).
   let lg: ReturnType<typeof leagueOnFight> | null = null;
@@ -221,9 +251,15 @@ export function rpcArenaFight(ctx: nkruntime.Context, logger: nkruntime.Logger, 
   } catch (e) {
     logger.warn('Arena: liga nie przyjęła walki %s: %s', userId, String(e));
   }
+  if (bonus.tk > 0) {
+    try { walletAdd(nk, userId, TOKENS, bonus.tk, rvWin ? 'arena: rewanż' : 'arena: seria wygranych'); } catch (e) {
+      logger.warn('Arena: nie dodano Żetonów premii %s: %s', userId, String(e));
+      bonus.tk = 0;
+    }
+  }
   return JSON.stringify({
     lp: lg ? lg.lp : 0, tk: lg ? lg.tk : 0, league: lg ? lg.league : null,
-    win: res.win, ms: res.ms, frames: res.frames, crits: res.crits, skills: res.skills,
+    win: res.win, ms: res.ms, frames: res.frames, crits: res.crits, skills: res.skills, ev: res.ev, bonus,
     me: { name: hero.f.name, power: hero.power, look: hero.look ?? {}, sk: skinOr(hero.sk), fr: frameOr(hero.fr) },
     foe: { name: opp.name, power: opp.power, ghost: opp.ghost, look: foeLook ?? {}, sk: foeSk, fr: foeFr },
     d, gold, ...view(nk, userId, me, hero),

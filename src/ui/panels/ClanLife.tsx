@@ -4,19 +4,23 @@ import { useEffect, useState } from 'preact/hooks';
 import { CLAN, CLAN_LEVELS, CLAN_SHOP, CLAN_SHOP_IDS, CLAN_WEEK, ORES, ORE_ORDER, ORE_WANT, TECH, TECH_UNLOCK_FORGE, type ClanEff, type ClanShopId } from '../../data';
 import { techKey, techLvl } from '../../engine/mods';
 import { bossUrl, dungeonBgUrl, oreUrl, resUrl } from '../../art/render';
-import { icUrl } from './ClanUi';
+import { ChestIcon, icUrl } from './ClanUi';
 
 /** Ikona premii poziomu klanu. */
 const PERK_IC: Partial<Record<ClanEff, string>> = { goldPct: 'zloto', dmgPct: 'moc', hpPct: 'eliksir', extraOre: 'kamien', forgeTime: 'czas', offlineMin: 'swieca' };
 import { donateCost, shopBlock, shopLeft, shopReward } from '../../engine/clan';
 import type { Game } from '../../engine/game';
 import { clanLife } from '../../save/clanlife';
-import { ServerError, type ClanLife, type ClanOreReq } from '../../save/server';
+import { ServerError, type ClanBoss, type ClanLife, type ClanOreReq } from '../../save/server';
 import { PlayError } from '../billing';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
 import { coins } from '../texts';
 import { Res, RewardIcons } from '../RewardIcons';
+import { StrikeResult, StrikeStage, bumpRecord, overtaken, useStrike, type StrikeFoe } from './Strike';
+
+/** Nagrody z ataku, które pokazuje karta wyniku ataku (bez dymków). */
+export const STRIKE_QUIET = (why: string) => /^(Atak na|Łup z ataku|Cios ostateczny)/.test(why);
 
 export type ClanTab = 'klan' | 'wojna' | 'smok' | 'boss' | 'kuznia' | 'pomoc' | 'sklep';
 export const errText = (e: unknown) => (e instanceof ServerError || e instanceof PlayError ? e.message : 'Brak połączenia z serwerem.');
@@ -163,35 +167,40 @@ export function DmgPodium({ top, rank, fighters, mine }: { top: { n: string; d: 
 export function ClanBossTab({ game }: { game: Game }) {
   const d = useClanLife();
   const a = useAction();
-  const [hit, setHit] = useState<{ dmg: number; key: number; killed: boolean } | null>(null);
+  const sk = useStrike();
+  const [prev, setPrev] = useState<ClanBoss | null>(null);
   if (!d?.clan || !d.boss || !d.left) return <Loading d={d} />;
   const b = d.boss;
+  const foeOf = (x: typeof b): StrikeFoe => ({ name: x.n, img: bossUrl(x.pal), size: 150, hp: x.hp, max: x.max });
   const attack = () => a.run(async () => {
-    const r = await clanLife.act(game, (l, up) => l.clanBossAttack(up));
-    if (r.hit) setHit({ dmg: r.hit.dmg, key: Date.now(), killed: r.hit.killed });
-    return r.hit?.killed ? 'Boss pokonany! Skrzynie trafiają do wszystkich, którzy go atakowali.' : `Zadajesz ${fmt(r.hit?.dmg ?? 0)} obrażeń.`;
+    const was = b;
+    const r = await clanLife.act(game, (l, up) => l.clanBossAttack(up), STRIKE_QUIET);
+    const h = r.hit;
+    if (!h) return;
+    setPrev(was);
+    sk.start({
+      id: Date.now(), kind: 'boss', foe: foeOf(was), dmg: h.dmg, q: h.q, bonus: 0, broke: false, killed: h.killed,
+      base: r.rewards.find(x => x.why.startsWith('Atak na'))?.r ?? {}, loot: h.loot ?? null, last: h.last ?? null,
+      rank: [was.rank, h.killed ? 0 : r.boss?.rank ?? 0], passed: overtaken(was.top, was.mine, was.mine + h.dmg), record: bumpRecord('boss', h.dmg),
+    });
   });
-  const hpPct = Math.max(0, (b.hp / b.max) * 100);
+  // W czasie sceny ataku karta pokazuje bossa sprzed ataku (poziom, nazwa), potem aktualnego.
+  const bv = sk.active && prev ? prev : b;
   const left = d.left.atk;
   return (
     <>
       <section class="cb-arena" style={{ '--bg': `url(${dungeonBgUrl('leza')})` } as Record<string, string>}>
-        <div class="psh-top"><span class="eyebrow">Boss klanowy · poziom {b.lvl + 1}</span><span class="ps-time">pokonano: {b.kills}</span></div>
-        <div class="cb-name">{b.n}</div>
-        <div class={`cb-art${hit ? ' hit' : ''}`} key={hit?.key}>
-          <Px src={bossUrl(b.pal)} size={150} alt={b.n} />
-          {hit && <span class={`bhit${hit.killed ? ' kill' : ''}`} aria-hidden="true">−{fmt(hit.dmg)}</span>}
-        </div>
-        <div class="cb-hp">
-          <div class="bar big cb-hpbar" role="progressbar" aria-label="Zdrowie bossa" aria-valuenow={Math.round(hpPct)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: hpPct + '%' }} /></div>
-          <span class="num">{fmt(b.hp)} / {fmt(b.max)} · {Math.round(hpPct)}%</span>
-        </div>
+        <div class="psh-top"><span class="eyebrow">Boss klanowy · poziom {bv.lvl + 1}</span><span class="ps-time">pokonano: {bv.kills}</span></div>
+        <div class="cb-name">{bv.n}</div>
+        <StrikeStage game={game} foe={foeOf(b)} run={sk.run} active={sk.active} busy={a.busy} downText="Boss pokonany!"
+          label={(hp, max) => `${fmt(hp)} / ${fmt(max)} · ${Math.round((hp / Math.max(1, max)) * 100)}%`} />
       </section>
       <button class="btn primary big cb-go" disabled={a.busy || left <= 0} onClick={attack}>
         <span class="cb-go-t">{left > 0 ? 'Atakuj' : 'Ataki na dziś zużyte'}</span>
         <span class="cb-pips" aria-label={`zostało ${left} z ${CLAN.BOSS_ATTACKS}`}>{Array.from({ length: CLAN.BOSS_ATTACKS }, (_, i) => <i key={i} class={i < left ? 'on' : ''} />)}</span>
       </button>
       <Note msg={a.msg} />
+      {sk.run && <StrikeResult run={sk.run} what="bossa" />}
       <DmgPodium top={b.top} rank={b.rank} fighters={b.fighters} mine={b.mine} />
       <section class="card cb-rew">
         <span class="eyebrow">Nagrody</span>
@@ -199,6 +208,8 @@ export function ClanBossTab({ game }: { game: Game }) {
           <li><Px src={resUrl('moneta')} size={22} /><span><b>Za każdy atak</b><small>+{CLAN.BOSS_ATTACK_COINS} Monety klanowe i złoto</small></span></li>
           <li><Px src={resUrl('puchar')} size={22} /><span><b>Boss pokonany</b><small>skrzynia dla każdego, kto atakował</small></span></li>
           <li><Px src={resUrl('jajo3')} size={22} /><span><b>1. miejsce</b><small>większa skrzynia i jajo</small></span></li>
+          <li><ChestIcon tier={2} state="open" size={22} /><span><b>Łup z ataku</b><small>{Math.round(CLAN.LOOT_CHANCE * 100)}% szansy przy każdym ataku: księgi, kamienie, zwój, Monety albo jajo</small></span></li>
+          <li><ChestIcon tier={4} state="open" size={22} /><span><b>Cios ostateczny</b><small>dodatkowa skrzynia dla tego, kto dobije bossa</small></span></li>
         </ul>
         <small class="sub">Atak zadaje obrażenia równe twojej Mocy (±15%). Po pokonaniu przychodzi silniejszy boss.</small>
       </section>

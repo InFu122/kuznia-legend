@@ -20,13 +20,14 @@ class ClanLifeStore {
   }
 
   /** Nagrody od serwera (klan, wojna, smok) — gra bierze każdą raz. */
-  rewards(game: Game, list: ServerReward[] | undefined): void {
-    for (const x of game.serverRewards(list || [])) game.notify(`${x.why}: ${rewardText(x.r)}`, 'good');
+  /** Nagrody od serwera trafiają do gry; `quiet` — te, których nie ogłaszać dymkiem (gra pokazuje je inaczej). */
+  rewards(game: Game, list: ServerReward[] | undefined, quiet?: (why: string) => boolean): void {
+    for (const x of game.serverRewards(list || [])) if (!quiet?.(x.why)) game.notify(`${x.why}: ${rewardText(x.r)}`, 'good');
   }
 
   /** Wynik z serwera: nagrody, pomoc klanu i poziom klanu trafiają do gry. */
-  take(game: Game, r: ClanLife): ClanLife {
-    this.rewards(game, r.rewards);
+  take(game: Game, r: ClanLife, quiet?: (why: string) => boolean): ClanLife {
+    this.rewards(game, r.rewards, quiet);
     // Skrót wojny i smoka przychodzi tylko z odświeżenia klanu — akcje go nie zmieniają.
     if (!r.war && this.data?.war) r.war = this.data.war;
     if (!r.raid && this.data?.raid) r.raid = this.data.raid;
@@ -56,10 +57,10 @@ class ClanLifeStore {
   up(game: Game): ClanUp { return { up: game.s.forge.up || 0, tk: techKey(game.s) }; }
 
   /** Akcja klanu na serwerze (datek, atak, pomoc…) — jej wynik od razu trafia do gry. */
-  async act(game: Game, fn: (l: ServerLink, up: ClanUp) => Promise<ClanLife>): Promise<ClanLife> {
+  async act(game: Game, fn: (l: ServerLink, up: ClanUp) => Promise<ClanLife>, quiet?: (why: string) => boolean): Promise<ClanLife> {
     const l = getLink();
     if (!l) throw new Error('Brak połączenia z serwerem.');
-    return this.take(game, await fn(l, this.up(game)));
+    return this.take(game, await fn(l, this.up(game)), quiet);
   }
 
   /** Ile rzeczy czeka w klanie (kropka na zakładce Klan). */

@@ -28,7 +28,8 @@ type Rec = { ownerId: string; username: string; score: number; subscore: number;
 function makeNk() {
   const store = new Map<string, { value: unknown; version: string }>();
   const boards = new Map<string, Map<string, Rec>>();
-  const notes: { userId: string; code: number; content: unknown }[] = [];
+  const notes: { userId: string; code: number; content: unknown; senderId?: string; t: number }[] = [];
+  const wallet: Record<string, Record<string, number>> = {};
   let ver = 0;
   const key = (c: string, k: string, u: string) => `${c}|${k}|${u}`;
   const board = (id: string) => { if (!boards.has(id)) boards.set(id, new Map()); return boards.get(id)!; };
@@ -57,16 +58,20 @@ function makeNk() {
       board(id).set(ownerId, r);
       return r;
     },
-    notificationsList: (userId: string) => ({ notifications: notes.filter(n => n.userId === userId).map((n, i) => ({ id: 'n' + i, code: n.code, content: n.content, createTime: 1 })) }),
+    notificationsList: (userId: string) => ({ notifications: notes.map((n, i) => ({ ...n, id: 'n' + i })).filter(n => n.userId === userId).map(n => ({ id: n.id, code: n.code, content: n.content, senderId: n.senderId, createTime: n.t })) }),
     notificationsDeleteId: () => {},
-    notificationsSend: (ns: { userId: string; code: number; content: unknown }[]) => { notes.push(...ns); },
+    notificationsSend: (ns: { userId: string; code: number; content: unknown; senderId?: string }[]) => { notes.push(...ns.map(n => ({ ...n, t: Math.floor(Date.now() / 1000) }))); },
     uuidv4: () => 'u' + (++ver),
     sha256Hash: (s: string) => (s.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) >>> 0).toString(16).padStart(8, '0') + 'ab',
     accountGetId: () => ({ wallet: {}, user: { username: 'x' } }),
-    walletUpdate: () => ({}),
+    walletUpdate: (userId: string, ch: Record<string, number>) => {
+      const w = (wallet[userId] ??= {});
+      for (const [k, v] of Object.entries(ch)) w[k] = (w[k] ?? 0) + v;
+      return { updated: { ...w } };
+    },
     userGroupsList: () => ({ userGroups: [] }),
   };
-  return { nk: nk as unknown as nkruntime.Nakama, store, notes };
+  return { nk: nk as unknown as nkruntime.Nakama, store, notes, wallet };
 }
 
 describe('arena na serwerze po zamrożeniu zmiennych globalnych', () => {
@@ -121,5 +126,64 @@ describe('arena na serwerze po zamrożeniu zmiennych globalnych', () => {
     let left = res.left;
     while (left > 0) left = JSON.parse(g.rpcArenaFight(c('a1'), log, nk, JSON.stringify({ i: 0 })) as string).left;
     expect(() => g.rpcArenaFight(c('a1'), log, nk, JSON.stringify({ i: 0 }))).toThrow(/koniec walk/);
+  });
+
+  /** Bohater areny gracza `userId` dużo silniejszy (do testów, które potrzebują pewnej wygranej). */
+  function buff(store: Map<string, { value: unknown; version: string }>, userId: string, k: number) {
+    const o = store.get(`arena|hero|${userId}`)!;
+    const h = o.value as { f: { st: { dmg: number; hp: number } }; power: number };
+    h.f.st.dmg *= k; h.f.st.hp *= k; h.power *= k;
+  }
+
+  it('seria wygranych daje więcej złota i Żetony za 3. i 5. wygraną z rzędu; przebieg walki przychodzi z wynikiem', () => {
+    const { nk, store, wallet } = makeNk();
+    player(nk, store, 'a1', 'Topór');
+    player(nk, store, 'b2', 'Iskra');
+    buff(store, 'a1', 30);
+    const streaks: number[] = [], bonus: { gold: number; tk: number }[] = [];
+    for (let n = 0; n < B.ARENA_FIGHTS; n++) {
+      const list = JSON.parse(g.rpcArenaList(c('a1'), log, nk, '{}') as string);
+      const i = list.opp.findIndex((o: { ghost: boolean }) => !o.ghost);
+      const res = JSON.parse(g.rpcArenaFight(c('a1'), log, nk, JSON.stringify({ i, id: list.opp[i].id })) as string);
+      expect(res.win).toBe(true);
+      expect(res.ev.length).toBeGreaterThan(0);
+      expect(res.ev[0][1]).toBe(0);
+      streaks.push(res.streak);
+      bonus.push({ gold: res.bonus.gold, tk: res.bonus.tk });
+    }
+    expect(streaks).toEqual([1, 2, 3, 4, 5]);
+    expect(bonus.map(b => b.gold)).toEqual([0, 0, 0.5, 0.5, 1]);
+    expect(bonus.map(b => b.tk)).toEqual([0, 0, 3, 0, 5]);
+    expect(wallet.a1.tokens).toBe(5 * 5 + 3 + 5);
+  });
+
+  it('rewanż: raz na przegraną obronę, przez 24 h, z premią za wygraną', () => {
+    const { nk, store, notes } = makeNk();
+    player(nk, store, 'a1', 'Topór');
+    player(nk, store, 'b2', 'Iskra');
+    buff(store, 'b2', 30);
+    // Iskra (silna) atakuje Topora i wygrywa — Topór dostaje wieść o przegranej obronie.
+    const lb = JSON.parse(g.rpcArenaList(c('b2'), log, nk, '{}') as string);
+    const ib = lb.opp.findIndex((o: { ghost: boolean }) => !o.ghost);
+    expect(JSON.parse(g.rpcArenaFight(c('b2'), log, nk, JSON.stringify({ i: ib, id: lb.opp[ib].id })) as string).win).toBe(true);
+    expect(notes.filter(n => n.userId === 'a1')).toHaveLength(1);
+    const la = JSON.parse(g.rpcArenaList(c('a1'), log, nk, '{}') as string);
+    const rv = la.log[0].rv as string;
+    expect(rv).toBeTruthy();
+    expect(la.log[0].until).toBeGreaterThan(Date.now());
+    // Topór słabnie, Iskra też — rewanż wygrany.
+    buff(store, 'a1', 100);
+    const opp = JSON.stringify(la.opp);
+    const res = JSON.parse(g.rpcArenaFight(c('a1'), log, nk, JSON.stringify({ rv })) as string);
+    expect(res.foe.name).toBe('Iskra');
+    expect(res.win).toBe(true);
+    expect(res.bonus.rv).toBe(true);
+    expect(res.bonus.gold).toBe(1);
+    expect(res.bonus.tk).toBe(3);
+    expect(res.left).toBe(B.ARENA_FIGHTS - 1);
+    // Rewanż nie losuje nowych rywali i nie da się go powtórzyć.
+    expect(JSON.stringify(res.opp)).toBe(opp);
+    expect(res.log[0].rv).toBeUndefined();
+    expect(() => g.rpcArenaFight(c('a1'), log, nk, JSON.stringify({ rv }))).toThrow(/rewanż nie jest już możliwy/);
   });
 });

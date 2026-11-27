@@ -196,6 +196,27 @@ export function clanSeasonReward(rank: number): { gems: number; coins: number } 
 }
 
 /** Nagroda za każdy atak na smoka. */
+/**
+ * Łup z ataku na bossa klanowego albo smoka: `a` (0–1) decyduje, czy wypada (szansa CLAN.LOOT_CHANCE),
+ * `b` (0–1) — co wypada. Przy smoku zamiast Monet wypada ruda żywiołu słabości `el`.
+ */
+export function attackLoot(a: number, b: number, lvl: number, el?: string): Reward | null {
+  if (!(a < CLAN.LOOT_CHANCE)) return null;
+  const L = Math.max(0, Math.min(30, Math.floor(lvl)));
+  if (b < 0.35) return { books: 2 + Math.floor(L / 5) };
+  if (b < 0.65) return { stones: 10 + 2 * L };
+  if (b < 0.80) return { scrolls: 1 };
+  if (b < 0.92) return el && (ELEM_KEYS as readonly string[]).includes(el) ? { els: { [el]: 3 + Math.floor(L / 3) } } : { coins: 15 + 2 * L };
+  return { eggs: { [Math.min(3, 1 + Math.floor(L / 5))]: 1 } };
+}
+
+/** Cios ostateczny: dodatkowa skrzynia dla tego, kto dobije bossa albo fazę smoka (`big` — dobicie całego smoka). */
+export function lastHitChest(lvl: number, bestG: number, big = false): Reward {
+  const L = Math.max(0, Math.min(30, Math.floor(lvl)));
+  const k = big ? 2 : 1;
+  return { coins: (15 + 3 * L) * k, gold: Math.round(goldWave(bestG) * (20 + 3 * L) * k), scrolls: k };
+}
+
 export function raidAttackReward(bestG: number): Reward {
   return { coins: 3, gold: goldWave(bestG) * 4 };
 }

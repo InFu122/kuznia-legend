@@ -50,6 +50,7 @@ export const CLAN = {
   BOSS_ATTACK_GOLD_WAVES: 5,  // złoto za atak (fale złota)
   BOSS_KILL_XP: 100,          // Doświadczenie klanu za pokonanie bossa (+20 za poziom)
   BOSS_KILL_XP_LVL: 20,
+  LOOT_CHANCE: 0.15,          // szansa na łup przy ataku na bossa klanowego albo smoka
   HELP_PCT: 3,                // każda pomoc skraca ulepszenie kuźni o 3% jego czasu
   HELP_MAX: 10,               // najwyżej 10 pomocy na jedno ulepszenie (−30%)
   HELP_TTL_MS: 48 * 3600000,  // prośba o pomoc wygasa po 2 dniach

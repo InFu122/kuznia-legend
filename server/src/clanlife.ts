@@ -11,7 +11,7 @@
 //   clan/rewards (gracz)           — nagrody czekające na odbiór.
 // Skrzynia tygodnia i Kowal tygodnia: punkty aktywności członków w stanie klanu (`wk`), poprzedni zwycięzca w `top`.
 import { B, CLAN, CLAN_LEVELS, CLAN_WEEK, ORES, ORE_WANT, TECH, clanBossHp, clanBossOf, clanEmbOf, clanLevelOf, clanWeekGoal, type ClanWeekKind } from '../../src/data';
-import { clanAttackReward, clanBossChest, clanWeekChest, type ServerReward } from '../../src/engine/clan';
+import { attackLoot, clanAttackReward, clanBossChest, clanWeekChest, lastHitChest, type ServerReward } from '../../src/engine/clan';
 import type { Reward, TechId } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { raidBrief } from './raid';
@@ -397,7 +397,9 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
   const bestG = goldStage(save && save.value.state);
   bumpDaily(nk, userId, x.now, d => (d.atk < CLAN.BOSS_ATTACKS ? (d.atk++, true) : false));
   const rng = serverRng(nk);
-  const roll = Math.round(power * (1 - CLAN.BOSS_SPREAD + 2 * CLAN.BOSS_SPREAD * rng.next()));
+  const q = rng.next();
+  const roll = Math.round(power * (1 - CLAN.BOSS_SPREAD + 2 * CLAN.BOSS_SPREAD * q));
+  const lootA = rng.next(), lootB = rng.next();
   const who = myName(nk, userId);
   const nextPower = clanPower(nk, x.ids);
   let dealt = 0;
@@ -424,10 +426,17 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
     }
     return st;
   }, perm) as ClanState;
-  pushRewards(nk, userId, [{ why: 'Atak na bossa klanowego', r: reward }]);
+  const k = killed as Boss | null;
+  const bossLvl = k ? k.lvl : x.st.boss.lvl;
+  const loot = attackLoot(lootA, lootB, bossLvl);
+  const last = k ? lastHitChest(k.lvl, bestG) : null;
+  pushRewards(nk, userId, [
+    { why: 'Atak na bossa klanowego', r: reward },
+    ...(loot ? [{ why: 'Łup z ataku na bossa', r: loot }] : []),
+    ...(last ? [{ why: 'Cios ostateczny: boss klanowy', r: last }] : []),
+  ]);
   try { warOnBossAttack(nk, ctx, userId, x.g, x.now); } catch { /* wojna nie blokuje ataku na bossa */ }
 
-  const k = killed as Boss | null;
   if (k) {
     const ranked = Object.entries(k.dmg).sort((a, b) => b[1] - a[1]);
     const saves = nk.storageRead(ranked.map(([u]) => ({ collection: 'save', key: 'state', userId: u })));
@@ -438,11 +447,11 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
       try { pushRewards(nk, u, [{ why: `Skrzynia: ${name} (poz. ${k.lvl + 1})${i < 3 ? `, ${i + 1}. miejsce` : ''}`, r: clanBossChest(k.lvl, i, best[u] || 0) }]); } catch { /* następna osoba */ }
     });
     const podium = ranked.slice(0, 3).map(([u], i) => `${i + 1}. ${k.who[u] || 'Kowal'}`).join(', ');
-    postClan(nk, x.g.id, { k: 'sys', t: `${name} pokonany! ${podium}. Skrzynie czekają w zakładce Klan.` });
+    postClan(nk, x.g.id, { k: 'sys', t: `${name} pokonany! Cios ostateczny: ${who}. ${podium}. Skrzynie czekają w zakładce Klan.` });
   }
   const after = clanLevelOf(x.st.xp);
   if (after > before) postClan(nk, x.g.id, { k: 'sys', t: `Wspólna Kuźnia osiąga ${after}. poziom! Nowa premia: ${CLAN_LEVELS[after - 1].d}.` });
-  return JSON.stringify(view(nk, x, up, { hit: { dmg: dealt, killed: !!k }, levelUp: after > before ? after : 0 }));
+  return JSON.stringify(view(nk, x, up, { hit: { dmg: dealt, killed: !!k, q, loot, last }, levelUp: after > before ? after : 0 }));
 }
 
 /** Wpis na czacie klanu z przyciskiem „Pomóż” (prośby o pomoc i o rudę). */

@@ -1,7 +1,7 @@
 // Wojna klanów (co tydzień: dobór, cztery dni aktywności, bitwa w sobotę, nagrody w niedzielę)
 // i rajd klanowy Smocze Leże (smok o czterech fazach ze słabościami na żywioły). Wszystko liczy serwer.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { B, CLAN_WEEK, ELEM, RAID, RAID_PHASES, WAR, WAR_DAYS, type WarDayKind } from '../../data';
+import { B, CLAN, CLAN_WEEK, ELEM, RAID, RAID_PHASES, WAR, WAR_DAYS, type WarDayKind } from '../../data';
 import type { ElemKey } from '../../engine/types';
 import { dungeonBgUrl, elemUrl, foeSize, foeUrl, resUrl } from '../../art/render';
 import type { Game } from '../../engine/game';
@@ -9,8 +9,9 @@ import { clanLife } from '../../save/clanlife';
 import { getLink, type RaidState, type WarState } from '../../save/server';
 import { fmt, tfmt } from '../format';
 import { Px } from '../Px';
-import { DmgPodium, Note, errText, useAction } from './ClanLife';
-import { ClanEmblem, icUrl } from './ClanUi';
+import { DmgPodium, Note, STRIKE_QUIET, errText, useAction } from './ClanLife';
+import { StrikeResult, StrikeStage, bumpRecord, overtaken, useStrike, type StrikeFoe } from './Strike';
+import { ChestIcon, ClanEmblem, icUrl } from './ClanUi';
 import { DuelReplay } from './Pvp';
 
 const RES_N = { win: 'Zwycięstwo!', draw: 'Remis', loss: 'Porażka' } as const;
@@ -253,10 +254,11 @@ export function ClanWarTab({ game }: { game: Game }) {
 
 export function ClanRaidTab({ game }: { game: Game }) {
   const [r, setR] = useState<RaidState | null>(() => (cache.raid && cache.raid.clan === clanId() ? cache.raid.v : null));
-  const [hit, setHit] = useState<{ dmg: number; key: number; big: boolean } | null>(null);
+  const [prev, setPrev] = useState<RaidState | null>(null);
+  const sk = useStrike();
   const a = useAction();
-  const take = (x: RaidState) => {
-    clanLife.rewards(game, x.rewards);
+  const take = (x: RaidState, quiet?: (why: string) => boolean) => {
+    clanLife.rewards(game, x.rewards, quiet);
     clanLife.brief(undefined, { left: x.left, done: x.done });
     cache.raid = { clan: clanId(), v: x };
     setR(x);
@@ -264,22 +266,33 @@ export function ClanRaidTab({ game }: { game: Game }) {
   const { err, live } = useServerState(() => getLink()?.raidState(), take);
   if (!r) return <Waiting err={err} text="Wczytywanie Smoczego Leża…" />;
 
-  const ph = Math.min(r.ph, RAID_PHASES.length - 1);
-  const P = RAID_PHASES[ph];
-  const el = ELEM[r.weak.el];
-  const hpPct = r.done ? 0 : Math.max(0, (r.hp / r.max) * 100);
+  const foeOf = (x: RaidState): StrikeFoe => {
+    const F = RAID_PHASES[Math.min(x.ph, RAID_PHASES.length - 1)].foe;
+    return { name: F, img: foeUrl(F), size: Math.min(150, foeSize(F) * 3), hp: x.done ? 0 : x.hp, max: x.max };
+  };
   const attack = () => a.run(async () => {
     const l = getLink();
     if (!l) throw new Error();
+    const was = r;
     const x = await l.raidAttack();
     if (!live.current) return;
-    take(x);
-    if (!x.hit) return;
-    setHit({ dmg: x.hit.dmg, key: Date.now(), big: x.hit.phase >= 0 });
-    if (x.hit.killed) return 'Smok pokonany! Wielkie skrzynie trafiają do wszystkich, którzy walczyli.';
-    if (x.hit.phase >= 0) return `Faza „${RAID_PHASES[x.hit.phase].n}” przełamana! Skrzynie dla wszystkich, którzy w niej walczyli.`;
-    return `Zadajesz ${fmt(x.hit.dmg)} obrażeń${x.hit.bonus > 0 ? ` (premia żywiołu +${Math.round(x.hit.bonus * 100)}%)` : ''}.`;
+    take(x, STRIKE_QUIET);
+    const h = x.hit;
+    if (!h) return;
+    setPrev(was);
+    sk.start({
+      id: Date.now(), kind: 'raid', foe: foeOf(was), dmg: h.dmg, q: h.q, bonus: h.bonus, broke: h.phase >= 0 && !h.killed, killed: h.killed,
+      base: x.rewards.find(z => z.why.startsWith('Atak na'))?.r ?? {}, loot: h.loot ?? null, last: h.last ?? null,
+      rank: [was.rank, x.rank], passed: overtaken(was.top, was.mine, was.mine + h.dmg), record: bumpRecord('raid', h.dmg),
+    });
   });
+  // W czasie sceny ataku karta pokazuje smoka sprzed ataku (faza, nazwa), potem aktualnego.
+  const v = sk.active && prev ? prev : r;
+  const ph = Math.min(v.ph, RAID_PHASES.length - 1);
+  const P = RAID_PHASES[ph];
+  const el = ELEM[r.weak.el];
+  const run = sk.run;
+  const downText = run?.killed ? 'Smok pokonany!' : run?.broke ? `Faza „${P.n}” przełamana!` : '';
 
   const col = EL_COL[r.weak.el];
   return (
@@ -289,25 +302,24 @@ export function ClanRaidTab({ game }: { game: Game }) {
           <span class="eyebrow">Smocze Leże · smok poziomu {r.lvl + 1}</span>
           {!r.done && <span class="ps-time">odlatuje za {tfmt(Math.max(0, r.ends - game.ctx.now()))}</span>}
         </div>
-        <div class="cb-name">{r.done ? 'Smok pokonany!' : P.foe}</div>
+        <div class="cb-name">{v.done ? 'Smok pokonany!' : P.foe}</div>
         <ol class="rd-ph" aria-label="Fazy smoka">
           {RAID_PHASES.map((x, i) => (
-            <li key={i} class={i < r.ph || r.done ? 'done' : i === r.ph ? 'on' : ''} style={{ '--pc': EL_COL[x.weak as ElemKey] } as Record<string, string>}>
-              <span class="rd-ph-ic"><Px src={elemUrl(x.weak as ElemKey)} size={18} />{(i < r.ph || r.done) && <i class="ct-ok">✓</i>}</span>
+            <li key={i} class={i < v.ph || v.done ? 'done' : i === v.ph ? 'on' : ''} style={{ '--pc': EL_COL[x.weak as ElemKey] } as Record<string, string>}>
+              <span class="rd-ph-ic"><Px src={elemUrl(x.weak as ElemKey)} size={18} />{(i < v.ph || v.done) && <i class="ct-ok">✓</i>}</span>
               <small>{x.n}</small>
             </li>
           ))}
         </ol>
-        <div class={`cb-art${hit ? ' hit' : ''}${r.done ? ' gone' : ''}`} key={hit?.key}>
-          <Px src={foeUrl(P.foe)} size={Math.min(150, foeSize(P.foe) * 3)} alt={P.foe} />
-          {hit && <span class={`bhit${hit.big ? ' kill' : ''}`} aria-hidden="true">−{fmt(hit.dmg)}</span>}
-        </div>
-        {!r.done ? (
-          <div class="cb-hp">
-            <div class="bar big cb-hpbar" role="progressbar" aria-label="Zdrowie fazy smoka" aria-valuenow={Math.round(hpPct)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: hpPct + '%' }} /></div>
-            <span class="num">Faza {ph + 1}/{RAID_PHASES.length} · {fmt(r.hp)} / {fmt(r.max)} · {Math.round(hpPct)}%</span>
-          </div>
-        ) : <p class="rd-done">Następny, silniejszy smok przyleci w poniedziałek.</p>}
+        {!v.done || sk.active ? (
+          <StrikeStage game={game} foe={foeOf(r)} run={run} active={sk.active} busy={a.busy} downText={downText}
+            label={(hp, max) => `Faza ${ph + 1}/${RAID_PHASES.length} · ${fmt(hp)} / ${fmt(max)} · ${Math.round((hp / Math.max(1, max)) * 100)}%`} />
+        ) : (
+          <>
+            <div class="cb-art gone"><Px src={foeUrl(P.foe)} size={Math.min(150, foeSize(P.foe) * 3)} alt={P.foe} /></div>
+            <p class="rd-done">Następny, silniejszy smok przyleci w poniedziałek.</p>
+          </>
+        )}
       </section>
       {!r.done && (
         <div class={`rd-weak${r.weak.n ? ' on' : ''}`} style={{ '--ec': col } as Record<string, string>}>
@@ -330,6 +342,7 @@ export function ClanRaidTab({ game }: { game: Game }) {
         </button>
       )}
       <Note msg={a.msg} />
+      {run && <StrikeResult run={run} what={run.killed ? 'smoka' : 'fazy smoka'} />}
       <DmgPodium top={r.top} rank={r.rank} fighters={r.fighters} mine={r.mine} />
       <section class="card cb-rew">
         <span class="eyebrow">Nagrody</span>
@@ -337,6 +350,8 @@ export function ClanRaidTab({ game }: { game: Game }) {
           <li><Px src={resUrl('moneta')} size={22} /><span><b>Za każdy atak</b><small>+3 Monety klanowe i złoto · obrażenia: Moc ×{RAID.DMG_MULT} (±15%)</small></span></li>
           <li><Px src={elemUrl(RAID_PHASES[Math.min(ph + 1, RAID_PHASES.length - 1)].weak as ElemKey)} size={22} /><span><b>Przełamana faza</b><small>skrzynia z rudą żywiołu na następną fazę</small></span></li>
           <li><Px src={resUrl('jajo3')} size={22} /><span><b>Pokonany smok</b><small>wielka skrzynia ze Smoczą Stalą · podium więcej, 1. miejsce jajo · {RAID.KILL_XP} Dośw. klanu</small></span></li>
+          <li><ChestIcon tier={2} state="open" size={22} /><span><b>Łup z ataku</b><small>{Math.round(CLAN.LOOT_CHANCE * 100)}% szansy przy każdym ataku: księgi, kamienie, zwój, ruda żywiołu albo jajo</small></span></li>
+          <li><ChestIcon tier={4} state="open" size={22} /><span><b>Cios ostateczny</b><small>skrzynia za przełamanie fazy, podwójna za dobicie smoka</small></span></li>
         </ul>
       </section>
       {r.log.length > 0 && (

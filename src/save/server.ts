@@ -3,8 +3,8 @@
 import type { AdKind, ArenaShopId, ClanEmb, GemItemId } from '../data';
 import type { ServerReward } from '../engine/clan';
 import type { ShopSync } from '../engine/game';
-import type { ElemKey, GameState, Item, MountId, PetId, SkillId, SlotId } from '../engine/types';
-import type { FighterStats } from '../engine/duel';
+import type { ElemKey, GameState, Item, MountId, PetId, Reward, SkillId, SlotId } from '../engine/types';
+import type { DuelEv, FighterStats } from '../engine/duel';
 
 const DEVICE_KEY = 'kuznia-legend-device';
 const TIMEOUT_MS = 10000;
@@ -37,16 +37,25 @@ export interface ClanRanking {
 export interface ArenaOpp { id: string; name: string; rating: number; power: number; land: string; ghost: boolean; sk?: string; fr?: string }
 export interface ArenaState {
   rating: number; rank: number; left: number; max: number; wins: number; losses: number; power: number;
-  opp: ArenaOpp[]; log: { who: string; won: boolean; d: number; t: number }[];
+  /** Wygrane z rzędu (starszy serwer: brak). */
+  streak?: number;
+  /** Dziennik obrony; `rv` — numer wieści, gdy rewanż jest możliwy (do `until`). */
+  opp: ArenaOpp[]; log: { who: string; won: boolean; d: number; t: number; rv?: string; until?: number }[];
   league?: LeagueBrief | null;
 }
 /** Pojedynek rozegrany przez serwer (arena, bitwa wojny klanów) — do odtworzenia w grze. */
 export interface DuelShow {
   win: boolean; ms: number; frames: [number, number][]; crits: [number, number]; skills: [number, number];
+  /** Przebieg walki (starszy serwer: brak — wtedy widać tylko paski życia). */
+  ev?: DuelEv[];
   me: { name: string; power: number; look?: Record<string, { kind: string; ore: number }>; sk?: string; fr?: string };
   foe: { name: string; power: number; ghost: boolean; look?: Record<string, { kind: string; ore: number }>; sk?: string; fr?: string };
 }
-export interface ArenaFight extends ArenaState, DuelShow { d: number; gold: number; lp: number; tk: number }
+export interface ArenaFight extends ArenaState, DuelShow {
+  d: number; gold: number; lp: number; tk: number;
+  /** Premia za serię wygranych i rewanż: część złota ponad zwykłe (0,5 = +50%) i dodatkowe Żetony. */
+  bonus?: { gold: number; tk: number; streak: boolean; rv: boolean };
+}
 /** Profil gracza (okno profilu): wygląd, Moc, ekwipunek, statystyki, klan, liga i arena. */
 export interface Profile {
   id: string; me: boolean; name: string; title: string; sk?: string; fr?: string;
@@ -93,7 +102,7 @@ export interface RaidState {
   mine: number; phase: number; rank: number; fighters: number; top: { n: string; d: number; me: boolean }[];
   left: number; weak: { el: ElemKey; n: number; bonus: number }; log: { t: number; m: string }[];
   rewards: ServerReward[]; serverTime: number;
-  hit?: { dmg: number; bonus: number; phase: number; killed: boolean };
+  hit?: { dmg: number; bonus: number; phase: number; killed: boolean; q?: number; loot?: Reward | null; last?: Reward | null };
 }
 
 const newDeviceId = () => 'kl-' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
@@ -139,7 +148,7 @@ export interface ClanLife {
   log?: { t: number; m: string; n?: number }[];
   rewards: ServerReward[];
   war?: { day: number; atk: number }; raid?: { left: number; done: boolean };
-  hit?: { dmg: number; killed: boolean }; levelUp?: number; helpedNow?: number; paid?: number; given?: number;
+  hit?: { dmg: number; killed: boolean; q?: number; loot?: Reward | null; last?: Reward | null }; levelUp?: number; helpedNow?: number; paid?: number; given?: number;
 }
 
 export class ServerLink {
@@ -363,6 +372,8 @@ export class ServerLink {
 
   arenaList(refresh = false): Promise<ArenaState> { return this.rpc('arena_list', { refresh }); }
   arenaFight(i: number, id: string): Promise<ArenaFight> { return this.rpc('arena_fight', { i, id }); }
+  /** Rewanż na kimś, kto pokonał twoją obronę (`rv` — numer wieści z dziennika obrony). */
+  arenaRevenge(rv: string): Promise<ArenaFight> { return this.rpc('arena_fight', { rv }); }
   arenaLeague(): Promise<LeagueState> { return this.rpc('arena_league', {}); }
   playerProfile(id: string): Promise<Profile> { return this.rpc('player_profile', { id }); }
   arenaShopBuy(id: ArenaShopId): Promise<LeagueState> { return this.rpc('arena_shop_buy', { id }); }

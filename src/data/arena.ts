@@ -22,6 +22,19 @@ export const LEAGUE = {
   GHOST_STEP: 45,
 } as const;
 
+/** Seria wygranych z rzędu: od 3 więcej złota, od 5 jeszcze więcej; za 3., 5., 10., 15.… wygraną z rzędu dodatkowe Żetony. */
+export const ARENA_STREAK = { FROM: 3, GOLD3: 0.5, GOLD5: 1, TK3: 3, TK5: 5 } as const;
+/** Rewanż na kimś, kto pokonał twoją obronę: przez 24 h, raz za każdą przegraną obronę; wygrana daje +100% złota i Żetony. */
+export const ARENA_REVENGE = { HOURS: 24, GOLD: 1, TK: 3 } as const;
+
+/** Premia za serię `streak` wygranych z rzędu (licząc właśnie wygraną walkę). */
+export function streakBonus(streak: number): { gold: number; tk: number } {
+  if (streak < ARENA_STREAK.FROM) return { gold: 0, tk: 0 };
+  const gold = streak >= 5 ? ARENA_STREAK.GOLD5 : ARENA_STREAK.GOLD3;
+  const tk = streak === 3 ? ARENA_STREAK.TK3 : streak >= 5 && streak % 5 === 0 ? ARENA_STREAK.TK5 : 0;
+  return { gold, tk };
+}
+
 /** Żetony za tydzień w lidze: więcej w wyższej lidze i za miejsca na podium grupy. */
 export const leagueWeekTokens = (tier: number, rank: number) => 20 + 15 * tier + (rank <= 5 ? 30 - 5 * (rank - 1) : 0);
 /** Klejnoty za najwyższą ligę sezonu (sezon = 28 dni, jak Przepustka Kowala). */

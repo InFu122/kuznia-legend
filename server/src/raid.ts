@@ -5,7 +5,7 @@
 //
 // Magazyn (SYSTEM): raid/{tydzień}:{klan}. Poziom smoka klanu: clan_state.raidLvl.
 import { RAID, RAID_PHASES, raidPhaseHp } from '../../src/data';
-import { raidAttackReward, raidFinalChest, raidPhaseChest } from '../../src/engine/clan';
+import { attackLoot, lastHitChest, raidAttackReward, raidFinalChest, raidPhaseChest } from '../../src/engine/clan';
 import type { GameState } from '../../src/engine/types';
 import { clanOf, postClan } from './clan';
 import { addClanXp, addWeekPoints, clanPower, memberIds, pushRewards, readPending, readState } from './clanlife';
@@ -98,7 +98,10 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   const bestG = goldStage(save && save.value.state);
   if (usedToday(r, userId, clock) >= RAID.ATTACKS) throw err('Na dziś ataki na smoka wykorzystane, wróć jutro.', PRECONDITION);
   const w = weakOf(save ? save.value.state : null, r.ph);
-  const roll = Math.round(power * RAID.DMG_MULT * (1 - RAID.SPREAD + 2 * RAID.SPREAD * serverRng(nk).next()) * (1 + w.bonus));
+  const rng = serverRng(nk);
+  const q = rng.next();
+  const roll = Math.round(power * RAID.DMG_MULT * (1 - RAID.SPREAD + 2 * RAID.SPREAD * q) * (1 + w.bonus));
+  const loot = attackLoot(rng.next(), rng.next(), r.lvl, RAID_PHASES[Math.min(r.ph, RAID_PHASES.length - 1)].weak);
   const who = nameOf(nk, userId) || 'Kowal';
   let dealt = 0;
   let broke: { ph: number; pd: Record<string, number> } | null = null;
@@ -130,7 +133,12 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
   }, perm) as Raid;
   if (limit) throw err('Na dziś ataki na smoka wykorzystane, wróć jutro.', PRECONDITION);
   if (!dealt) throw err('Smok pokonany, następny pojawi się w poniedziałek.', PRECONDITION);
-  pushRewards(nk, userId, [{ why: 'Atak na smoka', r: reward }]);
+  const last = broke ? lastHitChest(r.lvl, bestG, killed) : null;
+  pushRewards(nk, userId, [
+    { why: 'Atak na smoka', r: reward },
+    ...(loot ? [{ why: 'Łup z ataku na smoka', r: loot }] : []),
+    ...(last ? [{ why: killed ? 'Cios ostateczny: smok pokonany' : 'Cios ostateczny: faza smoka', r: last }] : []),
+  ]);
   try { addWeekPoints(nk, ctx, g.id, userId, 'raid'); } catch { /* skrzynia tygodnia nie blokuje ataku */ }
 
   const lvl = r.lvl;
@@ -161,7 +169,7 @@ export function rpcRaidAttack(ctx: nkruntime.Context, _logger: nkruntime.Logger,
     const podium = ranked.slice(0, 3).map(([u], i) => `${i + 1}. ${r.who[u] || 'Kowal'}`).join(', ');
     postClan(nk, g.id, { k: 'sys', t: `Smok poziomu ${lvl + 1} pokonany! ${podium}. Wielkie skrzynie czekają w zakładce Klan.` });
   }
-  return JSON.stringify(view(nk, clock, r, userId, now, { hit: { dmg: dealt, bonus: w.bonus, phase: b ? b.ph : -1, killed } }));
+  return JSON.stringify(view(nk, clock, r, userId, now, { hit: { dmg: dealt, bonus: w.bonus, phase: b ? b.ph : -1, killed, q, loot, last } }));
 }
 
 /** Skrót dla clan_sync (kropki w grze): ataki na smoka do wykorzystania dziś. */
