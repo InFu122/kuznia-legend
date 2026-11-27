@@ -455,7 +455,8 @@ export function rpcClanBossAttack(ctx: nkruntime.Context, _logger: nkruntime.Log
 }
 
 /** Wpis na czacie klanu z przyciskiem „Pomóż” (prośby o pomoc i o rudę). */
-const ask = (nk: nkruntime.Nakama, groupId: string, t: string) => postClan(nk, groupId, { k: 'ask', t, go: 'pomoc' });
+/** Prośba w czacie klanu; `by` — kto prosi (gra nie pokazuje prośby jej autorowi). */
+const ask = (nk: nkruntime.Nakama, groupId: string, t: string, by: string) => postClan(nk, groupId, { k: 'ask', t, go: 'pomoc', by });
 
 /** Prośba o pomoc przy trwającym ulepszeniu kuźni na poziom `up` albo (`what: 'tech'`) przy trwającym badaniu `tk`. */
 export function rpcClanHelpAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
@@ -480,7 +481,7 @@ export function rpcClanHelpAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger
     fresh = true;
     return { ...cur, helps };
   }, perm) as ClanState;
-  if (fresh) ask(nk, x.g.id, tech ? `${who} prosi o pomoc w badaniu: ${tn}.` : `${who} prosi o pomoc: Kuźnia → poziom ${up}.`);
+  if (fresh) ask(nk, x.g.id, tech ? `${who} prosi o pomoc w badaniu: ${tn}.` : `${who} prosi o pomoc: Kuźnia → poziom ${up}.`, userId);
   return JSON.stringify(view(nk, x, up));
 }
 
@@ -554,7 +555,7 @@ export function rpcClanOreAsk(ctx: nkruntime.Context, _logger: nkruntime.Logger,
     return { ...cur, ores };
   }, perm) as ClanState;
   if (open) throw err('Twoja prośba o rudę jeszcze trwa.', PRECONDITION);
-  ask(nk, x.g.id, `${who} prosi o rudę: ${ORE_WANT[ore]} × ${ORES[ore].n}.`);
+  ask(nk, x.g.id, `${who} prosi o rudę: ${ORE_WANT[ore]} × ${ORES[ore].n}.`, userId);
   updateObject<Daily>(nk, 'clan', 'daily', userId, cur => ({ ...(cur && cur.day === serverDay(x.now) ? cur : freshDaily(serverDay(x.now))), oreT: x.now }), perm);
   return JSON.stringify(view(nk, x, up));
 }

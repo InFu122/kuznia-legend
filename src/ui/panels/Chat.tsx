@@ -81,7 +81,9 @@ export function ChatView({ game, initial, close, goClan }: { game: Game; initial
   if (!chat) {
     return (<><div class="eyebrow">Czat</div><p class="sub">Czat działa po połączeniu z serwerem gry.</p><button class="btn" onClick={close}>Zamknij</button></>);
   }
-  const msgs = freshMsgs(ch, chat.msgs[ch]).filter(m => !chat.muted.has(m.uid));
+  // Własnych próśb o pomoc nie pokazujemy (starsze, sprzed pola `by`, rozpoznajemy po nicku na początku).
+  const ownAsk = (m: ChatMsg) => m.k === 'ask' && (m.mine || (!!game.s.name && m.t.startsWith(game.s.name + ' prosi o')));
+  const msgs = freshMsgs(ch, chat.msgs[ch]).filter(m => !chat.muted.has(m.uid) && !ownAsk(m));
   const noClan = ch === 'clan' && !chat.clanId;
   const lockGlobal = ch === 'global' && game.s.forge.lvl < B.CHAT_GLOBAL_FORGE;
 

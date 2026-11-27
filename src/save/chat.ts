@@ -21,7 +21,9 @@ const PING_EVERY_MS = 60000;
 export interface DropCard { name: string; r: number; slot: SlotId; kind?: string; lvl: number; ore: number; subs: { id: SubId; v: number }[]; el: ElemKey | null; set: SetId | null }
 export interface ChatMsg {
   id: string; ch: ChatCh; uid: string; n: string; t: string;
-  k: 'msg' | 'sys' | 'drop' | 'ann' | 'ask'; it?: DropCard; time: number; mine: boolean;
+  k: 'msg' | 'sys' | 'drop' | 'ann' | 'ask'; it?: DropCard; time: number;
+  /** Wiadomość gracza albo jego własna prośba w klanie (prośby wysyła serwer, autora zna pole `by`). */
+  mine: boolean;
 }
 
 interface NkMessage { channel_id: string; message_id: string; code?: number; sender_id?: string; content: string; create_time: string }
@@ -167,12 +169,12 @@ export class ChatLink {
   /** Wiadomość Nakamy → wiadomość gry. Pomija zdarzenia grup Nakamy (kod różny od 0). */
   private parse(m: NkMessage, ch: ChatCh): ChatMsg | null {
     if (m.code) return null;
-    let c: { k?: ChatMsg['k']; t?: string; n?: string; it?: DropCard } = {};
+    let c: { k?: ChatMsg['k']; t?: string; n?: string; it?: DropCard; by?: string } = {};
     try { c = JSON.parse(m.content); } catch { return null; }
     if (!c.t) return null;
     return {
       id: m.message_id, ch, uid: m.sender_id || '', n: c.n || '', t: c.t, k: c.k || 'msg', it: c.it,
-      time: Date.parse(m.create_time) || Date.now(), mine: !!this.me && m.sender_id === this.me,
+      time: Date.parse(m.create_time) || Date.now(), mine: !!this.me && (m.sender_id === this.me || (c.k === 'ask' && c.by === this.me)),
     };
   }
 

@@ -64,3 +64,25 @@ describe('czat: samo łączy się od nowa', () => {
     expect(c.state).toBe('on');
   });
 });
+
+describe('czat: własne prośby o pomoc', () => {
+  beforeEach(() => { vi.useFakeTimers(); FakeWs.all = []; vi.stubGlobal('WebSocket', FakeWs); });
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+  it('prośba wysłana przez serwer jest „moja”, gdy prosi gracz (pole by) — nie liczy się do nieprzeczytanych', async () => {
+    const c = new ChatLink(link);
+    await c.start(); await flush();
+    const ch = (Object.keys(c.ids) as (keyof typeof c.ids)[]).find(k => c.ids[k])!;
+    const send = (by: string, id: string) => FakeWs.all[0].onmessage?.({ data: JSON.stringify({ channel_message: {
+      channel_id: c.ids[ch], message_id: id, sender_id: '00000000-0000-0000-0000-000000000000', code: 0, create_time: new Date().toISOString(),
+      content: JSON.stringify({ k: 'ask', t: 'Ktoś prosi o pomoc: Kuźnia → poziom 16.', go: 'pomoc', by }),
+    } }) });
+    const before = c.unread[ch];
+    send('ja', 'm1');
+    send('inny', 'm2');
+    const [mine, other] = c.msgs[ch].slice(-2);
+    expect(mine.mine).toBe(true);
+    expect(other.mine).toBe(false);
+    expect(c.unread[ch]).toBe(before + 1);
+  });
+});
